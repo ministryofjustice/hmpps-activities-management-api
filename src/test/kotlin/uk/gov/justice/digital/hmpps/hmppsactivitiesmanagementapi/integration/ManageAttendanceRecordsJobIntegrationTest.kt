@@ -4,22 +4,15 @@ import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.argumentCaptor
-import org.mockito.kotlin.times
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.verifyNoInteractions
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
-import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
@@ -27,23 +20,14 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Atte
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.PRISONER_ATTENDANCE_CREATED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.PRISONER_ATTENDANCE_EXPIRED
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
-@TestPropertySource(
-  properties = [
-    "feature.events.sns.enabled=true",
-    "feature.event.activities.prisoner.attendance-created=true",
-    "feature.event.activities.prisoner.attendance-amended=true",
-    "feature.event.activities.prisoner.attendance-expired=true",
-  ],
-)
 @Deprecated("Remove when manage attendances job always uses SQS")
 class ManageAttendanceRecordsJobIntegrationTest : ActivityIntegrationTest() {
-
-  private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
 
   @Autowired
   private lateinit var attendanceRepository: AttendanceRepository
@@ -126,13 +110,12 @@ class ManageAttendanceRecordsJobIntegrationTest : ActivityIntegrationTest() {
 
     assertThat(attendanceRepository.count()).isEqualTo(4)
 
-    verify(eventsPublisher, times(4)).send(eventCaptor.capture())
-
-    eventCaptor.allValues.map {
-      assertThat(it.eventType).isEqualTo("activities.prisoner.attendance-created")
-      assertThat(it.occurredAt).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
-      assertThat(it.description).isEqualTo("A prisoner attendance has been created in the activities management service")
-    }
+    validateOutboundEvents(
+      ExpectedOutboundEvent(PRISONER_ATTENDANCE_CREATED, 1),
+      ExpectedOutboundEvent(PRISONER_ATTENDANCE_CREATED, 2),
+      ExpectedOutboundEvent(PRISONER_ATTENDANCE_CREATED, 3),
+      ExpectedOutboundEvent(PRISONER_ATTENDANCE_CREATED, 4),
+    )
   }
 
   @Sql("classpath:test_data/seed-activity-for-attendance-job.sql")
@@ -175,13 +158,14 @@ class ManageAttendanceRecordsJobIntegrationTest : ActivityIntegrationTest() {
 
     assertThat(attendanceRepository.findAll().filter { it.scheduledInstance.scheduledInstanceId == 2L }).hasSize(4)
 
-    verify(eventsPublisher, times(6)).send(eventCaptor.capture())
-
-    eventCaptor.allValues.forEach {
-      it.eventType isEqualTo "activities.prisoner.attendance-created"
-      it.occurredAt isCloseTo LocalDateTime.now()
-      it.description isEqualTo "A prisoner attendance has been created in the activities management service"
-    }
+    validateOutboundEvents(
+      ExpectedOutboundEvent(PRISONER_ATTENDANCE_CREATED, 1),
+      ExpectedOutboundEvent(PRISONER_ATTENDANCE_CREATED, 2),
+      ExpectedOutboundEvent(PRISONER_ATTENDANCE_CREATED, 3),
+      ExpectedOutboundEvent(PRISONER_ATTENDANCE_CREATED, 4),
+      ExpectedOutboundEvent(PRISONER_ATTENDANCE_CREATED, 5),
+      ExpectedOutboundEvent(PRISONER_ATTENDANCE_CREATED, 6),
+    )
   }
 
   @Sql("classpath:test_data/seed-activity-id-4.sql")
@@ -332,7 +316,7 @@ class ManageAttendanceRecordsJobIntegrationTest : ActivityIntegrationTest() {
       assertThat(it.status()).isEqualTo(AttendanceStatus.COMPLETED)
     }
 
-    verifyNoInteractions(eventsPublisher)
+    validateNoMessagesSent()
   }
 
   @Sql("classpath:test_data/seed-attendances-yesterdays-waiting.sql")
@@ -351,13 +335,9 @@ class ManageAttendanceRecordsJobIntegrationTest : ActivityIntegrationTest() {
       assertThat(it.status()).isEqualTo(AttendanceStatus.WAITING)
     }
 
-    verify(eventsPublisher).send(eventCaptor.capture())
-
-    eventCaptor.allValues.map {
-      assertThat(it.eventType).isEqualTo("activities.prisoner.attendance-expired")
-      assertThat(it.occurredAt).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
-      assertThat(it.description).isEqualTo("An unmarked prisoner attendance has been expired in the activities management service")
-    }
+    validateOutboundEvents(
+      ExpectedOutboundEvent(PRISONER_ATTENDANCE_EXPIRED, 1),
+    )
   }
 
   @Sql("classpath:test_data/seed-attendances-two-days-old-waiting.sql")
@@ -376,7 +356,7 @@ class ManageAttendanceRecordsJobIntegrationTest : ActivityIntegrationTest() {
       assertThat(it.status()).isEqualTo(AttendanceStatus.WAITING)
     }
 
-    verifyNoInteractions(eventsPublisher)
+    validateNoMessagesSent()
   }
 
   @Sql("classpath:test_data/seed-attendances-for-today.sql")
@@ -395,7 +375,7 @@ class ManageAttendanceRecordsJobIntegrationTest : ActivityIntegrationTest() {
       assertThat(it.status()).isIn(AttendanceStatus.WAITING, AttendanceStatus.COMPLETED)
     }
 
-    verifyNoInteractions(eventsPublisher)
+    validateNoMessagesSent()
   }
 
   @Sql("classpath:test_data/seed-activity-with-previous-current-future-deallocation.sql")
@@ -439,16 +419,13 @@ class ManageAttendanceRecordsJobIntegrationTest : ActivityIntegrationTest() {
       this.single { it.prisonerNumber == "A22222A" && it.status() == AttendanceStatus.WAITING }
     }
 
-    verify(eventsPublisher, times(2)).send(eventCaptor.capture())
-
-    eventCaptor.allValues.map {
-      assertThat(it.eventType).isEqualTo("activities.prisoner.attendance-created")
-      assertThat(it.occurredAt).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
-      assertThat(it.description).isEqualTo("A prisoner attendance has been created in the activities management service")
-    }
+    validateOutboundEvents(
+      ExpectedOutboundEvent(PRISONER_ATTENDANCE_CREATED, 1),
+      ExpectedOutboundEvent(PRISONER_ATTENDANCE_CREATED, 2),
+    )
   }
 
-  private fun List<ActivitySchedule>.findByDescription(description: String) = first { it.description.uppercase() == description.uppercase() }
+  private fun List<ActivitySchedule>.findByDescription(description: String) = first { it.description.equals(description, ignoreCase = true) }
 
   private fun WebTestClient.manageAttendanceRecords() {
     post()

@@ -8,10 +8,8 @@ import org.mockito.ArgumentMatchers.anyMap
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
-import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.springframework.http.MediaType
-import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
@@ -39,8 +37,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CASELO
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.AppointmentInstanceInformation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.APPOINTMENT_INSTANCE_CREATED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ORIGINAL_ID_PROPERTY_KEY
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -48,19 +45,12 @@ import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 import java.util.*
 
-@TestPropertySource(
-  properties = [
-    "feature.event.appointments.appointment-instance.created=true",
-  ],
-)
-class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
+class AppointmentSeriesIntegrationTest : LocalStackTestBase() {
   @MockitoBean
   private lateinit var telemetryClient: TelemetryClient
 
   @MockitoBean
   private lateinit var auditService: AuditService
-
-  private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
 
   private val telemetryCaptor = argumentCaptor<Map<String, String>>()
 
@@ -305,14 +295,9 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
     assertSingleAppointmentSinglePrisoner(appointmentSeries, request.copy(dpsLocationId = dpsLocationId))
     assertSingleAppointmentSinglePrisoner(webTestClient.getAppointmentSeriesById(appointmentSeries.id)!!, request.copy(dpsLocationId = dpsLocationId))
 
-    verify(eventsPublisher).send(eventCaptor.capture())
-
-    with(eventCaptor.firstValue) {
-      assertThat(eventType).isEqualTo("appointments.appointment-instance.created")
-      assertThat(additionalInformation).isEqualTo(AppointmentInstanceInformation(attendeeIds[0]))
-      assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-      assertThat(description).isEqualTo("A new appointment instance has been created in the activities management service")
-    }
+    validateOutboundEvents(
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, attendeeIds[0]),
+    )
 
     verify(auditService).logEvent(any<AppointmentSeriesCreatedEvent>())
 
@@ -360,14 +345,9 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
     assertSingleAppointmentSinglePrisoner(appointmentSeries, request.copy(internalLocationId = 4445))
     assertSingleAppointmentSinglePrisoner(webTestClient.getAppointmentSeriesById(appointmentSeries.id)!!, request.copy(internalLocationId = 4445))
 
-    verify(eventsPublisher).send(eventCaptor.capture())
-
-    with(eventCaptor.firstValue) {
-      assertThat(eventType).isEqualTo("appointments.appointment-instance.created")
-      assertThat(additionalInformation).isEqualTo(AppointmentInstanceInformation(attendeeIds[0]))
-      assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-      assertThat(description).isEqualTo("A new appointment instance has been created in the activities management service")
-    }
+    validateOutboundEvents(
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, attendeeIds[0]),
+    )
 
     verify(auditService).logEvent(any<AppointmentSeriesCreatedEvent>())
 
@@ -399,14 +379,9 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
     assertSingleAppointmentSinglePrisoner(appointmentSeries, request)
     assertSingleAppointmentSinglePrisoner(webTestClient.getAppointmentSeriesById(appointmentSeries.id)!!, request)
 
-    verify(eventsPublisher).send(eventCaptor.capture())
-
-    with(eventCaptor.firstValue) {
-      assertThat(eventType).isEqualTo("appointments.appointment-instance.created")
-      assertThat(additionalInformation).isEqualTo(AppointmentInstanceInformation(attendeeIds[0]))
-      assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-      assertThat(description).isEqualTo("A new appointment instance has been created in the activities management service")
-    }
+    validateOutboundEvents(
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, attendeeIds[0]),
+    )
 
     verify(auditService).logEvent(any<AppointmentSeriesCreatedEvent>())
 
@@ -462,14 +437,9 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
     assertSingleAppointmentTwoPrisoner(appointmentSeries, request)
     assertSingleAppointmentTwoPrisoner(webTestClient.getAppointmentSeriesById(appointmentSeries.id)!!, request)
 
-    verify(eventsPublisher, times(2)).send(eventCaptor.capture())
-
-    assertThat(
-      eventCaptor.allValues.map { it.eventType }.distinct().single(),
-    ).isEqualTo("appointments.appointment-instance.created")
-    assertThat(eventCaptor.allValues.map { it.additionalInformation }).contains(
-      AppointmentInstanceInformation(attendeeIds[0]),
-      AppointmentInstanceInformation(attendeeIds[1]),
+    validateOutboundEvents(
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, attendeeIds[0]),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, attendeeIds[1]),
     )
 
     verify(auditService).logEvent(any<AppointmentSeriesCreatedEvent>())
@@ -502,14 +472,9 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
     assertSingleAppointmentSinglePrisoner(appointmentSeries, request)
     assertSingleAppointmentSinglePrisoner(webTestClient.getAppointmentSeriesById(appointmentSeries.id)!!, request)
 
-    verify(eventsPublisher).send(eventCaptor.capture())
-
-    with(eventCaptor.firstValue) {
-      assertThat(eventType).isEqualTo("appointments.appointment-instance.created")
-      assertThat(additionalInformation).isEqualTo(AppointmentInstanceInformation(attendeeIds[0]))
-      assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-      assertThat(description).isEqualTo("A new appointment instance has been created in the activities management service")
-    }
+    validateOutboundEvents(
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, attendeeIds[0]),
+    )
 
     verify(auditService).logEvent(any<AppointmentSeriesCreatedEvent>())
 
@@ -541,15 +506,10 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
 
     assertThat(appointmentSeries.appointments).hasSize(3)
 
-    verify(eventsPublisher, times(3)).send(eventCaptor.capture())
-
-    assertThat(
-      eventCaptor.allValues.map { it.eventType }.distinct().single(),
-    ).isEqualTo("appointments.appointment-instance.created")
-    assertThat(eventCaptor.allValues.map { it.additionalInformation }).contains(
-      AppointmentInstanceInformation(attendeeIds[0]),
-      AppointmentInstanceInformation(attendeeIds[1]),
-      AppointmentInstanceInformation(attendeeIds[2]),
+    validateOutboundEvents(
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, attendeeIds[0]),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, attendeeIds[1]),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, attendeeIds[2]),
     )
 
     verify(auditService).logEvent(any<AppointmentSeriesCreatedEvent>())
@@ -590,14 +550,9 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
     appointmentSeries.appointments hasSize 2
     attendeeIds hasSize 10
 
-    verify(eventsPublisher, times(attendeeIds.size)).send(eventCaptor.capture())
+    val expectedOutboundEvents = attendeeIds.map { ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, it) }.toTypedArray()
 
-    assertThat(
-      eventCaptor.allValues.map { it.eventType }.distinct().single(),
-    ).isEqualTo("appointments.appointment-instance.created")
-    assertThat(eventCaptor.allValues.map { it.additionalInformation }).containsAll(
-      attendeeIds.map { AppointmentInstanceInformation(it) },
-    )
+    validateOutboundEvents(*expectedOutboundEvents)
 
     verify(auditService).logEvent(any<AppointmentSeriesCreatedEvent>())
 
@@ -646,14 +601,9 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
     appointmentSeries.appointments hasSize 4
     attendeeIds hasSize 12
 
-    verify(eventsPublisher, times(attendeeIds.size)).send(eventCaptor.capture())
+    val expectedOutboundEvents = attendeeIds.map { ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, it) }.toTypedArray()
 
-    assertThat(
-      eventCaptor.allValues.map { it.eventType }.distinct().single(),
-    ).isEqualTo("appointments.appointment-instance.created")
-    assertThat(eventCaptor.allValues.map { it.additionalInformation }).containsAll(
-      attendeeIds.map { AppointmentInstanceInformation(it) },
-    )
+    validateOutboundEvents(*expectedOutboundEvents)
 
     verify(auditService).logEvent(any<AppointmentSeriesCreatedEvent>())
 

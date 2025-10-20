@@ -2,13 +2,8 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.argumentCaptor
-import org.mockito.kotlin.times
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.verifyNoMoreInteractions
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
-import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
@@ -22,7 +17,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONV
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isNotEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.testPentonvillePayBandOne
@@ -39,24 +33,14 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CASELO
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_ACTIVITY_ADMIN
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_ACTIVITY_HUB
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.PrisonerAllocatedInformation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.PrisonerAttendanceInformation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.PRISONER_ALLOCATION_AMENDED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.PRISONER_ATTENDANCE_AMENDED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.PRISONER_ATTENDANCE_CREATED
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-@TestPropertySource(
-  properties = [
-    "feature.event.activities.prisoner.allocation-amended=true",
-    "feature.event.activities.prisoner.attendance-amended=true",
-    "feature.event.activities.prisoner.attendance-created=true",
-    "spring.jpa.properties.hibernate.enable_lazy_load_no_trans=true",
-  ],
-)
-class AllocationIntegrationTest : ActivitiesIntegrationTestBase() {
-
-  private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
+class AllocationIntegrationTest : LocalStackTestBase() {
 
   @Autowired
   private lateinit var allocationRepository: AllocationRepository
@@ -191,19 +175,10 @@ class AllocationIntegrationTest : ActivitiesIntegrationTestBase() {
       .also { it.size isEqualTo 1 }
       .first()
 
-    verify(eventsPublisher, times(2)).send(eventCaptor.capture())
-
-    with(eventCaptor.firstValue) {
-      eventType isEqualTo "activities.prisoner.allocation-amended"
-      additionalInformation isEqualTo PrisonerAllocatedInformation(6)
-      occurredAt isCloseTo TimeSource.now()
-    }
-
-    with(eventCaptor.secondValue) {
-      eventType isEqualTo "activities.prisoner.attendance-created"
-      additionalInformation isEqualTo PrisonerAttendanceInformation(newAttendance.attendanceId)
-      occurredAt isCloseTo TimeSource.now()
-    }
+    validateOutboundEvents(
+      ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 6),
+      ExpectedOutboundEvent(PRISONER_ATTENDANCE_CREATED, newAttendance.attendanceId),
+    )
   }
 
   @Sql("classpath:test_data/seed-activity-with-advance-attendances-2.sql")
@@ -247,13 +222,9 @@ class AllocationIntegrationTest : ActivitiesIntegrationTestBase() {
 
     allocationRepository.findById(1).get().also { it.endDate isEqualTo TimeSource.tomorrow() }
 
-    verify(eventsPublisher).send(eventCaptor.capture())
-
-    with(eventCaptor.firstValue) {
-      eventType isEqualTo "activities.prisoner.allocation-amended"
-      additionalInformation isEqualTo PrisonerAllocatedInformation(1)
-      occurredAt isCloseTo TimeSource.now()
-    }
+    validateOutboundEvents(
+      ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 1),
+    )
 
     assertThat(webTestClient.retrieveAdvanceAttendance(1).prisonerNumber).isEqualTo("A11111A")
   }
@@ -305,13 +276,9 @@ class AllocationIntegrationTest : ActivitiesIntegrationTestBase() {
       this.first().daysOfWeek isEqualTo setOf(DayOfWeek.MONDAY)
     }
 
-    verify(eventsPublisher).send(eventCaptor.capture())
-
-    with(eventCaptor.firstValue) {
-      eventType isEqualTo "activities.prisoner.allocation-amended"
-      additionalInformation isEqualTo PrisonerAllocatedInformation(1)
-      occurredAt isCloseTo TimeSource.now()
-    }
+    validateOutboundEvents(
+      ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 1),
+    )
   }
 
   @Sql("classpath:test_data/seed-activity-id-1.sql")
@@ -329,29 +296,17 @@ class AllocationIntegrationTest : ActivitiesIntegrationTestBase() {
     )
 
     listOf(1L, 4L).forEach {
-      with(allocationRepository.getReferenceById(it)) {
-        status(PrisonerStatus.ACTIVE) isBool true
-        plannedSuspension() isNotEqualTo null
-        plannedSuspension()!!.startDate() isEqualTo 5.daysFromNow()
-        plannedSuspension()!!.endDate() isEqualTo null
+      with(webTestClient.getAllocationBy(it)) {
+        status isEqualTo PrisonerStatus.ACTIVE
+        plannedSuspension!!.plannedStartDate isEqualTo 5.daysFromNow()
+        plannedSuspension.plannedEndDate isEqualTo null
       }
     }
 
-    verify(eventsPublisher, times(2)).send(eventCaptor.capture())
-
-    with(eventCaptor.firstValue) {
-      eventType isEqualTo "activities.prisoner.allocation-amended"
-      additionalInformation isEqualTo PrisonerAllocatedInformation(1)
-      occurredAt isCloseTo TimeSource.now()
-    }
-
-    with(eventCaptor.secondValue) {
-      eventType isEqualTo "activities.prisoner.allocation-amended"
-      additionalInformation isEqualTo PrisonerAllocatedInformation(4)
-      occurredAt isCloseTo TimeSource.now()
-    }
-
-    verifyNoMoreInteractions(eventsPublisher)
+    validateOutboundEvents(
+      ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 1),
+      ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 4),
+    )
   }
 
   @Sql("classpath:test_data/seed-allocation-for-manual-suspension.sql")
@@ -369,11 +324,10 @@ class AllocationIntegrationTest : ActivitiesIntegrationTestBase() {
     )
 
     listOf(1L, 2L).forEach {
-      with(allocationRepository.getReferenceById(it)) {
-        status(PrisonerStatus.SUSPENDED) isBool true
-        plannedSuspension() isNotEqualTo null
-        plannedSuspension()!!.startDate() isEqualTo TimeSource.today()
-        plannedSuspension()!!.endDate() isEqualTo null
+      with(webTestClient.getAllocationBy(it)) {
+        status isEqualTo PrisonerStatus.SUSPENDED
+        plannedSuspension!!.plannedStartDate isEqualTo TimeSource.today()
+        plannedSuspension.plannedEndDate isEqualTo null
       }
     }
 
@@ -396,33 +350,12 @@ class AllocationIntegrationTest : ActivitiesIntegrationTestBase() {
       }
     }
 
-    verify(eventsPublisher, times(4)).send(eventCaptor.capture())
-
-    with(eventCaptor.firstValue) {
-      eventType isEqualTo "activities.prisoner.allocation-amended"
-      additionalInformation isEqualTo PrisonerAllocatedInformation(1)
-      occurredAt isCloseTo TimeSource.now()
-    }
-
-    with(eventCaptor.secondValue) {
-      eventType isEqualTo "activities.prisoner.allocation-amended"
-      additionalInformation isEqualTo PrisonerAllocatedInformation(2)
-      occurredAt isCloseTo TimeSource.now()
-    }
-
-    with(eventCaptor.thirdValue) {
-      eventType isEqualTo "activities.prisoner.attendance-amended"
-      additionalInformation isEqualTo PrisonerAttendanceInformation(2)
-      occurredAt isCloseTo TimeSource.now()
-    }
-
-    with(eventCaptor.allValues[3]) {
-      eventType isEqualTo "activities.prisoner.attendance-amended"
-      additionalInformation isEqualTo PrisonerAttendanceInformation(4)
-      occurredAt isCloseTo TimeSource.now()
-    }
-
-    verifyNoMoreInteractions(eventsPublisher)
+    validateOutboundEvents(
+      ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 1),
+      ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 2),
+      ExpectedOutboundEvent(PRISONER_ATTENDANCE_AMENDED, 2),
+      ExpectedOutboundEvent(PRISONER_ATTENDANCE_AMENDED, 4),
+    )
   }
 
   @Sql("classpath:test_data/seed-allocation-for-manual-suspension.sql")
@@ -440,11 +373,10 @@ class AllocationIntegrationTest : ActivitiesIntegrationTestBase() {
     )
 
     listOf(1L, 2L).forEach {
-      with(allocationRepository.getReferenceById(it)) {
-        status(PrisonerStatus.SUSPENDED) isBool true
-        plannedSuspension() isNotEqualTo null
-        plannedSuspension()!!.startDate() isEqualTo TimeSource.today()
-        plannedSuspension()!!.endDate() isEqualTo null
+      with(webTestClient.getAllocationBy(it)) {
+        status isEqualTo PrisonerStatus.SUSPENDED
+        plannedSuspension!!.plannedStartDate isEqualTo TimeSource.today()
+        plannedSuspension.plannedEndDate isEqualTo null
       }
     }
 
@@ -467,33 +399,12 @@ class AllocationIntegrationTest : ActivitiesIntegrationTestBase() {
       }
     }
 
-    verify(eventsPublisher, times(4)).send(eventCaptor.capture())
-
-    with(eventCaptor.firstValue) {
-      eventType isEqualTo "activities.prisoner.allocation-amended"
-      additionalInformation isEqualTo PrisonerAllocatedInformation(1)
-      occurredAt isCloseTo TimeSource.now()
-    }
-
-    with(eventCaptor.secondValue) {
-      eventType isEqualTo "activities.prisoner.allocation-amended"
-      additionalInformation isEqualTo PrisonerAllocatedInformation(2)
-      occurredAt isCloseTo TimeSource.now()
-    }
-
-    with(eventCaptor.thirdValue) {
-      eventType isEqualTo "activities.prisoner.attendance-amended"
-      additionalInformation isEqualTo PrisonerAttendanceInformation(2)
-      occurredAt isCloseTo TimeSource.now()
-    }
-
-    with(eventCaptor.allValues[3]) {
-      eventType isEqualTo "activities.prisoner.attendance-amended"
-      additionalInformation isEqualTo PrisonerAttendanceInformation(4)
-      occurredAt isCloseTo TimeSource.now()
-    }
-
-    verifyNoMoreInteractions(eventsPublisher)
+    validateOutboundEvents(
+      ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 1),
+      ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 2),
+      ExpectedOutboundEvent(PRISONER_ATTENDANCE_AMENDED, 2),
+      ExpectedOutboundEvent(PRISONER_ATTENDANCE_AMENDED, 4),
+    )
   }
 
   @Sql("classpath:test_data/seed-allocation-for-manual-suspension.sql")
@@ -511,11 +422,10 @@ class AllocationIntegrationTest : ActivitiesIntegrationTestBase() {
     )
 
     listOf(1L, 2L).forEach {
-      with(allocationRepository.getReferenceById(it)) {
-        status(PrisonerStatus.SUSPENDED_WITH_PAY) isBool true
-        plannedSuspension() isNotEqualTo null
-        plannedSuspension()!!.startDate() isEqualTo TimeSource.today()
-        plannedSuspension()!!.endDate() isEqualTo null
+      with(webTestClient.getAllocationBy(it)) {
+        status isEqualTo PrisonerStatus.SUSPENDED_WITH_PAY
+        plannedSuspension!!.plannedStartDate isEqualTo TimeSource.today()
+        plannedSuspension.plannedEndDate isEqualTo null
       }
     }
 
@@ -538,33 +448,12 @@ class AllocationIntegrationTest : ActivitiesIntegrationTestBase() {
       }
     }
 
-    verify(eventsPublisher, times(4)).send(eventCaptor.capture())
-
-    with(eventCaptor.firstValue) {
-      eventType isEqualTo "activities.prisoner.allocation-amended"
-      additionalInformation isEqualTo PrisonerAllocatedInformation(1)
-      occurredAt isCloseTo TimeSource.now()
-    }
-
-    with(eventCaptor.secondValue) {
-      eventType isEqualTo "activities.prisoner.allocation-amended"
-      additionalInformation isEqualTo PrisonerAllocatedInformation(2)
-      occurredAt isCloseTo TimeSource.now()
-    }
-
-    with(eventCaptor.thirdValue) {
-      eventType isEqualTo "activities.prisoner.attendance-amended"
-      additionalInformation isEqualTo PrisonerAttendanceInformation(2)
-      occurredAt isCloseTo TimeSource.now()
-    }
-
-    with(eventCaptor.allValues[3]) {
-      eventType isEqualTo "activities.prisoner.attendance-amended"
-      additionalInformation isEqualTo PrisonerAttendanceInformation(4)
-      occurredAt isCloseTo TimeSource.now()
-    }
-
-    verifyNoMoreInteractions(eventsPublisher)
+    validateOutboundEvents(
+      ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 1),
+      ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 2),
+      ExpectedOutboundEvent(PRISONER_ATTENDANCE_AMENDED, 2),
+      ExpectedOutboundEvent(PRISONER_ATTENDANCE_AMENDED, 4),
+    )
   }
 
   @Sql("classpath:test_data/seed-allocation-with-active-suspension.sql")
@@ -581,9 +470,9 @@ class AllocationIntegrationTest : ActivitiesIntegrationTestBase() {
     )
 
     listOf(1L, 2L).forEach {
-      with(allocationRepository.getReferenceById(it)) {
-        status(PrisonerStatus.ACTIVE) isBool true
-        plannedSuspension() isEqualTo null
+      with(webTestClient.getAllocationBy(it)) {
+        status isEqualTo PrisonerStatus.ACTIVE
+        plannedSuspension isEqualTo null
       }
     }
 
@@ -606,33 +495,12 @@ class AllocationIntegrationTest : ActivitiesIntegrationTestBase() {
       }
     }
 
-    verify(eventsPublisher, times(4)).send(eventCaptor.capture())
-
-    with(eventCaptor.firstValue) {
-      eventType isEqualTo "activities.prisoner.allocation-amended"
-      additionalInformation isEqualTo PrisonerAllocatedInformation(1)
-      occurredAt isCloseTo TimeSource.now()
-    }
-
-    with(eventCaptor.secondValue) {
-      eventType isEqualTo "activities.prisoner.allocation-amended"
-      additionalInformation isEqualTo PrisonerAllocatedInformation(2)
-      occurredAt isCloseTo TimeSource.now()
-    }
-
-    with(eventCaptor.thirdValue) {
-      eventType isEqualTo "activities.prisoner.attendance-amended"
-      additionalInformation isEqualTo PrisonerAttendanceInformation(2)
-      occurredAt isCloseTo TimeSource.now()
-    }
-
-    with(eventCaptor.allValues[3]) {
-      eventType isEqualTo "activities.prisoner.attendance-amended"
-      additionalInformation isEqualTo PrisonerAttendanceInformation(4)
-      occurredAt isCloseTo TimeSource.now()
-    }
-
-    verifyNoMoreInteractions(eventsPublisher)
+    validateOutboundEvents(
+      ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 1),
+      ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 2),
+      ExpectedOutboundEvent(PRISONER_ATTENDANCE_AMENDED, 2),
+      ExpectedOutboundEvent(PRISONER_ATTENDANCE_AMENDED, 4),
+    )
   }
 
   @Sql("classpath:test_data/seed-allocation-with-active-paid-suspension.sql")
@@ -649,9 +517,9 @@ class AllocationIntegrationTest : ActivitiesIntegrationTestBase() {
     )
 
     listOf(1L, 2L).forEach {
-      with(allocationRepository.getReferenceById(it)) {
-        status(PrisonerStatus.ACTIVE) isBool true
-        plannedSuspension() isEqualTo null
+      with(webTestClient.getAllocationBy(it)) {
+        status isEqualTo PrisonerStatus.ACTIVE
+        plannedSuspension isEqualTo null
       }
     }
 
@@ -674,33 +542,12 @@ class AllocationIntegrationTest : ActivitiesIntegrationTestBase() {
       }
     }
 
-    verify(eventsPublisher, times(4)).send(eventCaptor.capture())
-
-    with(eventCaptor.firstValue) {
-      eventType isEqualTo "activities.prisoner.allocation-amended"
-      additionalInformation isEqualTo PrisonerAllocatedInformation(1)
-      occurredAt isCloseTo TimeSource.now()
-    }
-
-    with(eventCaptor.secondValue) {
-      eventType isEqualTo "activities.prisoner.allocation-amended"
-      additionalInformation isEqualTo PrisonerAllocatedInformation(2)
-      occurredAt isCloseTo TimeSource.now()
-    }
-
-    with(eventCaptor.thirdValue) {
-      eventType isEqualTo "activities.prisoner.attendance-amended"
-      additionalInformation isEqualTo PrisonerAttendanceInformation(2)
-      occurredAt isCloseTo TimeSource.now()
-    }
-
-    with(eventCaptor.allValues[3]) {
-      eventType isEqualTo "activities.prisoner.attendance-amended"
-      additionalInformation isEqualTo PrisonerAttendanceInformation(4)
-      occurredAt isCloseTo TimeSource.now()
-    }
-
-    verifyNoMoreInteractions(eventsPublisher)
+    validateOutboundEvents(
+      ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 1),
+      ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 2),
+      ExpectedOutboundEvent(PRISONER_ATTENDANCE_AMENDED, 2),
+      ExpectedOutboundEvent(PRISONER_ATTENDANCE_AMENDED, 4),
+    )
   }
 
   private fun WebTestClient.updateAllocation(

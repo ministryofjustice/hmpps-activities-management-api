@@ -106,7 +106,10 @@ enum class OutboundEvent(val eventType: String) {
   abstract fun event(additionalInformation: AdditionalInformation): OutboundHMPPSDomainEvent
 }
 
-interface AdditionalInformation
+interface AdditionalInformation {
+  fun primaryId(): String
+  fun secondaryId(): String? = null
+}
 
 data class OutboundHMPPSDomainEvent(
   val eventType: String,
@@ -116,9 +119,22 @@ data class OutboundHMPPSDomainEvent(
   val occurredAt: LocalDateTime = LocalDateTime.now(),
 )
 
-data class ScheduleCreatedInformation(val activityScheduleId: Long) : AdditionalInformation
-data class ScheduledInstanceInformation(val scheduledInstanceId: Long) : AdditionalInformation
-data class PrisonerAllocatedInformation(val allocationId: Long) : AdditionalInformation
-data class PrisonerAttendanceInformation(val attendanceId: Long) : AdditionalInformation
-data class PrisonerAttendanceDeleteInformation(val bookingId: Long, val scheduledInstanceId: Long) : AdditionalInformation
-data class AppointmentInstanceInformation(val appointmentInstanceId: Long) : AdditionalInformation
+data class ScheduleCreatedInformation(val activityScheduleId: Long) : AdditionalInformation {
+  override fun primaryId() = "$activityScheduleId"
+}
+data class ScheduledInstanceInformation(val scheduledInstanceId: Long) : AdditionalInformation {
+  override fun primaryId() = "$scheduledInstanceId"
+}
+data class PrisonerAllocatedInformation(val allocationId: Long) : AdditionalInformation {
+  override fun primaryId() = "$allocationId"
+}
+data class PrisonerAttendanceInformation(val attendanceId: Long) : AdditionalInformation {
+  override fun primaryId() = "$attendanceId"
+}
+data class PrisonerAttendanceDeleteInformation(val bookingId: Long, val scheduledInstanceId: Long) : AdditionalInformation {
+  override fun primaryId() = "$bookingId"
+  override fun secondaryId() = "$scheduledInstanceId"
+}
+data class AppointmentInstanceInformation(val appointmentInstanceId: Long) : AdditionalInformation {
+  override fun primaryId() = "$appointmentInstanceId"
+}

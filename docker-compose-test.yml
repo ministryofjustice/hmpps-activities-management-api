@@ -2,6 +2,7 @@ version: "3"
 services:
   test-db:
     image: postgres:latest
+#    image: arm64v8/postgres:17
     container_name: activities-test-db
     networks:
       - hmpps

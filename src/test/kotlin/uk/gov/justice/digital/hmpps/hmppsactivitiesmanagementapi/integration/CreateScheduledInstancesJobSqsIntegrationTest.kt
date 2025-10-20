@@ -2,35 +2,20 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.verifyNoMoreInteractions
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.jdbc.core.queryForObject
-import org.springframework.test.context.TestPropertySource
-import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.ACTIVITY_SCHEDULE_UPDATED
 import java.time.DayOfWeek
 import java.time.LocalDate
 
-@TestPropertySource(
-  properties = [
-    "feature.events.sns.enabled=true",
-    "feature.event.activities.activity-schedule.amended=true",
-    "feature.jobs.sqs.schedules.enabled=true",
-  ],
-)
 class CreateScheduledInstancesJobSqsIntegrationTest : AbstractJobIntegrationTest() {
-
-  @MockitoBean
-  private lateinit var outboundEventsService: OutboundEventsService
 
   @Autowired
   private lateinit var scheduleInstancesRepository: ScheduledInstanceRepository
@@ -55,9 +40,10 @@ class CreateScheduledInstancesJobSqsIntegrationTest : AbstractJobIntegrationTest
 
     assertThat(scheduleInstancesRepository.count()).isEqualTo(2)
 
-    verify(outboundEventsService).send(OutboundEvent.ACTIVITY_SCHEDULE_UPDATED, 1L)
-    verify(outboundEventsService).send(OutboundEvent.ACTIVITY_SCHEDULE_UPDATED, 2L)
-    verifyNoMoreInteractions(outboundEventsService)
+    validateOutboundEvents(
+      ExpectedOutboundEvent(ACTIVITY_SCHEDULE_UPDATED, 1),
+      ExpectedOutboundEvent(ACTIVITY_SCHEDULE_UPDATED, 2),
+    )
 
     verifyJobComplete(JobType.SCHEDULES)
   }
@@ -82,8 +68,9 @@ class CreateScheduledInstancesJobSqsIntegrationTest : AbstractJobIntegrationTest
 
     allInstances isEqualTo 3
 
-    verify(outboundEventsService).send(OutboundEvent.ACTIVITY_SCHEDULE_UPDATED, 1L)
-    verifyNoMoreInteractions(outboundEventsService)
+    validateOutboundEvents(
+      ExpectedOutboundEvent(ACTIVITY_SCHEDULE_UPDATED, 1),
+    )
   }
 
   @Sql("classpath:test_data/seed-activity-with-old-instances.sql")
@@ -100,7 +87,7 @@ class CreateScheduledInstancesJobSqsIntegrationTest : AbstractJobIntegrationTest
 
     scheduledInstances isEqualTo 0
 
-    verifyNoMoreInteractions(outboundEventsService)
+    validateNoMessagesSent()
   }
 
   @Test
@@ -129,8 +116,9 @@ class CreateScheduledInstancesJobSqsIntegrationTest : AbstractJobIntegrationTest
 
     allInstances isEqualTo 3
 
-    verify(outboundEventsService).send(OutboundEvent.ACTIVITY_SCHEDULE_UPDATED, 1L)
-    verifyNoMoreInteractions(outboundEventsService)
+    validateOutboundEvents(
+      ExpectedOutboundEvent(ACTIVITY_SCHEDULE_UPDATED, 1),
+    )
   }
 
   private fun WebTestClient.createScheduledInstances() {

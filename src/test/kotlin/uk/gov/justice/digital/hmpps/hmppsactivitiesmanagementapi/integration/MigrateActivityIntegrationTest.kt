@@ -2,17 +2,10 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
-import org.junit.Assert.assertTrue
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.argumentCaptor
-import org.mockito.kotlin.times
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.verifyNoInteractions
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
-import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
@@ -21,7 +14,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONV
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.RISLEY_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isWithinAMinuteOf
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityMigrateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AllocationMigrateRequest
@@ -33,36 +25,22 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Acti
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CASELOAD_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_NOMIS_ACTIVITIES
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.PrisonerAllocatedInformation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.ScheduleCreatedInformation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.ACTIVITY_SCHEDULE_CREATED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.ACTIVITY_SCHEDULE_UPDATED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.PRISONER_ALLOCATED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.PRISONER_ALLOCATION_AMENDED
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 
-@TestPropertySource(
-  properties = [
-    "feature.events.sns.enabled=true",
-    "feature.event.activities.activity-schedule.created=true",
-    "feature.event.activities.activity-schedule.amended=true",
-    "feature.event.activities.prisoner.allocation-amended=true",
-    "feature.event.activities.prisoner.allocated=true",
-    "feature.migrate.split.regime.enabled=true",
-  ],
-)
-class MigrateActivityIntegrationTest : ActivitiesIntegrationTestBase() {
+class MigrateActivityIntegrationTest : LocalStackTestBase() {
 
   @Autowired
   private lateinit var activityRepository: ActivityRepository
 
-  private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
   private val startTime = LocalTime.of(10, 0)
   private val endTime = LocalTime.of(11, 0)
-
-  companion object {
-    private val log: Logger = LoggerFactory.getLogger(this::class.java)
-  }
 
   @Test
   fun `migrate activity - success`() {
@@ -91,15 +69,9 @@ class MigrateActivityIntegrationTest : ActivitiesIntegrationTestBase() {
       assertThat(splitRegimeActivityId).isNull()
     }
 
-    verify(eventsPublisher).send(eventCaptor.capture())
-
-    eventCaptor.allValues.forEach { event ->
-      log.info("Event captured on successful activity migration: ${event.eventType}")
-    }
-
-    with(eventCaptor.firstValue) {
-      assertThat(eventType).isEqualTo("activities.activity-schedule.created")
-    }
+    validateOutboundEvents(
+      ExpectedOutboundEvent(ACTIVITY_SCHEDULE_CREATED, 1),
+    )
   }
 
   @Test
@@ -127,7 +99,7 @@ class MigrateActivityIntegrationTest : ActivitiesIntegrationTestBase() {
       assertThat(developerMessage).isEqualTo("Access Denied")
     }
 
-    verifyNoInteractions(eventsPublisher)
+    validateNoMessagesSent()
   }
 
   @Test
@@ -158,7 +130,7 @@ class MigrateActivityIntegrationTest : ActivitiesIntegrationTestBase() {
       assertThat(userMessage).contains("No prison pay band for Nomis pay band 12")
     }
 
-    verifyNoInteractions(eventsPublisher)
+    validateNoMessagesSent()
   }
 
   @Test
@@ -197,15 +169,9 @@ class MigrateActivityIntegrationTest : ActivitiesIntegrationTestBase() {
       assertThat(exclusion.sunday).isFalse()
     }
 
-    verify(eventsPublisher).send(eventCaptor.capture())
-
-    eventCaptor.allValues.forEach { event ->
-      log.info("Event captured on successful allocation: ${event.eventType}")
-    }
-
-    with(eventCaptor.firstValue) {
-      assertThat(eventType).isEqualTo("activities.prisoner.allocated")
-    }
+    validateOutboundEvents(
+      ExpectedOutboundEvent(PRISONER_ALLOCATED, 1),
+    )
   }
 
   @Test
@@ -227,15 +193,9 @@ class MigrateActivityIntegrationTest : ActivitiesIntegrationTestBase() {
       assertThat(allocationId).isNotNull
     }
 
-    verify(eventsPublisher).send(eventCaptor.capture())
-
-    eventCaptor.allValues.forEach { event ->
-      log.info("Event captured on successful allocation: ${event.eventType}")
-    }
-
-    with(eventCaptor.firstValue) {
-      assertThat(eventType).isEqualTo("activities.prisoner.allocated")
-    }
+    validateOutboundEvents(
+      ExpectedOutboundEvent(PRISONER_ALLOCATED, 1),
+    )
   }
 
   @Test
@@ -255,15 +215,9 @@ class MigrateActivityIntegrationTest : ActivitiesIntegrationTestBase() {
       assertThat(allocationId).isNotNull
     }
 
-    verify(eventsPublisher).send(eventCaptor.capture())
-
-    eventCaptor.allValues.forEach { event ->
-      log.info("Event captured on successful allocation: ${event.eventType}")
-    }
-
-    with(eventCaptor.firstValue) {
-      assertThat(eventType).isEqualTo("activities.prisoner.allocated")
-    }
+    validateOutboundEvents(
+      ExpectedOutboundEvent(PRISONER_ALLOCATED, 1),
+    )
   }
 
   @Test
@@ -284,15 +238,9 @@ class MigrateActivityIntegrationTest : ActivitiesIntegrationTestBase() {
       assertThat(allocationId).isNotNull
     }
 
-    verify(eventsPublisher).send(eventCaptor.capture())
-
-    eventCaptor.allValues.forEach { event ->
-      log.info("Event captured on successful allocation: ${event.eventType}")
-    }
-
-    with(eventCaptor.firstValue) {
-      assertThat(eventType).isEqualTo("activities.prisoner.allocated")
-    }
+    validateOutboundEvents(
+      ExpectedOutboundEvent(PRISONER_ALLOCATED, 1),
+    )
   }
 
   @Test
@@ -312,7 +260,7 @@ class MigrateActivityIntegrationTest : ActivitiesIntegrationTestBase() {
       assertThat(userMessage).contains("Allocation failed A1234AA. Already allocated to 1 Maths")
     }
 
-    verifyNoInteractions(eventsPublisher)
+    validateNoMessagesSent()
   }
 
   @Test
@@ -332,7 +280,7 @@ class MigrateActivityIntegrationTest : ActivitiesIntegrationTestBase() {
       assertThat(developerMessage).isEqualTo("Access Denied")
     }
 
-    verifyNoInteractions(eventsPublisher)
+    validateNoMessagesSent()
   }
 
   @Test
@@ -354,7 +302,7 @@ class MigrateActivityIntegrationTest : ActivitiesIntegrationTestBase() {
       assertThat(userMessage).contains("Allocation failed A1234BB. Nomis pay band 11 is not configured for MDI")
     }
 
-    verifyNoInteractions(eventsPublisher)
+    validateNoMessagesSent()
   }
 
   @Test
@@ -374,7 +322,7 @@ class MigrateActivityIntegrationTest : ActivitiesIntegrationTestBase() {
       assertThat(userMessage).contains("Allocation failed A1234BB. Prisoner not in MDI or INACTIVE")
     }
 
-    verifyNoInteractions(eventsPublisher)
+    validateNoMessagesSent()
   }
 
   @Test
@@ -395,7 +343,7 @@ class MigrateActivityIntegrationTest : ActivitiesIntegrationTestBase() {
 
     assertThat(activityRepository.count()).isEqualTo(0)
 
-    verifyNoInteractions(eventsPublisher)
+    validateNoMessagesSent()
   }
 
   @Test
@@ -486,19 +434,10 @@ class MigrateActivityIntegrationTest : ActivitiesIntegrationTestBase() {
       }
     }
 
-    verify(eventsPublisher, times(2)).send(eventCaptor.capture())
-
-    val messages = eventCaptor.allValues
-
-    with(messages.first { it.eventType == "activities.activity-schedule.amended" && it.additionalInformation == ScheduleCreatedInformation(1) }) {
-      occurredAt isWithinAMinuteOf now
-      description isEqualTo "An activity schedule has been updated in the activities management service"
-    }
-
-    with(messages.first { it.eventType == "activities.prisoner.allocation-amended" && it.additionalInformation == PrisonerAllocatedInformation(1) }) {
-      occurredAt isWithinAMinuteOf now
-      description isEqualTo "A prisoner allocation has been amended in the activities management service"
-    }
+    validateOutboundEvents(
+      ExpectedOutboundEvent(ACTIVITY_SCHEDULE_UPDATED, 1),
+      ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 1),
+    )
   }
 
   private fun buildActivityMigrateRequest(

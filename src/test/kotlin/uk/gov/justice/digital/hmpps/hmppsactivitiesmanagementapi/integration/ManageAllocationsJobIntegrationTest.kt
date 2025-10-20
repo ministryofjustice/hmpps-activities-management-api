@@ -5,12 +5,9 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.verify
-import org.mockito.kotlin.verifyNoInteractions
-import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
-import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
@@ -45,29 +42,19 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Allo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.PRISONER_ALLOCATION_AMENDED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.PRISONER_ATTENDANCE_AMENDED
 import java.time.Clock
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZoneOffset
 
-@TestPropertySource(
-  properties = [
-    "feature.audit.service.local.enabled=true",
-    "feature.audit.service.hmpps.enabled=true",
-    "jobs.deallocate-allocations-ending.days-start=22",
-  ],
-)
 @Deprecated("Remove when allocations job always uses SQS")
-class ManageAllocationsJobIntegrationTest : ActivitiesIntegrationTestBase() {
+class ManageAllocationsJobIntegrationTest : LocalStackTestBase() {
 
   @MockitoBean
   private lateinit var clock: Clock
-
-  @MockitoBean
-  private lateinit var outboundEventsService: OutboundEventsService
 
   @Autowired
   private lateinit var allocationRepository: AllocationRepository
@@ -100,10 +87,11 @@ class ManageAllocationsJobIntegrationTest : ActivitiesIntegrationTestBase() {
 
     waitForJobs({ webTestClient.manageAllocations(withDeallocateEnding = true) })
 
-    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
-    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 2L)
-    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 3L)
-    verifyNoMoreInteractions(outboundEventsService)
+    validateOutboundEvents(
+      ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 1),
+      ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 2),
+      ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 3),
+    )
 
     with(allocationRepository.findAllById(activeAllocations.map { it.allocationId })) {
       size isEqualTo 3
@@ -130,8 +118,9 @@ class ManageAllocationsJobIntegrationTest : ActivitiesIntegrationTestBase() {
 
     waitForJobs({ webTestClient.manageAllocations(withDeallocateEnding = true) })
 
-    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 2L)
-    verifyNoMoreInteractions(outboundEventsService)
+    validateOutboundEvents(
+      ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 2),
+    )
 
     with(allocationRepository.findAll()) {
       size isEqualTo 3
@@ -152,8 +141,9 @@ class ManageAllocationsJobIntegrationTest : ActivitiesIntegrationTestBase() {
 
     waitForJobs({ webTestClient.manageAllocations(withDeallocateEnding = true) })
 
-    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 2L)
-    verifyNoMoreInteractions(outboundEventsService)
+    validateOutboundEvents(
+      ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 2),
+    )
 
     with(allocationRepository.findAll()) {
       size isEqualTo 3
@@ -190,9 +180,10 @@ class ManageAllocationsJobIntegrationTest : ActivitiesIntegrationTestBase() {
 
     waitForJobs({ webTestClient.manageAllocations(withDeallocateExpiring = true) })
 
-    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
-    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 2L)
-    verifyNoMoreInteractions(outboundEventsService)
+    validateOutboundEvents(
+      ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 1),
+      ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 2),
+    )
 
     val expiredAllocations = allocationRepository.findAll().filter { it.prisonerNumber != "B11111B" }.also { it hasSize 2 }
 
@@ -255,9 +246,10 @@ class ManageAllocationsJobIntegrationTest : ActivitiesIntegrationTestBase() {
 
     waitForJobs({ webTestClient.manageAllocations(withActivate = true) }, 3)
 
-    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
-    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 3L)
-    verifyNoMoreInteractions(outboundEventsService)
+    validateOutboundEvents(
+      ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 1),
+      ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 3),
+    )
 
     with(allocationRepository.findAll()) {
       prisoner("PAST") isStatus ACTIVE
@@ -359,9 +351,10 @@ class ManageAllocationsJobIntegrationTest : ActivitiesIntegrationTestBase() {
 
     waitForJobs({ webTestClient.manageAllocations(withFixAutoSuspended = true) })
 
-    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
-    verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, 1L)
-    verifyNoMoreInteractions(outboundEventsService)
+    validateOutboundEvents(
+      ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 1),
+      ExpectedOutboundEvent(PRISONER_ATTENDANCE_AMENDED, 1),
+    )
 
     with(webTestClient.getAllocation(1)) {
       status isEqualTo ACTIVE
@@ -403,9 +396,10 @@ class ManageAllocationsJobIntegrationTest : ActivitiesIntegrationTestBase() {
 
     waitForJobs({ webTestClient.manageAllocations(withFixAutoSuspended = true) })
 
-    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
-    verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, 1L)
-    verifyNoMoreInteractions(outboundEventsService)
+    validateOutboundEvents(
+      ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 1),
+      ExpectedOutboundEvent(PRISONER_ATTENDANCE_AMENDED, 1),
+    )
 
     with(webTestClient.getAllocation(1)) {
       status isEqualTo SUSPENDED
@@ -438,7 +432,7 @@ class ManageAllocationsJobIntegrationTest : ActivitiesIntegrationTestBase() {
 
     waitForJobs({ webTestClient.manageAllocations(withFixAutoSuspended = true) })
 
-    verifyNoInteractions(outboundEventsService)
+    validateNoMessagesSent()
 
     (1L..3L).forEach { allocationId ->
       webTestClient.getAllocation(allocationId).status isEqualTo AUTO_SUSPENDED

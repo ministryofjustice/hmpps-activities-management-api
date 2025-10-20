@@ -1,15 +1,9 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
-import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.argumentCaptor
-import org.mockito.kotlin.never
-import org.mockito.kotlin.times
-import org.mockito.kotlin.verify
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
-import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
@@ -24,31 +18,19 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Atte
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_ACTIVITY_ADMIN
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.PrisonerAttendanceInformation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.PRISONER_ATTENDANCE_AMENDED
 import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.temporal.ChronoUnit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance as EntityAttendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AllAttendance as ModelAllAttendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance as ModelAttendance
 
-@TestPropertySource(
-  properties = [
-    "feature.events.sns.enabled=true",
-    "feature.event.activities.prisoner.attendance-created=true",
-    "feature.event.activities.prisoner.attendance-amended=true",
-  ],
-)
-class AttendanceIntegrationTest : ActivitiesIntegrationTestBase() {
+class AttendanceIntegrationTest : LocalStackTestBase() {
 
   @Autowired
   private lateinit var attendanceRepository: AttendanceRepository
 
   @Autowired
   private lateinit var attendanceHistoryRepository: AttendanceHistoryRepository
-
-  private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
 
   @Sql(
     "classpath:test_data/seed-activity-id-18.sql",
@@ -127,20 +109,10 @@ class AttendanceIntegrationTest : ActivitiesIntegrationTestBase() {
     assertThat(markedAttendances.prisonerAttendanceReason("A11111A").code).isEqualTo(AttendanceReasonEnum.ATTENDED)
     assertThat(markedAttendances.prisonerAttendanceReason("A22222A").code).isEqualTo(AttendanceReasonEnum.SICK)
 
-    verify(eventsPublisher, times(2)).send(eventCaptor.capture())
-
-    // Should detect the 2x attendance update events
-    eventCaptor.allValues.map {
-      assertThat(it.eventType).isEqualTo("activities.prisoner.attendance-amended")
-      assertThat(it.additionalInformation).isIn(
-        listOf(
-          PrisonerAttendanceInformation(1),
-          PrisonerAttendanceInformation(2),
-        ),
-      )
-      assertThat(it.occurredAt).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
-      assertThat(it.description).isEqualTo("A prisoner attendance has been amended in the activities management service")
-    }
+    validateOutboundEvents(
+      ExpectedOutboundEvent(PRISONER_ATTENDANCE_AMENDED, 1),
+      ExpectedOutboundEvent(PRISONER_ATTENDANCE_AMENDED, 2),
+    )
   }
 
   @Sql(
@@ -180,7 +152,7 @@ class AttendanceIntegrationTest : ActivitiesIntegrationTestBase() {
     assertThat(attendanceRepository.findById(3).get().attendanceReason!!.code).isEqualTo(AttendanceReasonEnum.SICK)
 
     // Check that no sync events were emitted
-    verify(eventsPublisher, never()).send(eventCaptor.capture())
+    validateNoMessagesSent()
   }
 
   @Sql(
@@ -209,15 +181,9 @@ class AttendanceIntegrationTest : ActivitiesIntegrationTestBase() {
     val history = attendanceHistoryRepository.findAll()
     assertThat(history.filter { it.attendance.attendanceId == updatedAttendances[0].attendanceId }).hasSize(1)
 
-    verify(eventsPublisher).send(eventCaptor.capture())
-
-    // Should detect the attendance updated event
-    with(eventCaptor.firstValue) {
-      assertThat(eventType).isEqualTo("activities.prisoner.attendance-amended")
-      assertThat(additionalInformation).isEqualTo(PrisonerAttendanceInformation(1))
-      assertThat(occurredAt).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
-      assertThat(description).isEqualTo("A prisoner attendance has been amended in the activities management service")
-    }
+    validateOutboundEvents(
+      ExpectedOutboundEvent(PRISONER_ATTENDANCE_AMENDED, 1),
+    )
   }
 
   @Sql(
@@ -284,9 +250,19 @@ class AttendanceIntegrationTest : ActivitiesIntegrationTestBase() {
     .expectBodyList(ModelAllAttendance::class.java)
     .returnResult().responseBody
 
-  private fun List<EntityAttendance>.prisonerAttendanceReason(prisonNumber: String) = firstOrNull { it.prisonerNumber.uppercase() == prisonNumber.uppercase() }.let { it?.attendanceReason }
+  private fun List<EntityAttendance>.prisonerAttendanceReason(prisonNumber: String) = firstOrNull {
+    it.prisonerNumber.equals(
+      prisonNumber,
+      ignoreCase = true,
+    )
+  }.let { it?.attendanceReason }
     ?: throw AssertionError("Prison attendance $prisonNumber not found.")
 
-  private fun List<ModelAttendance>.prisonerAttendanceReason(prisonNumber: String) = firstOrNull { it.prisonerNumber.uppercase() == prisonNumber.uppercase() }
+  private fun List<ModelAttendance>.prisonerAttendanceReason(prisonNumber: String) = firstOrNull {
+    it.prisonerNumber.equals(
+      prisonNumber,
+      ignoreCase = true,
+    )
+  }
     ?: throw AssertionError("Prison attendance $prisonNumber not found.")
 }

@@ -2,17 +2,12 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.argumentCaptor
-import org.mockito.kotlin.times
-import org.mockito.kotlin.verify
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.model.NonResidentialUsageDto.UsageType
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PublishEventUtilityModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.UpdateCaseNoteUUIDResponse
@@ -23,18 +18,15 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Plan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PlannedSuspensionRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.STATUS_COMPLETED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.STATUS_INCOMPLETE
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.PrisonerAllocatedInformation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.PRISONER_ALLOCATION_AMENDED
 import java.util.*
 
 @TestPropertySource(
   properties = [
-    "feature.event.activities.prisoner.allocation-amended=true",
     "migrate.activities-live=LEI,RSI",
   ],
 )
-class UtilityIntegrationTest : IntegrationTestBase() {
+class UtilityIntegrationTest : LocalStackTestBase() {
 
   @Autowired
   private lateinit var attendanceRepository: AttendanceRepository
@@ -51,32 +43,21 @@ class UtilityIntegrationTest : IntegrationTestBase() {
   @Autowired
   private lateinit var plannedSuspensionRepository: PlannedSuspensionRepository
 
-  private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
-
   @Test
   fun `update allocation exclusions`() {
     val response = webTestClient.publishEvents(
       PublishEventUtilityModel(
-        outboundEvent = OutboundEvent.PRISONER_ALLOCATION_AMENDED,
+        outboundEvent = PRISONER_ALLOCATION_AMENDED,
         identifiers = listOf(1, 1, 2),
       ),
     )
 
     response isEqualTo "Domain event PRISONER_ALLOCATION_AMENDED published"
 
-    verify(eventsPublisher, times(2)).send(eventCaptor.capture())
-
-    with(eventCaptor.firstValue) {
-      eventType isEqualTo "activities.prisoner.allocation-amended"
-      additionalInformation isEqualTo PrisonerAllocatedInformation(1)
-      occurredAt isCloseTo TimeSource.now()
-    }
-
-    with(eventCaptor.secondValue) {
-      eventType isEqualTo "activities.prisoner.allocation-amended"
-      additionalInformation isEqualTo PrisonerAllocatedInformation(2)
-      occurredAt isCloseTo TimeSource.now()
-    }
+    validateOutboundEvents(
+      ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 1),
+      ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 2),
+    )
   }
 
   @Sql("classpath:test_data/seed-activity-id-34.sql")

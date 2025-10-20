@@ -2,17 +2,14 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import net.javacrumbs.jsonunit.assertj.assertThatJson
 import org.assertj.core.api.Assertions.assertThat
-import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doReturn
-import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
-import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
@@ -60,34 +57,22 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_A
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.PrisonerAllocatedInformation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.ScheduleCreatedInformation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.ACTIVITY_SCHEDULE_CREATED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.ACTIVITY_SCHEDULE_UPDATED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.PRISONER_ALLOCATION_AMENDED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.BankHolidayService
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
-import java.time.temporal.ChronoUnit
 import java.util.*
 
-@TestPropertySource(
-  properties = [
-    "feature.event.activities.activity-schedule.created=true",
-    "feature.event.activities.activity-schedule.amended=true",
-    "feature.event.activities.prisoner.allocation-amended=true",
-    "feature.audit.service.hmpps.enabled=true",
-    "feature.audit.service.local.enabled=true",
-  ],
-)
-class ActivityIntegrationTest : ActivitiesIntegrationTestBase() {
+class ActivityIntegrationTest : LocalStackTestBase() {
   @Autowired
   private lateinit var activityRepository: ActivityRepository
 
   @MockitoBean
   private lateinit var bankHolidayService: BankHolidayService
-
-  private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
 
   private val hmppsAuditEventCaptor = argumentCaptor<HmppsAuditEvent>()
 
@@ -148,26 +133,21 @@ class ActivityIntegrationTest : ActivitiesIntegrationTestBase() {
     val activityPayHistoryList = webTestClient.getActivityPayHistory(1L)
     assertThat(activityPayHistoryList).size().isEqualTo(2)
 
-    verify(eventsPublisher).send(eventCaptor.capture())
-
-    with(eventCaptor.firstValue) {
-      assertThat(eventType).isEqualTo("activities.activity-schedule.created")
-      assertThat(additionalInformation).isEqualTo(ScheduleCreatedInformation(1))
-      assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-      assertThat(description).isEqualTo("A new activity schedule has been created in the activities management service")
-    }
+    validateOutboundEvents(
+      ExpectedOutboundEvent(ACTIVITY_SCHEDULE_CREATED, 1),
+    )
 
     verify(hmppsAuditApiClient).createEvent(hmppsAuditEventCaptor.capture())
     with(hmppsAuditEventCaptor.firstValue) {
       assertThat(what).isEqualTo("ACTIVITY_CREATED")
       assertThat(who).isEqualTo("test-client")
       assertThatJson(details).isEqualTo(
-        """
+        $$"""
           {
             activityId: 1,
             activityName: "IT level 1",
             prisonCode: "MDI",
-            createdAt: "${'$'}{json-unit.ignore}",
+            createdAt: "${json-unit.ignore}",
             createdBy: "test-client"
           }
         """.trimIndent(),
@@ -263,20 +243,15 @@ class ActivityIntegrationTest : ActivitiesIntegrationTestBase() {
     val activityPayHistoryList = webTestClient.getActivityPayHistory(1L)
     assertThat(activityPayHistoryList).size().isEqualTo(2)
 
-    verify(eventsPublisher).send(eventCaptor.capture())
-
-    with(eventCaptor.firstValue) {
-      assertThat(eventType).isEqualTo("activities.activity-schedule.created")
-      assertThat(additionalInformation).isEqualTo(ScheduleCreatedInformation(1))
-      assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-      assertThat(description).isEqualTo("A new activity schedule has been created in the activities management service")
-    }
+    validateOutboundEvents(
+      ExpectedOutboundEvent(ACTIVITY_SCHEDULE_CREATED, 1),
+    )
 
     verify(hmppsAuditApiClient).createEvent(hmppsAuditEventCaptor.capture())
     with(hmppsAuditEventCaptor.firstValue) {
       assertThat(what).isEqualTo("ACTIVITY_CREATED")
       assertThat(who).isEqualTo("test-client")
-      assertThatJson(details).isEqualTo("{\"activityId\":1,\"activityName\":\"IT level 1\",\"prisonCode\":\"MDI\",\"createdAt\":\"\${json-unit.ignore}\",\"createdBy\":\"test-client\"}")
+      assertThatJson(details).isEqualTo($$"{\"activityId\":1,\"activityName\":\"IT level 1\",\"prisonCode\":\"MDI\",\"createdAt\":\"${json-unit.ignore}\",\"createdBy\":\"test-client\"}")
     }
 
     assertThat(auditRepository.findAll().size).isEqualTo(1)
@@ -334,20 +309,15 @@ class ActivityIntegrationTest : ActivitiesIntegrationTestBase() {
       assertThat(schedules[0].internalLocation).isEqualTo(InternalLocation(1, location.code, location.localName!!, UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc")))
     }
 
-    verify(eventsPublisher).send(eventCaptor.capture())
-
-    with(eventCaptor.firstValue) {
-      assertThat(eventType).isEqualTo("activities.activity-schedule.created")
-      assertThat(additionalInformation).isEqualTo(ScheduleCreatedInformation(1))
-      assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-      assertThat(description).isEqualTo("A new activity schedule has been created in the activities management service")
-    }
+    validateOutboundEvents(
+      ExpectedOutboundEvent(ACTIVITY_SCHEDULE_CREATED, 1),
+    )
 
     verify(hmppsAuditApiClient).createEvent(hmppsAuditEventCaptor.capture())
     with(hmppsAuditEventCaptor.firstValue) {
       assertThat(what).isEqualTo("ACTIVITY_CREATED")
       assertThat(who).isEqualTo("test-client")
-      assertThatJson(details).isEqualTo("{\"activityId\":1,\"activityName\":\"Test activity\",\"prisonCode\":\"MDI\",\"createdAt\":\"\${json-unit.ignore}\",\"createdBy\":\"test-client\"}")
+      assertThatJson(details).isEqualTo($$"{\"activityId\":1,\"activityName\":\"Test activity\",\"prisonCode\":\"MDI\",\"createdAt\":\"${json-unit.ignore}\",\"createdBy\":\"test-client\"}")
     }
 
     assertThat(auditRepository.findAll().size).isEqualTo(1)
@@ -400,21 +370,16 @@ class ActivityIntegrationTest : ActivitiesIntegrationTestBase() {
       assertThat(schedules[0].internalLocation).isEqualTo(InternalLocation(1, location.code, location.localName!!, UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc")))
     }
 
-    verify(eventsPublisher).send(eventCaptor.capture())
-
-    with(eventCaptor.firstValue) {
-      assertThat(eventType).isEqualTo("activities.activity-schedule.created")
-      assertThat(additionalInformation).isEqualTo(ScheduleCreatedInformation(1))
-      assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-      assertThat(description).isEqualTo("A new activity schedule has been created in the activities management service")
-    }
+    validateOutboundEvents(
+      ExpectedOutboundEvent(ACTIVITY_SCHEDULE_CREATED, 1),
+    )
 
     verify(hmppsAuditApiClient).createEvent(hmppsAuditEventCaptor.capture())
 
     with(hmppsAuditEventCaptor.firstValue) {
       assertThat(what).isEqualTo("ACTIVITY_CREATED")
       assertThat(who).isEqualTo("test-client")
-      assertThatJson(details).isEqualTo("{\"activityId\":1,\"activityName\":\"Test activity\",\"prisonCode\":\"MDI\",\"createdAt\":\"\${json-unit.ignore}\",\"createdBy\":\"test-client\"}")
+      assertThatJson(details).isEqualTo($$"{\"activityId\":1,\"activityName\":\"Test activity\",\"prisonCode\":\"MDI\",\"createdAt\":\"${json-unit.ignore}\",\"createdBy\":\"test-client\"}")
     }
 
     assertThat(auditRepository.findAll().size).isEqualTo(1)
@@ -488,20 +453,15 @@ class ActivityIntegrationTest : ActivitiesIntegrationTestBase() {
     val activityPayHistoryList = webTestClient.getActivityPayHistory(1L)
     assertThat(activityPayHistoryList).size().isEqualTo(2)
 
-    verify(eventsPublisher).send(eventCaptor.capture())
-
-    with(eventCaptor.firstValue) {
-      assertThat(eventType).isEqualTo("activities.activity-schedule.created")
-      assertThat(additionalInformation).isEqualTo(ScheduleCreatedInformation(1))
-      assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-      assertThat(description).isEqualTo("A new activity schedule has been created in the activities management service")
-    }
+    validateOutboundEvents(
+      ExpectedOutboundEvent(ACTIVITY_SCHEDULE_CREATED, 1),
+    )
 
     verify(hmppsAuditApiClient).createEvent(hmppsAuditEventCaptor.capture())
     with(hmppsAuditEventCaptor.firstValue) {
       assertThat(what).isEqualTo("ACTIVITY_CREATED")
       assertThat(who).isEqualTo("test-client")
-      assertThatJson(details).isEqualTo("{\"activityId\":1,\"activityName\":\"IT level 1\",\"prisonCode\":\"MDI\",\"createdAt\":\"\${json-unit.ignore}\",\"createdBy\":\"test-client\"}")
+      assertThatJson(details).isEqualTo($$"{\"activityId\":1,\"activityName\":\"IT level 1\",\"prisonCode\":\"MDI\",\"createdAt\":\"${json-unit.ignore}\",\"createdBy\":\"test-client\"}")
     }
 
     assertThat(auditRepository.findAll().size).isEqualTo(1)
@@ -1117,7 +1077,7 @@ class ActivityIntegrationTest : ActivitiesIntegrationTestBase() {
 
   private fun Activity.schedule(description: String) = schedules.schedule(description)
 
-  private fun List<ActivitySchedule>.schedule(description: String) = firstOrNull { it.description.uppercase() == description.uppercase() }
+  private fun List<ActivitySchedule>.schedule(description: String) = firstOrNull { it.description.equals(description, ignoreCase = true) }
     ?: throw RuntimeException("Activity schedule $description not found.")
 
   @Test
@@ -1159,20 +1119,15 @@ class ActivityIntegrationTest : ActivitiesIntegrationTestBase() {
     val activityPayHistoryList = webTestClient.getActivityPayHistory(1L)
     assertThat(activityPayHistoryList).size().isEqualTo(1)
 
-    verify(eventsPublisher).send(eventCaptor.capture())
-
-    with(eventCaptor.firstValue) {
-      assertThat(eventType).isEqualTo("activities.activity-schedule.amended")
-      assertThat(additionalInformation).isEqualTo(ScheduleCreatedInformation(1))
-      assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-      assertThat(description).isEqualTo("An activity schedule has been updated in the activities management service")
-    }
+    validateOutboundEvents(
+      ExpectedOutboundEvent(ACTIVITY_SCHEDULE_UPDATED, 1),
+    )
 
     verify(hmppsAuditApiClient).createEvent(hmppsAuditEventCaptor.capture())
     with(hmppsAuditEventCaptor.firstValue) {
       assertThat(what).isEqualTo("ACTIVITY_UPDATED")
       assertThat(who).isEqualTo("test-client")
-      assertThatJson(details).isEqualTo("{\"activityId\":1,\"activityName\":\"IT level 1 - updated\",\"prisonCode\":\"PVI\",\"createdAt\":\"\${json-unit.ignore}\",\"createdBy\":\"test-client\"}")
+      assertThatJson(details).isEqualTo($$"{\"activityId\":1,\"activityName\":\"IT level 1 - updated\",\"prisonCode\":\"PVI\",\"createdAt\":\"${json-unit.ignore}\",\"createdBy\":\"test-client\"}")
     }
 
     assertThat(auditRepository.findAll().size).isEqualTo(1)
@@ -1220,29 +1175,11 @@ class ActivityIntegrationTest : ActivitiesIntegrationTestBase() {
       assertThat(allocations.filter { a -> a.prisonPayBand?.id == 2L }).hasSize(1)
     }
 
-    verify(eventsPublisher, times(3)).send(eventCaptor.capture())
-
-    val allEvents = eventCaptor.allValues
-    assertThat(allEvents.size).isEqualTo(3)
-    val scheduleUpdateEvent = allEvents.first { it.additionalInformation == ScheduleCreatedInformation(1) }
-    val allocation1AmendEvent = allEvents.first { it.additionalInformation == PrisonerAllocatedInformation(1) }
-    val allocation12mendEvent = allEvents.first { it.additionalInformation == PrisonerAllocatedInformation(2) }
-
-    with(scheduleUpdateEvent) {
-      assertThat(eventType).isEqualTo("activities.activity-schedule.amended")
-      assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-      assertThat(description).isEqualTo("An activity schedule has been updated in the activities management service")
-    }
-    with(allocation1AmendEvent) {
-      assertThat(eventType).isEqualTo("activities.prisoner.allocation-amended")
-      assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-      assertThat(description).isEqualTo("A prisoner allocation has been amended in the activities management service")
-    }
-    with(allocation12mendEvent) {
-      assertThat(eventType).isEqualTo("activities.prisoner.allocation-amended")
-      assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-      assertThat(description).isEqualTo("A prisoner allocation has been amended in the activities management service")
-    }
+    validateOutboundEvents(
+      ExpectedOutboundEvent(ACTIVITY_SCHEDULE_UPDATED, 1),
+      ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 1),
+      ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 2),
+    )
   }
 
   @Test
@@ -1276,14 +1213,9 @@ class ActivityIntegrationTest : ActivitiesIntegrationTestBase() {
       }
     }
 
-    verify(eventsPublisher).send(eventCaptor.capture())
-
-    with(eventCaptor.firstValue) {
-      assertThat(eventType).isEqualTo("activities.activity-schedule.amended")
-      assertThat(additionalInformation).isEqualTo(ScheduleCreatedInformation(1))
-      assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-      assertThat(description).isEqualTo("An activity schedule has been updated in the activities management service")
-    }
+    validateOutboundEvents(
+      ExpectedOutboundEvent(ACTIVITY_SCHEDULE_UPDATED, 1),
+    )
   }
 
   @Test
@@ -1362,21 +1294,9 @@ class ActivityIntegrationTest : ActivitiesIntegrationTestBase() {
       assertThat(instances).hasSizeBetween(1, 2)
     }
 
-    verify(eventsPublisher, times(2)).send(eventCaptor.capture())
-
-    with(eventCaptor.firstValue) {
-      assertThat(eventType).isEqualTo("activities.activity-schedule.amended")
-      assertThat(additionalInformation).isEqualTo(ScheduleCreatedInformation(1))
-      assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-      assertThat(description).isEqualTo("An activity schedule has been updated in the activities management service")
-    }
-
-    with(eventCaptor.secondValue) {
-      assertThat(eventType).isEqualTo("activities.activity-schedule.amended")
-      assertThat(additionalInformation).isEqualTo(ScheduleCreatedInformation(1))
-      assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-      assertThat(description).isEqualTo("An activity schedule has been updated in the activities management service")
-    }
+    validateOutboundEvents(
+      ExpectedOutboundEvent(ACTIVITY_SCHEDULE_UPDATED, 1, times = 2),
+    )
   }
 
   @Test
@@ -1406,21 +1326,10 @@ class ActivityIntegrationTest : ActivitiesIntegrationTestBase() {
       assertThat(slots[1].daysOfWeek).containsExactly("Mon", "Tue")
     }
 
-    verify(eventsPublisher, times(2)).send(eventCaptor.capture())
-
-    with(eventCaptor.firstValue) {
-      assertThat(eventType).isEqualTo("activities.activity-schedule.amended")
-      assertThat(additionalInformation).isEqualTo(ScheduleCreatedInformation(1))
-      assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-      assertThat(description).isEqualTo("An activity schedule has been updated in the activities management service")
-    }
-
-    with(eventCaptor.secondValue) {
-      assertThat(eventType).isEqualTo("activities.prisoner.allocation-amended")
-      assertThat(additionalInformation).isEqualTo(PrisonerAllocatedInformation(2))
-      assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-      assertThat(description).isEqualTo("A prisoner allocation has been amended in the activities management service")
-    }
+    validateOutboundEvents(
+      ExpectedOutboundEvent(ACTIVITY_SCHEDULE_UPDATED, 1),
+      ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 2),
+    )
   }
 
   @Test
