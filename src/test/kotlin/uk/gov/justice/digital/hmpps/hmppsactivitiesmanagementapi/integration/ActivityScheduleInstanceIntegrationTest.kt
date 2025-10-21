@@ -5,12 +5,7 @@ import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.argumentCaptor
-import org.mockito.kotlin.times
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.verifyNoInteractions
 import org.springframework.http.MediaType
-import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
@@ -18,7 +13,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isNotEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleInstance
@@ -34,23 +28,13 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CASELOAD_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_ACTIVITY_ADMIN
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.PrisonerAttendanceInformation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.ScheduledInstanceInformation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.ACTIVITY_SCHEDULED_INSTANCE_AMENDED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.PRISONER_ATTENDANCE_AMENDED
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 
-@TestPropertySource(
-  properties = [
-    "feature.event.activities.scheduled-instance.amended=true",
-    "feature.event.activities.prisoner.attendance-amended=true",
-    "feature.cancel.instance.priority.change.enabled=true",
-  ],
-)
-class ActivityScheduleInstanceIntegrationTest : ActivitiesIntegrationTestBase() {
-
-  private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
+class ActivityScheduleInstanceIntegrationTest : LocalStackTestBase() {
 
   @Nested
   @DisplayName("getScheduledInstancesById")
@@ -342,20 +326,10 @@ class ActivityScheduleInstanceIntegrationTest : ActivitiesIntegrationTestBase() 
         }
       }
 
-      verify(eventsPublisher, times(2)).send(eventCaptor.capture())
-
-      with(eventCaptor.firstValue) {
-        assertThat(eventType).isEqualTo("activities.scheduled-instance.amended")
-        assertThat(additionalInformation).isEqualTo(ScheduledInstanceInformation(1))
-        assertThat(occurredAt).isCloseTo(TimeSource.now(), within(60, ChronoUnit.SECONDS))
-        assertThat(description).isEqualTo("A scheduled instance has been amended in the activities management service")
-      }
-
-      with(eventCaptor.secondValue) {
-        eventType isEqualTo "activities.prisoner.attendance-amended"
-        additionalInformation isEqualTo PrisonerAttendanceInformation(1)
-        occurredAt isCloseTo TimeSource.now()
-      }
+      validateOutboundEvents(
+        ExpectedOutboundEvent(ACTIVITY_SCHEDULED_INSTANCE_AMENDED, 1),
+        ExpectedOutboundEvent(PRISONER_ATTENDANCE_AMENDED, 1),
+      )
     }
 
     @Test
@@ -379,20 +353,10 @@ class ActivityScheduleInstanceIntegrationTest : ActivitiesIntegrationTestBase() 
         }
       }
 
-      verify(eventsPublisher, times(2)).send(eventCaptor.capture())
-
-      with(eventCaptor.firstValue) {
-        assertThat(eventType).isEqualTo("activities.scheduled-instance.amended")
-        assertThat(additionalInformation).isEqualTo(ScheduledInstanceInformation(122405))
-        assertThat(occurredAt).isCloseTo(TimeSource.now(), within(60, ChronoUnit.SECONDS))
-        assertThat(description).isEqualTo("A scheduled instance has been amended in the activities management service")
-      }
-
-      with(eventCaptor.secondValue) {
-        eventType isEqualTo "activities.prisoner.attendance-amended"
-        additionalInformation isEqualTo PrisonerAttendanceInformation(680879)
-        occurredAt isCloseTo TimeSource.now()
-      }
+      validateOutboundEvents(
+        ExpectedOutboundEvent(ACTIVITY_SCHEDULED_INSTANCE_AMENDED, 122405),
+        ExpectedOutboundEvent(PRISONER_ATTENDANCE_AMENDED, 680879),
+      )
     }
 
     @Test
@@ -446,14 +410,9 @@ class ActivityScheduleInstanceIntegrationTest : ActivitiesIntegrationTestBase() 
         }
       }
 
-      verify(eventsPublisher).send(eventCaptor.capture())
-
-      with(eventCaptor.firstValue) {
-        assertThat(eventType).isEqualTo("activities.scheduled-instance.amended")
-        assertThat(additionalInformation).isEqualTo(ScheduledInstanceInformation(1))
-        assertThat(occurredAt).isCloseTo(TimeSource.now(), within(60, ChronoUnit.SECONDS))
-        assertThat(description).isEqualTo("A scheduled instance has been amended in the activities management service")
-      }
+      validateOutboundEvents(
+        ExpectedOutboundEvent(ACTIVITY_SCHEDULED_INSTANCE_AMENDED, 1),
+      )
     }
 
     @Test
@@ -481,20 +440,10 @@ class ActivityScheduleInstanceIntegrationTest : ActivitiesIntegrationTestBase() 
         }
       }
 
-      verify(eventsPublisher, times(2)).send(eventCaptor.capture())
-
-      with(eventCaptor.firstValue) {
-        assertThat(eventType).isEqualTo("activities.scheduled-instance.amended")
-        assertThat(additionalInformation).isEqualTo(ScheduledInstanceInformation(1))
-        assertThat(occurredAt).isCloseTo(TimeSource.now(), within(60, ChronoUnit.SECONDS))
-        assertThat(description).isEqualTo("A scheduled instance has been amended in the activities management service")
-      }
-
-      with(eventCaptor.secondValue) {
-        eventType isEqualTo "activities.prisoner.attendance-amended"
-        additionalInformation isEqualTo PrisonerAttendanceInformation(1)
-        occurredAt isCloseTo TimeSource.now()
-      }
+      validateOutboundEvents(
+        ExpectedOutboundEvent(ACTIVITY_SCHEDULED_INSTANCE_AMENDED, 1),
+        ExpectedOutboundEvent(PRISONER_ATTENDANCE_AMENDED, 1),
+      )
     }
 
     @Test
@@ -522,20 +471,10 @@ class ActivityScheduleInstanceIntegrationTest : ActivitiesIntegrationTestBase() 
         }
       }
 
-      verify(eventsPublisher, times(2)).send(eventCaptor.capture())
-
-      with(eventCaptor.firstValue) {
-        assertThat(eventType).isEqualTo("activities.scheduled-instance.amended")
-        assertThat(additionalInformation).isEqualTo(ScheduledInstanceInformation(1))
-        assertThat(occurredAt).isCloseTo(TimeSource.now(), within(60, ChronoUnit.SECONDS))
-        assertThat(description).isEqualTo("A scheduled instance has been amended in the activities management service")
-      }
-
-      with(eventCaptor.secondValue) {
-        eventType isEqualTo "activities.prisoner.attendance-amended"
-        additionalInformation isEqualTo PrisonerAttendanceInformation(1)
-        occurredAt isCloseTo TimeSource.now()
-      }
+      validateOutboundEvents(
+        ExpectedOutboundEvent(ACTIVITY_SCHEDULED_INSTANCE_AMENDED, 1),
+        ExpectedOutboundEvent(PRISONER_ATTENDANCE_AMENDED, 1),
+      )
     }
 
     @Test
@@ -578,20 +517,10 @@ class ActivityScheduleInstanceIntegrationTest : ActivitiesIntegrationTestBase() 
         }
       }
 
-      verify(eventsPublisher, times(2)).send(eventCaptor.capture())
-
-      with(eventCaptor.firstValue) {
-        assertThat(eventType).isEqualTo("activities.scheduled-instance.amended")
-        assertThat(additionalInformation).isEqualTo(ScheduledInstanceInformation(2))
-        assertThat(occurredAt).isCloseTo(TimeSource.now(), within(60, ChronoUnit.SECONDS))
-        assertThat(description).isEqualTo("A scheduled instance has been amended in the activities management service")
-      }
-
-      with(eventCaptor.secondValue) {
-        eventType isEqualTo "activities.prisoner.attendance-amended"
-        additionalInformation isEqualTo PrisonerAttendanceInformation(9)
-        occurredAt isCloseTo TimeSource.now()
-      }
+      validateOutboundEvents(
+        ExpectedOutboundEvent(ACTIVITY_SCHEDULED_INSTANCE_AMENDED, 2),
+        ExpectedOutboundEvent(PRISONER_ATTENDANCE_AMENDED, 9),
+      )
     }
 
     @Test
@@ -609,7 +538,7 @@ class ActivityScheduleInstanceIntegrationTest : ActivitiesIntegrationTestBase() 
         assertThat(cancelledIssuePayment).isNull()
       }
 
-      verifyNoInteractions(eventsPublisher)
+      validateNoMessagesSent()
     }
 
     @Test
@@ -636,7 +565,7 @@ class ActivityScheduleInstanceIntegrationTest : ActivitiesIntegrationTestBase() 
         }
       }
 
-      verifyNoInteractions(eventsPublisher)
+      validateNoMessagesSent()
     }
   }
 
@@ -664,29 +593,11 @@ class ActivityScheduleInstanceIntegrationTest : ActivitiesIntegrationTestBase() 
         }
       }
 
-      verify(eventsPublisher, times(3)).send(eventCaptor.capture())
-
-      val allEvents = eventCaptor.allValues
-      assertThat(allEvents.size).isEqualTo(3)
-      val scheduledInstanceAmendedEvent = allEvents.first { e -> e.additionalInformation == ScheduledInstanceInformation(1) }
-      val attendance1AmendedEvent = allEvents.first { e -> e.additionalInformation == PrisonerAttendanceInformation(1) }
-      val attendance2AmendedEvent = allEvents.first { e -> e.additionalInformation == PrisonerAttendanceInformation(2) }
-
-      with(scheduledInstanceAmendedEvent) {
-        assertThat(eventType).isEqualTo("activities.scheduled-instance.amended")
-        assertThat(occurredAt).isCloseTo(java.time.LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-        assertThat(description).isEqualTo("A scheduled instance has been amended in the activities management service")
-      }
-
-      with(attendance1AmendedEvent) {
-        eventType isEqualTo "activities.prisoner.attendance-amended"
-        occurredAt isCloseTo TimeSource.now()
-      }
-
-      with(attendance2AmendedEvent) {
-        eventType isEqualTo "activities.prisoner.attendance-amended"
-        occurredAt isCloseTo TimeSource.now()
-      }
+      validateOutboundEvents(
+        ExpectedOutboundEvent(ACTIVITY_SCHEDULED_INSTANCE_AMENDED, 1),
+        ExpectedOutboundEvent(PRISONER_ATTENDANCE_AMENDED, 1),
+        ExpectedOutboundEvent(PRISONER_ATTENDANCE_AMENDED, 2),
+      )
     }
 
     @Test
@@ -755,45 +666,13 @@ class ActivityScheduleInstanceIntegrationTest : ActivitiesIntegrationTestBase() 
         }
       }
 
-      verify(eventsPublisher, times(5)).send(eventCaptor.capture())
-
-      val allEvents = eventCaptor.allValues
-      assertThat(allEvents.size).isEqualTo(5)
-      val scheduledInstance1AmendedEvent =
-        allEvents.first { e -> e.additionalInformation == ScheduledInstanceInformation(1) }
-      val attendance1AmendedEvent = allEvents.first { e -> e.additionalInformation == PrisonerAttendanceInformation(1) }
-      val attendance2AmendedEvent = allEvents.first { e -> e.additionalInformation == PrisonerAttendanceInformation(2) }
-
-      with(scheduledInstance1AmendedEvent) {
-        assertThat(eventType).isEqualTo("activities.scheduled-instance.amended")
-        assertThat(occurredAt).isCloseTo(java.time.LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-        assertThat(description).isEqualTo("A scheduled instance has been amended in the activities management service")
-      }
-
-      with(attendance1AmendedEvent) {
-        eventType isEqualTo "activities.prisoner.attendance-amended"
-        occurredAt isCloseTo TimeSource.now()
-      }
-
-      with(attendance2AmendedEvent) {
-        eventType isEqualTo "activities.prisoner.attendance-amended"
-        occurredAt isCloseTo TimeSource.now()
-      }
-
-      val scheduledInstance2AmendedEvent =
-        allEvents.first { e -> e.additionalInformation == ScheduledInstanceInformation(4) }
-      val attendance3AmendedEvent = allEvents.first { e -> e.additionalInformation == PrisonerAttendanceInformation(3) }
-
-      with(scheduledInstance2AmendedEvent) {
-        assertThat(eventType).isEqualTo("activities.scheduled-instance.amended")
-        assertThat(occurredAt).isCloseTo(java.time.LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-        assertThat(description).isEqualTo("A scheduled instance has been amended in the activities management service")
-      }
-
-      with(attendance3AmendedEvent) {
-        eventType isEqualTo "activities.prisoner.attendance-amended"
-        occurredAt isCloseTo TimeSource.now()
-      }
+      validateOutboundEvents(
+        ExpectedOutboundEvent(ACTIVITY_SCHEDULED_INSTANCE_AMENDED, 1),
+        ExpectedOutboundEvent(PRISONER_ATTENDANCE_AMENDED, 1),
+        ExpectedOutboundEvent(PRISONER_ATTENDANCE_AMENDED, 2),
+        ExpectedOutboundEvent(ACTIVITY_SCHEDULED_INSTANCE_AMENDED, 4),
+        ExpectedOutboundEvent(PRISONER_ATTENDANCE_AMENDED, 3),
+      )
     }
   }
 
@@ -819,57 +698,13 @@ class ActivityScheduleInstanceIntegrationTest : ActivitiesIntegrationTestBase() 
         assertThatAttendanceIsReset(attendances[0])
       }
 
-      verify(eventsPublisher, times(5)).send(eventCaptor.capture())
-
-      val allEvents = eventCaptor.allValues
-      assertThat(allEvents.size).isEqualTo(5)
-      val scheduledInstance1AmendedEvent =
-        allEvents.first { e -> e.additionalInformation == ScheduledInstanceInformation(1) }
-      val attendance1AmendedEvent = allEvents.first { e -> e.additionalInformation == PrisonerAttendanceInformation(1) }
-      val attendance2AmendedEvent = allEvents.first { e -> e.additionalInformation == PrisonerAttendanceInformation(2) }
-
-      with(scheduledInstance1AmendedEvent) {
-        assertThat(eventType).isEqualTo("activities.scheduled-instance.amended")
-        assertThat(occurredAt).isCloseTo(java.time.LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-        assertThat(description).isEqualTo("A scheduled instance has been amended in the activities management service")
-      }
-
-      with(allEvents.first { e -> e.additionalInformation == ScheduledInstanceInformation(1) }) {
-        assertThat(eventType).isEqualTo("activities.scheduled-instance.amended")
-        assertThat(occurredAt).isCloseTo(java.time.LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-        assertThat(description).isEqualTo("A scheduled instance has been amended in the activities management service")
-      }
-
-      with(allEvents.first { e -> e.additionalInformation == ScheduledInstanceInformation(4) }) {
-        assertThat(eventType).isEqualTo("activities.scheduled-instance.amended")
-        assertThat(occurredAt).isCloseTo(java.time.LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-        assertThat(description).isEqualTo("A scheduled instance has been amended in the activities management service")
-      }
-
-      with(attendance1AmendedEvent) {
-        eventType isEqualTo "activities.prisoner.attendance-amended"
-        occurredAt isCloseTo TimeSource.now()
-      }
-
-      with(attendance2AmendedEvent) {
-        eventType isEqualTo "activities.prisoner.attendance-amended"
-        occurredAt isCloseTo TimeSource.now()
-      }
-
-      val scheduledInstance2AmendedEvent =
-        allEvents.first { e -> e.additionalInformation == ScheduledInstanceInformation(4) }
-      val attendance3AmendedEvent = allEvents.first { e -> e.additionalInformation == PrisonerAttendanceInformation(3) }
-
-      with(scheduledInstance2AmendedEvent) {
-        assertThat(eventType).isEqualTo("activities.scheduled-instance.amended")
-        assertThat(occurredAt).isCloseTo(java.time.LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-        assertThat(description).isEqualTo("A scheduled instance has been amended in the activities management service")
-      }
-
-      with(attendance3AmendedEvent) {
-        eventType isEqualTo "activities.prisoner.attendance-amended"
-        occurredAt isCloseTo TimeSource.now()
-      }
+      validateOutboundEvents(
+        ExpectedOutboundEvent(ACTIVITY_SCHEDULED_INSTANCE_AMENDED, 1),
+        ExpectedOutboundEvent(ACTIVITY_SCHEDULED_INSTANCE_AMENDED, 4),
+        ExpectedOutboundEvent(PRISONER_ATTENDANCE_AMENDED, 1),
+        ExpectedOutboundEvent(PRISONER_ATTENDANCE_AMENDED, 2),
+        ExpectedOutboundEvent(PRISONER_ATTENDANCE_AMENDED, 3),
+      )
     }
 
     @Test
@@ -886,17 +721,9 @@ class ActivityScheduleInstanceIntegrationTest : ActivitiesIntegrationTestBase() 
         }
       }
 
-      verify(eventsPublisher).send(eventCaptor.capture())
-
-      val allEvents = eventCaptor.allValues
-      assertThat(allEvents.size).isEqualTo(1)
-      val scheduledInstanceEvent = eventCaptor.firstValue
-
-      with(scheduledInstanceEvent) {
-        assertThat(eventType).isEqualTo("activities.scheduled-instance.amended")
-        assertThat(occurredAt).isCloseTo(java.time.LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-        assertThat(description).isEqualTo("A scheduled instance has been amended in the activities management service")
-      }
+      validateOutboundEvents(
+        ExpectedOutboundEvent(ACTIVITY_SCHEDULED_INSTANCE_AMENDED, 7),
+      )
     }
 
     @Test
@@ -933,7 +760,7 @@ class ActivityScheduleInstanceIntegrationTest : ActivitiesIntegrationTestBase() 
         }
       }
 
-      verifyNoInteractions(eventsPublisher)
+      validateNoMessagesSent()
     }
 
     private fun assertThatInstanceIsUncancelled(instances: ActivityScheduleInstance) = with(instances) {
@@ -988,7 +815,7 @@ class ActivityScheduleInstanceIntegrationTest : ActivitiesIntegrationTestBase() 
         assertThat(issuePayment).isNull()
       }
     }
-    verifyNoInteractions(eventsPublisher)
+    validateNoMessagesSent()
   }
 
   @Test
@@ -1020,7 +847,7 @@ class ActivityScheduleInstanceIntegrationTest : ActivitiesIntegrationTestBase() 
         assertThat(issuePayment).isNull()
       }
     }
-    verifyNoInteractions(eventsPublisher)
+    validateNoMessagesSent()
   }
 
   @Test

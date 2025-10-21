@@ -107,8 +107,14 @@ hmpps.sqs:
     updatefromexternalsystemevents:
       queueName: ${random.uuid}
       dlqName: ${random.uuid}
+    outboundtestqueue:
+      dlqName: ${random.uuid}
+      queueName: ${random.uuid}
+      subscribeTopicId: domainevents
   topics:
     inboundtopic:
+      arn: arn:aws:sns:eu-west-2:000000000000:${random.uuid}
+    domainevents:
       arn: arn:aws:sns:eu-west-2:000000000000:${random.uuid}
 
 aws:

@@ -1,17 +1,13 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
-import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.kotlin.await
 import org.awaitility.kotlin.untilAsserted
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
-import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
-import org.mockito.kotlin.verifyNoMoreInteractions
-import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.model.NonResidentialUsageDto.UsageType
@@ -29,22 +25,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.movemen
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentCancelledOnTransferEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.AppointmentInstanceInformation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.APPOINTMENT_INSTANCE_DELETED
 import java.time.LocalDate
 import java.util.*
 
-@TestPropertySource(
-  properties = [
-    "feature.event.appointments.appointment-instance.created=true",
-    "feature.event.appointments.appointment-instance.updated=true",
-    "feature.event.appointments.appointment-instance.deleted=true",
-    "feature.event.appointments.appointment-instance.cancelled=true",
-  ],
-)
 class AppointmentJobIntegrationTest : AppointmentsIntegrationTestBase() {
-
-  private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
 
   @MockitoBean
   private lateinit var auditService: AuditService
@@ -117,7 +102,7 @@ class AppointmentJobIntegrationTest : AppointmentsIntegrationTestBase() {
       }
     }
 
-    verifyNoInteractions(eventsPublisher)
+    validateNoMessagesSent()
     verifyNoInteractions(auditService)
   }
 
@@ -143,16 +128,13 @@ class AppointmentJobIntegrationTest : AppointmentsIntegrationTestBase() {
         flatMap { it.attendees }.map { it.prisoner.prisonerNumber }.toSet() isEqualTo setOf("B2345CD", "C3456DE")
       }
 
-      verify(eventsPublisher, times(4)).send(eventCaptor.capture())
-
-      with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.deleted" }) {
-        assertThat(map { it.additionalInformation }).hasSameElementsAs(
-          listOf(20L, 6L, 10L, 4L).map { AppointmentInstanceInformation(it) },
-        )
-      }
+      validateOutboundEvents(
+        ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 20),
+        ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 6),
+        ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 10),
+        ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 4),
+      )
     }
-
-    verifyNoMoreInteractions(eventsPublisher)
 
     verify(auditService, times(4)).logEvent(any<AppointmentCancelledOnTransferEvent>())
   }
@@ -175,7 +157,7 @@ class AppointmentJobIntegrationTest : AppointmentsIntegrationTestBase() {
       }
     }
 
-    verifyNoInteractions(eventsPublisher)
+    validateNoMessagesSent()
     verifyNoInteractions(auditService)
   }
 
@@ -200,15 +182,12 @@ class AppointmentJobIntegrationTest : AppointmentsIntegrationTestBase() {
       }
     }
 
-    verify(eventsPublisher, times(4)).send(eventCaptor.capture())
-
-    with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.deleted" }) {
-      assertThat(map { it.additionalInformation }).containsExactlyInAnyOrderElementsOf(
-        listOf(10L, 4L, 6L, 20L).map { AppointmentInstanceInformation(it) },
-      )
-    }
-
-    verifyNoMoreInteractions(eventsPublisher)
+    validateOutboundEvents(
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 10),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 4),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 6),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 20),
+    )
 
     verify(auditService, times(4)).logEvent(any<AppointmentCancelledOnTransferEvent>())
   }

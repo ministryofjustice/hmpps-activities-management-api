@@ -5,12 +5,9 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
-import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
-import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.springframework.http.MediaType
-import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
@@ -30,8 +27,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.A
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.AppointmentInstanceInformation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.APPOINTMENT_INSTANCE_CREATED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -39,17 +35,10 @@ import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 import java.util.*
 
-@TestPropertySource(
-  properties = [
-    "feature.event.appointments.appointment-instance.created=true",
-  ],
-)
 class AppointmentSetIntegrationTest : AppointmentsIntegrationTestBase() {
 
   @MockitoBean
   private lateinit var auditService: AuditService
-
-  private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
 
   @MockitoBean
   private lateinit var telemetryClient: TelemetryClient
@@ -231,17 +220,12 @@ class AppointmentSetIntegrationTest : AppointmentsIntegrationTestBase() {
     assertThat(response.appointments).allMatch {
       it.internalLocationId == 123L
       it.dpsLocationId == dpsLocationId
-      it.inCell == false
+      !it.inCell
     }
 
-    verify(eventsPublisher, times(2)).send(eventCaptor.capture())
-
-    assertThat(
-      eventCaptor.allValues.map { it.eventType }.distinct().single(),
-    ).isEqualTo("appointments.appointment-instance.created")
-    assertThat(eventCaptor.allValues.map { it.additionalInformation }).contains(
-      AppointmentInstanceInformation(response.appointments[0].attendees[0].id),
-      AppointmentInstanceInformation(response.appointments[1].attendees[0].id),
+    validateOutboundEvents(
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, response.appointments[0].attendees[0].id),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, response.appointments[1].attendees[0].id),
     )
 
     verify(telemetryClient).trackEvent(eq(TelemetryEvent.APPOINTMENT_SET_CREATED.value), any(), any())
@@ -293,17 +277,12 @@ class AppointmentSetIntegrationTest : AppointmentsIntegrationTestBase() {
     assertThat(response.appointments).allMatch {
       it.internalLocationId == 123L
       it.dpsLocationId == request.dpsLocationId
-      it.inCell == false
+      !it.inCell
     }
 
-    verify(eventsPublisher, times(2)).send(eventCaptor.capture())
-
-    assertThat(
-      eventCaptor.allValues.map { it.eventType }.distinct().single(),
-    ).isEqualTo("appointments.appointment-instance.created")
-    assertThat(eventCaptor.allValues.map { it.additionalInformation }).contains(
-      AppointmentInstanceInformation(response.appointments[0].attendees[0].id),
-      AppointmentInstanceInformation(response.appointments[1].attendees[0].id),
+    validateOutboundEvents(
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, response.appointments[0].attendees[0].id),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, response.appointments[1].attendees[0].id),
     )
 
     verify(telemetryClient).trackEvent(eq(TelemetryEvent.APPOINTMENT_SET_CREATED.value), any(), any())
@@ -341,17 +320,12 @@ class AppointmentSetIntegrationTest : AppointmentsIntegrationTestBase() {
     assertThat(response.appointments).allMatch {
       it.internalLocationId == null
       it.dpsLocationId == null
-      it.inCell == true
+      it.inCell
     }
 
-    verify(eventsPublisher, times(2)).send(eventCaptor.capture())
-
-    assertThat(
-      eventCaptor.allValues.map { it.eventType }.distinct().single(),
-    ).isEqualTo("appointments.appointment-instance.created")
-    assertThat(eventCaptor.allValues.map { it.additionalInformation }).contains(
-      AppointmentInstanceInformation(response.appointments[0].attendees[0].id),
-      AppointmentInstanceInformation(response.appointments[1].attendees[0].id),
+    validateOutboundEvents(
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, response.appointments[0].attendees[0].id),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, response.appointments[1].attendees[0].id),
     )
 
     verify(telemetryClient).trackEvent(eq(TelemetryEvent.APPOINTMENT_SET_CREATED.value), any(), any())

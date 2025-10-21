@@ -1,32 +1,18 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.argumentCaptor
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.verifyNoInteractions
 import org.springframework.http.MediaType
 import org.springframework.jdbc.core.queryForObject
-import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.ScheduleCreatedInformation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.ACTIVITY_SCHEDULE_UPDATED
 import java.time.DayOfWeek
 import java.time.LocalDate
 
-@TestPropertySource(
-  properties = [
-    "feature.events.sns.enabled=true",
-    "feature.event.activities.activity-schedule.amended=true",
-  ],
-)
 @Deprecated("Remove when scheduled instances job always uses SQS")
-class CreateScheduledInstancesJobIntegrationTest : IntegrationTestBase() {
-
-  private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
+class CreateScheduledInstancesJobIntegrationTest : LocalStackTestBase() {
 
   private val today: LocalDate = TimeSource.today()
 
@@ -50,14 +36,9 @@ class CreateScheduledInstancesJobIntegrationTest : IntegrationTestBase() {
 
     allInstances isEqualTo 3
 
-    verify(eventsPublisher).send(eventCaptor.capture())
-
-    with(eventCaptor.firstValue) {
-      eventType isEqualTo "activities.activity-schedule.amended"
-      additionalInformation isEqualTo ScheduleCreatedInformation(1)
-    }
-
-    eventCaptor.allValues hasSize 1
+    validateOutboundEvents(
+      ExpectedOutboundEvent(ACTIVITY_SCHEDULE_UPDATED, 1),
+    )
   }
 
   @Sql("classpath:test_data/seed-activity-with-old-instances.sql")
@@ -74,7 +55,7 @@ class CreateScheduledInstancesJobIntegrationTest : IntegrationTestBase() {
 
     scheduledInstances isEqualTo 0
 
-    verifyNoInteractions(eventsPublisher)
+    validateNoMessagesSent()
   }
 
   @Test
@@ -103,14 +84,9 @@ class CreateScheduledInstancesJobIntegrationTest : IntegrationTestBase() {
 
     allInstances isEqualTo 3
 
-    verify(eventsPublisher).send(eventCaptor.capture())
-
-    with(eventCaptor.firstValue) {
-      eventType isEqualTo "activities.activity-schedule.amended"
-      additionalInformation isEqualTo ScheduleCreatedInformation(1)
-    }
-
-    eventCaptor.allValues hasSize 1
+    validateOutboundEvents(
+      ExpectedOutboundEvent(ACTIVITY_SCHEDULE_UPDATED, 1),
+    )
   }
 
   private fun WebTestClient.createScheduledInstances() {

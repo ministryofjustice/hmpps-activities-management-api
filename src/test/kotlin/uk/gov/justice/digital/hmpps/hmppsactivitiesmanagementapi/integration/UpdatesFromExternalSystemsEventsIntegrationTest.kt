@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import net.javacrumbs.jsonunit.assertj.assertThatJson
 import org.assertj.core.api.Assertions.assertThat
-import org.assertj.core.api.Assertions.within
 import org.awaitility.kotlin.await
 import org.awaitility.kotlin.matches
 import org.awaitility.kotlin.untilAsserted
@@ -14,10 +13,8 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.never
-import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean
 import org.springframework.test.context.jdbc.Sql
 import software.amazon.awssdk.services.sqs.SqsAsyncClient
@@ -43,29 +40,16 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Activit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendancesService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.PrisonerAllocatedInformation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.PrisonerAttendanceInformation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.PRISONER_ALLOCATED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.PRISONER_ALLOCATION_AMENDED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.PRISONER_ATTENDANCE_AMENDED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.PRISONER_ATTENDANCE_DELETED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.updatesfromexternalsystems.UPDATE_FROM_EXTERNAL_SYSTEM_QUEUE_NAME
 import uk.gov.justice.hmpps.sqs.MissingQueueException
 import uk.gov.justice.hmpps.sqs.countAllMessagesOnQueue
 import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.temporal.ChronoUnit
-import java.util.UUID
+import java.util.*
 
-@TestPropertySource(
-  properties = [
-    "feature.events.sns.enabled=true",
-    "feature.event.activities.prisoner.attendance-created=true",
-    "feature.event.activities.prisoner.attendance-amended=true",
-    "feature.event.activities.prisoner.allocation-amended=true",
-    "feature.event.activities.prisoner.attendance-deleted=true",
-    "feature.event.activities.prisoner.allocated=true",
-    "feature.audit.service.hmpps.enabled=true",
-    "feature.audit.service.local.enabled=true",
-  ],
-)
 class UpdatesFromExternalSystemsEventsIntegrationTest : LocalStackTestBase() {
   @Autowired
   private lateinit var attendanceRepository: AttendanceRepository
@@ -88,7 +72,6 @@ class UpdatesFromExternalSystemsEventsIntegrationTest : LocalStackTestBase() {
   @MockitoSpyBean
   lateinit var activityScheduleService: ActivityScheduleService
 
-  private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
   private val hmppsAuditEventCaptor = argumentCaptor<HmppsAuditEvent>()
 
   private val updateFromExternalSystemEventsQueue by lazy {
@@ -155,7 +138,12 @@ class UpdatesFromExternalSystemsEventsIntegrationTest : LocalStackTestBase() {
   @Nested
   @DisplayName("MarkPrisonerAttendance")
   inner class MarkPrisonerAttendance {
-    private fun List<Attendance>.prisonerAttendanceReason(prisonNumber: String) = firstOrNull { it.prisonerNumber.uppercase() == prisonNumber.uppercase() }.let { it?.attendanceReason }
+    private fun List<Attendance>.prisonerAttendanceReason(prisonNumber: String) = firstOrNull {
+      it.prisonerNumber.equals(
+        prisonNumber,
+        ignoreCase = true,
+      )
+    }.let { it?.attendanceReason }
       ?: throw AssertionError("Prison attendance $prisonNumber not found.")
 
     @Sql(
@@ -223,15 +211,9 @@ class UpdatesFromExternalSystemsEventsIntegrationTest : LocalStackTestBase() {
       val history = attendanceHistoryRepository.findAll()
       assertThat(history.filter { it.attendance.attendanceId == updatedAttendances[0].attendanceId }).hasSize(1)
 
-      verify(eventsPublisher).send(eventCaptor.capture())
-
-      // Should detect the attendance updated event
-      with(eventCaptor.firstValue) {
-        assertThat(eventType).isEqualTo("activities.prisoner.attendance-amended")
-        assertThat(additionalInformation).isEqualTo(PrisonerAttendanceInformation(1))
-        assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-        assertThat(description).isEqualTo("A prisoner attendance has been amended in the activities management service")
-      }
+      validateOutboundEvents(
+        ExpectedOutboundEvent(PRISONER_ATTENDANCE_AMENDED, 1),
+      )
     }
 
     @Test
@@ -329,12 +311,11 @@ class UpdatesFromExternalSystemsEventsIntegrationTest : LocalStackTestBase() {
         }
       }
 
-      verify(eventsPublisher, times(4)).send(eventCaptor.capture())
-      assertThat(eventCaptor.allValues.map { it.eventType }).containsExactlyInAnyOrder(
-        "activities.prisoner.allocation-amended",
-        "activities.prisoner.attendance-deleted",
-        "activities.prisoner.attendance-deleted",
-        "activities.prisoner.attendance-deleted",
+      validateOutboundEvents(
+        ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 1),
+        ExpectedOutboundEvent(PRISONER_ATTENDANCE_DELETED, 10001, 1),
+        ExpectedOutboundEvent(PRISONER_ATTENDANCE_DELETED, 10001, 2),
+        ExpectedOutboundEvent(PRISONER_ATTENDANCE_DELETED, 10001, 3),
       )
     }
 
@@ -470,14 +451,9 @@ class UpdatesFromExternalSystemsEventsIntegrationTest : LocalStackTestBase() {
         }
       }
 
-      verify(eventsPublisher).send(eventCaptor.capture())
-
-      with(eventCaptor.firstValue) {
-        assertThat(eventType).isEqualTo("activities.prisoner.allocated")
-        assertThat(additionalInformation).isEqualTo(PrisonerAllocatedInformation(allocation.allocationId))
-        assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-        assertThat(description).isEqualTo("A prisoner has been allocated to an activity in the activities management service")
-      }
+      validateOutboundEvents(
+        ExpectedOutboundEvent(PRISONER_ALLOCATED, allocation.allocationId),
+      )
 
       verify(hmppsAuditApiClient).createEvent(hmppsAuditEventCaptor.capture())
       with(hmppsAuditEventCaptor.firstValue) {
