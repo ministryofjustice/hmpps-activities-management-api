@@ -128,9 +128,26 @@ feature:
         alerts-updated: true
     activities:
       prisoner:
+        allocated: true
         allocation-amended: true
+        attendance-amended: true
+        attendance-created: true
+        attendance-deleted: true
+        attendance-expired: true
       activity-schedule:
         amended: true
+        created: true
+      scheduled-instance:
+        amended: true
+    appointments:
+      appointment-instance:
+        cancelled: true
+        created: true
+        deleted: true
+        updated: true
+        uncancelled: true
+  events.sns.enabled: true
+
   jobs.sqs:
     schedules.enabled: true
     deallocate.ending.enabled: true

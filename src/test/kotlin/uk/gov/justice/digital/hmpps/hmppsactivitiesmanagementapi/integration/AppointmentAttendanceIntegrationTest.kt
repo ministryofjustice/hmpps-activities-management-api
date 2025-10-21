@@ -16,7 +16,6 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.springframework.http.MediaType
-import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
@@ -50,14 +49,6 @@ import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 import java.util.*
 
-@TestPropertySource(
-  properties = [
-    "feature.event.appointments.appointment-instance.created=true",
-    "feature.event.appointments.appointment-instance.updated=true",
-    "feature.event.appointments.appointment-instance.deleted=true",
-    "feature.event.appointments.appointment-instance.cancelled=true",
-  ],
-)
 class AppointmentAttendanceIntegrationTest : AppointmentsIntegrationTestBase() {
 
   @MockitoBean
@@ -343,7 +334,7 @@ class AppointmentAttendanceIntegrationTest : AppointmentsIntegrationTestBase() {
       ),
     )
 
-    verifyNoInteractions(eventsPublisher)
+    validateNoMessagesSent()
     verifyNoInteractions(telemetryClient)
     verifyNoInteractions(auditService)
   }
@@ -435,7 +426,7 @@ class AppointmentAttendanceIntegrationTest : AppointmentsIntegrationTestBase() {
     // No attendance marked and was deleted
     assertThat(summaries.singleOrNull { it.id == 8L }).isNull()
 
-    verifyNoInteractions(eventsPublisher)
+    validateNoMessagesSent()
     verifyNoInteractions(telemetryClient)
     verifyNoInteractions(auditService)
   }
@@ -459,7 +450,7 @@ class AppointmentAttendanceIntegrationTest : AppointmentsIntegrationTestBase() {
     fun afterEach() {
       verifyNoMoreInteractions(telemetryClient)
       verifyNoInteractions(auditService)
-      verifyNoInteractions(eventsPublisher)
+      validateNoMessagesSent()
     }
 
     @Sql("classpath:test_data/seed-appointment-attendance.sql")

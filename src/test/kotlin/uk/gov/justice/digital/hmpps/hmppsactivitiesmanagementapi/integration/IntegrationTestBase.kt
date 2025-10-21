@@ -39,7 +39,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wir
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.PrisonApiMockServer
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.PrisonerSearchApiMockServer
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditApiClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsPublisher
 import java.util.*
 
 @SqlMergeMode(SqlMergeMode.MergeMode.MERGE)
@@ -64,9 +63,6 @@ abstract class IntegrationTestBase {
 
   @Autowired
   lateinit var mapper: ObjectMapper
-
-  @MockitoBean
-  protected lateinit var eventsPublisher: OutboundEventsPublisher
 
   @MockitoBean
   protected lateinit var hmppsAuditApiClient: HmppsAuditApiClient

@@ -11,11 +11,8 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
-import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
-import org.mockito.kotlin.verifyNoMoreInteractions
 import org.springframework.http.MediaType
-import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
@@ -38,8 +35,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.A
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.AppointmentInstanceInformation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.APPOINTMENT_INSTANCE_CREATED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.APPOINTMENT_INSTANCE_DELETED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.APPOINTMENT_INSTANCE_UNCANCELLED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.APPOINTMENT_INSTANCE_UPDATED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPLY_TO_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_ID_PROPERTY_KEY
@@ -63,21 +63,10 @@ import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 import java.util.*
 
-@TestPropertySource(
-  properties = [
-    "feature.event.appointments.appointment-instance.created=true",
-    "feature.event.appointments.appointment-instance.updated=true",
-    "feature.event.appointments.appointment-instance.deleted=true",
-    "feature.event.appointments.appointment-instance.cancelled=true",
-    "feature.event.appointments.appointment-instance.uncancelled=true",
-  ],
-)
-class AppointmentIntegrationTest : IntegrationTestBase() {
+class AppointmentIntegrationTest : LocalStackTestBase() {
 
   @MockitoBean
   private lateinit var auditService: AuditService
-
-  private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
 
   @MockitoBean
   private lateinit var telemetryClient: TelemetryClient
@@ -171,15 +160,9 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       }
     }
 
-    verify(eventsPublisher).send(eventCaptor.capture())
-    verifyNoMoreInteractions(eventsPublisher)
-
-    with(eventCaptor.firstValue) {
-      assertThat(eventType).isEqualTo("appointments.appointment-instance.updated")
-      assertThat(additionalInformation).isEqualTo(AppointmentInstanceInformation(appointmentIds.first()))
-      assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-      assertThat(description).isEqualTo("An appointment instance has been updated in the activities management service")
-    }
+    validateOutboundEvents(
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_UPDATED, appointmentIds.first()),
+    )
 
     verify(auditService).logEvent(any<AppointmentEditedEvent>())
   }
@@ -257,15 +240,9 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       }
     }
 
-    verify(eventsPublisher).send(eventCaptor.capture())
-    verifyNoMoreInteractions(eventsPublisher)
-
-    with(eventCaptor.firstValue) {
-      assertThat(eventType).isEqualTo("appointments.appointment-instance.updated")
-      assertThat(additionalInformation).isEqualTo(AppointmentInstanceInformation(appointmentIds.first()))
-      assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-      assertThat(description).isEqualTo("An appointment instance has been updated in the activities management service")
-    }
+    validateOutboundEvents(
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_UPDATED, appointmentIds.first()),
+    )
 
     verify(auditService).logEvent(any<AppointmentEditedEvent>())
   }
@@ -324,15 +301,9 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       }
     }
 
-    verify(eventsPublisher).send(eventCaptor.capture())
-    verifyNoMoreInteractions(eventsPublisher)
-
-    with(eventCaptor.firstValue) {
-      assertThat(eventType).isEqualTo("appointments.appointment-instance.updated")
-      assertThat(additionalInformation).isEqualTo(AppointmentInstanceInformation(appointmentIds.first()))
-      assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-      assertThat(description).isEqualTo("An appointment instance has been updated in the activities management service")
-    }
+    validateOutboundEvents(
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_UPDATED, appointmentIds.first()),
+    )
 
     verify(auditService).logEvent(any<AppointmentEditedEvent>())
   }
@@ -358,15 +329,9 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       }
     }
 
-    verify(eventsPublisher).send(eventCaptor.capture())
-    verifyNoMoreInteractions(eventsPublisher)
-
-    with(eventCaptor.firstValue) {
-      assertThat(eventType).isEqualTo("appointments.appointment-instance.cancelled")
-      assertThat(additionalInformation).isEqualTo(AppointmentInstanceInformation(appointmentIds.first()))
-      assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-      assertThat(description).isEqualTo("An appointment instance has been cancelled in the activities management service")
-    }
+    validateOutboundEvents(
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CANCELLED, appointmentIds.first()),
+    )
 
     verify(auditService).logEvent(any<AppointmentCancelledEvent>())
   }
@@ -389,15 +354,9 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
 
     assertThat(appointmentSeries.appointments.filterNot { it.isDeleted }).isEmpty()
 
-    verify(eventsPublisher).send(eventCaptor.capture())
-    verifyNoMoreInteractions(eventsPublisher)
-
-    with(eventCaptor.firstValue) {
-      assertThat(eventType).isEqualTo("appointments.appointment-instance.deleted")
-      assertThat(additionalInformation).isEqualTo(AppointmentInstanceInformation(appointmentIds.first()))
-      assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-      assertThat(description).isEqualTo("An appointment instance has been deleted in the activities management service")
-    }
+    validateOutboundEvents(
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, appointmentIds.first()),
+    )
 
     verify(auditService).logEvent(any<AppointmentDeletedEvent>())
   }
@@ -421,26 +380,12 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       assertThat(subList(2, size)).isEmpty()
     }
 
-    verify(eventsPublisher, times(4)).send(eventCaptor.capture())
-    verifyNoMoreInteractions(eventsPublisher)
-
-    val activeAppointments = appointmentSeries.appointments.filterNot { it.isDeleted }
-
-    with(eventCaptor.allValues) {
-      assertThat(map { it.additionalInformation }).containsAll(
-        activeAppointments.subList(2, activeAppointments.size).flatMap {
-          it.attendees.filter { attendee -> attendee.prisonerNumber == "C3456DE" }
-            .map { attendee -> AppointmentInstanceInformation(attendee.id) }
-        },
-      )
-      forEach {
-        assertThat(it.occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-      }
-      assertThat(map { it.eventType }.distinct().single()).isEqualTo("appointments.appointment-instance.deleted")
-      assertThat(
-        map { it.description }.distinct().single(),
-      ).isEqualTo("An appointment instance has been deleted in the activities management service")
-    }
+    validateOutboundEvents(
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 24),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 25),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 26),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 27),
+    )
 
     verify(auditService).logEvent(any<AppointmentDeletedEvent>())
   }
@@ -473,24 +418,12 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       }
     }
 
-    verify(eventsPublisher, times(4)).send(eventCaptor.capture())
-    verifyNoMoreInteractions(eventsPublisher)
-
-    with(eventCaptor.allValues) {
-      assertThat(map { it.additionalInformation }).containsAll(
-        appointmentSeries.appointments.subList(2, appointmentSeries.appointments.size).flatMap {
-          it.attendees.filter { attendee -> attendee.prisonerNumber == "C3456DE" }
-            .map { attendee -> AppointmentInstanceInformation(attendee.id) }
-        },
-      )
-      forEach {
-        assertThat(it.occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-      }
-      assertThat(map { it.eventType }.distinct().single()).isEqualTo("appointments.appointment-instance.cancelled")
-      assertThat(
-        map { it.description }.distinct().single(),
-      ).isEqualTo("An appointment instance has been cancelled in the activities management service")
-    }
+    validateOutboundEvents(
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CANCELLED, 24),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CANCELLED, 25),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CANCELLED, 26),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CANCELLED, 27),
+    )
 
     verify(auditService).logEvent(any<AppointmentCancelledEvent>())
   }
@@ -520,15 +453,9 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
         }
     }
 
-    verify(eventsPublisher).send(eventCaptor.capture())
-    verifyNoMoreInteractions(eventsPublisher)
-
-    with(eventCaptor.firstValue) {
-      assertThat(eventType).isEqualTo("appointments.appointment-instance.uncancelled")
-      assertThat(additionalInformation).isEqualTo(AppointmentInstanceInformation(3))
-      assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-      assertThat(description).isEqualTo("An appointment instance has been uncancelled in the activities management service")
-    }
+    validateOutboundEvents(
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_UNCANCELLED, 3),
+    )
 
     verify(auditService).logEvent(any<AppointmentUncancelledEvent>())
   }
@@ -557,18 +484,10 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
         }
     }
 
-    verify(eventsPublisher, times(2)).send(eventCaptor.capture())
-    verifyNoMoreInteractions(eventsPublisher)
-
-    with(eventCaptor.allValues) {
-      single { it.additionalInformation == AppointmentInstanceInformation(4L) }
-      single { it.additionalInformation.equals(AppointmentInstanceInformation(5L)) }
-      forEach {
-        assertThat(it.eventType).isEqualTo("appointments.appointment-instance.uncancelled")
-        assertThat(it.occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-        assertThat(it.description).isEqualTo("An appointment instance has been uncancelled in the activities management service")
-      }
-    }
+    validateOutboundEvents(
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_UNCANCELLED, 4),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_UNCANCELLED, 5),
+    )
 
     verify(auditService).logEvent(any<AppointmentUncancelledEvent>())
   }
@@ -596,19 +515,11 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
         }
     }
 
-    verify(eventsPublisher, times(3)).send(eventCaptor.capture())
-    verifyNoMoreInteractions(eventsPublisher)
-
-    with(eventCaptor.allValues) {
-      single { it.additionalInformation == AppointmentInstanceInformation(3L) }
-      single { it.additionalInformation == AppointmentInstanceInformation(4L) }
-      single { it.additionalInformation == AppointmentInstanceInformation(5L) }
-      forEach {
-        assertThat(it.eventType).isEqualTo("appointments.appointment-instance.uncancelled")
-        assertThat(it.occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-        assertThat(it.description).isEqualTo("An appointment instance has been uncancelled in the activities management service")
-      }
-    }
+    validateOutboundEvents(
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_UNCANCELLED, 3),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_UNCANCELLED, 4),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_UNCANCELLED, 5),
+    )
 
     verify(auditService).logEvent(any<AppointmentUncancelledEvent>())
   }
@@ -657,18 +568,21 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
 
       appointmentSeries.appointments.count { it.isCancelled() } isEqualTo 4
 
-      verify(eventsPublisher, times(12)).send(eventCaptor.capture())
-
-      with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.cancelled" }) {
-        assertThat(map { it.additionalInformation })
-          .hasSameElementsAs(
-            appointmentSeries.appointments.flatMap { it.attendees }
-              .map { AppointmentInstanceInformation(it.id) },
-          )
-      }
+      validateOutboundEvents(
+        ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CANCELLED, 30),
+        ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CANCELLED, 31),
+        ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CANCELLED, 32),
+        ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CANCELLED, 33),
+        ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CANCELLED, 34),
+        ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CANCELLED, 35),
+        ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CANCELLED, 36),
+        ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CANCELLED, 37),
+        ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CANCELLED, 38),
+        ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CANCELLED, 39),
+        ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CANCELLED, 40),
+        ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CANCELLED, 41),
+      )
     }
-
-    verifyNoMoreInteractions(eventsPublisher)
 
     verify(telemetryClient).trackEvent(
       eq(TelemetryEvent.APPOINTMENT_CANCELLED.value),
@@ -692,8 +606,6 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       assertThat(this[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(12.0)
       assertThat(this[EVENT_TIME_MS_METRIC_KEY]).isNotNull
     }
-
-    verifyNoMoreInteractions(telemetryClient)
 
     verify(auditService).logEvent(any<AppointmentCancelledEvent>())
   }
@@ -726,20 +638,20 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       appointmentSeries.appointments.filterNot { it.isDeleted } hasSize 0
     }
 
-    verify(eventsPublisher, times(12)).send(eventCaptor.capture())
-
-    with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.deleted" }) {
-      size isEqualTo 12
-      assertThat(map { it.additionalInformation }).hasSameElementsAs(
-        // The delete events for the specified appointment's instances are sent first
-        listOf(36L, 37L, 38L)
-          // Followed by the delete events for the remaining instances
-          .union(listOf(30L, 31L, 32L, 33L, 34L, 35L, 39L, 40L, 41L))
-          .map { AppointmentInstanceInformation(it) },
-      )
-    }
-
-    verifyNoMoreInteractions(eventsPublisher)
+    validateOutboundEvents(
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 36),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 37),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 38),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 30),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 31),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 32),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 33),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 34),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 35),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 39),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 40),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 41),
+    )
 
     verify(telemetryClient).trackEvent(
       eq(TelemetryEvent.APPOINTMENT_DELETED.value),
@@ -764,7 +676,6 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       assertThat(this[EVENT_TIME_MS_METRIC_KEY]).isNotNull
     }
 
-    verifyNoMoreInteractions(telemetryClient)
     verify(auditService).logEvent(any<AppointmentDeletedEvent>())
   }
 
@@ -884,52 +795,24 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       }
     }
 
-    verify(eventsPublisher, times(6)).send(eventCaptor.capture())
-    verifyNoMoreInteractions(eventsPublisher)
-
-    with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.created" }) {
-      assertThat(size).isEqualTo(2)
-      assertThat(map { it.additionalInformation }).containsAll(
-        appointmentSeries.appointments.subList(2, appointmentSeries.appointments.size).flatMap {
-          it.attendees.filter { attendee -> attendee.prisonerNumber == "C3456DE" }
-            .map { attendee -> AppointmentInstanceInformation(attendee.id) }
-        },
-      )
-      forEach {
-        assertThat(it.occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-      }
-      assertThat(
-        map { it.description }.distinct().single(),
-      ).isEqualTo("A new appointment instance has been created in the activities management service")
+    val expectedOutboundEvents = appointmentSeries.appointments.subList(2, appointmentSeries.appointments.size).flatMap {
+      it.attendees.filter { attendee -> attendee.prisonerNumber == "C3456DE" }
+        .map { attendee -> ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, attendee.id) }
     }
-
-    with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.updated" }) {
-      assertThat(size).isEqualTo(2)
-      assertThat(map { it.additionalInformation }).contains(
-        AppointmentInstanceInformation(25),
-        AppointmentInstanceInformation(27),
-      )
-      forEach {
-        assertThat(it.occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+      .toMutableList()
+      .also {
+        it.addAll(
+          listOf(
+            ExpectedOutboundEvent(APPOINTMENT_INSTANCE_UPDATED, 25),
+            ExpectedOutboundEvent(APPOINTMENT_INSTANCE_UPDATED, 27),
+            ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 24),
+            ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 26),
+          ),
+        )
       }
-      assertThat(
-        map { it.description }.distinct().single(),
-      ).isEqualTo("An appointment instance has been updated in the activities management service")
-    }
+      .toTypedArray()
 
-    with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.deleted" }) {
-      assertThat(size).isEqualTo(2)
-      assertThat(map { it.additionalInformation }).contains(
-        AppointmentInstanceInformation(24),
-        AppointmentInstanceInformation(26),
-      )
-      forEach {
-        assertThat(it.occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-      }
-      assertThat(
-        map { it.description }.distinct().single(),
-      ).isEqualTo("An appointment instance has been deleted in the activities management service")
-    }
+    validateOutboundEvents(*expectedOutboundEvents)
 
     verify(auditService).logEvent(any<AppointmentEditedEvent>())
   }
@@ -1049,52 +932,24 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       }
     }
 
-    verify(eventsPublisher, times(6)).send(eventCaptor.capture())
-    verifyNoMoreInteractions(eventsPublisher)
-
-    with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.created" }) {
-      assertThat(size).isEqualTo(2)
-      assertThat(map { it.additionalInformation }).containsAll(
-        appointmentSeries.appointments.subList(2, appointmentSeries.appointments.size).flatMap {
-          it.attendees.filter { attendee -> attendee.prisonerNumber == "C3456DE" }
-            .map { attendee -> AppointmentInstanceInformation(attendee.id) }
-        },
-      )
-      forEach {
-        assertThat(it.occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-      }
-      assertThat(
-        map { it.description }.distinct().single(),
-      ).isEqualTo("A new appointment instance has been created in the activities management service")
+    val expectedOutboundEvents = appointmentSeries.appointments.subList(2, appointmentSeries.appointments.size).flatMap {
+      it.attendees.filter { attendee -> attendee.prisonerNumber == "C3456DE" }
+        .map { attendee -> ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, attendee.id) }
     }
-
-    with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.updated" }) {
-      assertThat(size).isEqualTo(2)
-      assertThat(map { it.additionalInformation }).contains(
-        AppointmentInstanceInformation(25),
-        AppointmentInstanceInformation(27),
-      )
-      forEach {
-        assertThat(it.occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+      .toMutableList()
+      .also {
+        it.addAll(
+          listOf(
+            ExpectedOutboundEvent(APPOINTMENT_INSTANCE_UPDATED, 25),
+            ExpectedOutboundEvent(APPOINTMENT_INSTANCE_UPDATED, 27),
+            ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 24),
+            ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 26),
+          ),
+        )
       }
-      assertThat(
-        map { it.description }.distinct().single(),
-      ).isEqualTo("An appointment instance has been updated in the activities management service")
-    }
+      .toTypedArray()
 
-    with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.deleted" }) {
-      assertThat(size).isEqualTo(2)
-      assertThat(map { it.additionalInformation }).contains(
-        AppointmentInstanceInformation(24),
-        AppointmentInstanceInformation(26),
-      )
-      forEach {
-        assertThat(it.occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-      }
-      assertThat(
-        map { it.description }.distinct().single(),
-      ).isEqualTo("An appointment instance has been deleted in the activities management service")
-    }
+    validateOutboundEvents(*expectedOutboundEvents)
 
     verify(auditService).logEvent(any<AppointmentEditedEvent>())
   }
@@ -1147,18 +1002,12 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
 
       appointmentSeries.appointments.count { it.internalLocationId == 456L && it.dpsLocationId == request.dpsLocationId } isEqualTo 4
 
-      verify(eventsPublisher, times(12)).send(eventCaptor.capture())
+      val expectedOutboundEvents = appointmentSeries.appointments.flatMap { it.attendees }
+        .map { ExpectedOutboundEvent(APPOINTMENT_INSTANCE_UPDATED, it.id) }
+        .toTypedArray()
 
-      with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.updated" }) {
-        assertThat(map { it.additionalInformation })
-          .hasSameElementsAs(
-            appointmentSeries.appointments.flatMap { it.attendees }
-              .map { AppointmentInstanceInformation(it.id) },
-          )
-      }
+      validateOutboundEvents(*expectedOutboundEvents)
     }
-
-    verifyNoMoreInteractions(eventsPublisher)
 
     verify(telemetryClient).trackEvent(
       eq(TelemetryEvent.APPOINTMENT_EDITED.value),
@@ -1191,7 +1040,6 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       assertThat(this[EVENT_TIME_MS_METRIC_KEY]).isNotNull
     }
 
-    verifyNoMoreInteractions(telemetryClient)
     verify(auditService).logEvent(any<AppointmentEditedEvent>())
   }
 
@@ -1243,18 +1091,12 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       val appointmentSeries = webTestClient.getAppointmentSeriesById(result.id)!!
       appointmentSeries.appointments.count { it.internalLocationId == request.internalLocationId && it.dpsLocationId == dpsLocation.id } isEqualTo 4
 
-      verify(eventsPublisher, times(12)).send(eventCaptor.capture())
+      val expectedOutboundEvents = appointmentSeries.appointments.flatMap { it.attendees }
+        .map { ExpectedOutboundEvent(APPOINTMENT_INSTANCE_UPDATED, it.id) }
+        .toTypedArray()
 
-      with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.updated" }) {
-        assertThat(map { it.additionalInformation })
-          .hasSameElementsAs(
-            appointmentSeries.appointments.flatMap { it.attendees }
-              .map { AppointmentInstanceInformation(it.id) },
-          )
-      }
+      validateOutboundEvents(*expectedOutboundEvents)
     }
-
-    verifyNoMoreInteractions(eventsPublisher)
 
     verify(telemetryClient).trackEvent(
       eq(TelemetryEvent.APPOINTMENT_EDITED.value),
@@ -1287,7 +1129,6 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       assertThat(this[EVENT_TIME_MS_METRIC_KEY]).isNotNull
     }
 
-    verifyNoMoreInteractions(telemetryClient)
     verify(auditService).logEvent(any<AppointmentEditedEvent>())
   }
 
@@ -1329,33 +1170,22 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
         appointmentSeries.appointments.flatMap { it.attendees }.map { it.prisonerNumber }
           .distinct(),
       ).containsOnly("B2345CD", "C3456DE", "D4567EF", "E5679FG")
-
-      verify(eventsPublisher, times(12)).send(eventCaptor.capture())
-
-      with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.deleted" }) {
-        assertThat(size).isEqualTo(4)
-        assertThat(map { it.additionalInformation }).containsExactly(
-          // The deleted event for the specified appointment's attendee is sent first
-          AppointmentInstanceInformation(36),
-          // Followed by the deleted events for the remaining attendees
-          AppointmentInstanceInformation(30),
-          AppointmentInstanceInformation(33),
-          AppointmentInstanceInformation(39),
-        )
-      }
-
-      with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.created" }) {
-        assertThat(map { it.additionalInformation })
-          .hasSameElementsAs(
-            appointmentSeries.appointments
-              .flatMap { it.attendees }
-              .filter { attendee -> listOf("E5679FG", "D4567EF").contains(attendee.prisonerNumber) }
-              .map { AppointmentInstanceInformation(it.id) },
-          )
-      }
     }
 
-    verifyNoMoreInteractions(eventsPublisher)
+    validateOutboundEvents(
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, 1),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, 2),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, 3),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, 4),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, 5),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, 6),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, 7),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, 8),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 30),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 33),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 36),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 39),
+    )
 
     verify(telemetryClient).trackEvent(
       eq(TelemetryEvent.APPOINTMENT_EDITED.value),
@@ -1388,7 +1218,6 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       assertThat(this[EVENT_TIME_MS_METRIC_KEY]).isNotNull
     }
 
-    verifyNoMoreInteractions(telemetryClient)
     verify(auditService).logEvent(any<AppointmentEditedEvent>())
   }
 

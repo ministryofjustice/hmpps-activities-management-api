@@ -94,6 +94,14 @@ const val PRISONERS_REMOVED_COUNT_METRIC_KEY = "prisonersRemovedCount"
 const val RESULTS_COUNT_METRIC_KEY = "resultsCount"
 const val WAIT_BEFORE_ALLOCATION_METRIC_KEY = "applicationWaitBeforeAllocationTimeDays"
 
+/* OutboundHMPPSDomainEvent */
+const val OUTBOUND_DOMAIN_EVENT_TYPE = "eventType"
+const val OUTBOUND_DOMAIN_EVENT_PRIMARY_ID = "primaryId"
+const val OUTBOUND_DOMAIN_EVENT_SECONDARY_ID = "secondaryId"
+const val OUTBOUND_DOMAIN_EVENT_VERSION = "version"
+const val OUTBOUND_DOMAIN_EVENT_DESCRIPTION = "description"
+const val OUTBOUND_DOMAIN_EVENT_DATE_TIME = "occurredAt"
+
 fun activityMetricsMap() = mapOf(
   NUMBER_OF_RESULTS_METRIC_KEY to 1.0,
 )

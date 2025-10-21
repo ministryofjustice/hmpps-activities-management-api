@@ -7,7 +7,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSetDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 
-abstract class AppointmentsIntegrationTestBase : IntegrationTestBase() {
+abstract class AppointmentsIntegrationTestBase : LocalStackTestBase() {
 
   fun WebTestClient.getAppointmentDetailsById(id: Long) = get()
     .uri("/appointments/$id/details")

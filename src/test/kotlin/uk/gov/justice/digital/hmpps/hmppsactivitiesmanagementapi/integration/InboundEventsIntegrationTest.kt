@@ -8,15 +8,11 @@ import org.awaitility.kotlin.untilAsserted
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.argumentCaptor
-import org.mockito.kotlin.never
-import org.mockito.kotlin.reset
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.test.context.TestPropertySource
-import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
@@ -52,7 +48,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.PRISONER_ALLOCATION_AMENDED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.PRISONER_ATTENDANCE_AMENDED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.PRISONER_ATTENDANCE_DELETED
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.PrisonerReleasedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.ReleaseInformation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.activitiesChangedEvent
@@ -67,24 +62,7 @@ import java.time.Duration
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
-@TestPropertySource(
-  properties = [
-    "feature.audit.service.hmpps.enabled=true",
-    "feature.audit.service.local.enabled=true",
-    "feature.offender.merge.enabled=true",
-    "feature.event.prison-offender-events.prisoner.merged=true",
-    "feature.event.prisoner-offender-search.prisoner.alerts-updated=true",
-    "feature.event.prisoner-offender-search.prisoner.released=true",
-    "feature.event.prison-offender-events.prisoner.activities-changed=true",
-    "feature.event.prison-offender-events.prisoner.appointments-changed=true",
-    "feature.event.prisoner-offender-search.prisoner.received=true",
-    "feature.event.prisoner-offender-search.prisoner.updated=true",
-  ],
-)
 class InboundEventsIntegrationTest : LocalStackTestBase() {
-
-  @MockitoBean
-  private lateinit var outboundEventsService: OutboundEventsService
 
   @Autowired
   private lateinit var allocationRepository: AllocationRepository
@@ -114,8 +92,6 @@ class InboundEventsIntegrationTest : LocalStackTestBase() {
 
   @BeforeEach
   fun initMocks() {
-    reset(outboundEventsService)
-
     prisonApiMockServer.resetAll()
     prisonerSearchApiMockServer.resetAll()
   }
@@ -150,7 +126,7 @@ class InboundEventsIntegrationTest : LocalStackTestBase() {
 
     assertThat(webTestClient.getScheduledInstancesByIds(1).first().advanceAttendances).extracting("prisonerNumber").containsOnly("A11111A")
 
-    verifyNoInteractions(outboundEventsService)
+    validateNoMessagesSent()
   }
 
   @Test
@@ -213,10 +189,11 @@ class InboundEventsIntegrationTest : LocalStackTestBase() {
 
       assertThatWaitingListStatusIs(WaitingListStatus.REMOVED, PENTONVILLE_PRISON_CODE, "A11111A")
 
-      verify(outboundEventsService).send(PRISONER_ALLOCATION_AMENDED, 1L)
-      verify(outboundEventsService).send(PRISONER_ALLOCATION_AMENDED, 4L)
-      verify(outboundEventsService).send(PRISONER_ALLOCATION_AMENDED, 6L)
-      verifyNoMoreInteractions(outboundEventsService)
+      validateOutboundEvents(
+        ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 1),
+        ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 4),
+        ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 6),
+      )
 
       verify(hmppsAuditApiClient, times(4)).createEvent(hmppsAuditEventCaptor.capture())
 
@@ -308,12 +285,6 @@ class InboundEventsIntegrationTest : LocalStackTestBase() {
     await untilAsserted {
       assertThatAllocationsAreEndedFor(PENTONVILLE_PRISON_CODE, "A11111A")
 
-      verify(outboundEventsService).send(PRISONER_ALLOCATION_AMENDED, 1L)
-      verify(outboundEventsService).send(PRISONER_ALLOCATION_AMENDED, 2L)
-      verify(outboundEventsService).send(PRISONER_ATTENDANCE_DELETED, 10001, 3L)
-      verify(outboundEventsService).send(PRISONER_ATTENDANCE_DELETED, 10021, 2L)
-      verifyNoMoreInteractions(outboundEventsService)
-
       assertThat(attendanceRepository.findAllById(listOf(1L, 2L, 3L, 4L, 5L)).map { it.attendanceId }).containsOnly(
         1L,
         4L,
@@ -322,6 +293,13 @@ class InboundEventsIntegrationTest : LocalStackTestBase() {
 
       assertThat(webTestClient.getScheduledInstancesByIds(1).first().advanceAttendances).extracting("prisonerNumber").containsOnly("B11111B")
     }
+
+    validateOutboundEvents(
+      ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 1),
+      ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 2),
+      ExpectedOutboundEvent(PRISONER_ATTENDANCE_DELETED, 10001, 3),
+      ExpectedOutboundEvent(PRISONER_ATTENDANCE_DELETED, 10021, 2),
+    )
   }
 
   @Test
@@ -379,17 +357,18 @@ class InboundEventsIntegrationTest : LocalStackTestBase() {
       assertThat(appointmentAttendeeRepository.existsById(327)).isTrue()
       assertThat(appointmentAttendeeRepository.existsById(328)).isTrue()
 
-      verify(outboundEventsService).send(APPOINTMENT_INSTANCE_DELETED, 300L)
-      verify(outboundEventsService).send(APPOINTMENT_INSTANCE_DELETED, 302L)
-      verify(outboundEventsService).send(APPOINTMENT_INSTANCE_DELETED, 322L)
-      verify(outboundEventsService).send(APPOINTMENT_INSTANCE_DELETED, 324L)
-      verifyNoMoreInteractions(outboundEventsService)
-
       verify(hmppsAuditApiClient, times(4)).createEvent(hmppsAuditEventCaptor.capture())
       hmppsAuditEventCaptor.allValues.map { it.what }.distinct()
         .single() isEqualTo AuditEventType.APPOINTMENT_CANCELLED_ON_TRANSFER.toString()
       verifyNoMoreInteractions(hmppsAuditApiClient)
     }
+
+    validateOutboundEvents(
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 300),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 302),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 322),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 324),
+    )
   }
 
   @Test
@@ -450,13 +429,12 @@ class InboundEventsIntegrationTest : LocalStackTestBase() {
       assertThat(appointmentAttendeeRepository.existsById(327)).isTrue()
       assertThat(appointmentAttendeeRepository.existsById(328)).isTrue()
 
-      verify(outboundEventsService).send(APPOINTMENT_INSTANCE_DELETED, 300L)
-      verify(outboundEventsService).send(APPOINTMENT_INSTANCE_DELETED, 302L)
-      // This is a court video link appointment and should not be touched on release
-      verify(outboundEventsService, never()).send(APPOINTMENT_INSTANCE_DELETED, 304L)
-      verify(outboundEventsService).send(APPOINTMENT_INSTANCE_DELETED, 322L)
-      verify(outboundEventsService).send(APPOINTMENT_INSTANCE_DELETED, 324L)
-      verifyNoMoreInteractions(outboundEventsService)
+      validateOutboundEvents(
+        ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 300),
+        ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 302),
+        ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 322),
+        ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 324),
+      )
 
       verify(hmppsAuditApiClient, times(4)).createEvent(hmppsAuditEventCaptor.capture())
       hmppsAuditEventCaptor.allValues.map { it.what }.distinct()
@@ -519,7 +497,6 @@ class InboundEventsIntegrationTest : LocalStackTestBase() {
       assertThat(appointmentRepository.existsById(211)).isTrue()
       assertThat(appointmentRepository.existsById(212)).isTrue()
 
-      verifyNoInteractions(outboundEventsService)
       verifyNoInteractions(hmppsAuditApiClient)
     }
   }
@@ -574,13 +551,12 @@ class InboundEventsIntegrationTest : LocalStackTestBase() {
         assertThat(it.recordedBy).isEqualTo("Activities Management Service")
       }
 
-      // Four events should be raised two for allocation amendments and two for an attendance amendment
-      verify(outboundEventsService).send(PRISONER_ALLOCATION_AMENDED, 1L)
-      verify(outboundEventsService).send(PRISONER_ALLOCATION_AMENDED, 2L)
-      verify(outboundEventsService, never()).send(PRISONER_ATTENDANCE_AMENDED, 1L)
-      verify(outboundEventsService).send(PRISONER_ATTENDANCE_AMENDED, 2L)
-      verify(outboundEventsService).send(PRISONER_ATTENDANCE_AMENDED, 3L)
-      verifyNoMoreInteractions(outboundEventsService)
+      validateOutboundEvents(
+        ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 1),
+        ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 2),
+        ExpectedOutboundEvent(PRISONER_ATTENDANCE_AMENDED, 2),
+        ExpectedOutboundEvent(PRISONER_ATTENDANCE_AMENDED, 3),
+      )
     }
   }
 
@@ -614,12 +590,12 @@ class InboundEventsIntegrationTest : LocalStackTestBase() {
 
     await untilAsserted {
       // Eight events should be raised four for allocation amendments and four for an attendance amendment
-      verify(outboundEventsService, times(2)).send(PRISONER_ALLOCATION_AMENDED, 1L)
-      verify(outboundEventsService, times(2)).send(PRISONER_ALLOCATION_AMENDED, 2L)
-      verify(outboundEventsService, never()).send(PRISONER_ATTENDANCE_AMENDED, 1L)
-      verify(outboundEventsService, times(2)).send(PRISONER_ATTENDANCE_AMENDED, 2L)
-      verify(outboundEventsService, times(2)).send(PRISONER_ATTENDANCE_AMENDED, 3L)
-      verifyNoMoreInteractions(outboundEventsService)
+      validateOutboundEvents(
+        ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 1, times = 2),
+        ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 2, times = 2),
+        ExpectedOutboundEvent(PRISONER_ATTENDANCE_AMENDED, 2, times = 2),
+        ExpectedOutboundEvent(PRISONER_ATTENDANCE_AMENDED, 3, times = 2),
+      )
 
       // This attendance record is never modified
       attendanceRepository.findById(1L).orElseThrow().also {
@@ -670,14 +646,6 @@ class InboundEventsIntegrationTest : LocalStackTestBase() {
     this.sendInboundEvent(prisonerReceivedEvent)
 
     await untilAsserted {
-      // Eight events should be raised four for allocation amendments and four for an attendance amendment
-      verify(outboundEventsService, times(2)).send(PRISONER_ALLOCATION_AMENDED, 1L)
-      verify(outboundEventsService, times(2)).send(PRISONER_ALLOCATION_AMENDED, 2L)
-      verify(outboundEventsService, never()).send(PRISONER_ATTENDANCE_AMENDED, 1L)
-      verify(outboundEventsService, times(2)).send(PRISONER_ATTENDANCE_AMENDED, 2L)
-      verify(outboundEventsService, times(2)).send(PRISONER_ATTENDANCE_AMENDED, 3L)
-      verifyNoMoreInteractions(outboundEventsService)
-
       // This attendance record is never modified
       attendanceRepository.findById(1L).orElseThrow().also {
         assertThat(it.status()).isEqualTo(AttendanceStatus.WAITING)
@@ -696,6 +664,14 @@ class InboundEventsIntegrationTest : LocalStackTestBase() {
         assertThat(it.recordedBy).isEqualTo("Activities Management Service")
       }
     }
+
+    // Eight events should be raised four for allocation amendments and four for an attendance amendment
+    validateOutboundEvents(
+      ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 1, times = 2),
+      ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 2, times = 2),
+      ExpectedOutboundEvent(PRISONER_ATTENDANCE_AMENDED, 2, times = 2),
+      ExpectedOutboundEvent(PRISONER_ATTENDANCE_AMENDED, 3, times = 2),
+    )
   }
 
   @Test
@@ -749,12 +725,12 @@ class InboundEventsIntegrationTest : LocalStackTestBase() {
         assertThat(it.recordedBy).isEqualTo("Activities Management Service")
       }
 
-      verify(outboundEventsService).send(PRISONER_ALLOCATION_AMENDED, 1L)
-      verify(outboundEventsService).send(PRISONER_ALLOCATION_AMENDED, 2L)
-      verify(outboundEventsService, never()).send(PRISONER_ATTENDANCE_AMENDED, 1L)
-      verify(outboundEventsService).send(PRISONER_ATTENDANCE_AMENDED, 2L)
-      verify(outboundEventsService).send(PRISONER_ATTENDANCE_AMENDED, 3L)
-      verifyNoMoreInteractions(outboundEventsService)
+      validateOutboundEvents(
+        ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 1),
+        ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 2),
+        ExpectedOutboundEvent(PRISONER_ATTENDANCE_AMENDED, 2),
+        ExpectedOutboundEvent(PRISONER_ATTENDANCE_AMENDED, 3),
+      )
     }
   }
 
@@ -800,10 +776,10 @@ class InboundEventsIntegrationTest : LocalStackTestBase() {
         attendanceReason!!.code isEqualTo AttendanceReasonEnum.SUSPENDED
       }
 
-      verify(outboundEventsService).send(PRISONER_ALLOCATION_AMENDED, 1L)
-      verify(outboundEventsService, never()).send(PRISONER_ATTENDANCE_AMENDED, 1L)
-      verify(outboundEventsService).send(PRISONER_ATTENDANCE_AMENDED, 2L)
-      verifyNoMoreInteractions(outboundEventsService)
+      validateOutboundEvents(
+        ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 1),
+        ExpectedOutboundEvent(PRISONER_ATTENDANCE_AMENDED, 2),
+      )
     }
   }
 
@@ -838,11 +814,12 @@ class InboundEventsIntegrationTest : LocalStackTestBase() {
       assertThatAllocationsAreEndedFor(PENTONVILLE_PRISON_CODE, "A22222A", DeallocationReason.RELEASED)
       assertThatWaitingListStatusIs(WaitingListStatus.REMOVED, PENTONVILLE_PRISON_CODE, "A22222A")
 
-      verify(outboundEventsService).send(PRISONER_ALLOCATION_AMENDED, 1L)
-      verify(outboundEventsService).send(PRISONER_ALLOCATION_AMENDED, 2L)
-      verify(outboundEventsService).send(PRISONER_ATTENDANCE_DELETED, 10099, 2L)
-      verify(outboundEventsService).send(PRISONER_ATTENDANCE_DELETED, 10001, 3L)
-      verifyNoMoreInteractions(outboundEventsService)
+      validateOutboundEvents(
+        ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 1),
+        ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 2),
+        ExpectedOutboundEvent(PRISONER_ATTENDANCE_DELETED, 10099, 2),
+        ExpectedOutboundEvent(PRISONER_ATTENDANCE_DELETED, 10001, 3),
+      )
 
       assertThat(attendanceRepository.findAllById(listOf(1L, 2L, 3L)).map { it.attendanceId }).containsOnly(1L)
 
@@ -879,11 +856,12 @@ class InboundEventsIntegrationTest : LocalStackTestBase() {
       assertThatAllocationsAreEndedFor(PENTONVILLE_PRISON_CODE, "A22222A", DeallocationReason.TEMPORARILY_RELEASED)
       assertThatWaitingListStatusIs(WaitingListStatus.REMOVED, PENTONVILLE_PRISON_CODE, "A22222A")
 
-      verify(outboundEventsService).send(PRISONER_ALLOCATION_AMENDED, 1L)
-      verify(outboundEventsService).send(PRISONER_ALLOCATION_AMENDED, 2L)
-      verify(outboundEventsService).send(PRISONER_ATTENDANCE_DELETED, 10099L, 2L)
-      verify(outboundEventsService).send(PRISONER_ATTENDANCE_DELETED, 10001, 3L)
-      verifyNoMoreInteractions(outboundEventsService)
+      validateOutboundEvents(
+        ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 1),
+        ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 2),
+        ExpectedOutboundEvent(PRISONER_ATTENDANCE_DELETED, 10099, 2),
+        ExpectedOutboundEvent(PRISONER_ATTENDANCE_DELETED, 10001, 3),
+      )
 
       assertThat(attendanceRepository.findAllById(listOf(1L, 2L, 3L)).map { it.attendanceId }).containsOnly(1L)
     }

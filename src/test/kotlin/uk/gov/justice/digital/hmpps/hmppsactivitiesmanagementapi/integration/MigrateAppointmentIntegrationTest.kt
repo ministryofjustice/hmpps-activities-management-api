@@ -15,7 +15,6 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.springframework.http.MediaType
-import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
@@ -32,23 +31,14 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentDeletedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentMigrateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.AppointmentInstanceInformation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.APPOINTMENT_INSTANCE_DELETED
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 import java.util.*
 
-@TestPropertySource(
-  properties = [
-    "feature.event.appointments.appointment-instance.created=true",
-    "feature.event.appointments.appointment-instance.deleted=true",
-  ],
-)
 class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
-
-  private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
 
   @MockitoBean
   private lateinit var telemetryClient: TelemetryClient
@@ -125,7 +115,8 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
     val response = webTestClient.migrateAppointment(request)!!
     verifyAppointmentInstance(response)
 
-    verifyNoInteractions(eventsPublisher, telemetryClient, auditService)
+    validateNoMessagesSent()
+    verifyNoInteractions(telemetryClient, auditService)
   }
 
   @Test
@@ -135,7 +126,8 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
     val response = webTestClient.migrateAppointment(request)!!
     verifyAppointmentInstance(response = response, comment = "This is a long comment over 40 characters")
 
-    verifyNoInteractions(eventsPublisher, telemetryClient, auditService)
+    validateNoMessagesSent()
+    verifyNoInteractions(telemetryClient, auditService)
   }
 
   @Test
@@ -146,7 +138,8 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
 
     verifyAppointmentInstance(response = response, endTime = response.startTime.plusHours(1))
 
-    verifyNoInteractions(eventsPublisher, telemetryClient, auditService)
+    validateNoMessagesSent()
+    verifyNoInteractions(telemetryClient, auditService)
   }
 
   @Test
@@ -165,7 +158,8 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
 
     verifyAppointmentInstance(response = response, appointmentDate = request.startDate, setCustomName = false)
 
-    verifyNoInteractions(eventsPublisher, telemetryClient, auditService)
+    validateNoMessagesSent()
+    verifyNoInteractions(telemetryClient, auditService)
   }
 
   @Test
@@ -176,7 +170,8 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
 
     verifyAppointmentInstance(response = response, appointmentDate = request.startDate)
 
-    verifyNoInteractions(eventsPublisher, telemetryClient, auditService)
+    validateNoMessagesSent()
+    verifyNoInteractions(telemetryClient, auditService)
   }
 
   @ParameterizedTest
@@ -187,7 +182,8 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
     val response = webTestClient.migrateAppointment(request)!!
     verifyAppointmentInstance(response, setCustomName = false)
 
-    verifyNoInteractions(eventsPublisher, telemetryClient, auditService)
+    validateNoMessagesSent()
+    verifyNoInteractions(telemetryClient, auditService)
   }
 
   @Test
@@ -203,7 +199,8 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
       assertThat(extraInformation).isEqualTo(request.comment)
     }
 
-    verifyNoInteractions(eventsPublisher, telemetryClient, auditService)
+    validateNoMessagesSent()
+    verifyNoInteractions(telemetryClient, auditService)
   }
 
   private fun verifyAppointmentInstance(
@@ -286,17 +283,10 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
     // On start date
     webTestClient.getAppointmentDetailsById(17)!!.isDeleted isBool true
 
-    verify(eventsPublisher, times(2)).send(eventCaptor.capture())
-
-    assertThat(
-      eventCaptor.allValues.map { it.eventType }.distinct().single(),
-    ).isEqualTo("appointments.appointment-instance.deleted")
-    assertThat(eventCaptor.allValues.map { it.additionalInformation }).contains(
-      AppointmentInstanceInformation(25),
-      AppointmentInstanceInformation(27),
+    validateOutboundEvents(
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 25),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 27),
     )
-
-    verifyNoInteractions(telemetryClient)
 
     verify(auditService, times(2)).logEvent(auditableEventCaptor.capture())
     assertThat(auditableEventCaptor.allValues.map { it.appointmentId }).contains(15, 17)
@@ -326,16 +316,9 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
     // On start date with different category code
     webTestClient.getAppointmentDetailsById(17)!!.isDeleted isBool false
 
-    verify(eventsPublisher).send(eventCaptor.capture())
-
-    assertThat(
-      eventCaptor.allValues.map { it.eventType }.distinct().single(),
-    ).isEqualTo("appointments.appointment-instance.deleted")
-    assertThat(eventCaptor.allValues.map { it.additionalInformation }).contains(
-      AppointmentInstanceInformation(25),
+    validateOutboundEvents(
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 25),
     )
-
-    verifyNoInteractions(telemetryClient)
 
     verify(auditService).logEvent(auditableEventCaptor.capture())
     assertThat(auditableEventCaptor.allValues.map { it.appointmentId }).contains(15)
@@ -356,18 +339,10 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
       }
     }
 
-    verify(eventsPublisher, times(2)).send(eventCaptor.capture())
-
-    // Deleted sync events should only be published for appointment instances not previously deleted
-    assertThat(
-      eventCaptor.allValues.map { it.eventType }.distinct().single(),
-    ).isEqualTo("appointments.appointment-instance.deleted")
-    assertThat(eventCaptor.allValues.map { it.additionalInformation }).contains(
-      AppointmentInstanceInformation(20),
-      AppointmentInstanceInformation(22),
+    validateOutboundEvents(
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 20),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 22),
     )
-
-    verifyNoInteractions(telemetryClient)
 
     verify(auditService, times(3)).logEvent(auditableEventCaptor.capture())
     assertThat(auditableEventCaptor.allValues.map { it.appointmentId }).contains(10, 12, 13)
