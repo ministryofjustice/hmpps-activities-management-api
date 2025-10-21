@@ -19,6 +19,7 @@ import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalTimeRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.rangeTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategory
@@ -259,7 +260,7 @@ class AppointmentSearchServiceTest {
 
   @Test
   fun `search by date range`() {
-    val request = AppointmentSearchRequest(startDate = LocalDate.now(), endDate = LocalDate.now().plusDays(1))
+    val request = AppointmentSearchRequest(startDate = LocalDate.now(), endDate = LocalDate.now().plusDays(27))
     val result = appointmentSearchEntity()
 
     whenever(appointmentSearchRepository.findAll(any())).thenReturn(listOf(result))
@@ -270,8 +271,9 @@ class AppointmentSearchServiceTest {
     service.searchAppointments("TPR", request, principal)
 
     verify(appointmentSearchSpecification).prisonCodeEquals("TPR")
-    verify(appointmentSearchSpecification).startDateEquals(request.startDate)
-    verify(appointmentSearchSpecification).startDateEquals(request.endDate!!)
+    request.startDate.rangeTo(request.endDate!!).forEach { date ->
+      verify(appointmentSearchSpecification).startDateEquals(date)
+    }
     verifyNoMoreInteractions(appointmentSearchSpecification)
 
     verify(telemetryClient).trackEvent(
@@ -297,6 +299,15 @@ class AppointmentSearchServiceTest {
       assertThat(value[RESULTS_COUNT_METRIC_KEY]).isEqualTo(1.0)
       assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
     }
+  }
+
+  @Test
+  fun `search by date range throws an exception when date range is more than one month`() {
+    val request = AppointmentSearchRequest(startDate = LocalDate.of(2025, 2, 27), endDate = LocalDate.of(2025, 3, 27))
+
+    assertThatThrownBy { service.searchAppointments("TPR", request, principal) }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("End date cannot be more than one month after the start date")
   }
 
   @Test
