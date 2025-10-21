@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appoin
 import com.microsoft.applicationinsights.TelemetryClient
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.rangeTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.toResults
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSearchRequest
@@ -60,13 +61,15 @@ class AppointmentSearchService(
     var spec = appointmentSearchSpecification.prisonCodeEquals(prisonCode)
 
     with(request) {
+      require(endDate == null || Period.between(startDate, endDate).toTotalMonths() < 1) {
+        "End date cannot be more than one month after the start date"
+      }
+
       appointmentType?.apply {
         spec = spec.and { root, _, cb -> cb.equal(root.get<Long>("appointmentType"), appointmentType) }
       }
 
-      val days = Period.between(startDate, endDate ?: startDate).days
-      val datesSpec = (0..days).map {
-        val date = startDate.plusDays(it.toLong())
+      val datesSpec = startDate.rangeTo(endDate ?: startDate).map { date ->
         val dateSpec = appointmentSearchSpecification.startDateEquals(date)
         val timeSlotSpecs = timeSlots?.map { slot ->
           val timeRange = prisonRegimeService.getTimeRangeForPrisonAndTimeSlot(
