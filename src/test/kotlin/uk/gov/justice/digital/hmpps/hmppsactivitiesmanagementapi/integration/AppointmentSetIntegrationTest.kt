@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
-import com.microsoft.applicationinsights.TelemetryClient
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
@@ -39,9 +38,6 @@ class AppointmentSetIntegrationTest : AppointmentsIntegrationTestBase() {
 
   @MockitoBean
   private lateinit var auditService: AuditService
-
-  @MockitoBean
-  private lateinit var telemetryClient: TelemetryClient
 
   @Test
   fun `get appointment set details authorisation required`() {

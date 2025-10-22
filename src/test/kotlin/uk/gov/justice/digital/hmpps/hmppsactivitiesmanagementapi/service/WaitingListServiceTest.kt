@@ -13,6 +13,8 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.EnumSource
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doReturn
@@ -22,6 +24,7 @@ import org.mockito.kotlin.spy
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
@@ -963,6 +966,70 @@ class WaitingListServiceTest {
   }
 
   @Test
+  fun `update status to WITHDRAWN`() {
+    val waitingList = waitingList(prisonCode = PENTONVILLE_PRISON_CODE, initialStatus = WaitingListStatus.PENDING).also {
+      whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
+    }
+
+    val prisoner = PrisonerSearchPrisonerFixture.instance().copy(releaseDate = LocalDate.now())
+    prisonerSearchApiClient.stub {
+      on { findByPrisonerNumber("123456") } doReturn prisoner
+    }
+
+    waitingList.status isEqualTo WaitingListStatus.PENDING
+    waitingList.updatedTime isEqualTo null
+    waitingList.updatedBy isEqualTo null
+    waitingList.statusUpdatedTime isEqualTo null
+
+    service.updateWaitingList(
+      waitingList.waitingListId,
+      WaitingListApplicationUpdateRequest(status = WaitingListStatus.WITHDRAWN),
+      "Frank",
+    )
+
+    verify(telemetryClient).trackEvent(
+      TelemetryEvent.PRISONER_WITHDRAWN_FROM_WAITLIST.value,
+      mapOf(PRISONER_NUMBER_PROPERTY_KEY to "123456"),
+      mapOf(NUMBER_OF_RESULTS_METRIC_KEY to 1.0),
+    )
+
+    waitingList.status isEqualTo WaitingListStatus.WITHDRAWN
+    waitingList.updatedTime!! isCloseTo TimeSource.now()
+    waitingList.updatedBy isEqualTo "Frank"
+    waitingList.statusUpdatedTime isCloseTo TimeSource.now()
+  }
+
+  @Test
+  fun `Re-instate a withdrawn application`() {
+    val waitingList = waitingList(prisonCode = PENTONVILLE_PRISON_CODE, initialStatus = WaitingListStatus.WITHDRAWN).also {
+      whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
+    }
+
+    val prisoner = PrisonerSearchPrisonerFixture.instance().copy(releaseDate = LocalDate.now())
+    prisonerSearchApiClient.stub {
+      on { findByPrisonerNumber("123456") } doReturn prisoner
+    }
+
+    waitingList.status isEqualTo WaitingListStatus.WITHDRAWN
+    waitingList.updatedTime isEqualTo null
+    waitingList.updatedBy isEqualTo null
+    waitingList.statusUpdatedTime isEqualTo null
+
+    service.updateWaitingList(
+      waitingList.waitingListId,
+      WaitingListApplicationUpdateRequest(status = WaitingListStatus.PENDING),
+      "Frank",
+    )
+
+    verifyNoInteractions(telemetryClient)
+
+    waitingList.status isEqualTo WaitingListStatus.PENDING
+    waitingList.updatedTime!! isCloseTo TimeSource.now()
+    waitingList.updatedBy isEqualTo "Frank"
+    waitingList.statusUpdatedTime isCloseTo TimeSource.now()
+  }
+
+  @Test
   fun `update status no-op if the same`() {
     val waitingList = waitingList(prisonCode = PENTONVILLE_PRISON_CODE, initialStatus = WaitingListStatus.PENDING).also {
       whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
@@ -1008,6 +1075,30 @@ class WaitingListServiceTest {
       .hasMessage("The waiting list ${waitingList.waitingListId} can no longer be updated")
 
     waitingList.status isEqualTo WaitingListStatus.ALLOCATED
+    waitingList.updatedTime isEqualTo null
+    waitingList.updatedBy isEqualTo null
+    waitingList.statusUpdatedTime isEqualTo null
+  }
+
+  @EnumSource(WaitingListStatus::class, names = ["PENDING", "WITHDRAWN"], mode = EnumSource.Mode.EXCLUDE)
+  @ParameterizedTest(name = "WITHDRAWN cannot be changed from to {0}")
+  fun `withdrawn can only be changed to pending`(newStatus: WaitingListStatus) {
+    val waitingList =
+      waitingList(prisonCode = PENTONVILLE_PRISON_CODE, initialStatus = WaitingListStatus.WITHDRAWN).also {
+        whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
+      }
+
+    assertThatThrownBy {
+      service.updateWaitingList(
+        waitingList.waitingListId,
+        WaitingListApplicationUpdateRequest(status = newStatus),
+        "Frank",
+      )
+    }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("The withdrawn waiting list can only be changed to pending")
+
+    waitingList.status isEqualTo WaitingListStatus.WITHDRAWN
     waitingList.updatedTime isEqualTo null
     waitingList.updatedBy isEqualTo null
     waitingList.statusUpdatedTime isEqualTo null
@@ -1139,7 +1230,7 @@ class WaitingListServiceTest {
       )
     }
       .isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Only PENDING, APPROVED or DECLINED are allowed for the status change")
+      .hasMessage("Only PENDING, APPROVED, DECLINED or WITHDRAWN are allowed for the status change")
 
     waitingList.status isEqualTo WaitingListStatus.PENDING
     waitingList.updatedTime isEqualTo null
@@ -1198,7 +1289,7 @@ class WaitingListServiceTest {
       waitingListRepository.findByPrisonCodeAndPrisonerNumberAndStatusIn(
         prisonCode = MOORLAND_PRISON_CODE,
         prisonerNumber = "A",
-        statuses = setOf(WaitingListStatus.PENDING, WaitingListStatus.APPROVED, WaitingListStatus.DECLINED),
+        statuses = setOf(WaitingListStatus.PENDING, WaitingListStatus.APPROVED, WaitingListStatus.DECLINED, WaitingListStatus.WITHDRAWN),
       ),
     ) doReturn listOf(pending, approved, declined)
 
@@ -1207,7 +1298,7 @@ class WaitingListServiceTest {
     verify(waitingListRepository).findByPrisonCodeAndPrisonerNumberAndStatusIn(
       MOORLAND_PRISON_CODE,
       "A",
-      setOf(WaitingListStatus.PENDING, WaitingListStatus.APPROVED, WaitingListStatus.DECLINED),
+      setOf(WaitingListStatus.PENDING, WaitingListStatus.APPROVED, WaitingListStatus.DECLINED, WaitingListStatus.WITHDRAWN),
     )
 
     with(pending) {
@@ -1418,5 +1509,21 @@ class WaitingListServiceTest {
     verify(waitingListSearchSpecification).statusIn(listOf(WaitingListStatus.APPROVED))
 
     result isEqualTo pagedResult.map { it.toModel(earliestReleaseDate) }
+  }
+
+  @Test
+  fun `fetch open applications for the prison`() {
+    val waitingList = listOf(waitingList(prisonCode = MOORLAND_PRISON_CODE, prisonerNumber = "ABC1234"))
+
+    whenever(
+      waitingListRepository.findByPrisonCodeAndStatusIn(
+        MOORLAND_PRISON_CODE,
+        setOf(WaitingListStatus.PENDING, WaitingListStatus.APPROVED, WaitingListStatus.DECLINED, WaitingListStatus.WITHDRAWN),
+      ),
+    ) doReturn waitingList
+
+    val result = service.fetchOpenApplicationsForPrison(MOORLAND_PRISON_CODE)
+
+    assertThat(result).isEqualTo(waitingList)
   }
 }

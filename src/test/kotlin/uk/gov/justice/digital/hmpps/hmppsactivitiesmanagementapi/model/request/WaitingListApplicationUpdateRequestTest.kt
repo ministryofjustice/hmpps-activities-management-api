@@ -1,6 +1,8 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request
 
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.EnumSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 
@@ -32,22 +34,19 @@ class WaitingListApplicationUpdateRequestTest : ValidatorBase<WaitingListApplica
     )
   }
 
-  @Test
-  fun `status can only be pending, approved or declined`() {
-    assertSingleValidationError(
-      request.copy(status = WaitingListStatus.ALLOCATED),
-      "status",
-      "Only PENDING, APPROVED or DECLINED are allowed for status",
-    )
+  @EnumSource(WaitingListStatus::class, names = ["PENDING", "APPROVED", "DECLINED", "WITHDRAWN"])
+  @ParameterizedTest(name = "Status can be {0}")
+  fun `status can be`(status: WaitingListStatus) {
+    assertNoErrors(request.copy(status = status))
+  }
 
+  @EnumSource(WaitingListStatus::class, names = ["PENDING", "APPROVED", "DECLINED", "WITHDRAWN"], mode = EnumSource.Mode.EXCLUDE)
+  @ParameterizedTest(name = "Status cannot be {0}")
+  fun `status cannot be`(status: WaitingListStatus) {
     assertSingleValidationError(
-      request.copy(status = WaitingListStatus.REMOVED),
+      request.copy(status = status),
       "status",
-      "Only PENDING, APPROVED or DECLINED are allowed for status",
+      "Only PENDING, APPROVED, DECLINED or WITHDRAWN are allowed for status",
     )
-
-    assertNoErrors(request.copy(status = WaitingListStatus.PENDING))
-    assertNoErrors(request.copy(status = WaitingListStatus.APPROVED))
-    assertNoErrors(request.copy(status = WaitingListStatus.DECLINED))
   }
 }

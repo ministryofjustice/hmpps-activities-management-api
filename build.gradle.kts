@@ -89,7 +89,7 @@ kotlin {
 
 tasks {
   withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-    dependsOn("buildPrisonApiModel", "buildNonAssociationsApiModel", "buildIncentivesApiModel", "buildLocationsInsidePrisonApiModel", "copyPreCommitHook")
+    dependsOn("buildPrisonApiModel", "buildNonAssociationsApiModel", "buildIncentivesApiModel", "buildLocationsInsidePrisonApiModel")
     compilerOptions {
       jvmTarget.set(JvmTarget.JVM_21)
       freeCompilerArgs.add("-Xannotation-default-target=param-property")
@@ -150,13 +150,6 @@ tasks.register("listrepos") {
         println("Name: ${it.name}; url: ${it.url}")
       }
   }
-}
-
-tasks.register("copyPreCommitHook", Copy::class) {
-  from(project.file("pre-commit"))
-  into(project.file(".git/hooks"))
-  filePermissions { unix("755") }
-  dependsOn("generateGitProperties")
 }
 
 val generatedProjectDirs = listOf("prisonapi", "nonassociations", "incentivesapi", "locationsinsideprisonapi")
