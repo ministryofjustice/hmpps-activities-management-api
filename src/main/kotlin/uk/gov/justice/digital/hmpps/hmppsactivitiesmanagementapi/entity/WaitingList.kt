@@ -52,6 +52,12 @@ data class WaitingList(
         }
       }
 
+      if (status == WaitingListStatus.WITHDRAWN) {
+        require(value == WaitingListStatus.PENDING) {
+          "Withdrawn waiting list can only be changed to pending"
+        }
+      }
+
       if (status == WaitingListStatus.DECLINED && value != WaitingListStatus.DECLINED) {
         declinedReason = null
       }
@@ -114,4 +120,5 @@ enum class WaitingListStatus {
   DECLINED,
   ALLOCATED,
   REMOVED,
+  WITHDRAWN,
 }

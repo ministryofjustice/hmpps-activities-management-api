@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
-import com.microsoft.applicationinsights.TelemetryClient
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.AfterEach
@@ -54,8 +53,6 @@ class AppointmentAttendanceIntegrationTest : AppointmentsIntegrationTestBase() {
   @MockitoBean
   private lateinit var auditService: AuditService
 
-  @MockitoBean
-  private lateinit var telemetryClient: TelemetryClient
   private val telemetryPropertyMap = argumentCaptor<Map<String, String>>()
   private val telemetryMetricsMap = argumentCaptor<Map<String, Double>>()
 

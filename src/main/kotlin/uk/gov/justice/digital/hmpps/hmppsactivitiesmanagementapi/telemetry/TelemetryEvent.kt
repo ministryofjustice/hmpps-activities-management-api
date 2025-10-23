@@ -21,4 +21,5 @@ enum class TelemetryEvent(val value: String) {
   PRISONER_APPROVED_ON_WAITLIST("SAA-Prisoner-Apporved-On-Waitlist"),
   PRISONER_DEALLOCATED("SAA-PrisonerDeallocated"),
   PRISONER_DECLINED_FROM_WAITLIST("SAA-Prisoner-Declined-From-Waitlist"),
+  PRISONER_WITHDRAWN_FROM_WAITLIST("SAA-Prisoner-Withdrawn-From-Waitlist"),
 }

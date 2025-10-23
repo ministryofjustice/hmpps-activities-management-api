@@ -153,7 +153,7 @@ class WaitingListService(
     }
   }
 
-  fun fetchOpenApplicationsForPrison(prisonCode: String) = waitingListRepository.findByPrisonCodeAndStatusIn(prisonCode, setOf(WaitingListStatus.PENDING, WaitingListStatus.APPROVED, WaitingListStatus.DECLINED))
+  fun fetchOpenApplicationsForPrison(prisonCode: String) = waitingListRepository.findByPrisonCodeAndStatusIn(prisonCode, setOf(WaitingListStatus.PENDING, WaitingListStatus.APPROVED, WaitingListStatus.DECLINED, WaitingListStatus.WITHDRAWN))
 
   private fun WaitingListApplicationRequest.failIfNotAllowableStatus() {
     require(
@@ -226,7 +226,7 @@ class WaitingListService(
     val waitingList = waitingListRepository
       .findOrThrowNotFound(id)
       .checkCaseloadAccess()
-      .failIfNotUpdatable()
+      .failIfNotUpdatable(request.status)
       .apply {
         updateApplicationDate(request, updatedBy)
         updateRequestedBy(request, updatedBy)
@@ -238,9 +238,15 @@ class WaitingListService(
     return waitingList.toModel(determineEarliestReleaseDate(prisoner))
   }
 
-  private fun WaitingList.failIfNotUpdatable() = also {
-    require(isStatus(WaitingListStatus.APPROVED, WaitingListStatus.PENDING, WaitingListStatus.DECLINED)) {
+  private fun WaitingList.failIfNotUpdatable(newStatus: WaitingListStatus?) = also {
+    require(isStatus(WaitingListStatus.APPROVED, WaitingListStatus.PENDING, WaitingListStatus.DECLINED, WaitingListStatus.WITHDRAWN)) {
       "The waiting list $waitingListId can no longer be updated"
+    }
+
+    if (isStatus(WaitingListStatus.WITHDRAWN)) {
+      require(newStatus == null || newStatus == WaitingListStatus.PENDING) {
+        "The withdrawn waiting list can only be changed to pending"
+      }
     }
 
     require(activitySchedule.allocations(true).none { it.prisonerNumber == prisonerNumber }) {
@@ -298,9 +304,10 @@ class WaitingListService(
           WaitingListStatus.APPROVED,
           WaitingListStatus.PENDING,
           WaitingListStatus.DECLINED,
+          WaitingListStatus.WITHDRAWN,
         ).contains(updatedStatus),
       ) {
-        "Only PENDING, APPROVED or DECLINED are allowed for the status change"
+        "Only PENDING, APPROVED, DECLINED or WITHDRAWN are allowed for the status change"
       }
 
       status = updatedStatus
@@ -326,6 +333,10 @@ class WaitingListService(
     if (status == WaitingListStatus.DECLINED) {
       logMetric(TelemetryEvent.PRISONER_DECLINED_FROM_WAITLIST, prisonerNumber)
     }
+
+    if (status == WaitingListStatus.WITHDRAWN) {
+      logMetric(TelemetryEvent.PRISONER_WITHDRAWN_FROM_WAITLIST, prisonerNumber)
+    }
   }
 
   private fun logMetric(event: TelemetryEvent, prisonerNumber: String) {
@@ -341,7 +352,7 @@ class WaitingListService(
     waitingListRepository.findByPrisonCodeAndPrisonerNumberAndStatusIn(
       prisonCode,
       prisonerNumber,
-      setOf(WaitingListStatus.PENDING, WaitingListStatus.APPROVED, WaitingListStatus.DECLINED),
+      setOf(WaitingListStatus.PENDING, WaitingListStatus.APPROVED, WaitingListStatus.DECLINED, WaitingListStatus.WITHDRAWN),
     ).forEach { application ->
       waitingListRepository.saveAndFlush(application.remove(removedBy))
       auditService.logEvent(application.toPrisonerRemovedFromWaitingListEvent())
