@@ -34,6 +34,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPLI
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPLICATIONS_DECLINED_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPLICATIONS_PENDING_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPLICATIONS_TOTAL_COUNT_METRIC_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPLICATIONS_WITHDRAWN_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ATTENDANCE_ACCEPTABLE_ABSENCE_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ATTENDANCE_ATTENDED_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ATTENDANCE_RECORDED_COUNT_METRIC_KEY
@@ -250,15 +251,18 @@ class DailyActivityMetricsServiceTest {
     val declined1 = waitingList(initialStatus = WaitingListStatus.DECLINED)
     val declined2 = waitingList(initialStatus = WaitingListStatus.DECLINED)
     val declined3 = waitingList(initialStatus = WaitingListStatus.DECLINED)
+    val withdrawn1 = waitingList(initialStatus = WaitingListStatus.WITHDRAWN)
+    val withdrawn2 = waitingList(initialStatus = WaitingListStatus.WITHDRAWN)
 
-    val waitingLists = listOf(approved1, pending1, pending2, declined1, declined2, declined3)
+    val waitingLists = listOf(approved1, pending1, pending2, declined1, declined2, declined3, withdrawn1, withdrawn2)
 
     dailyActivityMetricsService.generateWaitingListMetrics(metricsMap, waitingLists)
 
-    assertThat(metricsMap[APPLICATIONS_TOTAL_COUNT_METRIC_KEY]).isEqualTo(6.0)
+    assertThat(metricsMap[APPLICATIONS_TOTAL_COUNT_METRIC_KEY]).isEqualTo(8.0)
     assertThat(metricsMap[APPLICATIONS_APPROVED_COUNT_METRIC_KEY]).isEqualTo(1.0)
     assertThat(metricsMap[APPLICATIONS_PENDING_COUNT_METRIC_KEY]).isEqualTo(2.0)
     assertThat(metricsMap[APPLICATIONS_DECLINED_COUNT_METRIC_KEY]).isEqualTo(3.0)
+    assertThat(metricsMap[APPLICATIONS_WITHDRAWN_COUNT_METRIC_KEY]).isEqualTo(2.0)
   }
 
   private fun createMetricsMap() = mutableMapOf(

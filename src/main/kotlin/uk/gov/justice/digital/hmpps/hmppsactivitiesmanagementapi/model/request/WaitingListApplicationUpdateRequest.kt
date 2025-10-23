@@ -5,6 +5,10 @@ import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.AssertTrue
 import jakarta.validation.constraints.Size
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus.APPROVED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus.DECLINED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus.PENDING
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus.WITHDRAWN
 import java.time.LocalDate
 
 @Schema(
@@ -52,6 +56,6 @@ data class WaitingListApplicationUpdateRequest(
   @AssertTrue(message = "Application date cannot be in the future")
   private fun isApplicationDate() = applicationDate == null || applicationDate <= LocalDate.now()
 
-  @AssertTrue(message = "Only PENDING, APPROVED or DECLINED are allowed for status")
-  private fun isStatus() = status == null || listOf(WaitingListStatus.PENDING, WaitingListStatus.APPROVED, WaitingListStatus.DECLINED).contains(status)
+  @AssertTrue(message = "Only PENDING, APPROVED, DECLINED or WITHDRAWN are allowed for status")
+  private fun isStatus() = status == null || listOf(PENDING, APPROVED, DECLINED, WITHDRAWN).contains(status)
 }

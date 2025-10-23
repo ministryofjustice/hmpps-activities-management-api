@@ -2,6 +2,8 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.EnumSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
@@ -136,6 +138,31 @@ class WaitingListTest {
       status isEqualTo WaitingListStatus.REMOVED
       declinedReason isEqualTo null
     }
+  }
+
+  @Test
+  fun `can change a waiting list fron withdrawn to pending`() {
+    val waitingList = waitingList(initialStatus = WaitingListStatus.WITHDRAWN)
+    waitingList.status isEqualTo WaitingListStatus.WITHDRAWN
+
+    waitingList.status = WaitingListStatus.PENDING
+
+    waitingList.status isEqualTo WaitingListStatus.PENDING
+  }
+
+  @EnumSource(WaitingListStatus::class, names = ["PENDING", "WITHDRAWN", "DECLINED"], mode = EnumSource.Mode.EXCLUDE)
+  @ParameterizedTest(name = "Changing wait listing from WITHDRAWN to {0}")
+  fun `cannot change a waiting list fron withdrawn to anything other than pending`(newStatus: WaitingListStatus) {
+    val waitingList = waitingList(initialStatus = WaitingListStatus.WITHDRAWN)
+    waitingList.status isEqualTo WaitingListStatus.WITHDRAWN
+
+    assertThatThrownBy {
+      waitingList.status = newStatus
+    }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Withdrawn waiting list can only be changed to pending")
+
+    waitingList.status isEqualTo WaitingListStatus.WITHDRAWN
   }
 
   @Test

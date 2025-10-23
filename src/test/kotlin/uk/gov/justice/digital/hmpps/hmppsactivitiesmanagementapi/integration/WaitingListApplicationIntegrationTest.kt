@@ -79,6 +79,7 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
     }
 
     val response = update(
+      1,
       WaitingListApplicationUpdateRequest(
         applicationDate = TimeSource.yesterday(),
         requestedBy = "Fred",
@@ -102,8 +103,47 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
     }
   }
 
-  private fun update(request: WaitingListApplicationUpdateRequest) = webTestClient.patch()
-    .uri("/waiting-list-applications/1")
+  @Sql("classpath:test_data/seed-activity-id-22.sql")
+  @Test
+  fun `re-instate a withdrawn application`() {
+    stubPrisoners(listOf("Z1111ZZ"))
+
+    val beforeUpdate = waitingListRepository.findOrThrowNotFound(2)
+
+    with(beforeUpdate) {
+      applicationDate isEqualTo TimeSource.today()
+      requestedBy isEqualTo "Jemima"
+      comments isEqualTo "Jemima left some comments"
+      status isEqualTo WaitingListStatus.WITHDRAWN
+    }
+
+    val response = update(
+      2,
+      WaitingListApplicationUpdateRequest(
+        applicationDate = TimeSource.yesterday(),
+        requestedBy = "Fred",
+        comments = "Fred left some comments",
+        status = WaitingListStatus.PENDING,
+      ),
+    )!!
+
+    val afterUpdate = waitingListRepository.findOrThrowNotFound(2)
+
+    with(afterUpdate) {
+      applicationDate isEqualTo TimeSource.yesterday()
+      requestedBy isEqualTo "Fred"
+      comments isEqualTo "Fred left some comments"
+      status isEqualTo WaitingListStatus.PENDING
+
+      applicationDate isEqualTo response.requestedDate
+      requestedBy isEqualTo response.requestedBy
+      comments isEqualTo response.comments
+      status isEqualTo response.status
+    }
+  }
+
+  private fun update(id: Long, request: WaitingListApplicationUpdateRequest) = webTestClient.patch()
+    .uri("/waiting-list-applications/$id")
     .accept(MediaType.APPLICATION_JSON)
     .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB)))
     .header(CASELOAD_ID, MOORLAND_PRISON_CODE)

@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
-import com.microsoft.applicationinsights.TelemetryClient
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
 import org.awaitility.kotlin.await
@@ -39,10 +38,6 @@ import java.time.temporal.ChronoUnit
 import java.util.*
 
 class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
-
-  @MockitoBean
-  private lateinit var telemetryClient: TelemetryClient
-
   @MockitoBean
   private lateinit var auditService: AuditService
   private val auditableEventCaptor = argumentCaptor<AppointmentDeletedEvent>()

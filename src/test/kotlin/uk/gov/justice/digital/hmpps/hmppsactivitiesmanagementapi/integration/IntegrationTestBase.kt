@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.microsoft.applicationinsights.TelemetryClient
 import org.awaitility.kotlin.await
 import org.awaitility.kotlin.until
 import org.junit.jupiter.api.AfterAll
@@ -66,6 +67,9 @@ abstract class IntegrationTestBase {
 
   @MockitoBean
   protected lateinit var hmppsAuditApiClient: HmppsAuditApiClient
+
+  @MockitoBean
+  protected lateinit var telemetryClient: TelemetryClient
 
   companion object {
     @JvmField
