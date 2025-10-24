@@ -4,8 +4,8 @@ import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
 
 plugins {
   id("uk.gov.justice.hmpps.gradle-spring-boot") version "9.1.3"
-  kotlin("plugin.spring") version "2.2.20"
-  kotlin("plugin.jpa") version "2.2.20"
+  kotlin("plugin.spring") version "2.2.21"
+  kotlin("plugin.jpa") version "2.2.21"
   jacoco
   id("org.openapi.generator") version "7.16.0"
   id("io.sentry.jvm.gradle") version "5.12.1"
@@ -54,7 +54,7 @@ dependencies {
     }
   }
 
-  implementation("aws.sdk.kotlin:s3:1.5.66")
+  implementation("aws.sdk.kotlin:s3:1.5.67")
 
   // Other dependencies
   implementation("org.apache.commons:commons-text:1.14.0")
