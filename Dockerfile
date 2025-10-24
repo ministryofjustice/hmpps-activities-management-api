@@ -1,8 +1,5 @@
 FROM --platform=$BUILDPLATFORM eclipse-temurin:21-jdk-jammy AS builder
 
-ARG BUILD_NUMBER
-ENV BUILD_NUMBER=${BUILD_NUMBER:-1_0_0}
-
 WORKDIR /app
 ADD . .
 
@@ -15,9 +12,6 @@ RUN curl https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem  > ro
 
 FROM eclipse-temurin:21-jre-jammy
 LABEL maintainer="HMPPS Digital Studio <info@digital.justice.gov.uk>"
-
-ARG BUILD_NUMBER
-ENV BUILD_NUMBER=${BUILD_NUMBER:-1_0_0}
 
 RUN apt-get update && \
     apt-get -y upgrade && \
@@ -40,9 +34,12 @@ COPY --from=builder --chown=appuser:appgroup ./app/applicationinsights-agent*.ja
 
 COPY --from=builder --chown=appuser:appgroup /app/extracted/spring-boot-loader/ /app
 COPY --from=builder --chown=appuser:appgroup /app/extracted/snapshot-dependencies/ /app
-COPY --from=builder --chown=appuser:appgroup /app/extracted/application/ /app
 COPY --from=builder --chown=appuser:appgroup /app/extracted/dependencies/ /app
+COPY --from=builder --chown=appuser:appgroup /app/extracted/application/ /app
 
 USER 2000
+
+ARG BUILD_NUMBER
+ENV BUILD_NUMBER=${BUILD_NUMBER:-1_0_0}
 
 ENTRYPOINT ["java", "-XX:+AlwaysActAsServerClassMachine", "-javaagent:agent.jar", "-jar", "app.jar"]
