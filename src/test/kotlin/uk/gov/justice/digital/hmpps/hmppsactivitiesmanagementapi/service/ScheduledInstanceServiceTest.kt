@@ -51,6 +51,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.toTelemetryPropertiesMap
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.CaseloadAccessException
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModel
 import java.time.LocalDate
@@ -280,7 +281,6 @@ class ScheduledInstanceServiceTest {
 
       val result = service.getAttendeesForScheduledInstance(1)
 
-      assertThat(result).hasSize(1)
       assertThat(result).isEqualTo(
         listOf(
           ScheduledAttendee(
@@ -292,6 +292,107 @@ class ScheduledInstanceServiceTest {
           ),
         ),
       )
+    }
+
+    @Nested
+    @DisplayName("getAttendeesByScheduledInstanceIds")
+    inner class GetAttendeesByScheduledInstanceIds {
+      @Test
+      fun `get attendees by instance ids succeeds`() {
+        val prisonerABC123 = PrisonerScheduledActivity(
+          scheduledInstanceId = 1,
+          allocationId = 2,
+          prisonCode = "MDI",
+          sessionDate = LocalDate.now(),
+          startTime = LocalTime.of(10, 0),
+          endTime = LocalTime.of(11, 0),
+          prisonerNumber = "ABC123",
+          bookingId = 100001,
+          inCell = false,
+          onWing = false,
+          offWing = true,
+          activityCategory = "SAA_OUT_OF_WORK",
+          activityId = 1,
+          timeSlot = TimeSlot.AM,
+          paidActivity = true,
+          issuePayment = true,
+          attendanceStatus = AttendanceStatus.COMPLETED,
+          attendanceReasonCode = AttendanceReasonEnum.ATTENDED,
+          possibleAdvanceAttendance = false,
+        )
+
+        val prisonerZYZ456 = prisonerABC123.copy(prisonerNumber = "ZYZ456", scheduledInstanceId = 2)
+
+        addCaseloadIdToRequestHeader("MDI")
+
+        whenever(prisonerScheduledActivityRepository.getAllByScheduledInstanceIdIn(listOf(1, 2))).thenReturn(
+          listOf(
+            prisonerABC123,
+            prisonerZYZ456,
+          ),
+        )
+
+        val result = service.getAttendeesByScheduledInstanceIds(listOf(1, 2))
+
+        assertThat(result).isEqualTo(
+          listOf(
+            ScheduledAttendee(
+              scheduledInstanceId = 1,
+              allocationId = 2,
+              prisonerNumber = "ABC123",
+              bookingId = 100001,
+              suspended = false,
+            ),
+            ScheduledAttendee(
+              scheduledInstanceId = 2,
+              allocationId = 2,
+              prisonerNumber = "ZYZ456",
+              bookingId = 100001,
+              suspended = false,
+            ),
+          ),
+        )
+      }
+
+      @Test
+      fun `get attendees by instance ids succeeds fails because user cannot access a prison for a schedule instance`() {
+        val prisonerABC123 = PrisonerScheduledActivity(
+          scheduledInstanceId = 1,
+          allocationId = 2,
+          prisonCode = "MDI",
+          sessionDate = LocalDate.now(),
+          startTime = LocalTime.of(10, 0),
+          endTime = LocalTime.of(11, 0),
+          prisonerNumber = "ABC123",
+          bookingId = 100001,
+          inCell = false,
+          onWing = false,
+          offWing = true,
+          activityCategory = "SAA_OUT_OF_WORK",
+          activityId = 1,
+          timeSlot = TimeSlot.AM,
+          paidActivity = true,
+          issuePayment = true,
+          attendanceStatus = AttendanceStatus.COMPLETED,
+          attendanceReasonCode = AttendanceReasonEnum.ATTENDED,
+          possibleAdvanceAttendance = false,
+        )
+
+        val prisonerZYZ456 = prisonerABC123.copy(prisonerNumber = "ZYZ456", scheduledInstanceId = 2, prisonCode = "LEI")
+
+        addCaseloadIdToRequestHeader("MDI")
+
+        whenever(prisonerScheduledActivityRepository.getAllByScheduledInstanceIdIn(listOf(1, 2))).thenReturn(
+          listOf(
+            prisonerABC123,
+            prisonerZYZ456,
+          ),
+        )
+
+        assertThatThrownBy {
+          service.getAttendeesByScheduledInstanceIds(listOf(1, 2))
+        }.isInstanceOf(CaseloadAccessException::class.java)
+      }
     }
 
     @Test

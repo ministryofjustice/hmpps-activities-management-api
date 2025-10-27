@@ -203,9 +203,62 @@ class ScheduledInstanceController(
   )
   @CaseloadHeader
   @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
+  @Deprecated(message = "Use the POST method")
   fun getScheduledAttendeesByScheduledInstance(
     @PathVariable("instanceId") instanceId: Long,
   ): List<ScheduledAttendee> = scheduledInstanceService.getAttendeesForScheduledInstance(instanceId)
+
+  @PostMapping(value = ["/scheduled-attendees"])
+  @ResponseBody
+  @Operation(
+    summary = "Get a list of scheduled attendees for a list of scheduled instances",
+    description = "Returns a list of prisoners who are scheduled to attend the given scheduled instances.",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Scheduled attendees found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            array = ArraySchema(schema = Schema(implementation = ScheduledAttendee::class)),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  @CaseloadHeader
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
+  fun getScheduledAttendeesByScheduledInstances(
+    @Valid
+    @RequestBody
+    @Parameter(
+      description = "The scheduled instance ids",
+      required = true,
+    )
+    instanceIds: List<Long>,
+  ): List<ScheduledAttendee> = scheduledInstanceService.getAttendeesByScheduledInstanceIds(instanceIds)
 
   @PutMapping(value = ["/{instanceId}/uncancel"])
   @ResponseStatus(HttpStatus.NO_CONTENT)
