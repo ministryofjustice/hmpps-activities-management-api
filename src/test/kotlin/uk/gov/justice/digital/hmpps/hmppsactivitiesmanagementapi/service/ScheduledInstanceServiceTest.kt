@@ -355,7 +355,7 @@ class ScheduledInstanceServiceTest {
       }
 
       @Test
-      fun `get attendees by instance ids succeeds fails because user cannot access a prison for a schedule instance`() {
+      fun `get attendees by instance ids fails because user cannot access a prison for a schedule instance`() {
         val prisonerABC123 = PrisonerScheduledActivity(
           scheduledInstanceId = 1,
           allocationId = 2,
