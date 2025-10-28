@@ -15,6 +15,7 @@ import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
+import org.springframework.test.web.servlet.post
 import org.springframework.test.web.servlet.put
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
@@ -323,9 +324,43 @@ class ScheduledInstanceControllerTest : ControllerTestBase<ScheduledInstanceCont
     }
   }
 
+  @Nested
+  @DisplayName("Get Attendees By Scheduled Intances IDs")
+  inner class GetAttendeesByScheduleInstanceIds {
+
+    @Test
+    fun `200 response when get instances by ids succeeds`() {
+      val attendees = listOf(
+        ScheduledAttendee(
+          scheduledInstanceId = 1,
+          allocationId = 2,
+          prisonerNumber = "ABC123",
+          bookingId = 100001,
+          suspended = false,
+        ),
+      )
+
+      whenever(scheduledInstanceService.getAttendeesByScheduledInstanceIds(listOf(1))).thenReturn(attendees)
+
+      val response = mockMvc.getScheduledAttendeesByScheduledInstanceIds(listOf("1"))
+        .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+        .andExpect { status { isOk() } }
+        .andReturn().response
+
+      assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(attendees))
+
+      verify(scheduledInstanceService).getAttendeesByScheduledInstanceIds(listOf(1))
+    }
+  }
+
   private fun MockMvc.getScheduledInstanceById(instanceId: String) = get("/scheduled-instances/$instanceId")
 
   private fun MockMvc.getScheduledAttendeesByScheduledInstance(instanceId: String) = get("/scheduled-instances/$instanceId/scheduled-attendees")
+
+  private fun MockMvc.getScheduledAttendeesByScheduledInstanceIds(instanceId: List<String>) = post("/scheduled-instances/scheduled-attendees") {
+    contentType = MediaType.APPLICATION_JSON
+    content = mapper.writeValueAsBytes(instanceId)
+  }
 
   private fun MockMvc.getAttendancesSummary(prisonCode: String, date: LocalDate) = get("/scheduled-instances/attendance-summary?prisonCode=$prisonCode&date=$date")
 }
