@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM eclipse-temurin:21.0.8_9-jdk-jammy AS builder
+FROM --platform=$BUILDPLATFORM eclipse-temurin:25-jdk-jammy AS builder
 
 WORKDIR /app
 ADD . .
@@ -10,7 +10,7 @@ RUN java -Djarmode=tools -jar app.jar extract --layers --destination extracted
 RUN apt-get update && apt-get install -y curl
 RUN curl https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem  > root.crt
 
-FROM eclipse-temurin:21.0.8_9-jre-jammy
+FROM eclipse-temurin:25-jre-jammy
 LABEL maintainer="HMPPS Digital Studio <info@digital.justice.gov.uk>"
 
 RUN apt-get update && \
