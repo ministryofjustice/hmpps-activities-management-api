@@ -17,6 +17,8 @@ interface PrisonerScheduledActivityRepository : JpaRepository<PrisonerScheduledA
 
   fun getAllByScheduledInstanceId(id: Long): List<PrisonerScheduledActivity>
 
+  fun getAllByScheduledInstanceIdIn(ids: List<Long>): List<PrisonerScheduledActivity>
+
   fun getByScheduledInstanceIdAndPrisonerNumber(id: Long, prisonerNUmber: String): Optional<PrisonerScheduledActivity>
 
   @Query(

@@ -118,6 +118,11 @@ class ScheduledInstanceService(
       .toScheduledAttendeeModel()
   }
 
+  fun getAttendeesByScheduledInstanceIds(ids: List<Long>): List<ScheduledAttendee> = prisonerScheduledActivityRepository.getAllByScheduledInstanceIdIn(ids)
+    .onEach { checkCaseloadAccess(it.prisonCode) }
+    .excludeTodayWithoutAttendance()
+    .toScheduledAttendeeModel()
+
   fun uncancelScheduledInstance(id: Long) {
     log.info("Uncancelling scheduled instance $id")
 
