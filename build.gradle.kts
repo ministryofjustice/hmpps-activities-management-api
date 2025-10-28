@@ -54,7 +54,7 @@ dependencies {
     }
   }
 
-  implementation("aws.sdk.kotlin:s3:1.5.68")
+  implementation("aws.sdk.kotlin:s3:1.5.69")
 
   // Other dependencies
   implementation("org.apache.commons:commons-text:1.14.0")
