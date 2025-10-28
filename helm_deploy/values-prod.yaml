@@ -63,11 +63,3 @@ generic-prometheus-alerts:
     - "activities-and-appointments-prod-hmpps_activities_management_jobs_dlq"
   sqsAlertsOldestThreshold: 1
   sqsAlertsTotalMessagesThreshold: 1
-
-cron:
-  fixZeroPayDeallocate: "0 22 27 05 *"
-  fixZeroPayReallocate: "0 5 28 05 *"
-
-  datafix:
-    prisonCode: "NMI"
-    activityScheduleId: "11336"
