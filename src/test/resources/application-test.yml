@@ -23,7 +23,7 @@ spring:
     password: activities
     hikari:
       minimumIdle: 2
-      maximumPoolSize: 10
+      maximumPoolSize: 8
       idleTimeout: 1000
 
   flyway:

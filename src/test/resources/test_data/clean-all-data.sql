@@ -39,6 +39,3 @@ truncate table appointment_set restart identity cascade;
 --Envers
 truncate table activity_aud restart identity cascade;
 truncate table revision restart identity cascade;
-
--- Others
-truncate table data_fix restart identity cascade;
