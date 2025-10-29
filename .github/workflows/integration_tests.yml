@@ -131,7 +131,7 @@ jobs:
             build/reports/tests
 
       - name: Publish Test Report
-        uses: ctrf-io/github-test-reporter@ae51c170c9d8a9897f1575cc631659b44d600c77
+        uses: ctrf-io/github-test-reporter@024bc4b64d997ca9da86833c6b9548c55c620e40
         with:
           report-path: './build/test-results/integrationTest/*.xml'
           use-suite-name: true
