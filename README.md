@@ -13,7 +13,7 @@ The main (but not only) client is the Activities Management UI found [here](http
 
 Tools required:
 
-* JDK v21+
+* JDK v25+
 * Kotlin (Intellij)
 * postgresql v17+
 * docker
