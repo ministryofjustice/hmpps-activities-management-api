@@ -23,8 +23,8 @@ spring:
     password: activities
     hikari:
       minimumIdle: 2
-      maximumPoolSize: 20
-      idleTimeout: 2000
+      maximumPoolSize: 8
+      idleTimeout: 1000
 
   flyway:
     locations: classpath:/migrations/common
