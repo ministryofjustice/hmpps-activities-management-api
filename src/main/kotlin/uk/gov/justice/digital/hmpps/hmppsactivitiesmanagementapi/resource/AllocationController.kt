@@ -187,6 +187,7 @@ class AllocationController(
     allocation: AllocationUpdateRequest,
   ): Allocation = allocationsService.updateAllocation(allocationId, allocation, prisonCode, principal.name)
 
+  @Deprecated(message = "Use the /waiting-list-applications/{prisonCode}/{prisonerNumber} endpoint for submitting upto 5 applications")
   @PostMapping(value = ["/{prisonCode}/waiting-list-application"])
   @Operation(
     summary = "Add a prisoner to an activity schedule waiting list",

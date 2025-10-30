@@ -1,9 +1,17 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
+import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.mockito.ArgumentMatchers.anyList
+import org.mockito.ArgumentMatchers.anyString
+import org.mockito.Mockito.times
+import org.mockito.kotlin.any
+import org.mockito.kotlin.doNothing
+import org.mockito.kotlin.doThrow
+import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.skyscreamer.jsonassert.JSONAssert
@@ -18,8 +26,12 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.patch
 import org.springframework.test.web.servlet.post
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.RISLEY_PRISON_CODE
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.earliestReleaseDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.waitingList
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerWaitingListApplicationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListApplicationUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListSearchRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.WaitingListService
@@ -34,6 +46,20 @@ class WaitingListApplicationControllerTest : ControllerTestBase<WaitingListAppli
   private lateinit var waitingListService: WaitingListService
 
   override fun controller(): WaitingListApplicationController = WaitingListApplicationController(waitingListService)
+
+  private val prisonCode = RISLEY_PRISON_CODE
+  private val prisonerNumber = "123456"
+  private val principalName = "USERNAME"
+
+  private fun createPrisonerWaitingListRequest(size: Int): List<PrisonerWaitingListApplicationRequest> = List(size) { index ->
+    PrisonerWaitingListApplicationRequest(
+      activityScheduleId = index + 1L,
+      applicationDate = TimeSource.today(),
+      requestedBy = "Requester",
+      comments = "Testing",
+      status = WaitingListStatus.PENDING,
+    )
+  }
 
   @Test
   fun `200 response when get by ID found`() {
@@ -127,10 +153,74 @@ class WaitingListApplicationControllerTest : ControllerTestBase<WaitingListAppli
     }
   }
 
+  @Nested
+  @DisplayName("Authorization tests for adding prisoner to multiple activities")
+  inner class AuthorizationTestsForAddingPrisonerToMultipleActivities {
+    @Test
+    fun `204 response when adding prisoner to activities`() {
+      val requestList = createPrisonerWaitingListRequest(5)
+
+      doNothing().`when`(waitingListService).addPrisonerToMultipleActivities(prisonCode, prisonerNumber, requestList, principalName)
+
+      mockMvc.addToWaitingListApplication(prisonCode, prisonerNumber, requestList, includePrincipal = true).andExpect { status { isNoContent() } }
+
+      verify(waitingListService).addPrisonerToMultipleActivities(prisonCode, prisonerNumber, requestList, principalName)
+    }
+
+    @Test
+    @WithMockUser(roles = ["ACTIVITY_ADMIN"])
+    fun `400 response when adding prisoner to more than 5 activities`() {
+      val requestList = createPrisonerWaitingListRequest(6)
+
+      doThrow(IllegalArgumentException("A maximum of 5 waiting list application requests can be submitted at once"))
+        .`when`(waitingListService)
+        .addPrisonerToMultipleActivities(anyString(), anyString(), anyList(), anyString())
+
+      mockMvc.addToWaitingListApplication(prisonCode, prisonerNumber, requestList)
+        .andExpect { status { isBadRequest() } }
+
+      verify(waitingListService, times(1)).addPrisonerToMultipleActivities(any(), any(), any(), any())
+    }
+
+    @Test
+    fun `401 response when user is not authorized`() {
+      val requestList = createPrisonerWaitingListRequest(2)
+      mockMvcWithSecurity.addToWaitingListApplication(prisonCode, prisonerNumber, requestList, includePrincipal = false).andExpect { status { isUnauthorized() } }
+      verify(waitingListService, never()).addPrisonerToMultipleActivities(any(), any(), any(), any())
+    }
+
+    @Test
+    @WithMockUser(roles = ["PRISON"])
+    fun `403 response when user role is invalid`() {
+      val requestList = createPrisonerWaitingListRequest(2)
+      mockMvcWithSecurity.addToWaitingListApplication(prisonCode, prisonerNumber, requestList).andExpect { status { isForbidden() } }
+      verify(waitingListService, never()).addPrisonerToMultipleActivities(any(), any(), any(), any())
+    }
+
+    @Test
+    fun `404 response when activity schedule not found`() {
+      val requestList = createPrisonerWaitingListRequest(2)
+      doThrow(EntityNotFoundException("Activity schedule 1 not found"))
+        .`when`(waitingListService)
+        .addPrisonerToMultipleActivities(prisonCode, prisonerNumber, requestList, principalName)
+
+      mockMvc.addToWaitingListApplication(prisonCode, prisonerNumber, requestList, true).andExpect { status { isNotFound() } }
+      verify(waitingListService).addPrisonerToMultipleActivities(prisonCode, prisonerNumber, requestList, principalName)
+    }
+  }
+
   private fun MockMvc.updatedWaitingList(id: Long, request: WaitingListApplicationUpdateRequest, user: Principal) = mockMvc.patch("/waiting-list-applications/$id") {
     principal = user
     accept = MediaType.APPLICATION_JSON
     contentType = MediaType.APPLICATION_JSON
     content = mapper.writeValueAsBytes(request)
+  }
+
+  private fun MockMvc.addToWaitingListApplication(prisonCode: String, prisonerNumber: String, request: List<PrisonerWaitingListApplicationRequest>, includePrincipal: Boolean = true) = post("/waiting-list-applications/$prisonCode/$prisonerNumber") {
+    if (includePrincipal) {
+      principal = Principal { "USERNAME" }
+    }
+    content = mapper.writeValueAsString(request)
+    contentType = MediaType.APPLICATION_JSON
   }
 }
