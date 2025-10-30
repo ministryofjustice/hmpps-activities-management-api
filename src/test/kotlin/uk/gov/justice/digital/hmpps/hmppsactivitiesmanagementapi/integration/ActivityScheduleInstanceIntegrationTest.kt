@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.tuple
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
@@ -142,8 +143,8 @@ class ActivityScheduleInstanceIntegrationTest : LocalStackTestBase() {
   }
 
   @Nested
-  @DisplayName("getScheduledAttendeesByScheduledInstance")
-  inner class GetScheduledAttendeesByScheduledInstance {
+  @DisplayName("getScheduledAttendeesByScheduledInstanceId")
+  inner class GetScheduledAttendeesByScheduledInstanceId {
     @Test
     @Sql("classpath:test_data/seed-activity-id-1.sql")
     fun `get scheduled attendees by scheduled instance id`() {
@@ -212,6 +213,93 @@ class ActivityScheduleInstanceIntegrationTest : LocalStackTestBase() {
         .accept(MediaType.APPLICATION_JSON)
         .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_PRISON)))
         .header(CASELOAD_ID, "MDI")
+        .exchange()
+        .expectStatus().isForbidden
+    }
+  }
+
+  @Nested
+  @DisplayName("Get Scheduled Attendees By Scheduled Instances IDs")
+  inner class GetScheduledAttendeesByScheduledInstanceIds {
+    @Test
+    @Sql("classpath:test_data/seed-activity-id-1.sql")
+    fun `returns the correct attendees`() {
+      val attendees = webTestClient.getScheduledAttendeesByInstanceIds(listOf(1, 4))
+      assertThat(attendees).extracting("scheduledInstanceId", "prisonerNumber").containsExactlyInAnyOrder(
+        tuple(1L, "A11111A"),
+        tuple(1L, "A22222A"),
+        tuple(4L, "A11111A"),
+        tuple(4L, "A22222A"),
+      )
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-with-active-exclusions.sql")
+    fun `does not contain exclusions today`() {
+      val attendees = webTestClient.getScheduledAttendeesByInstanceIds(listOf(1))
+      assertThat(attendees).extracting("scheduledInstanceId", "prisonerNumber").containsOnly(
+        tuple(1L, "G4793VF"),
+        tuple(1L, "H4793VF"),
+      )
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-with-historical-exclusions.sql")
+    fun `ignores historical exclusions today`() {
+      val attendees = webTestClient.getScheduledAttendeesByInstanceIds(listOf(1))
+      assertThat(attendees).extracting("scheduledInstanceId", "prisonerNumber").containsOnly(
+        tuple(1L, "G4793VF"),
+        tuple(1L, "A5193DY"),
+      )
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-with-historical-exclusions.sql")
+    fun `respects historical exclusions`() {
+      val attendees = webTestClient.getScheduledAttendeesByInstanceId(3)!!
+      assertThat(attendees).extracting("scheduledInstanceId", "prisonerNumber").containsOnly(
+        tuple(3L, "G4793VF"),
+      )
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-with-future-exclusions.sql")
+    fun `ignores future exclusions today`() {
+      val attendees = webTestClient.getScheduledAttendeesByInstanceId(1)!!
+      assertThat(attendees).extracting("scheduledInstanceId", "prisonerNumber").containsOnly(
+        tuple(1L, "G4793VF"),
+        tuple(1L, "A5193DY"),
+      )
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-with-future-exclusions.sql")
+    fun `respects future exclusions`() {
+      val attendees = webTestClient.getScheduledAttendeesByInstanceId(3)!!
+      assertThat(attendees).extracting("scheduledInstanceId", "prisonerNumber").containsOnly(
+        tuple(3L, "G4793VF"),
+      )
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-with-session-in-the-past.sql")
+    fun `get scheduled attendees by scheduled instance id - with sessions in the past should appear`() {
+      val attendees = webTestClient.getScheduledAttendeesByInstanceId(43)!!
+      assertThat(attendees).extracting("scheduledInstanceId", "prisonerNumber").containsOnly(
+        tuple(43L, "G6268GL"),
+        tuple(43L, "G4206GA"),
+      )
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-id-1.sql")
+    fun `returns 403 when fetching a schedule by its id for the wrong caseload`() {
+      webTestClient.post()
+        .uri("/scheduled-instances/scheduled-attendees")
+        .accept(MediaType.APPLICATION_JSON)
+        .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_PRISON)))
+        .header(CASELOAD_ID, "MDI")
+        .bodyValue(listOf(1))
         .exchange()
         .expectStatus().isForbidden
     }
@@ -929,6 +1017,18 @@ class ActivityScheduleInstanceIntegrationTest : LocalStackTestBase() {
     .accept(MediaType.APPLICATION_JSON)
     .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
     .header(CASELOAD_ID, "PVI")
+    .exchange()
+    .expectStatus().isOk
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBodyList(ScheduledAttendee::class.java)
+    .returnResult().responseBody
+
+  private fun WebTestClient.getScheduledAttendeesByInstanceIds(ids: List<Long>) = post()
+    .uri("/scheduled-instances/scheduled-attendees")
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .header(CASELOAD_ID, "PVI")
+    .bodyValue(ids)
     .exchange()
     .expectStatus().isOk
     .expectHeader().contentType(MediaType.APPLICATION_JSON)

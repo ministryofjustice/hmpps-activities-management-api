@@ -9,7 +9,6 @@ import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.verify
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
-import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.typeReference
@@ -59,18 +58,6 @@ import java.time.temporal.ChronoUnit
 import java.util.*
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AllAttendance as ModelAllAttendance
 
-@TestPropertySource(
-  properties = [
-    "feature.event.activities.prisoner.allocated=true",
-    "feature.event.activities.activity-schedule.amended=true",
-    "feature.audit.service.hmpps.enabled=true",
-    "feature.audit.service.local.enabled=true",
-    "feature.event.activities.prisoner.allocation-amended=true",
-    "feature.event.activities.prisoner.attendance-created=true",
-    "feature.event.activities.prisoner.attendance-deleted=true",
-    "feature.events.sns.enabled=true",
-  ],
-)
 class ActivityScheduleIntegrationTest : LocalStackTestBase() {
 
   private val hmppsAuditEventCaptor = argumentCaptor<HmppsAuditEvent>()

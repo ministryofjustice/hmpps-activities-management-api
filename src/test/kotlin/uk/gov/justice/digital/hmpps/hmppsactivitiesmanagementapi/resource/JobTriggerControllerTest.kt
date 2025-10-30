@@ -19,7 +19,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ActivityMet
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.AppointmentMetricsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CreateScheduledInstancesJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.FixLocationsJob
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.FixZeroPayJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ManageAllocationsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ManageAttendanceRecordsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.PurposefulActivityReportsJob
@@ -52,9 +51,6 @@ class JobTriggerControllerTest : ControllerTestBase<JobTriggerController>() {
   private lateinit var purposefulActivityReportsJob: PurposefulActivityReportsJob
 
   @MockitoBean
-  private lateinit var fixZeroPayJob: FixZeroPayJob
-
-  @MockitoBean
   private lateinit var fixLocationsJob: FixLocationsJob
 
   @MockitoBean
@@ -72,7 +68,6 @@ class JobTriggerControllerTest : ControllerTestBase<JobTriggerController>() {
     manageAllocationsJob,
     activityMetricsJob,
     appointmentsMetricsJob,
-    fixZeroPayJob,
     clock,
     purposefulActivityReportsJob,
     fixLocationsJob,
