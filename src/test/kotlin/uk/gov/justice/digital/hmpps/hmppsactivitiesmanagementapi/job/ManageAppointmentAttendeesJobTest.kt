@@ -4,43 +4,64 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.MockitoAnnotations
+import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.AppointmentAttendeeService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.Feature
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.FeatureSwitches
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Job
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType.MANAGE_APPOINTMENT_ATTENDEES
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageAppointmentAttendeesService
 
 class ManageAppointmentAttendeesJobTest : JobsTestBase() {
-  private val rolloutPrisonRepository: RolloutPrisonService = mock()
-  private val service: AppointmentAttendeeService = mock()
+  private val manageAppointmentAttendeesService: ManageAppointmentAttendeesService = mock()
+  private val featureSwitches: FeatureSwitches = mock()
   private val jobDefinitionCaptor = argumentCaptor<JobDefinition>()
-  private val job = ManageAppointmentAttendeesJob(safeJobRunner, rolloutPrisonRepository, service)
+  private val jobCaptor = argumentCaptor<Job>()
 
   @BeforeEach
   fun setUp() {
     MockitoAnnotations.openMocks(this)
-    mockJobs(JobType.MANAGE_APPOINTMENT_ATTENDEES)
+    mockJobs(MANAGE_APPOINTMENT_ATTENDEES)
   }
 
   @Test
-  fun `job type is manage appointment attendees`() {
-    job.execute(1)
+  fun `manage attendees job is triggered`() {
+    whenever(featureSwitches.isEnabled(any<Feature>(), any())).thenReturn(false)
+
+    val job = ManageAppointmentAttendeesJob(manageAppointmentAttendeesService, safeJobRunner, featureSwitches)
+
+    mockJobs(MANAGE_APPOINTMENT_ATTENDEES)
+
+    job.execute(12)
 
     verify(safeJobRunner).runJob(jobDefinitionCaptor.capture())
 
-    assertThat(jobDefinitionCaptor.firstValue.jobType).isEqualTo(JobType.MANAGE_APPOINTMENT_ATTENDEES)
+    verifyNoMoreInteractions(safeJobRunner)
+
+    verify(manageAppointmentAttendeesService).manageAttendees(12)
+
+    assertThat(jobDefinitionCaptor.firstValue.jobType).isEqualTo(MANAGE_APPOINTMENT_ATTENDEES)
   }
 
   @Test
-  fun `job calls service to manage appointment attendees`() {
-    val rolloutPrison = rolloutPrison()
-    whenever(rolloutPrisonRepository.getRolloutPrisons()).thenReturn(listOf(rolloutPrison))
+  fun `distributed manage attendees job is triggered`() {
+    whenever(featureSwitches.isEnabled(any<Feature>(), any())).thenReturn(true)
 
-    job.execute(1)
+    val job = ManageAppointmentAttendeesJob(manageAppointmentAttendeesService, safeJobRunner, featureSwitches)
 
-    verify(service).manageAppointmentAttendees(rolloutPrison.prisonCode, 1)
+    mockJobs(MANAGE_APPOINTMENT_ATTENDEES)
+
+    job.execute(12)
+
+    verify(safeJobRunner).runDistributedJob(eq(MANAGE_APPOINTMENT_ATTENDEES), any())
+
+    verify(manageAppointmentAttendeesService).sendEvents(jobCaptor.capture(), eq(12))
+
+    assertThat(jobCaptor.firstValue.jobType).isEqualTo(MANAGE_APPOINTMENT_ATTENDEES)
   }
 }

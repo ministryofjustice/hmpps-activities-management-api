@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 import org.junit.jupiter.api.Test
 import org.springframework.http.MediaType
 import org.springframework.jdbc.core.queryForObject
+import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
@@ -12,6 +13,16 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 
 @Deprecated("Remove when scheduled instances job always uses SQS")
+@TestPropertySource(
+  properties = [
+    "feature.jobs.sqs.schedules.enabled=false",
+    "feature.jobs.sqs.activate.allocations.enabled=false",
+    "feature.jobs.sqs.deallocate.ending.enabled=false",
+    "feature.jobs.sqs.deallocate.expiring.enabled=false",
+    "feature.jobs.sqs.manage.attendances.enabled=false",
+    "feature.jobs.sqs.manage.appointment.attendees.enabled=false",
+  ],
+)
 class CreateScheduledInstancesJobIntegrationTest : LocalStackTestBase() {
 
   private val today: LocalDate = TimeSource.today()

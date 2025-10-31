@@ -12,13 +12,17 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSou
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.ACTIVITY_SCHEDULE_UPDATED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.JobIntegrationTestHelper
 import java.time.DayOfWeek
 import java.time.LocalDate
 
-class CreateScheduledInstancesJobSqsIntegrationTest : AbstractJobIntegrationTest() {
+class CreateScheduledInstancesJobSqsIntegrationTest : LocalStackTestBase() {
 
   @Autowired
   private lateinit var scheduleInstancesRepository: ScheduledInstanceRepository
+
+  @Autowired
+  private lateinit var jobHelper: JobIntegrationTestHelper
 
   private val today: LocalDate = TimeSource.today()
 
@@ -45,7 +49,7 @@ class CreateScheduledInstancesJobSqsIntegrationTest : AbstractJobIntegrationTest
       ExpectedOutboundEvent(ACTIVITY_SCHEDULE_UPDATED, 2),
     )
 
-    verifyJobComplete(JobType.SCHEDULES)
+    jobHelper.verifyJobComplete(JobType.SCHEDULES)
   }
 
   @Sql("classpath:test_data/seed-activity-with-old-instances.sql")

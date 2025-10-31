@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.jayway.jsonpath.JsonPath
-import org.awaitility.Awaitility
 import org.awaitility.kotlin.await
 import org.awaitility.kotlin.matches
 import org.awaitility.kotlin.untilCallTo
@@ -13,8 +12,6 @@ import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
 import org.springframework.test.context.TestPropertySource
-import software.amazon.awssdk.services.sqs.SqsAsyncClient
-import software.amazon.awssdk.services.sqs.model.PurgeQueueRequest
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.config.LocalStackContainer
@@ -36,12 +33,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.PRISONER_ATTENDANCE_DELETED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.PRISONER_ATTENDANCE_EXPIRED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.SQSMessage
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.LocalStackTestHelper.Companion.clearQueues
 import uk.gov.justice.hmpps.sqs.HmppsQueue
 import uk.gov.justice.hmpps.sqs.HmppsQueueService
 import uk.gov.justice.hmpps.sqs.MissingQueueException
-import uk.gov.justice.hmpps.sqs.countAllMessagesOnQueue
 import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
-import java.util.concurrent.TimeUnit
 
 @ActiveProfiles("test-localstack", inheritProfiles = false)
 @TestPropertySource(
@@ -76,6 +72,7 @@ import java.util.concurrent.TimeUnit
     "feature.jobs.sqs.deallocate.ending.enabled=true",
     "feature.jobs.sqs.deallocate.expiring.enabled=true",
     "feature.jobs.sqs.manage.attendances.enabled=true",
+    "feature.jobs.sqs.manage.appointment.attendees.enabled=true",
     "feature.offender.merge.enabled=true",
     "jobs.deallocate-allocations-ending.days-start=22",
   ],
@@ -107,22 +104,6 @@ abstract class LocalStackTestBase : ActivitiesIntegrationTestBase() {
   fun `clear queues`() {
     clearQueues(activitiesClient, activitiesQueue)
     clearQueues(outboundTestSqsClient, outboundTestQueue)
-  }
-
-  protected fun clearQueues(sqsClient: SqsAsyncClient, queue: HmppsQueue) {
-    Awaitility.setDefaultPollDelay(1, TimeUnit.MILLISECONDS)
-    Awaitility.setDefaultPollInterval(10, TimeUnit.MILLISECONDS)
-
-    sqsClient.purgeQueue(PurgeQueueRequest.builder().queueUrl(queue.queueUrl).build()).get()
-    sqsClient.purgeQueue(PurgeQueueRequest.builder().queueUrl(queue.dlqUrl).build()).get()
-
-    await untilCallTo {
-      sqsClient.countAllMessagesOnQueue(queue.queueUrl).get() + sqsClient.countAllMessagesOnQueue(queue.dlqUrl!!).get()
-    } matches { it == 0 }
-
-    Awaitility.setDefaultPollInterval(50, TimeUnit.MILLISECONDS)
-
-    sqsClient.purgeQueue(PurgeQueueRequest.builder().queueUrl(queue.queueUrl).build()).get()
   }
 
   protected fun sendInboundEvent(event: InboundEvent) {

@@ -50,13 +50,15 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAu
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.PRISONER_ALLOCATION_AMENDED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.PRISONER_ATTENDANCE_AMENDED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.JobIntegrationTestHelper
 import java.time.Clock
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZoneOffset
 
-class ManageAllocationsJobSqsIntegrationTest : AbstractJobIntegrationTest() {
+class ManageAllocationsJobSqsIntegrationTest : LocalStackTestBase() {
   @MockitoSpyBean
   lateinit var activityScheduleRepository: ActivityScheduleRepository
 
@@ -71,6 +73,12 @@ class ManageAllocationsJobSqsIntegrationTest : AbstractJobIntegrationTest() {
 
   @Autowired
   private lateinit var jobRepository: JobRepository
+
+  @Autowired
+  private lateinit var jobHelper: JobIntegrationTestHelper
+
+  @Autowired
+  private lateinit var rolloutPrisonService: RolloutPrisonService
 
   private val hmppsAuditEventCaptor = argumentCaptor<HmppsAuditEvent>()
 
@@ -113,7 +121,7 @@ class ManageAllocationsJobSqsIntegrationTest : AbstractJobIntegrationTest() {
 
     webTestClient.checkAdvanceAttendanceDoesNotExist(1)
 
-    verifyJobComplete(JobType.DEALLOCATE_ENDING)
+    jobHelper.verifyJobComplete(JobType.DEALLOCATE_ENDING)
   }
 
   @Sql("classpath:test_data/seed-activity-id-11.sql")
@@ -134,9 +142,9 @@ class ManageAllocationsJobSqsIntegrationTest : AbstractJobIntegrationTest() {
     webTestClient.manageAllocations(withDeallocateEnding = true)
 
     await untilAsserted {
-      val numPrisons = getNumPrisons()
-      assertThat(countMessagesInDlq()).isEqualTo(1)
-      verifyJobIncomplete(JobType.DEALLOCATE_ENDING, numPrisons, numPrisons - 1)
+      val numPrisons = rolloutPrisonService.getRolloutPrisons().count()
+      assertThat(jobHelper.countMessagesInDlq()).isEqualTo(1)
+      jobHelper.verifyJobIncomplete(JobType.DEALLOCATE_ENDING, numPrisons, numPrisons - 1)
     }
 
     validateNoMessagesSent()
@@ -173,7 +181,7 @@ class ManageAllocationsJobSqsIntegrationTest : AbstractJobIntegrationTest() {
       prisoner("A33333A") isStatus ACTIVE
     }
 
-    verifyJobComplete(JobType.DEALLOCATE_ENDING)
+    jobHelper.verifyJobComplete(JobType.DEALLOCATE_ENDING)
   }
 
   @Sql("classpath:test_data/seed-activity-id-28.sql")
@@ -198,7 +206,7 @@ class ManageAllocationsJobSqsIntegrationTest : AbstractJobIntegrationTest() {
       prisoner("A33333A") isStatus ACTIVE
     }
 
-    verifyJobComplete(JobType.DEALLOCATE_ENDING)
+    jobHelper.verifyJobComplete(JobType.DEALLOCATE_ENDING)
   }
 
   @Sql("classpath:test_data/seed-allocations-due-to-expire.sql")

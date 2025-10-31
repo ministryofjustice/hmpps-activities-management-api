@@ -79,7 +79,7 @@ class ManageScheduledInstancesServiceTest {
 
   private val transactionHandler = CreateInstanceTransactionHandler(activityScheduleRepository, activityServiceTest, Clock.systemDefaultZone())
 
-  private val job = ManageScheduledInstancesService(
+  private val service = ManageScheduledInstancesService(
     activityRepository,
     rolloutPrisonRepository,
     transactionHandler, outboundEventsService,
@@ -119,7 +119,7 @@ class ManageScheduledInstancesServiceTest {
     whenever(activityScheduleRepository.getActivityScheduleByIdWithFilters(6L, today, null))
       .thenReturn(leedsActivities().last().schedules().first())
 
-    job.create()
+    service.create()
 
     // Creates 6 scheduled instances for 3 activities in Moorland and 3 activities in Leeds
     verify(activityScheduleRepository, times(6)).getActivityScheduleByIdWithFilters(anyLong(), any(), eq(null))
@@ -144,7 +144,7 @@ class ManageScheduledInstancesServiceTest {
     whenever(activityScheduleRepository.getActivityScheduleByIdWithFilters(1L, today))
       .thenReturn(activityWithMultipleSlots().first().schedules().first())
 
-    job.create()
+    service.create()
 
     verify(activityScheduleRepository).getActivityScheduleByIdWithFilters(1L, today)
     verify(activityScheduleRepository).saveAndFlush(scheduleSaveCaptor.capture())
@@ -171,7 +171,7 @@ class ManageScheduledInstancesServiceTest {
     whenever(activityScheduleRepository.getActivityScheduleByIdWithFilters(1L, today))
       .thenReturn(activityWithExistingInstance().first().schedules().first())
 
-    job.create()
+    service.create()
 
     verify(activityScheduleRepository).getActivityScheduleByIdWithFilters(1L, today)
     verify(activityScheduleRepository, never()).saveAndFlush(any())
@@ -189,7 +189,7 @@ class ManageScheduledInstancesServiceTest {
     whenever(activityScheduleRepository.getActivityScheduleByIdWithFilters(1L, today))
       .thenReturn(activityWithSuspension().first().schedules().first())
 
-    job.create()
+    service.create()
 
     verify(activityScheduleRepository).getActivityScheduleByIdWithFilters(1L, today)
     verify(activityScheduleRepository).saveAndFlush(scheduleSaveCaptor.capture())
@@ -211,7 +211,7 @@ class ManageScheduledInstancesServiceTest {
     whenever(activityScheduleRepository.getActivityScheduleByIdWithFilters(1L, today))
       .thenReturn(activityDoesNotRunOnABankHoliday().first().schedules().first())
 
-    job.create()
+    service.create()
 
     verify(activityScheduleRepository).getActivityScheduleByIdWithFilters(1L, today)
     verify(activityRepository, never()).saveAndFlush(any())
@@ -228,7 +228,7 @@ class ManageScheduledInstancesServiceTest {
     whenever(activityScheduleRepository.getActivityScheduleByIdWithFilters(1L, today))
       .thenReturn(activityRunsOnABankHoliday().first().schedules().first())
 
-    job.create()
+    service.create()
 
     verify(activityScheduleRepository).getActivityScheduleByIdWithFilters(1L, today)
     verify(activityScheduleRepository).saveAndFlush(scheduleSaveCaptor.capture())
@@ -266,7 +266,7 @@ class ManageScheduledInstancesServiceTest {
 
   @Test
   fun `should send events to queue for each prison`() {
-    job.sendCreateSchedulesEvents(Job(123, JobType.SCHEDULES))
+    service.sendCreateSchedulesEvents(Job(123, JobType.SCHEDULES))
 
     verify(jobService).initialiseCounts(123, rolledOutPrisons.count())
 
@@ -288,7 +288,7 @@ class ManageScheduledInstancesServiceTest {
     whenever(activityScheduleRepository.getActivityScheduleByIdWithFilters(3L, today, null))
       .thenReturn(moorlandActivities().last().schedules().first())
 
-    job.handleEvent(123, "MDI")
+    service.handleEvent(123, "MDI")
 
     verify(jobService).incrementCount(123)
 
@@ -316,7 +316,7 @@ class ManageScheduledInstancesServiceTest {
     whenever(activityScheduleRepository.getActivityScheduleByIdWithFilters(1L, today))
       .thenReturn(activityWithMultipleSlots().first().schedules().first())
 
-    job.handleEvent(123, "MDI")
+    service.handleEvent(123, "MDI")
 
     verify(jobService).incrementCount(123)
     verify(activityScheduleRepository).getActivityScheduleByIdWithFilters(1L, today)
@@ -344,7 +344,7 @@ class ManageScheduledInstancesServiceTest {
     whenever(activityScheduleRepository.getActivityScheduleByIdWithFilters(1L, today))
       .thenReturn(activityWithExistingInstance().first().schedules().first())
 
-    job.handleEvent(123, "MDI")
+    service.handleEvent(123, "MDI")
 
     verify(jobService).incrementCount(123)
     verify(activityScheduleRepository).getActivityScheduleByIdWithFilters(1L, today)
@@ -363,7 +363,7 @@ class ManageScheduledInstancesServiceTest {
     whenever(activityScheduleRepository.getActivityScheduleByIdWithFilters(1L, today))
       .thenReturn(activityWithSuspension().first().schedules().first())
 
-    job.handleEvent(123, "MDI")
+    service.handleEvent(123, "MDI")
 
     verify(jobService).incrementCount(123)
     verify(activityScheduleRepository).getActivityScheduleByIdWithFilters(1L, today)
@@ -386,7 +386,7 @@ class ManageScheduledInstancesServiceTest {
     whenever(activityScheduleRepository.getActivityScheduleByIdWithFilters(1L, today))
       .thenReturn(activityDoesNotRunOnABankHoliday().first().schedules().first())
 
-    job.handleEvent(123, "MDI")
+    service.handleEvent(123, "MDI")
 
     verify(jobService).incrementCount(123)
     verify(activityScheduleRepository).getActivityScheduleByIdWithFilters(1L, today)
@@ -404,7 +404,7 @@ class ManageScheduledInstancesServiceTest {
     whenever(activityScheduleRepository.getActivityScheduleByIdWithFilters(1L, today))
       .thenReturn(activityRunsOnABankHoliday().first().schedules().first())
 
-    job.handleEvent(123, "MDI")
+    service.handleEvent(123, "MDI")
 
     verify(jobService).incrementCount(123)
     verify(activityScheduleRepository).getActivityScheduleByIdWithFilters(1L, today)

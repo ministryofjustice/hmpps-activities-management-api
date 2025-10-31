@@ -13,11 +13,13 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType.DEALLOCATE_ENDING
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType.DEALLOCATE_EXPIRING
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType.END_SUSPENSIONS
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType.MANAGE_APPOINTMENT_ATTENDEES
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType.SCHEDULES
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType.START_SUSPENSIONS
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ExpireAttendancesService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageAllocationsDueToEndService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageAllocationsDueToExpireService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageAppointmentAttendeesService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageNewAllocationsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageNewAttendancesService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageScheduledInstancesService
@@ -36,6 +38,7 @@ class JobsSqsListener(
   private val unsuspendAllocationsService: UnsuspendAllocationsService,
   private val manageNewAttendancesService: ManageNewAttendancesService,
   private val expireAttendancesService: ExpireAttendancesService,
+  private val manageAppointmentAttendeesService: ManageAppointmentAttendeesService,
   private val mapper: ObjectMapper,
 ) {
   companion object {
@@ -83,6 +86,12 @@ class JobsSqsListener(
         expireAttendancesService.handleEvent(sqsMessage.jobId, toPrisonCode(sqsMessage))
       }
 
+      MANAGE_APPOINTMENT_ATTENDEES -> {
+        with(toManageAppointmentAttendeesJobEvent(sqsMessage)) {
+          manageAppointmentAttendeesService.handleEvent(sqsMessage.jobId, prisonCode, daysAfterNow)
+        }
+      }
+
       else -> {
         log.warn("Unsupported job event: ${sqsMessage.eventType}")
         throw UnsupportedOperationException("Unsupported job event: ${sqsMessage.eventType}")
@@ -95,6 +104,8 @@ class JobsSqsListener(
   private fun toPrisonCode(sqsMessage: SQSMessage) = mapper.convertValue(sqsMessage.messageAttributes, PrisonCodeJobEvent::class.java).prisonCode
 
   private fun toNewActivityAttendance(sqsMessage: SQSMessage) = mapper.convertValue(sqsMessage.messageAttributes, NewActivityAttendanceJobEvent::class.java)
+
+  private fun toManageAppointmentAttendeesJobEvent(sqsMessage: SQSMessage) = mapper.convertValue(sqsMessage.messageAttributes, ManageAppointmentAttendeesJobEvent::class.java)
 }
 
 interface JobEvent
@@ -105,4 +116,9 @@ data class NewActivityAttendanceJobEvent(
   val prisonCode: String,
   val date: LocalDate,
   val expireUnmarkedAttendances: Boolean,
+) : JobEvent
+
+data class ManageAppointmentAttendeesJobEvent(
+  val prisonCode: String,
+  val daysAfterNow: Long,
 ) : JobEvent

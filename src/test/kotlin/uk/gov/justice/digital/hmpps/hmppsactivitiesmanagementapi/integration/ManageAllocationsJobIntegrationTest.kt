@@ -8,6 +8,7 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
+import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
@@ -51,6 +52,16 @@ import java.time.ZoneId
 import java.time.ZoneOffset
 
 @Deprecated("Remove when allocations job always uses SQS")
+@TestPropertySource(
+  properties = [
+    "feature.jobs.sqs.schedules.enabled=false",
+    "feature.jobs.sqs.activate.allocations.enabled=false",
+    "feature.jobs.sqs.deallocate.ending.enabled=false",
+    "feature.jobs.sqs.deallocate.expiring.enabled=false",
+    "feature.jobs.sqs.manage.attendances.enabled=false",
+    "feature.jobs.sqs.manage.appointment.attendees.enabled=false",
+  ],
+)
 class ManageAllocationsJobIntegrationTest : LocalStackTestBase() {
 
   @MockitoBean
