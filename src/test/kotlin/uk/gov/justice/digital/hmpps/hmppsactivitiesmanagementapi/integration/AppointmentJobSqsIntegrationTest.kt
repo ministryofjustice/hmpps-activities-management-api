@@ -1,12 +1,14 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
+import org.awaitility.kotlin.await
+import org.awaitility.kotlin.untilAsserted
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
-import org.springframework.test.context.TestPropertySource
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.model.NonResidentialUsageDto.UsageType
@@ -14,6 +16,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.MovementType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.daysAgo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.RISLEY_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.containsExactlyInAnyOrder
@@ -25,21 +28,14 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.App
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.APPOINTMENT_INSTANCE_DELETED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.JobIntegrationTestHelper
 import java.time.LocalDate
 import java.util.*
 
-@Deprecated("Remove when manage appointment attendees job always uses SQS")
-@TestPropertySource(
-  properties = [
-    "feature.jobs.sqs.schedules.enabled=false",
-    "feature.jobs.sqs.activate.allocations.enabled=false",
-    "feature.jobs.sqs.deallocate.ending.enabled=false",
-    "feature.jobs.sqs.deallocate.expiring.enabled=false",
-    "feature.jobs.sqs.manage.attendances.enabled=false",
-    "feature.jobs.sqs.manage.appointment.attendees.enabled=false",
-  ],
-)
-class AppointmentJobIntegrationTest : AppointmentsIntegrationTestBase() {
+class AppointmentJobSqsIntegrationTest : AppointmentsIntegrationTestBase() {
+
+  @Autowired
+  private lateinit var jobHelper: JobIntegrationTestHelper
 
   @MockitoBean
   private lateinit var auditService: AuditService
@@ -110,6 +106,8 @@ class AppointmentJobIntegrationTest : AppointmentsIntegrationTestBase() {
       flatMap { it.attendees } hasSize 3
     }
 
+    jobHelper.verifyJobComplete(JobType.MANAGE_APPOINTMENT_ATTENDEES)
+
     validateNoMessagesSent()
     verifyNoInteractions(auditService)
   }
@@ -119,28 +117,32 @@ class AppointmentJobIntegrationTest : AppointmentsIntegrationTestBase() {
   fun `remove released prisoner from future appointments`() {
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(listOf(prisonNumber, "B2345CD"), listOf(prisonerReleasedToday, activeInPrisoner))
 
-    waitForJobs({ webTestClient.manageAppointmentAttendees(1) })
+    webTestClient.manageAppointmentAttendees(1)
 
-    with(webTestClient.getAppointmentSeriesById(1)!!.appointments.filterNot { it.isDeleted }) {
-      flatMap { it.attendees } hasSize 7
-      single { it.id == 1L }.attendees.map { it.prisonerNumber } containsExactlyInAnyOrder listOf(
-        prisonNumber,
-        "B2345CD",
+    await untilAsserted {
+      with(webTestClient.getAppointmentSeriesById(1)!!.appointments.filterNot { it.isDeleted }) {
+        flatMap { it.attendees } hasSize 7
+        single { it.id == 1L }.attendees.map { it.prisonerNumber } containsExactlyInAnyOrder listOf(
+          prisonNumber,
+          "B2345CD",
+        )
+        filterNot { it.id == 1L }.flatMap { it.attendees }.map { it.prisonerNumber }.toSet() isEqualTo setOf("B2345CD")
+      }
+
+      with(webTestClient.getAppointmentSetDetailsById(1)!!.appointments.filterNot { it.isDeleted }) {
+        flatMap { it.attendees } hasSize 2
+        flatMap { it.attendees }.map { it.prisoner.prisonerNumber }.toSet() isEqualTo setOf("B2345CD", "C3456DE")
+      }
+
+      validateOutboundEvents(
+        ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 20),
+        ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 6),
+        ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 10),
+        ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 4),
       )
-      filterNot { it.id == 1L }.flatMap { it.attendees }.map { it.prisonerNumber }.toSet() isEqualTo setOf("B2345CD")
     }
 
-    with(webTestClient.getAppointmentSetDetailsById(1)!!.appointments.filterNot { it.isDeleted }) {
-      flatMap { it.attendees } hasSize 2
-      flatMap { it.attendees }.map { it.prisoner.prisonerNumber }.toSet() isEqualTo setOf("B2345CD", "C3456DE")
-    }
-
-    validateOutboundEvents(
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 20),
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 6),
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 10),
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 4),
-    )
+    jobHelper.verifyJobComplete(JobType.MANAGE_APPOINTMENT_ATTENDEES)
 
     verify(auditService, times(4)).logEvent(any<AppointmentCancelledOnTransferEvent>())
   }
@@ -151,15 +153,19 @@ class AppointmentJobIntegrationTest : AppointmentsIntegrationTestBase() {
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(listOf(prisonNumber, "B2345CD"), listOf(activeInDifferentPrison, activeInPrisoner))
     prisonApiMockServer.stubPrisonerMovements(listOf(prisonNumber), listOf(nonExpiredMovement))
 
-    waitForJobs({ webTestClient.manageAppointmentAttendees(1) })
+    webTestClient.manageAppointmentAttendees(1)
 
-    with(webTestClient.getAppointmentSeriesById(1)!!.appointments.filterNot { it.isDeleted }) {
-      flatMap { it.attendees } hasSize 10
+    await untilAsserted {
+      with(webTestClient.getAppointmentSeriesById(1)!!.appointments.filterNot { it.isDeleted }) {
+        flatMap { it.attendees } hasSize 10
+      }
+
+      with(webTestClient.getAppointmentSetDetailsById(1)!!.appointments.filterNot { it.isDeleted }) {
+        flatMap { it.attendees } hasSize 3
+      }
     }
 
-    with(webTestClient.getAppointmentSetDetailsById(1)!!.appointments.filterNot { it.isDeleted }) {
-      flatMap { it.attendees } hasSize 3
-    }
+    jobHelper.verifyJobComplete(JobType.MANAGE_APPOINTMENT_ATTENDEES)
 
     validateNoMessagesSent()
     verifyNoInteractions(auditService)
@@ -171,17 +177,19 @@ class AppointmentJobIntegrationTest : AppointmentsIntegrationTestBase() {
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(listOf(prisonNumber, "B2345CD"), listOf(activeInDifferentPrison, activeInPrisoner))
     prisonApiMockServer.stubPrisonerMovements(listOf(prisonNumber), listOf(expiredMovement))
 
-    waitForJobs({ webTestClient.manageAppointmentAttendees(1) })
+    webTestClient.manageAppointmentAttendees(1)
 
-    with(webTestClient.getAppointmentSeriesById(1)!!.appointments.filterNot { it.isDeleted }) {
-      flatMap { it.attendees } hasSize 7
-      single { it.id == 1L }.attendees.map { it.prisonerNumber }.toSet() isEqualTo setOf(prisonNumber, "B2345CD")
-      filterNot { it.id == 1L }.flatMap { it.attendees }.map { it.prisonerNumber }.toSet() isEqualTo setOf("B2345CD")
-    }
+    await untilAsserted {
+      with(webTestClient.getAppointmentSeriesById(1)!!.appointments.filterNot { it.isDeleted }) {
+        flatMap { it.attendees } hasSize 7
+        single { it.id == 1L }.attendees.map { it.prisonerNumber }.toSet() isEqualTo setOf(prisonNumber, "B2345CD")
+        filterNot { it.id == 1L }.flatMap { it.attendees }.map { it.prisonerNumber }.toSet() isEqualTo setOf("B2345CD")
+      }
 
-    with(webTestClient.getAppointmentSetDetailsById(1)!!.appointments.filterNot { it.isDeleted }) {
-      flatMap { it.attendees } hasSize 2
-      flatMap { it.attendees }.map { it.prisoner.prisonerNumber }.toSet() isEqualTo setOf("B2345CD", "C3456DE")
+      with(webTestClient.getAppointmentSetDetailsById(1)!!.appointments.filterNot { it.isDeleted }) {
+        flatMap { it.attendees } hasSize 2
+        flatMap { it.attendees }.map { it.prisoner.prisonerNumber }.toSet() isEqualTo setOf("B2345CD", "C3456DE")
+      }
     }
 
     validateOutboundEvents(
@@ -190,6 +198,8 @@ class AppointmentJobIntegrationTest : AppointmentsIntegrationTestBase() {
       ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 6),
       ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 20),
     )
+
+    jobHelper.verifyJobComplete(JobType.MANAGE_APPOINTMENT_ATTENDEES)
 
     verify(auditService, times(4)).logEvent(any<AppointmentCancelledOnTransferEvent>())
   }

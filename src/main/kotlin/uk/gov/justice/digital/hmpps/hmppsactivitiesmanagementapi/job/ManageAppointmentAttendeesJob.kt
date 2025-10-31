@@ -2,25 +2,28 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job
 
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.Feature
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.FeatureSwitches
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.AppointmentAttendeeService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageAppointmentAttendeesService
 
 @Component
 class ManageAppointmentAttendeesJob(
+  private val manageAppointmentAttendeesService: ManageAppointmentAttendeesService,
   private val jobRunner: SafeJobRunner,
-  private val rolloutPrisonService: RolloutPrisonService,
-  private val service: AppointmentAttendeeService,
+  featureSwitches: FeatureSwitches,
 ) {
+
+  private val sqsEnabled = featureSwitches.isEnabled(Feature.JOBS_SQS_MANAGE_APPOINTMENT_ATTENDEES_ENABLED)
+
   @Async("asyncExecutor")
   fun execute(daysAfterNow: Long) {
-    jobRunner.runJob(
-      JobDefinition(JobType.MANAGE_APPOINTMENT_ATTENDEES) {
-        // Do not check if prison has been enabled for appointments as it could still have migrated appointments requiring managing
-        rolloutPrisonService.getRolloutPrisons().forEach {
-          service.manageAppointmentAttendees(it.prisonCode, daysAfterNow)
-        }
-      },
-    )
+    if (sqsEnabled) {
+      jobRunner.runDistributedJob(JobType.MANAGE_APPOINTMENT_ATTENDEES) { job ->
+        manageAppointmentAttendeesService.sendEvents(job, daysAfterNow)
+      }
+    } else {
+      jobRunner.runJob(JobDefinition(JobType.MANAGE_APPOINTMENT_ATTENDEES) { manageAppointmentAttendeesService.manageAttendees(daysAfterNow) })
+    }
   }
 }
