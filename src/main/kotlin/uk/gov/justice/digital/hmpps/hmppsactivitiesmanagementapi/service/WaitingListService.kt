@@ -21,6 +21,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.WaitingListApplication
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerWaitingListApplicationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListApplicationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListApplicationUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListSearchRequest
@@ -95,6 +96,7 @@ class WaitingListService(
     }
   }
 
+  @Deprecated("Use the addPrisonerByPrisonNumber method for submitting upto 5 applications for a prisoner at once")
   @Transactional
   fun addPrisoner(prisonCode: String, request: WaitingListApplicationRequest, createdBy: String) {
     checkCaseloadAccess(prisonCode)
@@ -126,6 +128,56 @@ class WaitingListService(
       .also { logPrisonerAddedMetric(request.prisonerNumber) }
   }
 
+  @Transactional
+  fun addPrisonerToMultipleActivities(prisonCode: String, prisonerNumber: String, requests: List<PrisonerWaitingListApplicationRequest>, createdBy: String) {
+    checkCaseloadAccess(prisonCode)
+
+    require(requests.isNotEmpty()) {
+      "At least one waiting list application request must be provided"
+    }
+
+    require(requests.size <= 5) {
+      "A maximum of 5 waiting list application requests can be submitted at once"
+    }
+
+    val waitingLists = requests.map { request ->
+      val schedule = scheduleRepository.findBy(request.activityScheduleId!!, prisonCode)
+        ?: throw EntityNotFoundException("Activity schedule ${request.activityScheduleId} not found")
+
+      schedule.failIfIsNotInWorkCategory()
+      schedule.failIfNotFutureSchedule()
+      schedule.failIfActivelyAllocated(prisonerNumber)
+      request.failIfApplicationDateInFuture()
+      request.failIfNotAllowableStatus()
+      failIfAlreadyPendingOrApproved(prisonCode, prisonerNumber, schedule)
+
+      val waitingList = WaitingList(
+        prisonCode = prisonCode,
+        prisonerNumber = prisonerNumber,
+        bookingId = getActivePrisonerBookingId(prisonCode, prisonerNumber, request),
+        activitySchedule = schedule,
+        applicationDate = request.applicationDate!!,
+        requestedBy = request.requestedBy!!,
+        comments = request.comments,
+        createdBy = createdBy,
+        initialStatus = request.status!!,
+      )
+
+      log.info("Preparing ${request.status} waiting list application for prisoner $prisonerNumber to activity ${schedule.description}")
+      waitingList
+    }
+
+    // Batch save
+    val savedWaitingLists = waitingListRepository.saveAllAndFlush(waitingLists)
+
+    savedWaitingLists.forEach { wl ->
+      log.info("Successfully added ${wl.status} waiting list application for prisoner $prisonerNumber to activity ${wl.activitySchedule.description}")
+      logPrisonerAddedMetric(prisonerNumber)
+    }
+
+    log.info("Completed saving ${savedWaitingLists.size} waiting list applications for prisoner $prisonerNumber")
+  }
+
   fun searchWaitingLists(
     prisonCode: String,
     request: WaitingListSearchRequest,
@@ -155,6 +207,7 @@ class WaitingListService(
 
   fun fetchOpenApplicationsForPrison(prisonCode: String) = waitingListRepository.findByPrisonCodeAndStatusIn(prisonCode, setOf(WaitingListStatus.PENDING, WaitingListStatus.APPROVED, WaitingListStatus.DECLINED, WaitingListStatus.WITHDRAWN))
 
+  @Deprecated("Use the one for PrisonerWaitingListApplicationRequest")
   private fun WaitingListApplicationRequest.failIfNotAllowableStatus() {
     require(
       status != null &&
@@ -164,7 +217,21 @@ class WaitingListService(
     }
   }
 
+  private fun PrisonerWaitingListApplicationRequest.failIfNotAllowableStatus() {
+    require(
+      status != null &&
+        listOf(WaitingListStatus.ALLOCATED, WaitingListStatus.REMOVED).none { it == status },
+    ) {
+      "Only statuses of PENDING, APPROVED and DECLINED are allowed when adding a prisoner to a waiting list"
+    }
+  }
+
+  @Deprecated("Use the one for PrisonerWaitingListApplicationRequest")
   private fun WaitingListApplicationRequest.failIfApplicationDateInFuture() {
+    require(applicationDate!! <= LocalDate.now()) { "Application date cannot be not be in the future" }
+  }
+
+  private fun PrisonerWaitingListApplicationRequest.failIfApplicationDateInFuture() {
     require(applicationDate!! <= LocalDate.now()) { "Application date cannot be not be in the future" }
   }
 
@@ -188,6 +255,7 @@ class WaitingListService(
     }
   }
 
+  @Deprecated("Use the one with request for PrisonerWaitingListApplicationRequest")
   private fun getActivePrisonerBookingId(prisonCode: String, request: WaitingListApplicationRequest): Long {
     val prisonerDetails = prisonerSearchApiClient.findByPrisonerNumber(request.prisonerNumber!!)
       ?: throw IllegalArgumentException("Prisoner with ${request.prisonerNumber} not found")
@@ -201,6 +269,21 @@ class WaitingListService(
     }
 
     return prisonerDetails.bookingId!!.toLong()
+  }
+
+  private fun getActivePrisonerBookingId(prisonCode: String, prisonerNumber: String, request: PrisonerWaitingListApplicationRequest): Long {
+    val prisonerDetails = prisonerSearchApiClient.findByPrisonerNumber(prisonerNumber)
+      ?: throw IllegalArgumentException("Prisoner with number $prisonerNumber not found")
+
+    require(prisonerDetails.isActiveAtPrison(prisonCode)) {
+      "${prisonerDetails.firstName} ${prisonerDetails.lastName} is not resident at this prison"
+    }
+
+    requireNotNull(prisonerDetails.bookingId) {
+      "Prisoner $prisonerNumber has no booking id at prison $prisonCode"
+    }
+
+    return prisonerDetails.bookingId.toLong()
   }
 
   private fun ActivitySchedule.failIfIsNotInWorkCategory() {
