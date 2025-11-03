@@ -225,10 +225,6 @@ class WaitingListService(
     require(applicationDate!! <= LocalDate.now()) { "Application date cannot be not be in the future" }
   }
 
-//  private fun PrisonerWaitingListApplicationRequest.failIfApplicationDateInFuture() {
-//    require(applicationDate!! <= LocalDate.now()) { "Application date cannot be in the future" }
-//  }
-
   private fun failIfAlreadyPendingOrApproved(
     prisonCode: String,
     prisonerNumber: String,
