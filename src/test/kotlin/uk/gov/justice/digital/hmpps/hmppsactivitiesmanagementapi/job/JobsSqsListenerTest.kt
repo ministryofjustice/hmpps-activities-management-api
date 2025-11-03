@@ -10,6 +10,7 @@ import org.mockito.kotlin.verifyNoInteractions
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ExpireAttendancesService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageAllocationsDueToEndService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageAllocationsDueToExpireService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageAppointmentAttendeesService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageNewAllocationsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageNewAttendancesService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageScheduledInstancesService
@@ -26,6 +27,7 @@ class JobsSqsListenerTest {
   val unsuspendAllocationsService: UnsuspendAllocationsService = mock()
   val manageNewAttendancesService: ManageNewAttendancesService = mock()
   val expireAttendancesService: ExpireAttendancesService = mock()
+  val manageAppointmentAttendeesService: ManageAppointmentAttendeesService = mock()
   val mapper = jacksonObjectMapper().registerModule(JavaTimeModule())
 
   val listener: JobsSqsListener = JobsSqsListener(
@@ -37,6 +39,7 @@ class JobsSqsListenerTest {
     unsuspendAllocationsService,
     manageNewAttendancesService,
     expireAttendancesService,
+    manageAppointmentAttendeesService,
     mapper,
   )
 
@@ -176,6 +179,24 @@ class JobsSqsListenerTest {
     listener.onMessage(rawMessage)
 
     verify(expireAttendancesService).handleEvent(123L, "RSI")
+  }
+
+  @Test
+  fun `should handle MANAGE_APPOINTMENT_ATTENDEES event`() {
+    val rawMessage = """
+      {
+        "jobId": 123,
+        "eventType": "MANAGE_APPOINTMENT_ATTENDEES",
+        "messageAttributes": {
+          "prisonCode": "RSI",
+          "daysAfterNow": 10
+        }
+      }
+    """
+
+    listener.onMessage(rawMessage)
+
+    verify(manageAppointmentAttendeesService).handleEvent(123L, "RSI", 10)
   }
 
   @Test

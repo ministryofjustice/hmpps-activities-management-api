@@ -26,7 +26,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
-class ManageAttendanceRecordsJobSqsIntegrationTest : AbstractJobIntegrationTest() {
+class ManageAttendanceRecordsJobSqsIntegrationTest : LocalStackTestBase() {
 
   @Autowired
   private lateinit var attendanceRepository: AttendanceRepository
