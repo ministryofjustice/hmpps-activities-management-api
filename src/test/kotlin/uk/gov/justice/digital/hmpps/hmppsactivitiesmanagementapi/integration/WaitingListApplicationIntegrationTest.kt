@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import net.javacrumbs.jsonunit.assertj.assertThatJson
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.verify
@@ -19,6 +20,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isClose
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.startsWith
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.WaitingListApplication
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerWaitingListApplicationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListApplicationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListApplicationUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListSearchRequest
@@ -26,11 +28,13 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Audi
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CASELOAD_ID
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_ACTIVITY_ADMIN
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_ACTIVITY_HUB
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 
 @TestPropertySource(
   properties = [
@@ -296,6 +300,160 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
     }
   }
 
+  private fun createPrisonerWaitingListRequest(size: Int, statuses: List<WaitingListStatus>): List<PrisonerWaitingListApplicationRequest> = List(size) { index ->
+    PrisonerWaitingListApplicationRequest(
+      activityScheduleId = index + 1L,
+      applicationDate = TimeSource.today(),
+      requestedBy = "Requester",
+      comments = "Testing",
+      status = statuses.getOrElse(index) { WaitingListStatus.PENDING },
+    )
+  }
+
+  @Sql("classpath:test_data/seed-activity-add-prisoner-to-multiple-activities.sql")
+  @Test
+  fun `successfully adds a prisoner to a waiting list for up to 5 activities`() {
+    val prisonerNumber = "G4793VF"
+
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(prisonerNumber)
+
+    val requestList = createPrisonerWaitingListRequest(
+      5,
+      listOf(
+        WaitingListStatus.PENDING,
+        WaitingListStatus.APPROVED,
+        WaitingListStatus.DECLINED,
+        WaitingListStatus.APPROVED,
+        WaitingListStatus.DECLINED,
+      ),
+    )
+
+    assertThat(waitingListRepository.findAll()).isEmpty()
+    assertThat(auditRepository.findAll()).isEmpty()
+
+    webTestClient.prisonerWaitingListApplication(MOORLAND_PRISON_CODE, prisonerNumber, requestList).expectStatus().isNoContent
+
+    val waitingListEntries = waitingListRepository.findAll()
+    assertThat(waitingListEntries).hasSize(5)
+
+    waitingListEntries.forEachIndexed { index, entry ->
+      with(entry) {
+        assertThat(activitySchedule.activityScheduleId).isEqualTo(index + 1L)
+        assertThat(applicationDate).isToday()
+        assertThat(requestedBy).isEqualTo("Requester")
+        assertThat(comments).isEqualTo("Testing")
+        assertThat(status).isEqualTo(requestList[index].status)
+        assertThat(prisonCode).isEqualTo(MOORLAND_PRISON_CODE)
+      }
+    }
+
+    val auditRecords = auditRepository.findAll()
+    assertThat(auditRecords).hasSize(5)
+
+    auditRecords.forEachIndexed { index, auditRecord ->
+      with(auditRecord) {
+        assertThat(auditType).isEqualTo(uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditType.PRISONER)
+        assertThat(detailType).isEqualTo(uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditEventType.PRISONER_ADDED_TO_WAITING_LIST)
+        assertThat(activityId).isEqualTo(index + 1L)
+        assertThat(prisonCode).isEqualTo(MOORLAND_PRISON_CODE)
+        assertThat(recordedTime).isCloseTo(TimeSource.now(), within(60, ChronoUnit.SECONDS))
+        assertThat(message).startsWith("Prisoner G4793VF was added to the waiting list for activity")
+      }
+    }
+  }
+
+  @Sql("classpath:test_data/seed-activity-add-prisoner-to-multiple-activities.sql")
+  @Test
+  fun `returns 400 when more than 5 applications are submitted`() {
+    val prisonerNumber = "G4793VF"
+
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(prisonerNumber)
+
+    val requestList = createPrisonerWaitingListRequest(6, listOf(WaitingListStatus.PENDING))
+
+    webTestClient.prisonerWaitingListApplication(MOORLAND_PRISON_CODE, prisonerNumber, requestList).expectStatus()
+      .isBadRequest
+      .expectBody()
+      .jsonPath("$.userMessage").value<String> {
+        assertThat(it).contains("A maximum of 5 waiting list application requests can be submitted at once")
+      }
+
+    assertThat(waitingListRepository.findAll()).isEmpty()
+    assertThat(auditRepository.findAll()).isEmpty()
+  }
+
+  @Sql("classpath:test_data/seed-activity-add-prisoner-to-multiple-activities.sql")
+  @Test
+  fun `returns 400 when application request is empty`() {
+    val prisonerNumber = "G4793VF"
+
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(prisonerNumber)
+
+    val requestList = emptyList<PrisonerWaitingListApplicationRequest>()
+
+    webTestClient.prisonerWaitingListApplication(MOORLAND_PRISON_CODE, prisonerNumber, requestList).expectStatus()
+      .isBadRequest
+      .expectBody()
+      .jsonPath("$.userMessage").value<String> {
+        assertThat(it).contains("At least one waiting list application request must be provided")
+      }
+
+    assertThat(waitingListRepository.findAll()).isEmpty()
+    assertThat(auditRepository.findAll()).isEmpty()
+  }
+
+  @Sql("classpath:test_data/seed-activity-add-prisoner-to-multiple-activities.sql")
+  @Test
+  fun `returns 401 when the user is unauthorized`() {
+    val prisonerNumber = "G4793VF"
+
+    val requestList = createPrisonerWaitingListRequest(1, listOf(WaitingListStatus.PENDING))
+    webTestClient.post()
+      .uri("/waiting-list-applications/$MOORLAND_PRISON_CODE/$prisonerNumber")
+      .bodyValue(requestList)
+      .accept(MediaType.APPLICATION_JSON)
+      .header(CASELOAD_ID, "USERNAME")
+      .exchange()
+      .expectStatus().isUnauthorized
+  }
+
+  @Sql("classpath:test_data/seed-activity-add-prisoner-to-multiple-activities.sql")
+  @Test
+  fun `returns 403 when the user role is inappropriate`() {
+    val prisonerNumber = "G4793VF"
+    val caseloadId: String = CASELOAD_ID
+
+    val requestList = createPrisonerWaitingListRequest(1, listOf(WaitingListStatus.PENDING))
+    webTestClient.post()
+      .uri("/waiting-list-applications/MOORLAND_PRISON_CODE/$prisonerNumber")
+      .bodyValue(requestList)
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_PRISON)))
+      .header(CASELOAD_ID, caseloadId)
+      .exchange()
+      .expectStatus().isForbidden
+  }
+
+  @Sql("classpath:test_data/seed-activity-id-20.sql")
+  @Test
+  fun `returns 404 when activity schedule id is not found`() {
+    val prisonerNumber = "G4793VF"
+
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(prisonerNumber)
+
+    val requestList = createPrisonerWaitingListRequest(2, listOf(WaitingListStatus.PENDING))
+
+    webTestClient.prisonerWaitingListApplication(MOORLAND_PRISON_CODE, prisonerNumber, requestList).expectStatus()
+      .isNotFound
+      .expectBody()
+      .jsonPath("$.userMessage").value<String> {
+        assertThat(it).contains("Activity schedule 2 not found")
+      }
+
+    assertThat(waitingListRepository.findAll()).isEmpty()
+    assertThat(auditRepository.findAll()).isEmpty()
+  }
+
   private fun WebTestClient.waitingListApplication(
     prisonCode: String,
     application: WaitingListApplicationRequest,
@@ -305,6 +463,19 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
     .bodyValue(application)
     .accept(MediaType.APPLICATION_JSON)
     .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB)))
+    .header(CASELOAD_ID, caseloadId)
+    .exchange()
+
+  private fun WebTestClient.prisonerWaitingListApplication(
+    prisonCode: String,
+    prisonerNumber: String,
+    request: List<PrisonerWaitingListApplicationRequest>,
+    caseloadId: String? = CASELOAD_ID,
+  ) = post()
+    .uri("/waiting-list-applications/$prisonCode/$prisonerNumber")
+    .bodyValue(request)
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_ADMIN, ROLE_ACTIVITY_HUB)))
     .header(CASELOAD_ID, caseloadId)
     .exchange()
 
