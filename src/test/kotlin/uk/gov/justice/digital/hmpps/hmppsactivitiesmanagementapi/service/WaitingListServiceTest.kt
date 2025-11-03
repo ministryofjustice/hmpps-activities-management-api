@@ -9,12 +9,14 @@ import jakarta.persistence.EntityNotFoundException
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.junit.jupiter.api.Assertions.assertDoesNotThrow
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
+import org.mockito.invocation.InvocationOnMock
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doReturn
@@ -47,6 +49,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.notInWo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.waitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.PrisonerDeclinedFromWaitingListEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.PrisonerRemovedFromWaitingListEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerWaitingListApplicationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListApplicationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListApplicationUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListSearchRequest
@@ -92,6 +95,30 @@ class WaitingListServiceTest {
     nonAssociationsApiClient,
   )
   private val waitingListCaptor = argumentCaptor<WaitingList>()
+
+  private val prisonCode = PENTONVILLE_PRISON_CODE
+  private val prisonerNumber = "AB1234C"
+  private val createdBy = "Creator"
+
+  private fun createPrisonerWaitingListRequest(size: Int): List<PrisonerWaitingListApplicationRequest> = List(size) { index ->
+    PrisonerWaitingListApplicationRequest(
+      activityScheduleId = index + 1L,
+      applicationDate = TimeSource.today(),
+      requestedBy = "Requester",
+      comments = "Testing",
+      status = WaitingListStatus.PENDING,
+    )
+  }
+
+  private fun createPrisonerWaitingListRequestWith(size: Int, applicationDate: LocalDate, status: WaitingListStatus) = List(size) {
+    PrisonerWaitingListApplicationRequest(
+      activityScheduleId = 1L,
+      applicationDate = applicationDate,
+      requestedBy = "Requester",
+      comments = "Testing",
+      status = status,
+    )
+  }
 
   @BeforeEach
   fun setUp() {
@@ -1525,5 +1552,127 @@ class WaitingListServiceTest {
     val result = service.fetchOpenApplicationsForPrison(MOORLAND_PRISON_CODE)
 
     assertThat(result).isEqualTo(waitingList)
+  }
+
+  @Test
+  fun `should throw an exception if application request is empty`() {
+    assertThrows<IllegalArgumentException> {
+      service.addPrisonerToMultipleActivities(prisonCode, prisonerNumber, emptyList(), createdBy)
+    }.also {
+      assertThat(it.message).isEqualTo("At least one waiting list application request must be provided")
+    }
+  }
+
+  @Test
+  fun `should throw an exception if more than 5 application requests are provided`() {
+    val requestList = createPrisonerWaitingListRequest(6)
+    assertThrows<IllegalArgumentException> {
+      service.addPrisonerToMultipleActivities(prisonCode, prisonerNumber, requestList, createdBy)
+    }.also {
+      assertThat(it.message).isEqualTo("A maximum of 5 waiting list application requests can be submitted at once")
+    }
+  }
+
+  @Test
+  fun `should throw an exception if activity schedule is not found`() {
+    val requestList = createPrisonerWaitingListRequest(3)
+    whenever(scheduleRepository.findBy(1L, prisonCode)).thenReturn(null)
+    assertThrows<EntityNotFoundException> {
+      service.addPrisonerToMultipleActivities(prisonCode, prisonerNumber, requestList, createdBy)
+    }.also {
+      assertThat(it.message).isEqualTo("Activity schedule 1 not found")
+    }
+  }
+
+  @Test
+  fun `should throw an exception if activity schedule id is the same for multiple requests`() {
+    val requestList = createPrisonerWaitingListRequestWith(2, TimeSource.today(), WaitingListStatus.PENDING)
+
+    assertThrows<IllegalArgumentException> {
+      service.addPrisonerToMultipleActivities(prisonCode, prisonerNumber, requestList, createdBy)
+    }.also {
+      assertThat(it.message).isEqualTo("Activity schedule IDs cannot be the same for more than one waiting list application request")
+    }
+  }
+
+  @ParameterizedTest
+  @EnumSource(WaitingListStatus::class, names = ["PENDING", "APPROVED", "DECLINED"])
+  fun `should allow PENDING, APPROVED and DECLINED statuses for application request`(status: WaitingListStatus) {
+    val requests = createPrisonerWaitingListRequestWith(1, TimeSource.today(), status)
+
+    requests.forEach { request ->
+      assertDoesNotThrow { request.failIfNotAllowableStatus() }
+    }
+  }
+
+  @ParameterizedTest
+  @EnumSource(WaitingListStatus::class, names = ["ALLOCATED", "REMOVED", "WITHDRAWN"])
+  fun `should throw an exception for ALLOCATED, REMOVED and WITHDRAWN statuses for application request`(status: WaitingListStatus) {
+    val requests = createPrisonerWaitingListRequestWith(1, TimeSource.today(), status)
+    requests.forEach { request ->
+      assertThrows<IllegalArgumentException> {
+        request.failIfNotAllowableStatus()
+      }.also {
+        assertThat(it.message).isEqualTo("Only statuses of PENDING, APPROVED and DECLINED are allowed when adding a prisoner to a waiting list")
+      }
+    }
+  }
+
+  @Test
+  fun `should throw an exception when application date is in future`() {
+    val futureDate = TimeSource.tomorrow()
+    val requests = createPrisonerWaitingListRequestWith(1, futureDate, WaitingListStatus.PENDING)
+    requests.forEach { request ->
+      assertThrows<IllegalArgumentException> {
+        request.failIfApplicationDateInFuture()
+      }.also {
+        assertThat(it.message).isEqualTo("Application date cannot be in the future")
+      }
+    }
+  }
+
+  @Test
+  fun `should save applications successfully to waiting list`() {
+    prisonerSearchApiClient.stub {
+      on { findByPrisonerNumber(prisonerNumber = "AB1234C") } doReturn activeInPentonvillePrisoner
+    }
+
+    val requestList = createPrisonerWaitingListRequest(5)
+
+    whenever(scheduleRepository.findBy(any(), any())).thenReturn(schedule)
+    whenever(waitingListRepository.saveAllAndFlush(any<List<WaitingList>>()))
+      .thenAnswer { invocation: InvocationOnMock ->
+        invocation.getArgument<List<WaitingList>>(0)
+      }
+
+    assertDoesNotThrow {
+      service.addPrisonerToMultipleActivities(prisonCode, prisonerNumber, requestList, createdBy)
+    }
+
+    // Verifying the number of applications saved
+    val captor = argumentCaptor<List<WaitingList>>()
+    verify(waitingListRepository).saveAllAndFlush(captor.capture())
+
+    val applicationsSaved = captor.firstValue
+    assert(applicationsSaved.size == 5) {
+      "Expected 5 applications in waiting list, got ${applicationsSaved.size}"
+    }
+
+    // Checking field values for every application in the waiting list
+    applicationsSaved.forEachIndexed { index, app ->
+      assert(app.prisonCode == prisonCode) { "Prison code does not match for application $index" }
+      assert(app.activitySchedule == schedule) { "Activity schedule does not match for application $index" }
+      assert(app.status == WaitingListStatus.PENDING) { "Status does not match for application $index" }
+      assert(app.createdBy == "Creator") { "Created by does not match for application $index" }
+      assert(app.comments == "Testing") { "Comment does not match for application $index" }
+      assert(app.applicationDate == TimeSource.today()) { "Application date does not match for application $index" }
+      assert(app.requestedBy == "Requester") { "Requested by does not match for application $index" }
+    }
+
+    verify(telemetryClient, times(5)).trackEvent(
+      TelemetryEvent.PRISONER_ADDED_TO_WAITLIST.value,
+      mapOf(PRISONER_NUMBER_PROPERTY_KEY to "AB1234C"),
+      mapOf(NUMBER_OF_RESULTS_METRIC_KEY to 1.0),
+    )
   }
 }
