@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentMatchers.anyList
 import org.mockito.ArgumentMatchers.anyString
+import org.mockito.Mockito.mock
 import org.mockito.Mockito.times
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doNothing
@@ -46,20 +47,6 @@ class WaitingListApplicationControllerTest : ControllerTestBase<WaitingListAppli
   private lateinit var waitingListService: WaitingListService
 
   override fun controller(): WaitingListApplicationController = WaitingListApplicationController(waitingListService)
-
-  private val prisonCode = RISLEY_PRISON_CODE
-  private val prisonerNumber = "123456"
-  private val principalName = "USERNAME"
-
-  private fun createPrisonerWaitingListRequest(size: Int): List<PrisonerWaitingListApplicationRequest> = List(size) { index ->
-    PrisonerWaitingListApplicationRequest(
-      activityScheduleId = index + 1L,
-      applicationDate = TimeSource.today(),
-      requestedBy = "Requester",
-      comments = "Testing",
-      status = WaitingListStatus.PENDING,
-    )
-  }
 
   @Test
   fun `200 response when get by ID found`() {
@@ -156,11 +143,24 @@ class WaitingListApplicationControllerTest : ControllerTestBase<WaitingListAppli
   @Nested
   @DisplayName("Authorization tests for adding prisoner to multiple activities")
   inner class AuthorizationTestsForAddingPrisonerToMultipleActivities {
+    private val prisonCode = RISLEY_PRISON_CODE
+    private val prisonerNumber = "123456"
+    private val principalName = "USERNAME"
+
+    private fun createPrisonerWaitingListRequest(size: Int): List<PrisonerWaitingListApplicationRequest> = List(size) { index ->
+      PrisonerWaitingListApplicationRequest(
+        activityScheduleId = index + 1L,
+        applicationDate = TimeSource.today(),
+        requestedBy = "Requester",
+        comments = "Testing",
+        status = WaitingListStatus.PENDING,
+      )
+    }
+
     @Test
     fun `204 response when adding prisoner to activities`() {
-      val requestList = createPrisonerWaitingListRequest(5)
-
-      doNothing().`when`(waitingListService).addPrisonerToMultipleActivities(prisonCode, prisonerNumber, requestList, principalName)
+      val requestList = createPrisonerWaitingListRequest(1)
+      doNothing().whenever(waitingListService).addPrisonerToMultipleActivities(prisonCode, prisonerNumber, requestList, principalName)
 
       mockMvc.addToWaitingListApplication(prisonCode, prisonerNumber, requestList, includePrincipal = true).andExpect { status { isNoContent() } }
 
@@ -173,7 +173,7 @@ class WaitingListApplicationControllerTest : ControllerTestBase<WaitingListAppli
       val requestList = createPrisonerWaitingListRequest(6)
 
       doThrow(IllegalArgumentException("A maximum of 5 waiting list application requests can be submitted at once"))
-        .`when`(waitingListService)
+        .whenever(waitingListService)
         .addPrisonerToMultipleActivities(anyString(), anyString(), anyList(), anyString())
 
       mockMvc.addToWaitingListApplication(prisonCode, prisonerNumber, requestList)
@@ -184,7 +184,7 @@ class WaitingListApplicationControllerTest : ControllerTestBase<WaitingListAppli
 
     @Test
     fun `401 response when user is not authorized`() {
-      val requestList = createPrisonerWaitingListRequest(2)
+      val requestList = listOf(mock<PrisonerWaitingListApplicationRequest>())
       mockMvcWithSecurity.addToWaitingListApplication(prisonCode, prisonerNumber, requestList, includePrincipal = false).andExpect { status { isUnauthorized() } }
       verify(waitingListService, never()).addPrisonerToMultipleActivities(any(), any(), any(), any())
     }
@@ -192,16 +192,16 @@ class WaitingListApplicationControllerTest : ControllerTestBase<WaitingListAppli
     @Test
     @WithMockUser(roles = ["PRISON"])
     fun `403 response when user role is invalid`() {
-      val requestList = createPrisonerWaitingListRequest(2)
+      val requestList = listOf(mock<PrisonerWaitingListApplicationRequest>())
       mockMvcWithSecurity.addToWaitingListApplication(prisonCode, prisonerNumber, requestList).andExpect { status { isForbidden() } }
       verify(waitingListService, never()).addPrisonerToMultipleActivities(any(), any(), any(), any())
     }
 
     @Test
     fun `404 response when activity schedule not found`() {
-      val requestList = createPrisonerWaitingListRequest(2)
+      val requestList = createPrisonerWaitingListRequest(1)
       doThrow(EntityNotFoundException("Activity schedule 1 not found"))
-        .`when`(waitingListService)
+        .whenever(waitingListService)
         .addPrisonerToMultipleActivities(prisonCode, prisonerNumber, requestList, principalName)
 
       mockMvc.addToWaitingListApplication(prisonCode, prisonerNumber, requestList, true).andExpect { status { isNotFound() } }

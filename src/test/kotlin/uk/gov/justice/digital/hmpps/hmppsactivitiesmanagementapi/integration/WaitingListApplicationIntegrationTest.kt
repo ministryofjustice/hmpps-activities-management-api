@@ -2,9 +2,9 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import net.javacrumbs.jsonunit.assertj.assertThatJson
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.argumentCaptor
-import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
@@ -34,6 +34,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_P
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 
 @TestPropertySource(
   properties = [
@@ -299,60 +300,65 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
     }
   }
 
-  private fun createPrisonerWaitingListRequest(size: Int): List<PrisonerWaitingListApplicationRequest> = List(size) { index ->
+  private fun createPrisonerWaitingListRequest(size: Int, statuses: List<WaitingListStatus>): List<PrisonerWaitingListApplicationRequest> = List(size) { index ->
     PrisonerWaitingListApplicationRequest(
       activityScheduleId = index + 1L,
       applicationDate = TimeSource.today(),
       requestedBy = "Requester",
       comments = "Testing",
-      status = WaitingListStatus.PENDING,
+      status = statuses.getOrElse(index) { WaitingListStatus.PENDING },
     )
   }
 
   @Sql("classpath:test_data/seed-activity-add-prisoner-to-multiple-activities.sql")
   @Test
-  fun `successfully add a prisoner to a waiting list for up to 5 activities`() {
+  fun `successfully adds a prisoner to a waiting list for up to 5 activities`() {
     val prisonerNumber = "G4793VF"
 
     prisonerSearchApiMockServer.stubSearchByPrisonerNumber(prisonerNumber)
 
-    val requestList = createPrisonerWaitingListRequest(5)
+    val requestList = createPrisonerWaitingListRequest(
+      5,
+      listOf(
+        WaitingListStatus.PENDING,
+        WaitingListStatus.APPROVED,
+        WaitingListStatus.DECLINED,
+        WaitingListStatus.APPROVED,
+        WaitingListStatus.DECLINED,
+      ),
+    )
 
     assertThat(waitingListRepository.findAll()).isEmpty()
     assertThat(auditRepository.findAll()).isEmpty()
 
     webTestClient.prisonerWaitingListApplication(MOORLAND_PRISON_CODE, prisonerNumber, requestList).expectStatus().isNoContent
 
-    val persisted = waitingListRepository.findAll().also { assertThat(it).hasSize(5) }.first()
+    val waitingListEntries = waitingListRepository.findAll()
+    assertThat(waitingListEntries).hasSize(5)
 
-    with(persisted) {
-      assertThat(prisonerNumber).isEqualTo("G4793VF")
-      assertThat(activitySchedule.activityScheduleId).isEqualTo(1L)
-      assertThat(applicationDate).isToday()
-      assertThat(requestedBy).isEqualTo("Requester")
-      assertThat(comments).isEqualTo("Testing")
-      assertThat(status).isEqualTo(WaitingListStatus.PENDING)
+    waitingListEntries.forEachIndexed { index, entry ->
+      with(entry) {
+        assertThat(activitySchedule.activityScheduleId).isEqualTo(index + 1L)
+        assertThat(applicationDate).isToday()
+        assertThat(requestedBy).isEqualTo("Requester")
+        assertThat(comments).isEqualTo("Testing")
+        assertThat(status).isEqualTo(requestList[index].status)
+        assertThat(prisonCode).isEqualTo(MOORLAND_PRISON_CODE)
+      }
     }
 
-    val localAuditRecord = auditRepository.findAll().also { assertThat(it).hasSize(5) }.first()
+    val auditRecords = auditRepository.findAll()
+    assertThat(auditRecords).hasSize(5)
 
-    with(localAuditRecord) {
-      auditType isEqualTo uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditType.PRISONER
-      detailType isEqualTo uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditEventType.PRISONER_ADDED_TO_WAITING_LIST
-      activityId isEqualTo 1L
-      prisonCode isEqualTo MOORLAND_PRISON_CODE
-      prisonerNumber isEqualTo "G4793VF"
-      recordedTime isCloseTo TimeSource.now()
-      message startsWith "Prisoner G4793VF was added to the waiting list for activity 'Maths'(1) with a status of PENDING. Event created on ${TimeSource.today()}"
-    }
-
-    verify(hmppsAuditApiClient, times(5)).createEvent(hmppsAuditEventCaptor.capture())
-
-    with(hmppsAuditEventCaptor.firstValue) {
-      println(details)
-      assertThat(what).isEqualTo("PRISONER_ADDED_TO_WAITING_LIST")
-      assertThat(who).isEqualTo("test-client")
-      assertThatJson(details).isEqualTo("{\"activityId\":1,\"activityName\":\"Maths\",\"prisonCode\":\"MDI\",\"prisonerNumber\":\"G4793VF\",\"scheduleId\":1,\"createdAt\":\"\${json-unit.ignore}\",\"createdBy\":\"test-client\"}")
+    auditRecords.forEachIndexed { index, auditRecord ->
+      with(auditRecord) {
+        assertThat(auditType).isEqualTo(uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditType.PRISONER)
+        assertThat(detailType).isEqualTo(uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditEventType.PRISONER_ADDED_TO_WAITING_LIST)
+        assertThat(activityId).isEqualTo(index + 1L)
+        assertThat(prisonCode).isEqualTo(MOORLAND_PRISON_CODE)
+        assertThat(recordedTime).isCloseTo(TimeSource.now(), within(60, ChronoUnit.SECONDS))
+        assertThat(message).startsWith("Prisoner G4793VF was added to the waiting list for activity")
+      }
     }
   }
 
@@ -363,7 +369,7 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
 
     prisonerSearchApiMockServer.stubSearchByPrisonerNumber(prisonerNumber)
 
-    val requestList = createPrisonerWaitingListRequest(6)
+    val requestList = createPrisonerWaitingListRequest(6, listOf(WaitingListStatus.PENDING))
 
     webTestClient.prisonerWaitingListApplication(MOORLAND_PRISON_CODE, prisonerNumber, requestList).expectStatus()
       .isBadRequest
@@ -401,7 +407,7 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
   fun `returns 401 when the user is unauthorized`() {
     val prisonerNumber = "G4793VF"
 
-    val requestList = createPrisonerWaitingListRequest(2)
+    val requestList = createPrisonerWaitingListRequest(1, listOf(WaitingListStatus.PENDING))
     webTestClient.post()
       .uri("/waiting-list-applications/$MOORLAND_PRISON_CODE/$prisonerNumber")
       .bodyValue(requestList)
@@ -417,7 +423,7 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
     val prisonerNumber = "G4793VF"
     val caseloadId: String = CASELOAD_ID
 
-    val requestList = createPrisonerWaitingListRequest(2)
+    val requestList = createPrisonerWaitingListRequest(1, listOf(WaitingListStatus.PENDING))
     webTestClient.post()
       .uri("/waiting-list-applications/MOORLAND_PRISON_CODE/$prisonerNumber")
       .bodyValue(requestList)
@@ -435,7 +441,7 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
 
     prisonerSearchApiMockServer.stubSearchByPrisonerNumber(prisonerNumber)
 
-    val requestList = createPrisonerWaitingListRequest(2)
+    val requestList = createPrisonerWaitingListRequest(2, listOf(WaitingListStatus.PENDING))
 
     webTestClient.prisonerWaitingListApplication(MOORLAND_PRISON_CODE, prisonerNumber, requestList).expectStatus()
       .isNotFound

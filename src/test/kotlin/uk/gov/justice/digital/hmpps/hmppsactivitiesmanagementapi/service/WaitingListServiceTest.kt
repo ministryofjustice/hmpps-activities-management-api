@@ -9,14 +9,13 @@ import jakarta.persistence.EntityNotFoundException
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.junit.jupiter.api.Assertions.assertDoesNotThrow
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
-import org.mockito.Mockito.`when`
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
@@ -108,6 +107,16 @@ class WaitingListServiceTest {
       requestedBy = "Requester",
       comments = "Testing",
       status = WaitingListStatus.PENDING,
+    )
+  }
+
+  private fun createPrisonerWaitingListRequestWith(size: Int, applicationDate: LocalDate, status: WaitingListStatus) = List(size) {
+    PrisonerWaitingListApplicationRequest(
+      activityScheduleId = 1L,
+      applicationDate = applicationDate,
+      requestedBy = "Requester",
+      comments = "Testing",
+      status = status,
     )
   }
 
@@ -1546,7 +1555,7 @@ class WaitingListServiceTest {
   }
 
   @Test
-  fun `should throw exception if application request is empty`() {
+  fun `should throw an exception if application request is empty`() {
     assertThrows<IllegalArgumentException> {
       service.addPrisonerToMultipleActivities(prisonCode, prisonerNumber, emptyList(), createdBy)
     }.also {
@@ -1555,7 +1564,7 @@ class WaitingListServiceTest {
   }
 
   @Test
-  fun `should throw exception if more than 5 application requests are provided`() {
+  fun `should throw an exception if more than 5 application requests are provided`() {
     val requestList = createPrisonerWaitingListRequest(6)
     assertThrows<IllegalArgumentException> {
       service.addPrisonerToMultipleActivities(prisonCode, prisonerNumber, requestList, createdBy)
@@ -1565,13 +1574,60 @@ class WaitingListServiceTest {
   }
 
   @Test
-  fun `should throw exception if activity schedule is not found`() {
+  fun `should throw an exception if activity schedule is not found`() {
     val requestList = createPrisonerWaitingListRequest(3)
-    `when`(scheduleRepository.findBy(1L, prisonCode)).thenReturn(null)
+    whenever(scheduleRepository.findBy(1L, prisonCode)).thenReturn(null)
     assertThrows<EntityNotFoundException> {
       service.addPrisonerToMultipleActivities(prisonCode, prisonerNumber, requestList, createdBy)
     }.also {
       assertThat(it.message).isEqualTo("Activity schedule 1 not found")
+    }
+  }
+
+  @Test
+  fun `should throw an exception if activity schedule id is the same for multiple requests`() {
+    val requestList = createPrisonerWaitingListRequestWith(2, TimeSource.today(), WaitingListStatus.PENDING)
+
+    assertThrows<IllegalArgumentException> {
+      service.addPrisonerToMultipleActivities(prisonCode, prisonerNumber, requestList, createdBy)
+    }.also {
+      assertThat(it.message).isEqualTo("Activity schedule IDs cannot be the same for more than one waiting list application request")
+    }
+  }
+
+  @ParameterizedTest
+  @EnumSource(WaitingListStatus::class, names = ["PENDING", "APPROVED", "DECLINED"])
+  fun `should allow PENDING, APPROVED and DECLINED statuses for application request`(status: WaitingListStatus) {
+    val requests = createPrisonerWaitingListRequestWith(1, TimeSource.today(), status)
+
+    requests.forEach { request ->
+      assertDoesNotThrow { request.failIfNotAllowableStatus() }
+    }
+  }
+
+  @ParameterizedTest
+  @EnumSource(WaitingListStatus::class, names = ["ALLOCATED", "REMOVED", "WITHDRAWN"])
+  fun `should throw an exception for ALLOCATED, REMOVED and WITHDRAWN statuses for application request`(status: WaitingListStatus) {
+    val requests = createPrisonerWaitingListRequestWith(1, TimeSource.today(), status)
+    requests.forEach { request ->
+      assertThrows<IllegalArgumentException> {
+        request.failIfNotAllowableStatus()
+      }.also {
+        assertThat(it.message).isEqualTo("Only statuses of PENDING, APPROVED and DECLINED are allowed when adding a prisoner to a waiting list")
+      }
+    }
+  }
+
+  @Test
+  fun `should throw an exception when application date is in future`() {
+    val futureDate = TimeSource.tomorrow()
+    val requests = createPrisonerWaitingListRequestWith(1, futureDate, WaitingListStatus.PENDING)
+    requests.forEach { request ->
+      assertThrows<IllegalArgumentException> {
+        request.failIfApplicationDateInFuture()
+      }.also {
+        assertThat(it.message).isEqualTo("Application date cannot be in the future")
+      }
     }
   }
 

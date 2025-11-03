@@ -96,7 +96,7 @@ class WaitingListService(
     }
   }
 
-  @Deprecated("Use the addPrisonerByPrisonNumber method for submitting upto 5 applications for a prisoner at once")
+  @Deprecated("Use the addPrisonerByPrisonNumber method for submitting multiple applications")
   @Transactional
   fun addPrisoner(prisonCode: String, request: WaitingListApplicationRequest, createdBy: String) {
     checkCaseloadAccess(prisonCode)
@@ -140,6 +140,10 @@ class WaitingListService(
       "A maximum of 5 waiting list application requests can be submitted at once"
     }
 
+    require(requests.map { it.activityScheduleId }.distinct().size == requests.size) {
+      "Activity schedule IDs cannot be the same for more than one waiting list application request"
+    }
+
     val waitingLists = requests.map { request ->
       val schedule = scheduleRepository.findBy(request.activityScheduleId!!, prisonCode)
         ?: throw EntityNotFoundException("Activity schedule ${request.activityScheduleId} not found")
@@ -151,10 +155,12 @@ class WaitingListService(
       request.failIfNotAllowableStatus()
       failIfAlreadyPendingOrApproved(prisonCode, prisonerNumber, schedule)
 
-      val waitingList = WaitingList(
+      log.info("Preparing ${request.status} waiting list application for prisoner $prisonerNumber to activity ${schedule.description}")
+
+      WaitingList(
         prisonCode = prisonCode,
         prisonerNumber = prisonerNumber,
-        bookingId = getActivePrisonerBookingId(prisonCode, prisonerNumber, request),
+        bookingId = getActivePrisonerBookingId(prisonCode, prisonerNumber),
         activitySchedule = schedule,
         applicationDate = request.applicationDate!!,
         requestedBy = request.requestedBy!!,
@@ -162,9 +168,6 @@ class WaitingListService(
         createdBy = createdBy,
         initialStatus = request.status!!,
       )
-
-      log.info("Preparing ${request.status} waiting list application for prisoner $prisonerNumber to activity ${schedule.description}")
-      waitingList
     }
 
     // Batch save
@@ -207,7 +210,7 @@ class WaitingListService(
 
   fun fetchOpenApplicationsForPrison(prisonCode: String) = waitingListRepository.findByPrisonCodeAndStatusIn(prisonCode, setOf(WaitingListStatus.PENDING, WaitingListStatus.APPROVED, WaitingListStatus.DECLINED, WaitingListStatus.WITHDRAWN))
 
-  @Deprecated("Use the one for PrisonerWaitingListApplicationRequest")
+  @Deprecated("Use - PrisonerWaitingListApplicationRequest.failIfNotAllowableStatus()")
   private fun WaitingListApplicationRequest.failIfNotAllowableStatus() {
     require(
       status != null &&
@@ -217,23 +220,14 @@ class WaitingListService(
     }
   }
 
-  private fun PrisonerWaitingListApplicationRequest.failIfNotAllowableStatus() {
-    require(
-      status != null &&
-        listOf(WaitingListStatus.ALLOCATED, WaitingListStatus.REMOVED).none { it == status },
-    ) {
-      "Only statuses of PENDING, APPROVED and DECLINED are allowed when adding a prisoner to a waiting list"
-    }
-  }
-
-  @Deprecated("Use the one for PrisonerWaitingListApplicationRequest")
+  @Deprecated("Use - PrisonerWaitingListApplicationRequest.failIfApplicationDateInFuture()")
   private fun WaitingListApplicationRequest.failIfApplicationDateInFuture() {
     require(applicationDate!! <= LocalDate.now()) { "Application date cannot be not be in the future" }
   }
 
-  private fun PrisonerWaitingListApplicationRequest.failIfApplicationDateInFuture() {
-    require(applicationDate!! <= LocalDate.now()) { "Application date cannot be not be in the future" }
-  }
+//  private fun PrisonerWaitingListApplicationRequest.failIfApplicationDateInFuture() {
+//    require(applicationDate!! <= LocalDate.now()) { "Application date cannot be in the future" }
+//  }
 
   private fun failIfAlreadyPendingOrApproved(
     prisonCode: String,
@@ -255,7 +249,7 @@ class WaitingListService(
     }
   }
 
-  @Deprecated("Use the one with request for PrisonerWaitingListApplicationRequest")
+  @Deprecated("Use - getActivePrisonerBookingId(prisonCode, prisonerNumber")
   private fun getActivePrisonerBookingId(prisonCode: String, request: WaitingListApplicationRequest): Long {
     val prisonerDetails = prisonerSearchApiClient.findByPrisonerNumber(request.prisonerNumber!!)
       ?: throw IllegalArgumentException("Prisoner with ${request.prisonerNumber} not found")
@@ -271,7 +265,7 @@ class WaitingListService(
     return prisonerDetails.bookingId!!.toLong()
   }
 
-  private fun getActivePrisonerBookingId(prisonCode: String, prisonerNumber: String, request: PrisonerWaitingListApplicationRequest): Long {
+  private fun getActivePrisonerBookingId(prisonCode: String, prisonerNumber: String): Long {
     val prisonerDetails = prisonerSearchApiClient.findByPrisonerNumber(prisonerNumber)
       ?: throw IllegalArgumentException("Prisoner with number $prisonerNumber not found")
 
@@ -485,4 +479,17 @@ class WaitingListService(
 
     return this
   }
+}
+
+internal fun PrisonerWaitingListApplicationRequest.failIfNotAllowableStatus() {
+  require(
+    status != null &&
+      listOf(WaitingListStatus.ALLOCATED, WaitingListStatus.REMOVED, WaitingListStatus.WITHDRAWN).none { it == status },
+  ) {
+    "Only statuses of PENDING, APPROVED and DECLINED are allowed when adding a prisoner to a waiting list"
+  }
+}
+
+internal fun PrisonerWaitingListApplicationRequest.failIfApplicationDateInFuture() {
+  require(applicationDate!! <= LocalDate.now()) { "Application date cannot be in the future" }
 }

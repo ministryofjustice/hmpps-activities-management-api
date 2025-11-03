@@ -261,7 +261,7 @@ class WaitingListApplicationController(private val waitingListService: WaitingLi
       ),
       ApiResponse(
         responseCode = "404",
-        description = "The activity schedule in the request for this ID was not found.",
+        description = "An activity schedule was not found.",
         content = [
           Content(
             mediaType = "application/json",
