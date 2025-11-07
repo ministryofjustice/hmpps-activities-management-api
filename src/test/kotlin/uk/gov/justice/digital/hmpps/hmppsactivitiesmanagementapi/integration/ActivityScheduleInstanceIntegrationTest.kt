@@ -20,7 +20,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityS
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledInstanceAttendanceSummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstanceCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstancesCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstancesUncancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduledInstancedUpdateRequest
@@ -658,63 +657,6 @@ class ActivityScheduleInstanceIntegrationTest : LocalStackTestBase() {
   }
 
   @Nested
-  @DisplayName("cancelScheduledInstance")
-  inner class CancelScheduledInstance {
-    @Test
-    @Sql("classpath:test_data/seed-activity-id-16.sql")
-    fun success() {
-      webTestClient.cancelScheduledInstance(1, "Location unavailable", "USER1")
-
-      with(webTestClient.getScheduledInstanceById(1)!!) {
-        assertThat(cancelled).isTrue
-        assertThat(cancelledBy).isEqualTo("USER1")
-        assertThat(cancelledIssuePayment).isNull()
-
-        with(attendances.first()) {
-          assertThat(attendanceReason!!.code).isEqualTo("CANCELLED")
-          assertThat(status).isEqualTo("COMPLETED")
-          assertThat(comment).isEqualTo("Location unavailable")
-          assertThat(recordedBy).isEqualTo("USER1")
-          assertThat(recordedTime).isNotNull
-          assertThat(editable).isTrue
-          assertThat(issuePayment).isTrue
-        }
-      }
-
-      validateOutboundEvents(
-        ExpectedOutboundEvent(ACTIVITY_SCHEDULED_INSTANCE_AMENDED, 1),
-        ExpectedOutboundEvent(PRISONER_ATTENDANCE_AMENDED, 1),
-        ExpectedOutboundEvent(PRISONER_ATTENDANCE_AMENDED, 2),
-      )
-    }
-
-    @Test
-    @Sql("classpath:test_data/seed-activity-id-16.sql")
-    fun `404 - scheduled instance not found`() {
-      val response = webTestClient.cancelScheduledInstance(4, "Location unavailable", "USER1")
-      response.expectStatus().isNotFound
-    }
-
-    @Test
-    @Sql("classpath:test_data/seed-activity-id-16.sql")
-    fun `400 - scheduled instance in past`() {
-      val response = webTestClient.cancelScheduledInstance(2, "Location unavailable", "USER1")
-      response
-        .expectStatus().isBadRequest
-        .expectBody().jsonPath("developerMessage").isEqualTo("Maths PM (PM) has ended")
-    }
-
-    @Test
-    @Sql("classpath:test_data/seed-activity-id-16.sql")
-    fun `400 - scheduled instance has been canceled`() {
-      val response = webTestClient.cancelScheduledInstance(3, "Location unavailable", "USER1")
-      response
-        .expectStatus().isBadRequest
-        .expectBody().jsonPath("developerMessage").isEqualTo("Maths PM (PM) has already been cancelled")
-    }
-  }
-
-  @Nested
   @DisplayName("cancelScheduledInstances")
   inner class CancelScheduledInstances {
     @Test
@@ -1045,18 +987,6 @@ class ActivityScheduleInstanceIntegrationTest : LocalStackTestBase() {
   private fun WebTestClient.updateScheduledInstance(id: Long, cancelledReason: String?, comment: String?, issuePayment: Boolean?) = put()
     .uri("/scheduled-instances/$id")
     .bodyValue(ScheduledInstancedUpdateRequest(cancelledReason, comment, issuePayment))
-    .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
-    .exchange()
-
-  private fun WebTestClient.cancelScheduledInstance(
-    id: Long,
-    reason: String,
-    username: String,
-    comment: String? = null,
-  ) = put()
-    .uri("/scheduled-instances/$id/cancel")
-    .bodyValue(ScheduleInstanceCancelRequest(reason, username, comment))
     .accept(MediaType.APPLICATION_JSON)
     .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
     .exchange()

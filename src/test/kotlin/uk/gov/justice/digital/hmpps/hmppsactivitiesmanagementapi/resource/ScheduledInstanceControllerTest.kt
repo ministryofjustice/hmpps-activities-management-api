@@ -21,7 +21,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledInstanceAttendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledInstanceAttendanceSummary.AttendanceSummaryDetails
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstanceCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstancesUncancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduledInstancedUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ScheduledAttendee
@@ -104,74 +103,6 @@ class ScheduledInstanceControllerTest : ControllerTestBase<ScheduledInstanceCont
     assertThat(response.contentAsString).contains("Not found")
 
     verify(scheduledInstanceService).getAttendeesForScheduledInstance(2)
-  }
-
-  @Test
-  fun `204 response when successfully cancelling scheduled instance`() {
-    mockMvc.put("/scheduled-instances/1/cancel") {
-      accept = MediaType.APPLICATION_JSON
-      contentType = MediaType.APPLICATION_JSON
-      content = mapper.writeValueAsBytes(
-        ScheduleInstanceCancelRequest("Staff unavailable", "USER1", null),
-      )
-    }.andExpect { status { isNoContent() } }
-
-    verify(scheduledInstanceService).cancelScheduledInstance(
-      1,
-      ScheduleInstanceCancelRequest("Staff unavailable", "USER1", null),
-    )
-  }
-
-  @Test
-  fun `404 response when scheduled instance to be cancelled is not found`() {
-    whenever(
-      scheduledInstanceService.cancelScheduledInstance(
-        2,
-        ScheduleInstanceCancelRequest("Staff unavailable", "USER1", null),
-      ),
-    ).thenThrow(EntityNotFoundException("not found"))
-
-    mockMvc.put("/scheduled-instances/2/cancel") {
-      accept = MediaType.APPLICATION_JSON
-      contentType = MediaType.APPLICATION_JSON
-      content = mapper.writeValueAsBytes(
-        ScheduleInstanceCancelRequest("Staff unavailable", "USER1", null),
-      )
-    }.andExpect { status { isNotFound() } }
-  }
-
-  @Test
-  fun `400 response when bad request`() {
-    whenever(
-      scheduledInstanceService.cancelScheduledInstance(
-        3,
-        ScheduleInstanceCancelRequest("Staff unavailable", "USER1", null),
-      ),
-    ).thenThrow(IllegalArgumentException("Bad request"))
-
-    mockMvc.put("/scheduled-instances/3/cancel") {
-      accept = MediaType.APPLICATION_JSON
-      contentType = MediaType.APPLICATION_JSON
-      content = mapper.writeValueAsBytes(
-        ScheduleInstanceCancelRequest("Staff unavailable", "USER1", null),
-      )
-    }.andExpect { status { isBadRequest() } }
-  }
-
-  @Test
-  fun `cancelScheduledInstances - 204 response when successfully cancelling multiple scheduled instances`() {
-    mockMvc.put("/scheduled-instances/1/cancel") {
-      accept = MediaType.APPLICATION_JSON
-      contentType = MediaType.APPLICATION_JSON
-      content = mapper.writeValueAsBytes(
-        ScheduleInstanceCancelRequest("Staff unavailable", "USER1", null),
-      )
-    }.andExpect { status { isNoContent() } }
-
-    verify(scheduledInstanceService).cancelScheduledInstance(
-      1,
-      ScheduleInstanceCancelRequest("Staff unavailable", "USER1", null),
-    )
   }
 
   @Test
