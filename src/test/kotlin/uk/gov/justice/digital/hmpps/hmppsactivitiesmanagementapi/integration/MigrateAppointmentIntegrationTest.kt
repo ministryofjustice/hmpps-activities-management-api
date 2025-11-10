@@ -279,8 +279,8 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
     webTestClient.getAppointmentDetailsById(17)!!.isDeleted isBool true
 
     validateOutboundEvents(
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 25),
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 27),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 25, "CHAP"),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 27, "EDUC"),
     )
 
     verify(auditService, times(2)).logEvent(auditableEventCaptor.capture())
@@ -312,7 +312,7 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
     webTestClient.getAppointmentDetailsById(17)!!.isDeleted isBool false
 
     validateOutboundEvents(
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 25),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 25, "CHAP"),
     )
 
     verify(auditService).logEvent(auditableEventCaptor.capture())
@@ -335,8 +335,8 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
     }
 
     validateOutboundEvents(
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 20),
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 22),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 20, "CHAP"),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 22, "CHAP"),
     )
 
     verify(auditService, times(3)).logEvent(auditableEventCaptor.capture())

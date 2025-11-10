@@ -155,7 +155,7 @@ abstract class LocalStackTestBase : ActivitiesIntegrationTestBase() {
     val (firstIdKey, secondIdKey) = when (expectedOutboundEvent.event) {
       ACTIVITY_SCHEDULE_CREATED, ACTIVITY_SCHEDULE_UPDATED -> "activityScheduleId" to null
       ACTIVITY_SCHEDULED_INSTANCE_AMENDED -> "scheduledInstanceId" to null
-      APPOINTMENT_INSTANCE_CREATED, APPOINTMENT_INSTANCE_UPDATED, APPOINTMENT_INSTANCE_DELETED, APPOINTMENT_INSTANCE_CANCELLED, APPOINTMENT_INSTANCE_UNCANCELLED -> "appointmentInstanceId" to null
+      APPOINTMENT_INSTANCE_CREATED, APPOINTMENT_INSTANCE_UPDATED, APPOINTMENT_INSTANCE_DELETED, APPOINTMENT_INSTANCE_CANCELLED, APPOINTMENT_INSTANCE_UNCANCELLED -> "appointmentInstanceId" to "categoryCode"
       PRISONER_ALLOCATED, PRISONER_ALLOCATION_AMENDED -> "allocationId" to null
       PRISONER_ATTENDANCE_CREATED, PRISONER_ATTENDANCE_AMENDED, PRISONER_ATTENDANCE_EXPIRED -> "attendanceId" to null
       PRISONER_ATTENDANCE_DELETED -> "bookingId" to "scheduledInstanceId"
@@ -165,10 +165,20 @@ abstract class LocalStackTestBase : ActivitiesIntegrationTestBase() {
     if (expectedOutboundEvent.event.eventType != actualEventType) return false
     val actualFirstId = JsonPath.parse(actualMessage).read<Int>("$.additionalInformation.$firstIdKey").toLong()
     if (actualFirstId != expectedOutboundEvent.firstId) return false
+
     if (secondIdKey == null) return true
-    val actualSecondId = JsonPath.parse(actualMessage).read<Int>("$.additionalInformation.$secondIdKey").toLong()
-    return actualSecondId == expectedOutboundEvent.secondId
+    val actualSecondId = JsonPath.parse(actualMessage).read<Any>("$.additionalInformation.$secondIdKey")
+
+    return when (expectedOutboundEvent.secondId) {
+      is Long -> when (actualSecondId) {
+        is Long -> actualSecondId == expectedOutboundEvent.secondId
+        is Int -> actualSecondId.toLong() == expectedOutboundEvent.secondId
+        else -> false
+      }
+      is String -> actualSecondId.toString() == expectedOutboundEvent.secondId
+      else -> actualSecondId?.toString() == expectedOutboundEvent.secondId?.toString()
+    }
   }
 
-  data class ExpectedOutboundEvent(val event: OutboundEvent, val firstId: Long, val secondId: Long? = null, val times: Int = 1)
+  data class ExpectedOutboundEvent(val event: OutboundEvent, val firstId: Long, val secondId: Any? = null, val times: Int = 1)
 }

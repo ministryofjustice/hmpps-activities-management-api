@@ -40,12 +40,12 @@ class AppointmentInstanceServiceTest {
     fun `returns an appointment instance for known appointment instance id`() {
       val entity = appointmentInstanceEntity()
       whenever(appointmentInstanceRepository.findById(1)).thenReturn(Optional.of(entity))
-      assertThat(appointmentInstanceService.getAppointmentInstanceById(1)).isEqualTo(entity.toModel())
+      assertThat(appointmentInstanceService.getAppointmentInstanceById(1, false)).isEqualTo(entity.toModel())
     }
 
     @Test
     fun `throws entity not found exception for unknown appointment instance id`() {
-      assertThatThrownBy { appointmentInstanceService.getAppointmentInstanceById(0) }
+      assertThatThrownBy { appointmentInstanceService.getAppointmentInstanceById(0, false) }
         .isInstanceOf(EntityNotFoundException::class.java)
         .hasMessage("Appointment Instance 0 not found")
     }
@@ -56,7 +56,7 @@ class AppointmentInstanceServiceTest {
       val entity = appointmentInstanceEntity()
       whenever(appointmentInstanceRepository.findById(1)).thenReturn(Optional.of(entity))
 
-      assertThatThrownBy { appointmentInstanceService.getAppointmentInstanceById(1) }
+      assertThatThrownBy { appointmentInstanceService.getAppointmentInstanceById(1, true) }
         .isInstanceOf(CaseloadAccessException::class.java)
     }
   }

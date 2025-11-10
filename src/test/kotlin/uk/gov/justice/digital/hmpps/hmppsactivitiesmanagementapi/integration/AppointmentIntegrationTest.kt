@@ -158,7 +158,7 @@ class AppointmentIntegrationTest : LocalStackTestBase() {
     }
 
     validateOutboundEvents(
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_UPDATED, appointmentIds.first()),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_UPDATED, appointmentIds.first(), "VLB"),
     )
 
     verify(auditService).logEvent(any<AppointmentEditedEvent>())
@@ -238,7 +238,7 @@ class AppointmentIntegrationTest : LocalStackTestBase() {
     }
 
     validateOutboundEvents(
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_UPDATED, appointmentIds.first()),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_UPDATED, appointmentIds.first(), "VLB"),
     )
 
     verify(auditService).logEvent(any<AppointmentEditedEvent>())
@@ -299,7 +299,7 @@ class AppointmentIntegrationTest : LocalStackTestBase() {
     }
 
     validateOutboundEvents(
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_UPDATED, appointmentIds.first()),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_UPDATED, appointmentIds.first(), "VLB"),
     )
 
     verify(auditService).logEvent(any<AppointmentEditedEvent>())
@@ -327,7 +327,7 @@ class AppointmentIntegrationTest : LocalStackTestBase() {
     }
 
     validateOutboundEvents(
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CANCELLED, appointmentIds.first()),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CANCELLED, appointmentIds.first(), "OIC"),
     )
 
     verify(auditService).logEvent(any<AppointmentCancelledEvent>())
@@ -352,7 +352,7 @@ class AppointmentIntegrationTest : LocalStackTestBase() {
     assertThat(appointmentSeries.appointments.filterNot { it.isDeleted }).isEmpty()
 
     validateOutboundEvents(
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, appointmentIds.first()),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, appointmentIds.first(), "OIC"),
     )
 
     verify(auditService).logEvent(any<AppointmentDeletedEvent>())
@@ -378,10 +378,10 @@ class AppointmentIntegrationTest : LocalStackTestBase() {
     }
 
     validateOutboundEvents(
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 24),
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 25),
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 26),
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 27),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 24, "OIC"),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 25, "OIC"),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 26, "OIC"),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 27, "OIC"),
     )
 
     verify(auditService).logEvent(any<AppointmentDeletedEvent>())
@@ -416,10 +416,10 @@ class AppointmentIntegrationTest : LocalStackTestBase() {
     }
 
     validateOutboundEvents(
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CANCELLED, 24),
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CANCELLED, 25),
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CANCELLED, 26),
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CANCELLED, 27),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CANCELLED, 24, "OIC"),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CANCELLED, 25, "OIC"),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CANCELLED, 26, "OIC"),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CANCELLED, 27, "OIC"),
     )
 
     verify(auditService).logEvent(any<AppointmentCancelledEvent>())
@@ -451,7 +451,7 @@ class AppointmentIntegrationTest : LocalStackTestBase() {
     }
 
     validateOutboundEvents(
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_UNCANCELLED, 3),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_UNCANCELLED, 3, "OIC"),
     )
 
     verify(auditService).logEvent(any<AppointmentUncancelledEvent>())
@@ -482,8 +482,8 @@ class AppointmentIntegrationTest : LocalStackTestBase() {
     }
 
     validateOutboundEvents(
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_UNCANCELLED, 4),
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_UNCANCELLED, 5),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_UNCANCELLED, 4, "OIC"),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_UNCANCELLED, 5, "OIC"),
     )
 
     verify(auditService).logEvent(any<AppointmentUncancelledEvent>())
@@ -513,9 +513,9 @@ class AppointmentIntegrationTest : LocalStackTestBase() {
     }
 
     validateOutboundEvents(
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_UNCANCELLED, 3),
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_UNCANCELLED, 4),
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_UNCANCELLED, 5),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_UNCANCELLED, 3, "OIC"),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_UNCANCELLED, 4, "OIC"),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_UNCANCELLED, 5, "OIC"),
     )
 
     verify(auditService).logEvent(any<AppointmentUncancelledEvent>())
@@ -566,18 +566,18 @@ class AppointmentIntegrationTest : LocalStackTestBase() {
       appointmentSeries.appointments.count { it.isCancelled() } isEqualTo 4
 
       validateOutboundEvents(
-        ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CANCELLED, 30),
-        ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CANCELLED, 31),
-        ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CANCELLED, 32),
-        ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CANCELLED, 33),
-        ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CANCELLED, 34),
-        ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CANCELLED, 35),
-        ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CANCELLED, 36),
-        ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CANCELLED, 37),
-        ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CANCELLED, 38),
-        ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CANCELLED, 39),
-        ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CANCELLED, 40),
-        ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CANCELLED, 41),
+        ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CANCELLED, 30, "OIC"),
+        ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CANCELLED, 31, "OIC"),
+        ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CANCELLED, 32, "OIC"),
+        ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CANCELLED, 33, "OIC"),
+        ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CANCELLED, 34, "OIC"),
+        ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CANCELLED, 35, "OIC"),
+        ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CANCELLED, 36, "OIC"),
+        ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CANCELLED, 37, "OIC"),
+        ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CANCELLED, 38, "OIC"),
+        ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CANCELLED, 39, "OIC"),
+        ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CANCELLED, 40, "OIC"),
+        ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CANCELLED, 41, "OIC"),
       )
     }
 
@@ -636,18 +636,18 @@ class AppointmentIntegrationTest : LocalStackTestBase() {
     }
 
     validateOutboundEvents(
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 36),
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 37),
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 38),
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 30),
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 31),
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 32),
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 33),
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 34),
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 35),
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 39),
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 40),
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 41),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 36, "OIC"),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 37, "OIC"),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 38, "OIC"),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 30, "OIC"),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 31, "OIC"),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 32, "OIC"),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 33, "OIC"),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 34, "OIC"),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 35, "OIC"),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 39, "OIC"),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 40, "OIC"),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 41, "OIC"),
     )
 
     verify(telemetryClient).trackEvent(
@@ -794,16 +794,16 @@ class AppointmentIntegrationTest : LocalStackTestBase() {
 
     val expectedOutboundEvents = appointmentSeries.appointments.subList(2, appointmentSeries.appointments.size).flatMap {
       it.attendees.filter { attendee -> attendee.prisonerNumber == "C3456DE" }
-        .map { attendee -> ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, attendee.id) }
+        .map { attendee -> ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, attendee.id, "VLB") }
     }
       .toMutableList()
       .also {
         it.addAll(
           listOf(
-            ExpectedOutboundEvent(APPOINTMENT_INSTANCE_UPDATED, 25),
-            ExpectedOutboundEvent(APPOINTMENT_INSTANCE_UPDATED, 27),
-            ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 24),
-            ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 26),
+            ExpectedOutboundEvent(APPOINTMENT_INSTANCE_UPDATED, 25, "VLB"),
+            ExpectedOutboundEvent(APPOINTMENT_INSTANCE_UPDATED, 27, "VLB"),
+            ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 24, ""),
+            ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 26, ""),
           ),
         )
       }
@@ -931,16 +931,16 @@ class AppointmentIntegrationTest : LocalStackTestBase() {
 
     val expectedOutboundEvents = appointmentSeries.appointments.subList(2, appointmentSeries.appointments.size).flatMap {
       it.attendees.filter { attendee -> attendee.prisonerNumber == "C3456DE" }
-        .map { attendee -> ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, attendee.id) }
+        .map { attendee -> ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, attendee.id, "VLB") }
     }
       .toMutableList()
       .also {
         it.addAll(
           listOf(
-            ExpectedOutboundEvent(APPOINTMENT_INSTANCE_UPDATED, 25),
-            ExpectedOutboundEvent(APPOINTMENT_INSTANCE_UPDATED, 27),
-            ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 24),
-            ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 26),
+            ExpectedOutboundEvent(APPOINTMENT_INSTANCE_UPDATED, 25, "VLB"),
+            ExpectedOutboundEvent(APPOINTMENT_INSTANCE_UPDATED, 27, "VLB"),
+            ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 24, ""),
+            ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 26, ""),
           ),
         )
       }
@@ -1000,7 +1000,7 @@ class AppointmentIntegrationTest : LocalStackTestBase() {
       appointmentSeries.appointments.count { it.internalLocationId == 456L && it.dpsLocationId == request.dpsLocationId } isEqualTo 4
 
       val expectedOutboundEvents = appointmentSeries.appointments.flatMap { it.attendees }
-        .map { ExpectedOutboundEvent(APPOINTMENT_INSTANCE_UPDATED, it.id) }
+        .map { ExpectedOutboundEvent(APPOINTMENT_INSTANCE_UPDATED, it.id, "OIC") }
         .toTypedArray()
 
       validateOutboundEvents(*expectedOutboundEvents)
@@ -1089,7 +1089,7 @@ class AppointmentIntegrationTest : LocalStackTestBase() {
       appointmentSeries.appointments.count { it.internalLocationId == request.internalLocationId && it.dpsLocationId == dpsLocation.id } isEqualTo 4
 
       val expectedOutboundEvents = appointmentSeries.appointments.flatMap { it.attendees }
-        .map { ExpectedOutboundEvent(APPOINTMENT_INSTANCE_UPDATED, it.id) }
+        .map { ExpectedOutboundEvent(APPOINTMENT_INSTANCE_UPDATED, it.id, "OIC") }
         .toTypedArray()
 
       validateOutboundEvents(*expectedOutboundEvents)
@@ -1170,18 +1170,18 @@ class AppointmentIntegrationTest : LocalStackTestBase() {
     }
 
     validateOutboundEvents(
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, 1),
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, 2),
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, 3),
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, 4),
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, 5),
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, 6),
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, 7),
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, 8),
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 30),
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 33),
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 36),
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 39),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, 1, "OIC"),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, 2, "OIC"),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, 3, "OIC"),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, 4, "OIC"),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, 5, "OIC"),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, 6, "OIC"),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, 7, "OIC"),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, 8, "OIC"),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 30, ""),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 33, ""),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 36, ""),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 39, ""),
     )
 
     verify(telemetryClient).trackEvent(

@@ -27,7 +27,7 @@ class AppointmentInstanceControllerTest : ControllerTestBase<AppointmentInstance
   fun `200 response when get appointment instance by valid id`() {
     val appointmentInstance = appointmentInstanceEntity().toModel()
 
-    whenever(appointmentInstanceService.getAppointmentInstanceById(1)).thenReturn(appointmentInstance)
+    whenever(appointmentInstanceService.getAppointmentInstanceById(1, false)).thenReturn(appointmentInstance)
 
     val response = mockMvc.getAppointmentInstanceById(1)
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
@@ -36,12 +36,12 @@ class AppointmentInstanceControllerTest : ControllerTestBase<AppointmentInstance
 
     assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(appointmentInstance))
 
-    verify(appointmentInstanceService).getAppointmentInstanceById(1)
+    verify(appointmentInstanceService).getAppointmentInstanceById(1, false)
   }
 
   @Test
   fun `404 response when get appointment instance by invalid id`() {
-    whenever(appointmentInstanceService.getAppointmentInstanceById(-1)).thenThrow(EntityNotFoundException("Appointment Instance -1 not found"))
+    whenever(appointmentInstanceService.getAppointmentInstanceById(-1, false)).thenThrow(EntityNotFoundException("Appointment Instance -1 not found"))
 
     val response = mockMvc.getAppointmentInstanceById(-1)
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
@@ -50,7 +50,7 @@ class AppointmentInstanceControllerTest : ControllerTestBase<AppointmentInstance
 
     assertThat(response.contentAsString).contains("Appointment Instance -1 not found")
 
-    verify(appointmentInstanceService).getAppointmentInstanceById(-1)
+    verify(appointmentInstanceService).getAppointmentInstanceById(-1, false)
   }
 
   private fun MockMvc.getAppointmentInstanceById(id: Long) = get("/appointment-instances/{appointmentInstanceId}", id)

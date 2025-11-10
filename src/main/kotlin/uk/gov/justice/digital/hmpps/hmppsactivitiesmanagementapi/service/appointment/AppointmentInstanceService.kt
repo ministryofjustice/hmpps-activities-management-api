@@ -8,9 +8,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCasel
 
 @Service
 class AppointmentInstanceService(private val appointmentInstanceRepository: AppointmentInstanceRepository) {
-  fun getAppointmentInstanceById(appointmentInstanceId: Long): AppointmentInstance {
+  fun getAppointmentInstanceById(appointmentInstanceId: Long, caseLoadAccess: Boolean): AppointmentInstance {
     val appointmentInstance = appointmentInstanceRepository.findOrThrowNotFound(appointmentInstanceId).toModel()
-    checkCaseloadAccess(appointmentInstance.prisonCode)
+    if (caseLoadAccess) {
+      checkCaseloadAccess(appointmentInstance.prisonCode)
+    }
 
     return appointmentInstance
   }

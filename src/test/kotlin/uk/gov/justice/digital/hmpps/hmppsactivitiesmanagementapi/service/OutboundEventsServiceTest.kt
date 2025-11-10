@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
@@ -11,7 +12,10 @@ import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.verifyNoMoreInteractions
+import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.FeatureSwitches
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentInstance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.AppointmentInstanceService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.AdditionalInformation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.AppointmentInstanceInformation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
@@ -29,7 +33,13 @@ class OutboundEventsServiceTest {
 
   private val eventsPublisher: OutboundEventsPublisher = mock()
   private val featureSwitches: FeatureSwitches = mock()
-  private val outboundEventsService = OutboundEventsService(eventsPublisher, featureSwitches)
+  private val appointmentInstanceService: AppointmentInstanceService = mock()
+  private val appointmentInstance: AppointmentInstance = mock()
+  private val outboundEventsService = OutboundEventsService(
+    eventsPublisher,
+    featureSwitches,
+    appointmentInstanceService,
+  )
   private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
 
   @Test
@@ -127,12 +137,37 @@ class OutboundEventsServiceTest {
   fun `appointment instance created event with id 1 is sent to the events publisher`() {
     featureSwitches.stub { on { isEnabled(OutboundEvent.APPOINTMENT_INSTANCE_CREATED) } doReturn true }
 
+    whenever(appointmentInstanceService.getAppointmentInstanceById(1L, false)).thenReturn(appointmentInstance)
+    whenever(appointmentInstance.id).thenReturn(1L)
+    whenever(appointmentInstance.categoryCode).thenReturn("TEST")
+
     outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_CREATED, 1L)
 
+    verify(appointmentInstanceService).getAppointmentInstanceById(1L, false)
     verify(
       expectedEventType = "appointments.appointment-instance.created",
-      expectedAdditionalInformation = AppointmentInstanceInformation(1),
+      expectedAdditionalInformation = AppointmentInstanceInformation(1, "TEST"),
       expectedDescription = "A new appointment instance has been created in the activities management service",
+    )
+  }
+
+  @Test
+  fun `returns category code as an empty string when appointment instance is not found`() {
+    featureSwitches.stub { on { isEnabled(OutboundEvent.APPOINTMENT_INSTANCE_DELETED) } doReturn true }
+
+    whenever(appointmentInstanceService.getAppointmentInstanceById(1L, false)).thenThrow(EntityNotFoundException("AppointmentInstance 1 not found"))
+
+    try {
+      appointmentInstanceService.getAppointmentInstanceById(1L, false)
+    } catch (ex: EntityNotFoundException) {
+      assertThat(ex).hasMessage("AppointmentInstance 1 not found")
+    }
+
+    outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_DELETED, 1L)
+    verify(
+      expectedEventType = "appointments.appointment-instance.deleted",
+      expectedAdditionalInformation = AppointmentInstanceInformation(1, ""),
+      expectedDescription = "An appointment instance has been deleted in the activities management service",
     )
   }
 

@@ -220,8 +220,8 @@ class AppointmentSetIntegrationTest : AppointmentsIntegrationTestBase() {
     }
 
     validateOutboundEvents(
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, response.appointments[0].attendees[0].id),
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, response.appointments[1].attendees[0].id),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, response.appointments[0].attendees[0].id, "OIC"),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, response.appointments[1].attendees[0].id, "OIC"),
     )
 
     verify(telemetryClient).trackEvent(eq(TelemetryEvent.APPOINTMENT_SET_CREATED.value), any(), any())
@@ -277,8 +277,8 @@ class AppointmentSetIntegrationTest : AppointmentsIntegrationTestBase() {
     }
 
     validateOutboundEvents(
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, response.appointments[0].attendees[0].id),
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, response.appointments[1].attendees[0].id),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, response.appointments[0].attendees[0].id, "OIC"),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, response.appointments[1].attendees[0].id, "OIC"),
     )
 
     verify(telemetryClient).trackEvent(eq(TelemetryEvent.APPOINTMENT_SET_CREATED.value), any(), any())
@@ -320,8 +320,8 @@ class AppointmentSetIntegrationTest : AppointmentsIntegrationTestBase() {
     }
 
     validateOutboundEvents(
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, response.appointments[0].attendees[0].id),
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, response.appointments[1].attendees[0].id),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, response.appointments[0].attendees[0].id, "OIC"),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, response.appointments[1].attendees[0].id, "OIC"),
     )
 
     verify(telemetryClient).trackEvent(eq(TelemetryEvent.APPOINTMENT_SET_CREATED.value), any(), any())
