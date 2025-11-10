@@ -38,7 +38,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonPayBandsLowMediumHigh
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleInstance
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstanceCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstancesCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstancesUncancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduledInstancedUpdateRequest
@@ -484,206 +483,40 @@ class ScheduledInstanceServiceTest {
     }
   }
 
-  @Nested
-  @DisplayName("cancelScheduledInstance")
-  inner class CancelScheduledInstance {
-    @Test
-    @Deprecated("Remove when toggle FEATURE_CANCEL_INSTANCE_PRIORITY_CHANGE_ENABLED is removed")
-    fun `cancels a scheduled instance and its attendance - success - old`() {
-      val activity = activityEntity(timestamp = LocalDateTime.now())
-      val schedule = activity.schedules().first()
-      val instance = schedule.instances().first()
-      instance.cancelled = false
+  @Test
+  fun `can get scheduled instance attendance summary`() {
+    val attendanceSummary = ScheduledInstanceAttendanceSummary(
+      scheduledInstanceId = 1,
+      activityId = 1,
+      activityScheduleId = 2,
+      prisonCode = "MDI",
+      summary = "English 1",
+      activityCategoryId = 4,
+      sessionDate = LocalDate.now(),
+      startTime = LocalTime.of(9, 0),
+      endTime = LocalTime.of(12, 0),
+      inCell = true,
+      onWing = false,
+      offWing = false,
+      cancelled = false,
+      allocations = 3,
+      attendees = 3,
+      notRecorded = 1,
+      attended = 1,
+      absences = 1,
+      paid = 1,
+      attendanceRequired = true,
+      timeSlot = TimeSlot.AM,
+    )
 
-      activity.addPay(
-        incentiveNomisCode = "STD",
-        incentiveLevel = "Standard",
-        payBand = prisonPayBandsLowMediumHigh()[1],
-        rate = 50,
-        pieceRate = 60,
-        pieceRateItems = 70,
-        startDate = null,
-      )
-      schedule.apply {
-        this.allocatePrisoner(
-          prisonerNumber = "A1234AB".toPrisonerNumber(),
-          startDate = LocalDate.now().plusDays(1),
-          bookingId = 10002,
-          payBand = prisonPayBandsLowMediumHigh()[1],
-          allocatedBy = "Mr Blogs",
-        )
-      }
-      instance.apply {
-        this.attendances.add(
-          Attendance(
-            attendanceId = 2,
-            scheduledInstance = this,
-            prisonerNumber = "A1234AB",
-          ),
-        )
-      }
+    whenever(attendanceSummaryRepository.findByPrisonAndDate("MDI", LocalDate.now()))
+      .thenReturn(listOf(attendanceSummary))
 
-      whenever(repository.findById(instance.scheduledInstanceId)).thenReturn(Optional.of(instance))
-      whenever(repository.saveAndFlush(instance)).thenReturn(instance)
-      whenever(attendanceReasonRepository.findByCode(AttendanceReasonEnum.CANCELLED)).thenReturn(
-        attendanceReason(
-          AttendanceReasonEnum.CANCELLED,
-        ),
-      )
+    addCaseloadIdToRequestHeader("MDI")
 
-      service.cancelScheduledInstance(
-        instance.scheduledInstanceId,
-        ScheduleInstanceCancelRequest("Staff unavailable", "USER1", "Resume tomorrow"),
-      )
+    val result = service.attendanceSummary("MDI", LocalDate.now())
 
-      assertThat(instance.cancelled).isTrue
-      assertThat(instance.cancelledTime).isNotNull
-      assertThat(instance.cancelledBy).isEqualTo("USER1")
-      assertThat(instance.comment).isEqualTo("Resume tomorrow")
-
-      instance.attendances.forEach {
-        assertThat(it.status()).isEqualTo(AttendanceStatus.COMPLETED)
-        assertThat(it.attendanceReason?.code).isEqualTo(AttendanceReasonEnum.CANCELLED)
-        assertThat(it.comment).isEqualTo("Staff unavailable")
-        assertThat(it.recordedBy).isEqualTo("USER1")
-        assertThat(it.recordedTime).isNotNull
-      }
-
-      verify(telemetryClient).trackEvent(TelemetryEvent.RECORD_ATTENDANCE.value, instance.attendances.first().toTelemetryPropertiesMap())
-      verify(outboundEventsService)
-        .send(OutboundEvent.ACTIVITY_SCHEDULED_INSTANCE_AMENDED, instance.scheduledInstanceId)
-      verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, instance.attendances.first().attendanceId)
-    }
-
-    @Test
-    fun `cancels a scheduled instance and its attendance - success`() {
-      val activity = activityEntity(timestamp = LocalDateTime.now())
-      val schedule = activity.schedules().first()
-      val instance = schedule.instances().first()
-      instance.cancelled = false
-
-      activity.addPay(
-        incentiveNomisCode = "STD",
-        incentiveLevel = "Standard",
-        payBand = prisonPayBandsLowMediumHigh()[1],
-        rate = 50,
-        pieceRate = 60,
-        pieceRateItems = 70,
-        startDate = null,
-      )
-      schedule.apply {
-        this.allocatePrisoner(
-          prisonerNumber = "A1234AB".toPrisonerNumber(),
-          startDate = LocalDate.now().plusDays(1),
-          bookingId = 10002,
-          payBand = prisonPayBandsLowMediumHigh()[1],
-          allocatedBy = "Mr Blogs",
-        )
-      }
-      instance.apply {
-        this.attendances.add(
-          Attendance(
-            attendanceId = 2,
-            scheduledInstance = this,
-            prisonerNumber = "A1234AB",
-          ),
-        )
-      }
-
-      whenever(repository.findById(instance.scheduledInstanceId)).thenReturn(Optional.of(instance))
-      whenever(repository.saveAndFlush(instance)).thenReturn(instance)
-      whenever(attendanceReasonRepository.findByCode(AttendanceReasonEnum.CANCELLED)).thenReturn(
-        attendanceReason(
-          AttendanceReasonEnum.CANCELLED,
-        ),
-      )
-
-      featureSwitches.stub { on { isEnabled(Feature.CANCEL_INSTANCE_PRIORITY_CHANGE_ENABLED) } doReturn true }
-
-      service.cancelScheduledInstance(
-        instance.scheduledInstanceId,
-        ScheduleInstanceCancelRequest("Staff unavailable", "USER1", "Resume tomorrow"),
-      )
-
-      assertThat(instance.cancelled).isTrue
-      assertThat(instance.cancelledTime).isNotNull
-      assertThat(instance.cancelledBy).isEqualTo("USER1")
-      assertThat(instance.comment).isEqualTo("Resume tomorrow")
-
-      instance.attendances.forEach {
-        assertThat(it.status()).isEqualTo(AttendanceStatus.COMPLETED)
-        assertThat(it.attendanceReason?.code).isEqualTo(AttendanceReasonEnum.CANCELLED)
-        assertThat(it.comment).isEqualTo("Staff unavailable")
-        assertThat(it.recordedBy).isEqualTo("USER1")
-        assertThat(it.recordedTime).isNotNull
-      }
-
-      verify(telemetryClient).trackEvent(TelemetryEvent.RECORD_ATTENDANCE.value, instance.attendances.first().toTelemetryPropertiesMap())
-      verify(outboundEventsService)
-        .send(OutboundEvent.ACTIVITY_SCHEDULED_INSTANCE_AMENDED, instance.scheduledInstanceId)
-      verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, instance.attendances.first().attendanceId)
-    }
-
-    @Test
-    fun `cannot cancel an already cancelled instance`() {
-      val activity = activityEntity(timestamp = LocalDateTime.now())
-      val schedule = activity.schedules().first()
-      val instance = schedule.instances().first()
-      instance.cancelled = true
-
-      whenever(repository.findById(instance.scheduledInstanceId)).thenReturn(Optional.of(instance))
-      whenever(attendanceReasonRepository.findByCode(AttendanceReasonEnum.CANCELLED)).thenReturn(
-        attendanceReason(
-          AttendanceReasonEnum.CANCELLED,
-        ),
-      )
-
-      assertThrows<IllegalArgumentException> {
-        service.cancelScheduledInstance(
-          instance.scheduledInstanceId,
-          ScheduleInstanceCancelRequest("Staff unavailable", "USER1", "Resume tomorrow"),
-        )
-      }
-
-      verify(outboundEventsService, times(0))
-        .send(OutboundEvent.ACTIVITY_SCHEDULED_INSTANCE_AMENDED, instance.scheduledInstanceId)
-    }
-
-    @Test
-    fun `can get scheduled instance attendance summary`() {
-      val attendanceSummary = ScheduledInstanceAttendanceSummary(
-        scheduledInstanceId = 1,
-        activityId = 1,
-        activityScheduleId = 2,
-        prisonCode = "MDI",
-        summary = "English 1",
-        activityCategoryId = 4,
-        sessionDate = LocalDate.now(),
-        startTime = LocalTime.of(9, 0),
-        endTime = LocalTime.of(12, 0),
-        inCell = true,
-        onWing = false,
-        offWing = false,
-        cancelled = false,
-        allocations = 3,
-        attendees = 3,
-        notRecorded = 1,
-        attended = 1,
-        absences = 1,
-        paid = 1,
-        attendanceRequired = true,
-        timeSlot = TimeSlot.AM,
-      )
-
-      whenever(attendanceSummaryRepository.findByPrisonAndDate("MDI", LocalDate.now()))
-        .thenReturn(listOf(attendanceSummary))
-
-      addCaseloadIdToRequestHeader("MDI")
-
-      val result = service.attendanceSummary("MDI", LocalDate.now())
-
-      assertThat(result).isEqualTo(listOf(attendanceSummary.toModel()))
-    }
+    assertThat(result).isEqualTo(listOf(attendanceSummary.toModel()))
   }
 
   @Nested

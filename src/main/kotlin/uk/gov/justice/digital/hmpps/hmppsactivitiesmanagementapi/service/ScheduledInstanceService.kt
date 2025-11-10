@@ -20,7 +20,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toSchedu
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toScheduledAttendeeModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledInstanceAttendanceSummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstanceCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstancesCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstancesUncancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduledInstancedUpdateRequest
@@ -172,48 +171,6 @@ class ScheduledInstanceService(
       }
 
     log.info("Finished uncancelling scheduled instances")
-  }
-
-  fun cancelScheduledInstance(instanceId: Long, scheduleInstanceCancelRequest: ScheduleInstanceCancelRequest) {
-    log.info("Cancelling scheduled instance $instanceId")
-
-    val (cancelledInstance, cancelledAttendances) = transactionHandler.newSpringTransaction {
-      val scheduledInstance = repository.findById(instanceId)
-        .orElseThrow { EntityNotFoundException("Scheduled Instance $instanceId not found") }
-
-      val waitingAttendances = scheduledInstance.attendances.filter { it.status() == AttendanceStatus.WAITING }
-
-      val cancelledAttendances = scheduledInstance.cancelSessionAndAttendances(
-        reason = scheduleInstanceCancelRequest.reason,
-        by = scheduleInstanceCancelRequest.username,
-        cancelComment = scheduleInstanceCancelRequest.comment,
-        cancellationReason = attendanceReasonRepository.findByCode(AttendanceReasonEnum.CANCELLED),
-        useNewPriorityRules = useNewPriorityRules,
-      )
-
-      // If going from WAITING -> COMPLETED track as a RECORD_ATTENDANCE event
-      waitingAttendances.forEach { attendance ->
-        if (attendance.status() == AttendanceStatus.COMPLETED) {
-          val propertiesMap = attendance.toTelemetryPropertiesMap()
-          telemetryClient.trackEvent(TelemetryEvent.RECORD_ATTENDANCE.value, propertiesMap)
-        }
-      }
-
-      repository.saveAndFlush(scheduledInstance) to cancelledAttendances
-    }
-
-    // Emit sync events - manually
-    if (cancelledInstance.cancelled) {
-      log.info("Sending instance amended and attendance amended events.")
-
-      send(OutboundEvent.ACTIVITY_SCHEDULED_INSTANCE_AMENDED, cancelledInstance.scheduledInstanceId)
-
-      cancelledAttendances.forEach { attendance ->
-        send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, attendance.attendanceId)
-      }
-    }
-
-    log.info("Cancelled scheduled instance $instanceId")
   }
 
   fun cancelScheduledInstances(request: ScheduleInstancesCancelRequest) {
