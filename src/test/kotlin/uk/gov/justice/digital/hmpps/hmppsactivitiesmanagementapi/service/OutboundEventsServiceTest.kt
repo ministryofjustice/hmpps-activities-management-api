@@ -135,8 +135,6 @@ class OutboundEventsServiceTest {
   fun `appointment instance created event with id 1 is sent to the events publisher`() {
     featureSwitches.stub { on { isEnabled(OutboundEvent.APPOINTMENT_INSTANCE_CREATED) } doReturn true }
 
-    whenever(appointmentInstanceService.getAppointmentInstanceById(1L)).thenReturn(appointmentInstance)
-    whenever(appointmentInstance.id).thenReturn(1L)
     whenever(appointmentInstance.categoryCode).thenReturn("TEST")
 
     outboundEventsService.sendAppointmentEvent(OutboundEvent.APPOINTMENT_INSTANCE_CREATED, 1L, "TEST")
