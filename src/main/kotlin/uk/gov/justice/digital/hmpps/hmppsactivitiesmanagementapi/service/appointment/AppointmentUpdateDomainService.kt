@@ -91,11 +91,11 @@ class AppointmentUpdateDomainService(
     }.also { (updatedAppointmentSeries, removedAttendees, addedAttendees) ->
 
       removedAttendees.forEach { attendee ->
-        outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_DELETED, attendee.appointmentAttendeeId, categoryCode = updatedAppointmentSeries.categoryCode)
+        outboundEventsService.sendAppointmentEvent(OutboundEvent.APPOINTMENT_INSTANCE_DELETED, attendee.appointmentAttendeeId, updatedAppointmentSeries.categoryCode)
       }
 
       addedAttendees.forEach { attendee ->
-        outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_CREATED, attendee.appointmentAttendeeId, categoryCode = updatedAppointmentSeries.categoryCode)
+        outboundEventsService.sendAppointmentEvent(OutboundEvent.APPOINTMENT_INSTANCE_CREATED, attendee.appointmentAttendeeId, updatedAppointmentSeries.categoryCode)
       }
 
       if (request.isPropertyUpdate()) {
@@ -108,7 +108,7 @@ class AppointmentUpdateDomainService(
               addedAttendees.none { it.appointmentAttendeeId == attendee.id }
           }
           .forEach { attendee ->
-            outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, attendee.id, categoryCode = updatedAppointmentSeries.categoryCode)
+            outboundEventsService.sendAppointmentEvent(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, attendee.id, updatedAppointmentSeries.categoryCode)
           }
       }
 

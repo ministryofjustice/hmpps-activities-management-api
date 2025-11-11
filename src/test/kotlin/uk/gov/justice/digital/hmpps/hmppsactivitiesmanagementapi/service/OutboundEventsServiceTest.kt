@@ -139,7 +139,7 @@ class OutboundEventsServiceTest {
     whenever(appointmentInstance.id).thenReturn(1L)
     whenever(appointmentInstance.categoryCode).thenReturn("TEST")
 
-    outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_CREATED, 1L, categoryCode = "TEST")
+    outboundEventsService.sendAppointmentEvent(OutboundEvent.APPOINTMENT_INSTANCE_CREATED, 1L, "TEST")
 
     verify(
       expectedEventType = "appointments.appointment-instance.created",

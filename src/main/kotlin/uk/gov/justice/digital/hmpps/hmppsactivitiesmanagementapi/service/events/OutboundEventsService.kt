@@ -28,36 +28,51 @@ class OutboundEventsService(
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  fun send(outboundEvent: OutboundEvent, identifier: Long, secondIdentifier: Long? = null, categoryCode: String = "") {
+  fun send(outboundEvent: OutboundEvent, identifier: Long, secondIdentifier: Long? = null) {
     if (featureSwitches.isEnabled(outboundEvent)) {
       log.info("Sending outbound event $outboundEvent for identifier $identifier")
       when (outboundEvent) {
         ACTIVITY_SCHEDULE_CREATED, ACTIVITY_SCHEDULE_UPDATED -> {
           publisher.send(outboundEvent.event(ScheduleCreatedInformation(identifier)))
         }
-
         ACTIVITY_SCHEDULED_INSTANCE_AMENDED -> {
           publisher.send(outboundEvent.event(ScheduledInstanceInformation(identifier)))
         }
-
         PRISONER_ALLOCATED, PRISONER_ALLOCATION_AMENDED -> {
           publisher.send(outboundEvent.event(PrisonerAllocatedInformation(identifier)))
         }
-
         PRISONER_ATTENDANCE_CREATED, PRISONER_ATTENDANCE_AMENDED, PRISONER_ATTENDANCE_EXPIRED -> {
           publisher.send(outboundEvent.event(PrisonerAttendanceInformation(identifier)))
         }
-
         PRISONER_ATTENDANCE_DELETED -> {
           publisher.send(outboundEvent.event(PrisonerAttendanceDeleteInformation(identifier, secondIdentifier!!)))
         }
-
-        APPOINTMENT_INSTANCE_CREATED, APPOINTMENT_INSTANCE_UPDATED, APPOINTMENT_INSTANCE_DELETED, APPOINTMENT_INSTANCE_CANCELLED, APPOINTMENT_INSTANCE_UNCANCELLED -> {
-          publisher.send(outboundEvent.event(AppointmentInstanceInformation(identifier, categoryCode)))
-        }
+        else -> log.warn("Event type $outboundEvent is not a valid outbound event.")
       }
     } else {
       log.warn("Outbound event type $outboundEvent feature is currently disabled.")
     }
+  }
+
+  fun sendAppointmentEvent(outboundEvent: OutboundEvent, identifier: Long, secondIdentifier: String) {
+    if (!featureSwitches.isEnabled(outboundEvent)) {
+      log.warn("Outbound event type $outboundEvent feature is currently disabled.")
+      return
+    }
+
+    val supportedAppointmentEvents = setOf(
+      APPOINTMENT_INSTANCE_CREATED,
+      APPOINTMENT_INSTANCE_UPDATED,
+      APPOINTMENT_INSTANCE_DELETED,
+      APPOINTMENT_INSTANCE_CANCELLED,
+      APPOINTMENT_INSTANCE_UNCANCELLED,
+    )
+
+    if (outboundEvent !in supportedAppointmentEvents) {
+      log.warn("Event type $outboundEvent is not valid for appointment events.")
+    }
+
+    log.info("Sending outbound event $outboundEvent for identifier $identifier")
+    publisher.send(outboundEvent.event(AppointmentInstanceInformation(identifier, secondIdentifier)))
   }
 }

@@ -83,7 +83,7 @@ class AppointmentSetService(
       // TODO: publish appointment instance created messages post transaction
       it.appointments().forEach { appointment ->
         appointment.attendees().forEach { attendee ->
-          outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_CREATED, attendee.appointmentAttendeeId, categoryCode = attendee.appointment.categoryCode)
+          outboundEventsService.sendAppointmentEvent(OutboundEvent.APPOINTMENT_INSTANCE_CREATED, attendee.appointmentAttendeeId, attendee.appointment.categoryCode)
         }
       }
       it.auditCreatedEvent()
