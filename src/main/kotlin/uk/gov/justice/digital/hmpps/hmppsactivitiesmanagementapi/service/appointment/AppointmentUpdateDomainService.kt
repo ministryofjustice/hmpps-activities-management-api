@@ -90,30 +90,14 @@ class AppointmentUpdateDomainService(
       Triple(updatedAppointmentSeries.toModel(), removedAttendees, addedAttendees)
     }.also { (updatedAppointmentSeries, removedAttendees, addedAttendees) ->
 
-//      fun getCategoryCode(attendeeId: Long): String =
-//        updatedAppointmentSeries.appointments
-//          .find { appointment ->
-//            appointment.attendees.any { it.id == attendeeId }
-//          }
-//          ?.categoryCode ?: ""
-
       removedAttendees.forEach { attendee ->
-//        val categoryCode = getCategoryCode(attendee.appointmentAttendeeId)
-//        val categoryCode = attendee.appointment.categoryCode ?: ""
         outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_DELETED, attendee.appointmentAttendeeId, categoryCode = updatedAppointmentSeries.categoryCode ?: "")
       }
 
       addedAttendees.forEach { attendee ->
-//        val categoryCode = getCategoryCode(attendee.appointmentAttendeeId)
-//        val categoryCode = attendee.appointment.categoryCode ?: ""
         outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_CREATED, attendee.appointmentAttendeeId, categoryCode = updatedAppointmentSeries.categoryCode ?: "")
       }
-//      val removedAttendeeIds = removedAttendees.map { it.appointmentAttendeeId }.onEach {
-//        outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_DELETED, it)
-//      }
-//      val addedAttendeesIds = addedAttendees.map { it.appointmentAttendeeId }.onEach {
-//        outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_CREATED, it)
-//      }
+
       if (request.isPropertyUpdate()) {
         updatedAppointmentSeries.appointments
           .filterNot { it.isDeleted }
@@ -124,7 +108,6 @@ class AppointmentUpdateDomainService(
               addedAttendees.none { it.appointmentAttendeeId == attendee.id }
           }
           .forEach { attendee ->
-//            val categoryCode = getCategoryCode(attendee.id)
             outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, attendee.id, categoryCode = updatedAppointmentSeries.categoryCode ?: "")
           }
       }
