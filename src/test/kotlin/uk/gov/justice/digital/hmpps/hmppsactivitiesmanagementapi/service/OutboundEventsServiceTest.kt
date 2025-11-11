@@ -11,10 +11,7 @@ import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.verifyNoMoreInteractions
-import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.FeatureSwitches
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentInstance
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.AppointmentInstanceService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.AdditionalInformation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.AppointmentInstanceInformation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
@@ -32,8 +29,6 @@ class OutboundEventsServiceTest {
 
   private val eventsPublisher: OutboundEventsPublisher = mock()
   private val featureSwitches: FeatureSwitches = mock()
-  private val appointmentInstanceService: AppointmentInstanceService = mock()
-  private val appointmentInstance: AppointmentInstance = mock()
   private val outboundEventsService = OutboundEventsService(
     eventsPublisher,
     featureSwitches,
@@ -135,8 +130,6 @@ class OutboundEventsServiceTest {
   fun `appointment instance created event with id 1 is sent to the events publisher`() {
     featureSwitches.stub { on { isEnabled(OutboundEvent.APPOINTMENT_INSTANCE_CREATED) } doReturn true }
 
-    whenever(appointmentInstance.categoryCode).thenReturn("TEST")
-
     outboundEventsService.sendAppointmentEvent(OutboundEvent.APPOINTMENT_INSTANCE_CREATED, 1L, "TEST")
 
     verify(
@@ -147,10 +140,41 @@ class OutboundEventsServiceTest {
   }
 
   @Test
-  fun `events are not published for any outbound event when not enabled`() {
-    featureSwitches.stub { on { isEnabled(any<OutboundEvent>(), any()) } doReturn false }
+  fun `events are not published when feature switch is disabled`() {
+    featureSwitches.stub { on { isEnabled(any<OutboundEvent>(), defaultValue = any()) } doReturn false }
 
-    OutboundEvent.values().forEach { outboundEventsService.send(it, 1L) }
+    OutboundEvent.values().forEach { event ->
+      outboundEventsService.send(event, 1L)
+    }
+
+    verifyNoInteractions(eventsPublisher)
+  }
+
+  @Test
+  fun `appointment events are not published when feature switch is disabled`() {
+    featureSwitches.stub { on { isEnabled(any<OutboundEvent>(), defaultValue = any()) } doReturn false }
+
+    OutboundEvent.values().forEach { event ->
+      outboundEventsService.sendAppointmentEvent(event, 1L, "TEST")
+    }
+
+    verifyNoInteractions(eventsPublisher)
+  }
+
+  @Test
+  fun `outbound event is not published when event type is invalid`() {
+    featureSwitches.stub { on { isEnabled(OutboundEvent.APPOINTMENT_INSTANCE_CREATED) } doReturn true }
+
+    outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_CREATED, 1L)
+
+    verifyNoInteractions(eventsPublisher)
+  }
+
+  @Test
+  fun `appointment outbound event is not published when event type is invalid`() {
+    featureSwitches.stub { on { isEnabled(OutboundEvent.ACTIVITY_SCHEDULE_CREATED) } doReturn true }
+
+    outboundEventsService.sendAppointmentEvent(OutboundEvent.ACTIVITY_SCHEDULE_CREATED, 1L, "TEST")
 
     verifyNoInteractions(eventsPublisher)
   }
