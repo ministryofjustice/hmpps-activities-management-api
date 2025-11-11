@@ -271,6 +271,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
     endTime = endTime,
     unlockNotes = null,
     extraInformation = comment,
+    prisonerExtraInformation = null,
     createdTime = created,
     createdBy = createdBy,
     isCancelled = false,

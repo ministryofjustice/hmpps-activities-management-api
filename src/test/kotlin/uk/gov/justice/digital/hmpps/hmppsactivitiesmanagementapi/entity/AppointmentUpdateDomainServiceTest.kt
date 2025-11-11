@@ -507,7 +507,7 @@ class AppointmentUpdateDomainServiceTest {
     fun `updates comment`() {
       val appointmentsToUpdate = applyToThisAndAllFuture
       val ids = appointmentsToUpdate.map { it.appointmentId }.toSet()
-      val request = AppointmentUpdateRequest(extraInformation = "Updated appointment level comment")
+      val request = AppointmentUpdateRequest(extraInformation = "Updated appointment level comment", prisonerExtraInformation = "Updated prisoner level comment")
       val response = service.updateAppointments(
         appointmentSeries.appointmentSeriesId,
         appointment.appointmentId,
@@ -524,12 +524,19 @@ class AppointmentUpdateDomainServiceTest {
       )
 
       appointmentSeries.extraInformation isEqualTo "Appointment series level comment"
+      appointmentSeries.prisonerExtraInformation isEqualTo "Prisoner level comment"
       appointmentSeries.appointments().filter { ids.contains(it.appointmentId) }.all { it.extraInformation == "Updated appointment level comment" } isBool true
+      appointmentSeries.appointments().filter { ids.contains(it.appointmentId) }.all { it.prisonerExtraInformation == "Updated prisoner level comment" } isBool true
+
       appointmentSeries.appointments().filterNot { ids.contains(it.appointmentId) }.all { it.extraInformation == "Appointment level comment" } isBool true
+      appointmentSeries.appointments().filterNot { ids.contains(it.appointmentId) }.all { it.prisonerExtraInformation == "Prisoner level comment" } isBool true
 
       response.extraInformation isEqualTo "Appointment series level comment"
+      response.prisonerExtraInformation isEqualTo "Prisoner level comment"
       response.appointments.filter { ids.contains(it.id) }.all { it.extraInformation == "Updated appointment level comment" } isBool true
+      response.appointments.filter { ids.contains(it.id) }.all { it.prisonerExtraInformation == "Updated prisoner level comment" } isBool true
       response.appointments.filterNot { ids.contains(it.id) }.all { it.extraInformation == "Appointment level comment" } isBool true
+      response.appointments.filterNot { ids.contains(it.id) }.all { it.prisonerExtraInformation == "Prisoner level comment" } isBool true
 
       verify(outboundEventsService, times(9)).sendAppointmentEvent(eq(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED), any(), eq("TEST"))
       verifyNoMoreInteractions(outboundEventsService)

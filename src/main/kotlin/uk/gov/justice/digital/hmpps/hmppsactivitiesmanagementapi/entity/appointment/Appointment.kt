@@ -72,6 +72,8 @@ data class Appointment(
 
   var extraInformation: String? = null,
 
+  var prisonerExtraInformation: String? = null,
+
   val createdTime: LocalDateTime,
 
   val createdBy: String,
@@ -184,6 +186,7 @@ data class Appointment(
     startTime = startTime,
     endTime = endTime,
     extraInformation = extraInformation,
+    prisonerExtraInformation = prisonerExtraInformation,
     createdTime = createdTime,
     createdBy = createdBy,
     updatedTime = updatedTime,
@@ -234,6 +237,7 @@ data class Appointment(
     endTime = endTime,
     isExpired = isExpired(),
     extraInformation = extraInformation,
+    prisonerExtraInformation = prisonerExtraInformation,
     createdTime = appointmentSeries.createdTime,
     createdBy = appointmentSeries.createdBy,
     isEdited = isEdited(),

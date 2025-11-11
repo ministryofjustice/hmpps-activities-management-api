@@ -183,6 +183,7 @@ class AppointmentSetService(
       startTime = appointment.startTime!!,
       endTime = appointment.endTime,
       extraInformation = appointment.extraInformation?.trim()?.takeUnless(String::isBlank),
+      prisonerExtraInformation = appointment.prisonerExtraInformation?.trim()?.takeUnless(String::isBlank),
       createdTime = createdTime,
       createdBy = createdBy,
     ).also {

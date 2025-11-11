@@ -248,8 +248,12 @@ class AppointmentUpdateDomainService(
     appointmentsToUpdate: Collection<Appointment>,
   ) {
     appointmentsToUpdate.forEach {
-      request.extraInformation?.apply {
+      request.extraInformation?.run {
         it.extraInformation = this
+      }
+
+      request.prisonerExtraInformation?.run {
+        it.prisonerExtraInformation = this
       }
     }
   }
