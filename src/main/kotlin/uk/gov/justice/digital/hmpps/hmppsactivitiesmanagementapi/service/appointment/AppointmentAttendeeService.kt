@@ -43,7 +43,7 @@ class AppointmentAttendeeService(
             transactionHandler.newSpringTransaction {
               attendee.remove(removedTime, removalReason, removedBy)
             }.also { updatedAttendee ->
-              outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_DELETED, updatedAttendee.appointmentAttendeeId, categoryCode = updatedAttendee.appointment.categoryCode ?: "")
+              outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_DELETED, updatedAttendee.appointmentAttendeeId, categoryCode = updatedAttendee.appointment.categoryCode)
             }
 
             log.info("Removed appointment attendee with id '${it.appointmentAttendeeId}' for prisoner '$prisonerNumber' from appointment with id '${it.appointmentId}'")

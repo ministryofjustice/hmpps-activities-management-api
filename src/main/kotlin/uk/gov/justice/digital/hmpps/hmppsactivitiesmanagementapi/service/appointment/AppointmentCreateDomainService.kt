@@ -141,7 +141,7 @@ class AppointmentCreateDomainService(
         }.also {
           if (!appointmentSeries.isMigrated) {
             it.attendees().forEach { attendee ->
-              outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_CREATED, attendee.appointmentAttendeeId, categoryCode = attendee.appointment.categoryCode ?: "")
+              outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_CREATED, attendee.appointmentAttendeeId, categoryCode = attendee.appointment.categoryCode)
             }
           }
         }
