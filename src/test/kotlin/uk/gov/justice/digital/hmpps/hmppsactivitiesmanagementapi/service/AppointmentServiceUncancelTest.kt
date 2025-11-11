@@ -252,7 +252,7 @@ class AppointmentServiceUncancelTest {
         }
 
         appointment.attendees().forEach {
-          verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UNCANCELLED, it.appointmentAttendeeId)
+          verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UNCANCELLED, it.appointmentAttendeeId, categoryCode = "TEST")
         }
         verifyNoMoreInteractions(outboundEventsService)
 

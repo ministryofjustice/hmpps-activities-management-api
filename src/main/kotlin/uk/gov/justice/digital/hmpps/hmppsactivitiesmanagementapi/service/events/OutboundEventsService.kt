@@ -1,11 +1,9 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events
 
-import jakarta.persistence.EntityNotFoundException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.FeatureSwitches
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.AppointmentInstanceService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.ACTIVITY_SCHEDULED_INSTANCE_AMENDED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.ACTIVITY_SCHEDULE_CREATED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.ACTIVITY_SCHEDULE_UPDATED
@@ -25,13 +23,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 class OutboundEventsService(
   private val publisher: OutboundEventsPublisher,
   private val featureSwitches: FeatureSwitches,
-  private val appointmentInstanceService: AppointmentInstanceService,
 ) {
   companion object {
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  fun send(outboundEvent: OutboundEvent, identifier: Long, secondIdentifier: Long? = null) {
+  fun send(outboundEvent: OutboundEvent, identifier: Long, secondIdentifier: Long? = null, categoryCode: String? = "") {
     if (featureSwitches.isEnabled(outboundEvent)) {
       log.info("Sending outbound event $outboundEvent for identifier $identifier")
       when (outboundEvent) {
@@ -56,14 +53,7 @@ class OutboundEventsService(
         }
 
         APPOINTMENT_INSTANCE_CREATED, APPOINTMENT_INSTANCE_UPDATED, APPOINTMENT_INSTANCE_DELETED, APPOINTMENT_INSTANCE_CANCELLED, APPOINTMENT_INSTANCE_UNCANCELLED -> {
-          try {
-            val appointmentInstance = appointmentInstanceService.getAppointmentInstanceById(identifier, false)
-            publisher.send(outboundEvent.event(AppointmentInstanceInformation(appointmentInstance.id, appointmentInstance.categoryCode)))
-            log.info("Sent outbound event $outboundEvent for appointment instance id=${appointmentInstance.id}, categoryCode=${appointmentInstance.categoryCode}")
-          } catch (e: EntityNotFoundException) {
-            publisher.send(outboundEvent.event(AppointmentInstanceInformation(identifier, "")))
-            log.info("Sent outbound event $outboundEvent for appointment instance id=$identifier, categoryCode=\"\"")
-          }
+          publisher.send(outboundEvent.event(AppointmentInstanceInformation(identifier, categoryCode ?: "")))
         }
       }
     } else {

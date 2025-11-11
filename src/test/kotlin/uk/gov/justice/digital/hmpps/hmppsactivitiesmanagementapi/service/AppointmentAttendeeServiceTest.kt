@@ -15,6 +15,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.cancelOnTransferAppointmentAttendeeRemovalReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonerReleasedAppointmentAttendeeRemovalReason
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentCancelledOnTransferEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appointment.AppointmentAttendeeRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appointment.AppointmentInstanceRepository
@@ -58,10 +59,13 @@ class AppointmentAttendeeServiceTest {
       val removedBy = "OFFENDER_RELEASED_EVENT"
       val appointmentInstance = mock<AppointmentInstance>()
       val appointmentAttendeeMock = mock<AppointmentAttendee>()
+      val appointments = mock<uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.Appointment>()
 
       whenever(appointmentInstance.appointmentAttendeeId).thenReturn(appointmentAttendeeId)
       whenever(appointmentInstance.prisonCode).thenReturn(prisonCode)
       whenever(appointmentInstance.prisonerNumber).thenReturn(prisonerNumber)
+      whenever(appointmentAttendeeMock.appointment).thenReturn(appointments)
+      whenever(appointments.categoryCode).thenReturn("VLB")
 
       whenever(appointmentAttendeeMock.appointmentAttendeeId).thenReturn(appointmentAttendeeId)
       whenever(

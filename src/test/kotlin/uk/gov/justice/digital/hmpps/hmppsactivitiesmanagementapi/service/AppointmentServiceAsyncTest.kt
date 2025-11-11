@@ -618,7 +618,7 @@ class AppointmentServiceAsyncTest {
     assertThat(startTimeInMs.firstValue).isCloseTo(System.currentTimeMillis(), within(60000L))
 
     appointment.attendees().forEach {
-      verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED, it.appointmentAttendeeId)
+      verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED, it.appointmentAttendeeId, categoryCode = "TEST")
     }
     verifyNoMoreInteractions(outboundEventsService)
 
@@ -676,7 +676,7 @@ class AppointmentServiceAsyncTest {
 
     scheduledAppointments.forEach {
       it.attendees().forEach { attendee ->
-        verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED, attendee.appointmentAttendeeId)
+        verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED, attendee.appointmentAttendeeId, categoryCode = "TEST")
       }
     }
     verifyNoMoreInteractions(outboundEventsService)
@@ -728,7 +728,7 @@ class AppointmentServiceAsyncTest {
     assertThat(startTimeInMs.firstValue).isCloseTo(System.currentTimeMillis(), within(60000L))
 
     appointment.attendees().forEach { attendee ->
-      verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED, attendee.appointmentAttendeeId)
+      verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED, attendee.appointmentAttendeeId, categoryCode = "TEST")
     }
     verifyNoMoreInteractions(outboundEventsService)
 
@@ -794,7 +794,7 @@ class AppointmentServiceAsyncTest {
     assertThat(startTimeInMs.firstValue).isCloseTo(System.currentTimeMillis(), within(60000L))
 
     appointment.attendees().forEach { attendee ->
-      verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_DELETED, attendee.appointmentAttendeeId)
+      verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_DELETED, attendee.appointmentAttendeeId, categoryCode = "TEST")
     }
     verifyNoMoreInteractions(outboundEventsService)
 
@@ -852,7 +852,7 @@ class AppointmentServiceAsyncTest {
 
     scheduledAppointments.forEach {
       it.attendees().forEach { attendee ->
-        verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_DELETED, attendee.appointmentAttendeeId)
+        verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_DELETED, attendee.appointmentAttendeeId, categoryCode = "TEST")
       }
     }
     verifyNoMoreInteractions(outboundEventsService)
@@ -904,7 +904,7 @@ class AppointmentServiceAsyncTest {
     assertThat(startTimeInMs.firstValue).isCloseTo(System.currentTimeMillis(), within(60000L))
 
     appointment.attendees().forEach { attendee ->
-      verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_DELETED, attendee.appointmentAttendeeId)
+      verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_DELETED, attendee.appointmentAttendeeId, categoryCode = "TEST")
     }
     verifyNoMoreInteractions(outboundEventsService)
 

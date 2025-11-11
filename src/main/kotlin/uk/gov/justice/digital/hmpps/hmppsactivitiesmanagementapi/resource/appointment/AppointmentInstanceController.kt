@@ -64,5 +64,5 @@ class AppointmentInstanceController(
   )
   @CaseloadHeader
   @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN', 'NOMIS_ACTIVITIES', 'ACTIVITIES_MANAGEMENT__RO')")
-  fun getAppointmentInstanceById(@PathVariable("appointmentInstanceId") appointmentInstanceId: Long): AppointmentInstance = appointmentInstanceService.getAppointmentInstanceById(appointmentInstanceId, false)
+  fun getAppointmentInstanceById(@PathVariable("appointmentInstanceId") appointmentInstanceId: Long): AppointmentInstance = appointmentInstanceService.getAppointmentInstanceById(appointmentInstanceId)
 }

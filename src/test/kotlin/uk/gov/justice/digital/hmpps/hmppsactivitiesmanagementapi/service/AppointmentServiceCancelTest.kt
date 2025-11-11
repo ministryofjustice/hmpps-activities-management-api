@@ -245,7 +245,7 @@ class AppointmentServiceCancelTest {
       }
 
       appointment.attendees().forEach {
-        verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_DELETED, it.appointmentAttendeeId)
+        verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_DELETED, it.appointmentAttendeeId, categoryCode = "TEST")
       }
       verifyNoMoreInteractions(outboundEventsService)
 
@@ -284,7 +284,7 @@ class AppointmentServiceCancelTest {
       }
 
       appointment.attendees().forEach {
-        verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED, it.appointmentAttendeeId)
+        verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED, it.appointmentAttendeeId, categoryCode = "TEST")
       }
       verifyNoMoreInteractions(outboundEventsService)
 

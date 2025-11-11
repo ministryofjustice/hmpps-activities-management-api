@@ -133,7 +133,7 @@ class AppointmentUpdateDomainServiceTest {
       response.appointments.filter { ids.contains(it.id) }.all { it.categoryCode == "NEW" } isBool true
       response.appointments.filterNot { ids.contains(it.id) }.all { it.categoryCode == "TEST" } isBool true
 
-      verify(outboundEventsService, times(9)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED), any(), eq(null))
+      verify(outboundEventsService, times(9)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED), any(), eq(null), eq("TEST"))
       verifyNoMoreInteractions(outboundEventsService)
     }
 
@@ -301,7 +301,7 @@ class AppointmentUpdateDomainServiceTest {
       response.appointments.filter { ids.contains(it.id) }.all { it.internalLocationId == 456L } isBool true
       response.appointments.filterNot { ids.contains(it.id) }.all { it.internalLocationId == 123L } isBool true
 
-      verify(outboundEventsService, times(9)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED), any(), eq(null))
+      verify(outboundEventsService, times(9)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED), any(), eq(null), eq("TEST"))
       verifyNoMoreInteractions(outboundEventsService)
     }
 
@@ -340,7 +340,7 @@ class AppointmentUpdateDomainServiceTest {
       response.appointments.filter { ids.contains(it.id) }.all { it.internalLocationId == 456L } isBool true
       response.appointments.filterNot { ids.contains(it.id) }.all { it.internalLocationId == 123L } isBool true
 
-      verify(outboundEventsService, times(9)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED), any(), eq(null))
+      verify(outboundEventsService, times(9)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED), any(), eq(null), eq("TEST"))
       verifyNoMoreInteractions(outboundEventsService)
     }
 
@@ -395,7 +395,7 @@ class AppointmentUpdateDomainServiceTest {
         this.all { !it.inCell } isBool true
       }
 
-      verify(outboundEventsService, times(9)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED), any(), eq(null))
+      verify(outboundEventsService, times(9)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED), any(), eq(null), eq("TEST"))
       verifyNoMoreInteractions(outboundEventsService)
     }
 
@@ -435,7 +435,7 @@ class AppointmentUpdateDomainServiceTest {
         get(3).startDate isEqualTo weekFromNow.plusDays(2)
       }
 
-      verify(outboundEventsService, times(9)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED), any(), eq(null))
+      verify(outboundEventsService, times(9)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED), any(), eq(null), eq("TEST"))
       verifyNoMoreInteractions(outboundEventsService)
     }
 
@@ -467,7 +467,7 @@ class AppointmentUpdateDomainServiceTest {
       response.appointments.filter { ids.contains(it.id) }.all { it.startTime == LocalTime.of(13, 30) } isBool true
       response.appointments.filterNot { ids.contains(it.id) }.all { it.startTime == LocalTime.of(9, 0) } isBool true
 
-      verify(outboundEventsService, times(9)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED), any(), eq(null))
+      verify(outboundEventsService, times(9)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED), any(), eq(null), eq("TEST"))
       verifyNoMoreInteractions(outboundEventsService)
     }
 
@@ -499,7 +499,7 @@ class AppointmentUpdateDomainServiceTest {
       response.appointments.filter { ids.contains(it.id) }.all { it.endTime == LocalTime.of(15, 0) } isBool true
       response.appointments.filterNot { ids.contains(it.id) }.all { it.endTime == LocalTime.of(10, 30) } isBool true
 
-      verify(outboundEventsService, times(9)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED), any(), eq(null))
+      verify(outboundEventsService, times(9)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED), any(), eq(null), eq("TEST"))
       verifyNoMoreInteractions(outboundEventsService)
     }
 
@@ -531,7 +531,7 @@ class AppointmentUpdateDomainServiceTest {
       response.appointments.filter { ids.contains(it.id) }.all { it.extraInformation == "Updated appointment level comment" } isBool true
       response.appointments.filterNot { ids.contains(it.id) }.all { it.extraInformation == "Appointment level comment" } isBool true
 
-      verify(outboundEventsService, times(9)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED), any(), eq(null))
+      verify(outboundEventsService, times(9)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED), any(), eq(null), eq("TEST"))
       verifyNoMoreInteractions(outboundEventsService)
     }
 
@@ -595,7 +595,7 @@ class AppointmentUpdateDomainServiceTest {
         onEach { it.addedBy isEqualTo null }
       }
 
-      verify(outboundEventsService, times(6)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_CREATED), any(), eq(null))
+      verify(outboundEventsService, times(6)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_CREATED), any(), eq(null), eq("TEST"))
       verifyNoMoreInteractions(outboundEventsService)
     }
 
@@ -653,7 +653,7 @@ class AppointmentUpdateDomainServiceTest {
         onEach { it.removedBy isEqualTo null }
       }
 
-      verify(outboundEventsService, times(6)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_DELETED), any(), eq(null))
+      verify(outboundEventsService, times(6)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_DELETED), any(), eq(null), eq("TEST"))
       verifyNoMoreInteractions(outboundEventsService)
     }
 
@@ -726,8 +726,8 @@ class AppointmentUpdateDomainServiceTest {
         onEach { it.addedBy isEqualTo null }
       }
 
-      verify(outboundEventsService, times(6)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_DELETED), any(), eq(null))
-      verify(outboundEventsService, times(9)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_CREATED), any(), eq(null))
+      verify(outboundEventsService, times(6)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_DELETED), any(), eq(null), eq("TEST"))
+      verify(outboundEventsService, times(9)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_CREATED), any(), eq(null), eq("TEST"))
       verifyNoMoreInteractions(outboundEventsService)
     }
 
