@@ -364,10 +364,10 @@ class InboundEventsIntegrationTest : LocalStackTestBase() {
     }
 
     validateOutboundEvents(
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 300),
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 302),
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 322),
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 324),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 300, "OIC"),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 302, "AC3"),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 322, "OIC"),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 324, "OIC"),
     )
   }
 
@@ -430,10 +430,10 @@ class InboundEventsIntegrationTest : LocalStackTestBase() {
       assertThat(appointmentAttendeeRepository.existsById(328)).isTrue()
 
       validateOutboundEvents(
-        ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 300),
-        ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 302),
-        ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 322),
-        ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 324),
+        ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 300, "OIC"),
+        ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 302, "AC3"),
+        ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 322, "OIC"),
+        ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 324, "OIC"),
       )
 
       verify(hmppsAuditApiClient, times(4)).createEvent(hmppsAuditEventCaptor.capture())

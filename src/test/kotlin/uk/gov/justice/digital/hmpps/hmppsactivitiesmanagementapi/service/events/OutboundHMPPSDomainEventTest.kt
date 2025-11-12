@@ -21,7 +21,7 @@ class OutboundHMPPSDomainEventTest {
     assertThat(PrisonerAttendanceDeleteInformation(222, 333).primaryId()).isEqualTo("222")
     assertThat(PrisonerAttendanceDeleteInformation(222, 333).secondaryId()).isEqualTo("333")
 
-    assertThat(AppointmentInstanceInformation(222).primaryId()).isEqualTo("222")
-    assertThat(AppointmentInstanceInformation(222).secondaryId()).isNull()
+    assertThat(AppointmentInstanceInformation(222, "TEST").primaryId()).isEqualTo("222")
+    assertThat(AppointmentInstanceInformation(222, "TEST").secondaryId()).isEqualTo("TEST")
   }
 }

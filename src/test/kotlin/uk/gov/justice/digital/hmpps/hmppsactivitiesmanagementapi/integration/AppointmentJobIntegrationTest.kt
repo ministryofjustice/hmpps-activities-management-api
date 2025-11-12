@@ -136,10 +136,10 @@ class AppointmentJobIntegrationTest : AppointmentsIntegrationTestBase() {
     }
 
     validateOutboundEvents(
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 20),
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 6),
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 10),
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 4),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 20, "OIC"),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 6, "CHAP"),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 10, "CHAP"),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 4, "CHAP"),
     )
 
     verify(auditService, times(4)).logEvent(any<AppointmentCancelledOnTransferEvent>())
@@ -185,10 +185,10 @@ class AppointmentJobIntegrationTest : AppointmentsIntegrationTestBase() {
     }
 
     validateOutboundEvents(
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 10),
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 4),
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 6),
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 20),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 10, "CHAP"),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 4, "CHAP"),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 6, "CHAP"),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 20, "OIC"),
     )
 
     verify(auditService, times(4)).logEvent(any<AppointmentCancelledOnTransferEvent>())

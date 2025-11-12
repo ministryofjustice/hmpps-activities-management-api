@@ -29,7 +29,10 @@ class OutboundEventsServiceTest {
 
   private val eventsPublisher: OutboundEventsPublisher = mock()
   private val featureSwitches: FeatureSwitches = mock()
-  private val outboundEventsService = OutboundEventsService(eventsPublisher, featureSwitches)
+  private val outboundEventsService = OutboundEventsService(
+    eventsPublisher,
+    featureSwitches,
+  )
   private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
 
   @Test
@@ -127,20 +130,51 @@ class OutboundEventsServiceTest {
   fun `appointment instance created event with id 1 is sent to the events publisher`() {
     featureSwitches.stub { on { isEnabled(OutboundEvent.APPOINTMENT_INSTANCE_CREATED) } doReturn true }
 
-    outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_CREATED, 1L)
+    outboundEventsService.sendAppointmentEvent(OutboundEvent.APPOINTMENT_INSTANCE_CREATED, 1L, "TEST")
 
     verify(
       expectedEventType = "appointments.appointment-instance.created",
-      expectedAdditionalInformation = AppointmentInstanceInformation(1),
+      expectedAdditionalInformation = AppointmentInstanceInformation(1, "TEST"),
       expectedDescription = "A new appointment instance has been created in the activities management service",
     )
   }
 
   @Test
-  fun `events are not published for any outbound event when not enabled`() {
-    featureSwitches.stub { on { isEnabled(any<OutboundEvent>(), any()) } doReturn false }
+  fun `events are not published when feature switch is disabled`() {
+    featureSwitches.stub { on { isEnabled(any<OutboundEvent>(), defaultValue = any()) } doReturn false }
 
-    OutboundEvent.values().forEach { outboundEventsService.send(it, 1L) }
+    OutboundEvent.values().forEach { event ->
+      outboundEventsService.send(event, 1L)
+    }
+
+    verifyNoInteractions(eventsPublisher)
+  }
+
+  @Test
+  fun `appointment events are not published when feature switch is disabled`() {
+    featureSwitches.stub { on { isEnabled(any<OutboundEvent>(), defaultValue = any()) } doReturn false }
+
+    OutboundEvent.values().forEach { event ->
+      outboundEventsService.sendAppointmentEvent(event, 1L, "TEST")
+    }
+
+    verifyNoInteractions(eventsPublisher)
+  }
+
+  @Test
+  fun `outbound event is not published when event type is invalid`() {
+    featureSwitches.stub { on { isEnabled(OutboundEvent.APPOINTMENT_INSTANCE_CREATED) } doReturn true }
+
+    outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_CREATED, 1L)
+
+    verifyNoInteractions(eventsPublisher)
+  }
+
+  @Test
+  fun `appointment outbound event is not published when event type is invalid`() {
+    featureSwitches.stub { on { isEnabled(OutboundEvent.ACTIVITY_SCHEDULE_CREATED) } doReturn true }
+
+    outboundEventsService.sendAppointmentEvent(OutboundEvent.ACTIVITY_SCHEDULE_CREATED, 1L, "TEST")
 
     verifyNoInteractions(eventsPublisher)
   }

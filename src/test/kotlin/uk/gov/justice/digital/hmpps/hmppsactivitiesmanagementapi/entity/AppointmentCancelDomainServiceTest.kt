@@ -258,7 +258,7 @@ class AppointmentCancelDomainServiceTest {
       startTimeInMs,
     )
 
-    verify(outboundEventsService, times(12)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED), any(), eq(null))
+    verify(outboundEventsService, times(12)).sendAppointmentEvent(eq(OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED), any(), eq("TEST"))
     verifyNoMoreInteractions(outboundEventsService)
   }
 
@@ -304,7 +304,7 @@ class AppointmentCancelDomainServiceTest {
       startTimeInMs,
     )
 
-    verify(outboundEventsService, times(12)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED), any(), eq(null))
+    verify(outboundEventsService, times(12)).sendAppointmentEvent(eq(OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED), any(), eq("ABC"))
     verifyNoMoreInteractions(outboundEventsService)
 
     verify(appointmentSeriesMock).cancel(now, "CANCEL.USER", appointment.startDate, appointment.startTime)
@@ -352,7 +352,7 @@ class AppointmentCancelDomainServiceTest {
       startTimeInMs,
     )
 
-    verify(outboundEventsService, times(12)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED), any(), eq(null))
+    verify(outboundEventsService, times(12)).sendAppointmentEvent(eq(OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED), any(), eq("ABC"))
     verifyNoMoreInteractions(outboundEventsService)
 
     verify(appointmentSeriesMock).cancel(now, "CANCEL.USER", appointment.startDate, appointment.startTime)
@@ -400,7 +400,7 @@ class AppointmentCancelDomainServiceTest {
       startTimeInMs,
     )
 
-    verify(outboundEventsService, times(12)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED), any(), eq(null))
+    verify(outboundEventsService, times(12)).sendAppointmentEvent(eq(OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED), any(), eq("ABC"))
     verifyNoMoreInteractions(outboundEventsService)
 
     verify(appointmentSeriesMock, times(0)).cancel(any(), any(), any(), any())
@@ -431,7 +431,7 @@ class AppointmentCancelDomainServiceTest {
       startTimeInMs,
     )
 
-    verify(outboundEventsService, times(12)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_DELETED), any(), eq(null))
+    verify(outboundEventsService, times(12)).sendAppointmentEvent(eq(OutboundEvent.APPOINTMENT_INSTANCE_DELETED), any(), eq("TEST"))
     verifyNoMoreInteractions(outboundEventsService)
   }
 

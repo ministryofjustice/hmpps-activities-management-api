@@ -20,9 +20,20 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.PRISONER_ATTENDANCE_EXPIRED
 
 @Service
-class OutboundEventsService(private val publisher: OutboundEventsPublisher, private val featureSwitches: FeatureSwitches) {
+class OutboundEventsService(
+  private val publisher: OutboundEventsPublisher,
+  private val featureSwitches: FeatureSwitches,
+) {
   companion object {
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
+
+    private val SUPPORTED_APPOINTMENT_EVENTS = setOf(
+      APPOINTMENT_INSTANCE_CREATED,
+      APPOINTMENT_INSTANCE_UPDATED,
+      APPOINTMENT_INSTANCE_DELETED,
+      APPOINTMENT_INSTANCE_CANCELLED,
+      APPOINTMENT_INSTANCE_UNCANCELLED,
+    )
   }
 
   fun send(outboundEvent: OutboundEvent, identifier: Long, secondIdentifier: Long? = null) {
@@ -44,12 +55,25 @@ class OutboundEventsService(private val publisher: OutboundEventsPublisher, priv
         PRISONER_ATTENDANCE_DELETED -> {
           publisher.send(outboundEvent.event(PrisonerAttendanceDeleteInformation(identifier, secondIdentifier!!)))
         }
-        APPOINTMENT_INSTANCE_CREATED, APPOINTMENT_INSTANCE_UPDATED, APPOINTMENT_INSTANCE_DELETED, APPOINTMENT_INSTANCE_CANCELLED, APPOINTMENT_INSTANCE_UNCANCELLED -> {
-          publisher.send(outboundEvent.event(AppointmentInstanceInformation(identifier)))
-        }
+        else -> log.warn("Event type $outboundEvent is not a valid outbound event.")
       }
     } else {
       log.warn("Outbound event type $outboundEvent feature is currently disabled.")
     }
+  }
+
+  fun sendAppointmentEvent(outboundEvent: OutboundEvent, identifier: Long, categoryCode: String) {
+    if (!featureSwitches.isEnabled(outboundEvent)) {
+      log.warn("Outbound event type $outboundEvent feature is currently disabled.")
+      return
+    }
+
+    if (outboundEvent !in SUPPORTED_APPOINTMENT_EVENTS) {
+      log.warn("Event type $outboundEvent is not valid for appointment events.")
+      return
+    }
+
+    log.info("Sending outbound event $outboundEvent for identifier $identifier")
+    publisher.send(outboundEvent.event(AppointmentInstanceInformation(identifier, categoryCode)))
   }
 }

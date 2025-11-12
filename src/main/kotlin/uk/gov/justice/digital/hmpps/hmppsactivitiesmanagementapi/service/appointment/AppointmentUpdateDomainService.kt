@@ -89,19 +89,27 @@ class AppointmentUpdateDomainService(
 
       Triple(updatedAppointmentSeries.toModel(), removedAttendees, addedAttendees)
     }.also { (updatedAppointmentSeries, removedAttendees, addedAttendees) ->
-      val removedAttendeeIds = removedAttendees.map { it.appointmentAttendeeId }.onEach {
-        outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_DELETED, it)
+
+      removedAttendees.forEach { attendee ->
+        outboundEventsService.sendAppointmentEvent(OutboundEvent.APPOINTMENT_INSTANCE_DELETED, attendee.appointmentAttendeeId, updatedAppointmentSeries.categoryCode)
       }
-      val addedAttendeesIds = addedAttendees.map { it.appointmentAttendeeId }.onEach {
-        outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_CREATED, it)
+
+      addedAttendees.forEach { attendee ->
+        outboundEventsService.sendAppointmentEvent(OutboundEvent.APPOINTMENT_INSTANCE_CREATED, attendee.appointmentAttendeeId, updatedAppointmentSeries.categoryCode)
       }
+
       if (request.isPropertyUpdate()) {
         updatedAppointmentSeries.appointments
           .filterNot { it.isDeleted }
-          .filter { appointmentIdsToUpdate.contains(it.id) }.toSet()
-          .flatMap { it.attendees.map { attendee -> attendee.id } }
-          .filter { !removedAttendeeIds.contains(it) && !addedAttendeesIds.contains(it) }
-          .forEach { outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it) }
+          .filter { appointmentIdsToUpdate.contains(it.id) }
+          .flatMap { it.attendees }
+          .filter { attendee ->
+            removedAttendees.none { it.appointmentAttendeeId == attendee.id } &&
+              addedAttendees.none { it.appointmentAttendeeId == attendee.id }
+          }
+          .forEach { attendee ->
+            outboundEventsService.sendAppointmentEvent(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, attendee.id, updatedAppointmentSeries.categoryCode)
+          }
       }
 
       if (trackEvent) {

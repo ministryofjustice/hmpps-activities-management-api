@@ -292,7 +292,7 @@ class AppointmentSeriesIntegrationTest : LocalStackTestBase() {
     assertSingleAppointmentSinglePrisoner(webTestClient.getAppointmentSeriesById(appointmentSeries.id)!!, request.copy(dpsLocationId = dpsLocationId))
 
     validateOutboundEvents(
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, attendeeIds[0]),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, attendeeIds[0], "OIC"),
     )
 
     verify(auditService).logEvent(any<AppointmentSeriesCreatedEvent>())
@@ -342,7 +342,7 @@ class AppointmentSeriesIntegrationTest : LocalStackTestBase() {
     assertSingleAppointmentSinglePrisoner(webTestClient.getAppointmentSeriesById(appointmentSeries.id)!!, request.copy(internalLocationId = 4445))
 
     validateOutboundEvents(
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, attendeeIds[0]),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, attendeeIds[0], "OIC"),
     )
 
     verify(auditService).logEvent(any<AppointmentSeriesCreatedEvent>())
@@ -376,7 +376,7 @@ class AppointmentSeriesIntegrationTest : LocalStackTestBase() {
     assertSingleAppointmentSinglePrisoner(webTestClient.getAppointmentSeriesById(appointmentSeries.id)!!, request)
 
     validateOutboundEvents(
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, attendeeIds[0]),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, attendeeIds[0], "OIC"),
     )
 
     verify(auditService).logEvent(any<AppointmentSeriesCreatedEvent>())
@@ -434,8 +434,8 @@ class AppointmentSeriesIntegrationTest : LocalStackTestBase() {
     assertSingleAppointmentTwoPrisoner(webTestClient.getAppointmentSeriesById(appointmentSeries.id)!!, request)
 
     validateOutboundEvents(
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, attendeeIds[0]),
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, attendeeIds[1]),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, attendeeIds[0], "OIC"),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, attendeeIds[1], "OIC"),
     )
 
     verify(auditService).logEvent(any<AppointmentSeriesCreatedEvent>())
@@ -469,7 +469,7 @@ class AppointmentSeriesIntegrationTest : LocalStackTestBase() {
     assertSingleAppointmentSinglePrisoner(webTestClient.getAppointmentSeriesById(appointmentSeries.id)!!, request)
 
     validateOutboundEvents(
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, attendeeIds[0]),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, attendeeIds[0], "OIC"),
     )
 
     verify(auditService).logEvent(any<AppointmentSeriesCreatedEvent>())
@@ -503,9 +503,9 @@ class AppointmentSeriesIntegrationTest : LocalStackTestBase() {
     assertThat(appointmentSeries.appointments).hasSize(3)
 
     validateOutboundEvents(
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, attendeeIds[0]),
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, attendeeIds[1]),
-      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, attendeeIds[2]),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, attendeeIds[0], "OIC"),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, attendeeIds[1], "OIC"),
+      ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, attendeeIds[2], "OIC"),
     )
 
     verify(auditService).logEvent(any<AppointmentSeriesCreatedEvent>())
@@ -546,7 +546,7 @@ class AppointmentSeriesIntegrationTest : LocalStackTestBase() {
     appointmentSeries.appointments hasSize 2
     attendeeIds hasSize 10
 
-    val expectedOutboundEvents = attendeeIds.map { ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, it) }.toTypedArray()
+    val expectedOutboundEvents = attendeeIds.map { ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, it, "OIC") }.toTypedArray()
 
     validateOutboundEvents(*expectedOutboundEvents)
 
@@ -597,7 +597,7 @@ class AppointmentSeriesIntegrationTest : LocalStackTestBase() {
     appointmentSeries.appointments hasSize 4
     attendeeIds hasSize 12
 
-    val expectedOutboundEvents = attendeeIds.map { ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, it) }.toTypedArray()
+    val expectedOutboundEvents = attendeeIds.map { ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, it, "OIC") }.toTypedArray()
 
     validateOutboundEvents(*expectedOutboundEvents)
 
