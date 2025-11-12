@@ -11,6 +11,7 @@ import org.mockito.kotlin.spy
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentAttendee
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.cancelOnTransferAppointmentAttendeeRemovalReason
@@ -58,10 +59,13 @@ class AppointmentAttendeeServiceTest {
       val removedBy = "OFFENDER_RELEASED_EVENT"
       val appointmentInstance = mock<AppointmentInstance>()
       val appointmentAttendeeMock = mock<AppointmentAttendee>()
+      val appointments = mock<Appointment>()
 
       whenever(appointmentInstance.appointmentAttendeeId).thenReturn(appointmentAttendeeId)
       whenever(appointmentInstance.prisonCode).thenReturn(prisonCode)
       whenever(appointmentInstance.prisonerNumber).thenReturn(prisonerNumber)
+      whenever(appointmentAttendeeMock.appointment).thenReturn(appointments)
+      whenever(appointments.categoryCode).thenReturn("VLB")
 
       whenever(appointmentAttendeeMock.appointmentAttendeeId).thenReturn(appointmentAttendeeId)
       whenever(

@@ -135,6 +135,7 @@ data class PrisonerAttendanceDeleteInformation(val bookingId: Long, val schedule
   override fun primaryId() = "$bookingId"
   override fun secondaryId() = "$scheduledInstanceId"
 }
-data class AppointmentInstanceInformation(val appointmentInstanceId: Long) : AdditionalInformation {
+data class AppointmentInstanceInformation(val appointmentInstanceId: Long, val categoryCode: String) : AdditionalInformation {
   override fun primaryId() = "$appointmentInstanceId"
+  override fun secondaryId() = categoryCode
 }

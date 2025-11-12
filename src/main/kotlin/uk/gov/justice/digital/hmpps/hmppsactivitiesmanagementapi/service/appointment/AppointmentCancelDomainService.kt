@@ -215,7 +215,7 @@ class AppointmentCancelDomainService(
     }
     appointmentsToCancel.forEach {
       it.attendees().forEach { attendee ->
-        outboundEventsService.send(syncEvent, attendee.appointmentAttendeeId)
+        outboundEventsService.sendAppointmentEvent(syncEvent, attendee.appointmentAttendeeId, attendee.appointment.categoryCode)
       }
     }
   }
@@ -225,7 +225,7 @@ class AppointmentCancelDomainService(
   ) {
     appointmentsToUncancel.forEach {
       it.attendees().forEach { attendee ->
-        outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_UNCANCELLED, attendee.appointmentAttendeeId)
+        outboundEventsService.sendAppointmentEvent(OutboundEvent.APPOINTMENT_INSTANCE_UNCANCELLED, attendee.appointmentAttendeeId, attendee.appointment.categoryCode)
       }
     }
   }
