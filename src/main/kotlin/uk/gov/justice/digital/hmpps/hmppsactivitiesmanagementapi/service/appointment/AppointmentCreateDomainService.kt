@@ -179,7 +179,7 @@ class AppointmentCreateDomainService(
       IS_REPEAT_PROPERTY_KEY to (schedule != null).toString(),
       FREQUENCY_PROPERTY_KEY to (schedule?.frequency?.toString() ?: ""),
       NUMBER_OF_APPOINTMENTS_PROPERTY_KEY to (schedule?.numberOfAppointments?.toString() ?: ""),
-      HAS_EXTRA_INFORMATION_PROPERTY_KEY to (extraInformation?.isNotEmpty() == true).toString(),
+      HAS_EXTRA_INFORMATION_PROPERTY_KEY to (!extraInformation.isNullOrEmpty() || !prisonerExtraInformation.isNullOrEmpty()).toString(),
       EVENT_TIER_PROPERTY_KEY to (tier?.description ?: ""),
       EVENT_ORGANISER_PROPERTY_KEY to (organiser?.description ?: ""),
       ORIGINAL_ID_PROPERTY_KEY to (if (originalAppointmentId == 0L) "" else originalAppointmentId.toString()),
