@@ -167,7 +167,7 @@ applications:
 
 hmpps:
   sqs:
-    queueAdminRole: ACTIVITY_ADMIN
+    queueAdminRole: ACTIVITY_QUEUE_ADMIN
 
 springdoc:
   swagger-ui:
