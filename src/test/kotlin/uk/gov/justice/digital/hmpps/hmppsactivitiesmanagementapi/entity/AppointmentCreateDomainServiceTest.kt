@@ -246,7 +246,7 @@ class AppointmentCreateDomainServiceTest {
       // Not currently used by the UI. For future features
       unlockNotes = "Wing officer notes",
       extraInformation = "Extra information for prisoner",
-      prisonerExtraInformation = "Extra information for prisoner",
+      prisonerExtraInformation = "Prisoner extra information for prisoner",
       createdTime = LocalDateTime.now().minusDays(1),
       createdBy = "CREATED_BY_USER",
       updatedTime = LocalDateTime.now().minusHours(1),

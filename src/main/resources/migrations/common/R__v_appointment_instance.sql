@@ -48,7 +48,7 @@ SELECT aa.appointment_attendee_id AS appointment_instance_id,
            WHEN a.in_cell THEN NULL::uuid
            ELSE a.dps_location_id
            END AS dps_location_id,
-    a.prisoner_extra_information
+       a.prisoner_extra_information
 FROM appointment_attendee aa
          JOIN appointment a ON aa.appointment_id = a.appointment_id
          JOIN appointment_series asrs ON asrs.appointment_series_id = a.appointment_series_id
