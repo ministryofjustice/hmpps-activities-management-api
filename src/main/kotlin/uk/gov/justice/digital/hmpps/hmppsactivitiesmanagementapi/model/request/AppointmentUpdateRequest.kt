@@ -110,7 +110,7 @@ data class AppointmentUpdateRequest(
   )
   val extraInformation: String? = null,
 
-  @field:Size(max = 400, message = "Extra prisoner information must not exceed {max} characters")
+  @field:Size(max = 400, message = "Prisoner extra information must not exceed {max} characters")
   @Schema(
     description =
     """
