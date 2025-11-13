@@ -38,6 +38,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus.ALLOCATED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus.REMOVED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
@@ -169,7 +171,7 @@ class WaitingListServiceTest {
     assertThatThrownBy {
       service.addPrisoner(
         DEFAULT_CASELOAD_PENTONVILLE,
-        request.copy(status = WaitingListStatus.ALLOCATED),
+        request.copy(status = ALLOCATED),
         "test",
       )
     }
@@ -179,7 +181,7 @@ class WaitingListServiceTest {
     assertThatThrownBy {
       service.addPrisoner(
         DEFAULT_CASELOAD_PENTONVILLE,
-        request.copy(status = WaitingListStatus.REMOVED),
+        request.copy(status = REMOVED),
         "test",
       )
     }
@@ -454,7 +456,7 @@ class WaitingListServiceTest {
     }
 
     waitingListRepository.stub {
-      on { findByActivitySchedule(schedule) } doReturn listOf(waitingList)
+      on { findByActivitySchedule(schedule, listOf(REMOVED, ALLOCATED)) } doReturn listOf(waitingList)
     }
 
     prisonerSearchApiClient.stub {
@@ -478,46 +480,9 @@ class WaitingListServiceTest {
   }
 
   @Test
-  fun `get waiting lists by the schedule identifier ignores prisoners who have status of REMOVED`() {
-    val schedule = activityEntity(prisonCode = PENTONVILLE_PRISON_CODE).schedules().first()
-
-    val removedWaitingList = waitingList(prisonCode = PENTONVILLE_PRISON_CODE, prisonerNumber = "AAAAAAA", initialStatus = WaitingListStatus.REMOVED)
-    val validWaitingList = waitingList(prisonCode = PENTONVILLE_PRISON_CODE, prisonerNumber = "CCCCCC", initialStatus = WaitingListStatus.PENDING)
-
-    val validPrisoner = PrisonerSearchPrisonerFixture.instance(prisonerNumber = validWaitingList.prisonerNumber)
-
-    scheduleRepository.stub {
-      on { scheduleRepository.findById(1L) } doReturn Optional.of(schedule)
-    }
-
-    waitingListRepository.stub {
-      on { findByActivitySchedule(schedule) } doReturn listOf(removedWaitingList, validWaitingList)
-    }
-
-    prisonerSearchApiClient.stub {
-      on {
-        runBlocking {
-          prisonerSearchApiClient.findByPrisonerNumbersAsync(listOf("CCCCCC"))
-        }
-      } doReturn listOf(validPrisoner)
-    }
-
-    val nonAssociation: NonAssociation = mock {
-      on { firstPrisonerNumber } doReturn "CCCCCC"
-    }
-
-    coEvery { nonAssociationsApiClient.getNonAssociationsInvolving(PENTONVILLE_PRISON_CODE, listOf("CCCCCC")) } returns listOf(nonAssociation)
-
-    service.getWaitingListsBySchedule(1L, true) isEqualTo listOf(validWaitingList.toModel(determineEarliestReleaseDate(validPrisoner), true))
-
-    coVerify { nonAssociationsApiClient.getNonAssociationsInvolving(PENTONVILLE_PRISON_CODE, listOf("CCCCCC")) }
-  }
-
-  @Test
   fun `get waiting lists by the schedule identifier with includeNonAssociationsCheck set to false does not call non-associations api`() {
     val schedule = activityEntity(prisonCode = PENTONVILLE_PRISON_CODE).schedules().first()
 
-    val removedWaitingList = waitingList(prisonCode = PENTONVILLE_PRISON_CODE, prisonerNumber = "AAAAAAA", initialStatus = WaitingListStatus.REMOVED)
     val validWaitingList = waitingList(prisonCode = PENTONVILLE_PRISON_CODE, prisonerNumber = "CCCCCC", initialStatus = WaitingListStatus.PENDING)
 
     val validPrisoner = PrisonerSearchPrisonerFixture.instance(prisonerNumber = validWaitingList.prisonerNumber)
@@ -527,7 +492,7 @@ class WaitingListServiceTest {
     }
 
     waitingListRepository.stub {
-      on { findByActivitySchedule(schedule) } doReturn listOf(removedWaitingList, validWaitingList)
+      on { findByActivitySchedule(schedule, listOf(REMOVED, ALLOCATED)) } doReturn listOf(validWaitingList)
     }
 
     prisonerSearchApiClient.stub {
@@ -552,7 +517,7 @@ class WaitingListServiceTest {
     }
 
     waitingListRepository.stub {
-      on { findByActivitySchedule(schedule) } doReturn emptyList()
+      on { findByActivitySchedule(schedule, listOf(REMOVED, ALLOCATED)) } doReturn emptyList()
     }
 
     prisonerSearchApiClient.stub {
@@ -567,7 +532,6 @@ class WaitingListServiceTest {
   @Test
   fun `get waiting lists by the schedule identifier succeeds when non-associations api returns a null`() {
     val schedule = activityEntity(prisonCode = PENTONVILLE_PRISON_CODE).schedules().first()
-    val removedWaitingList = waitingList(prisonCode = PENTONVILLE_PRISON_CODE, prisonerNumber = "AAAAAAA", initialStatus = WaitingListStatus.REMOVED)
     val validWaitingList = waitingList(prisonCode = PENTONVILLE_PRISON_CODE, prisonerNumber = "CCCCCC", initialStatus = WaitingListStatus.PENDING)
 
     val validPrisoner = PrisonerSearchPrisonerFixture.instance(prisonerNumber = validWaitingList.prisonerNumber)
@@ -577,7 +541,7 @@ class WaitingListServiceTest {
     }
 
     waitingListRepository.stub {
-      on { findByActivitySchedule(schedule) } doReturn listOf(removedWaitingList, validWaitingList)
+      on { findByActivitySchedule(schedule, listOf(REMOVED, ALLOCATED)) } doReturn listOf(validWaitingList)
     }
 
     prisonerSearchApiClient.stub {
@@ -623,7 +587,7 @@ class WaitingListServiceTest {
     }
 
     waitingListRepository.stub {
-      on { findByActivitySchedule(schedule) } doReturn listOf(waitingList)
+      on { findByActivitySchedule(schedule, listOf(REMOVED, ALLOCATED)) } doReturn listOf(waitingList)
     }
 
     val releaseDate = LocalDate.of(2030, 4, 20)

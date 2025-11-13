@@ -1004,7 +1004,7 @@ class ActivityScheduleIntegrationTest : LocalStackTestBase() {
     "classpath:test_data/seed-activity-id-21.sql",
   )
   @Test
-  fun `get all waiting lists for Maths ignoring prisoners REMOVED from waitlist`() {
+  fun `get all waiting lists for Maths ignoring prisoners REMOVED and ALLOCATED from waitlist`() {
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
       listOf("A4065DZ"),
       listOf(
