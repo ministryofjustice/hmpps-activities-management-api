@@ -37,7 +37,7 @@ import java.time.ZoneId
 import java.time.ZoneOffset
 import java.util.*
 
-class MigrateIntegrationTest : ActivitiesIntegrationTestBase() {
+class MigrateIntegrationTest : LocalStackTestBase() {
 
   @MockitoBean
   lateinit var clock: Clock

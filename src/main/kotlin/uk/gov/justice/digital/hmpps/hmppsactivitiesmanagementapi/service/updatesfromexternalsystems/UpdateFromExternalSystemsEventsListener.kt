@@ -17,7 +17,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Attenda
 
 const val UPDATE_FROM_EXTERNAL_SYSTEM_QUEUE_NAME = "updatefromexternalsystemevents"
 
-@Profile("!test && !local")
+@Profile("!test")
 @Component
 class UpdateFromExternalSystemsEventsListener(
   private val mapper: ObjectMapper,

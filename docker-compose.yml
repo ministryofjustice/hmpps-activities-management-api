@@ -16,5 +16,19 @@ services:
       DPR_USER: dpr_user
       DPR_PASSWORD: dpr_password
 
+  localstack:
+    image: localstack/localstack:4
+#    image: localstack/localstack:4-arm64
+    networks:
+      - hmpps
+    container_name: activities-localstack
+    ports:
+      - "14566:4566"
+    environment:
+      - SERVICES=sns,sqs,s3
+    volumes:
+      - "./localstack:/etc/localstack/init/ready.d"
+      - "${LOCALSTACK_VOLUME_DIR:-./volume}:/var/lib/localstack"
+
 networks:
   hmpps:

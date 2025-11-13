@@ -11,7 +11,7 @@ import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.FeatureSwitches
 
-@Profile("!test && !local")
+@Profile("!test")
 @Component
 class InboundEventsListener(
   private val mapper: ObjectMapper,
@@ -52,7 +52,7 @@ class InboundEventsListener(
 data class HMPPSDomainEvent(
   val eventType: String,
 ) {
-  fun toInboundEventType() = InboundEventType.values().firstOrNull { it.eventType == eventType }
+  fun toInboundEventType() = InboundEventType.entries.firstOrNull { it.eventType == eventType }
 }
 
 @JsonNaming(value = PropertyNamingStrategies.UpperCamelCaseStrategy::class)
