@@ -20,6 +20,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus.ALLOCATED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus.APPROVED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus.REMOVED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.WaitingListApplication
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerWaitingListApplicationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListApplicationRequest
@@ -69,8 +72,7 @@ class WaitingListService(
   fun getWaitingListsBySchedule(id: Long, includeNonAssociationsCheck: Boolean = true): List<WaitingListApplication> = runBlocking {
     val schedule = scheduleRepository.findOrThrowNotFound(id).checkCaseloadAccess()
 
-    val waitingLists = waitingListRepository.findByActivitySchedule(schedule)
-      .filter { waitingList -> waitingList.status != WaitingListStatus.REMOVED }
+    val waitingLists = waitingListRepository.findByActivitySchedule(schedule, listOf(REMOVED, ALLOCATED))
 
     if (waitingLists.isEmpty()) return@runBlocking emptyList()
 
@@ -208,13 +210,21 @@ class WaitingListService(
     }
   }
 
-  fun fetchOpenApplicationsForPrison(prisonCode: String) = waitingListRepository.findByPrisonCodeAndStatusIn(prisonCode, setOf(WaitingListStatus.PENDING, WaitingListStatus.APPROVED, WaitingListStatus.DECLINED, WaitingListStatus.WITHDRAWN))
+  fun fetchOpenApplicationsForPrison(prisonCode: String) = waitingListRepository.findByPrisonCodeAndStatusIn(
+    prisonCode,
+    setOf(
+      WaitingListStatus.PENDING,
+      APPROVED,
+      WaitingListStatus.DECLINED,
+      WaitingListStatus.WITHDRAWN,
+    ),
+  )
 
   @Deprecated("Use - PrisonerWaitingListApplicationRequest.failIfNotAllowableStatus()")
   private fun WaitingListApplicationRequest.failIfNotAllowableStatus() {
     require(
       status != null &&
-        listOf(WaitingListStatus.ALLOCATED, WaitingListStatus.REMOVED).none { it == status },
+        listOf(ALLOCATED, REMOVED).none { it == status },
     ) {
       "Only statuses of PENDING, APPROVED and DECLINED are allowed when adding a prisoner to a waiting list"
     }
@@ -239,7 +249,7 @@ class WaitingListService(
         "Cannot add prisoner to the waiting list because a pending application already exists"
       }
 
-      require(entries.none { it.status == WaitingListStatus.APPROVED }) {
+      require(entries.none { it.status == APPROVED }) {
         "Cannot add prisoner to the waiting list because an approved application already exists"
       }
     }
@@ -312,7 +322,7 @@ class WaitingListService(
   }
 
   private fun WaitingList.failIfNotUpdatable(newStatus: WaitingListStatus?) = also {
-    require(isStatus(WaitingListStatus.APPROVED, WaitingListStatus.PENDING, WaitingListStatus.DECLINED, WaitingListStatus.WITHDRAWN)) {
+    require(isStatus(APPROVED, WaitingListStatus.PENDING, WaitingListStatus.DECLINED, WaitingListStatus.WITHDRAWN)) {
       "The waiting list $waitingListId can no longer be updated"
     }
 
@@ -374,7 +384,7 @@ class WaitingListService(
     request.status?.takeUnless { it == status }?.let { updatedStatus ->
       require(
         listOf(
-          WaitingListStatus.APPROVED,
+          APPROVED,
           WaitingListStatus.PENDING,
           WaitingListStatus.DECLINED,
           WaitingListStatus.WITHDRAWN,
@@ -399,7 +409,7 @@ class WaitingListService(
   }
 
   private fun logStatusChangeMetric(prisonerNumber: String, status: WaitingListStatus) {
-    if (status == WaitingListStatus.APPROVED) {
+    if (status == APPROVED) {
       logMetric(TelemetryEvent.PRISONER_APPROVED_ON_WAITLIST, prisonerNumber)
     }
 
@@ -425,7 +435,7 @@ class WaitingListService(
     waitingListRepository.findByPrisonCodeAndPrisonerNumberAndStatusIn(
       prisonCode,
       prisonerNumber,
-      setOf(WaitingListStatus.PENDING, WaitingListStatus.APPROVED, WaitingListStatus.DECLINED, WaitingListStatus.WITHDRAWN),
+      setOf(WaitingListStatus.PENDING, APPROVED, WaitingListStatus.DECLINED, WaitingListStatus.WITHDRAWN),
     ).forEach { application ->
       waitingListRepository.saveAndFlush(application.remove(removedBy))
       auditService.logEvent(application.toPrisonerRemovedFromWaitingListEvent())
@@ -440,7 +450,7 @@ class WaitingListService(
   ) {
     waitingListRepository.findByActivityAndStatusIn(
       activityRepository.findOrThrowNotFound(activityId),
-      setOf(WaitingListStatus.PENDING, WaitingListStatus.APPROVED),
+      setOf(WaitingListStatus.PENDING, APPROVED),
     ).forEach { application ->
       waitingListRepository.saveAndFlush(application.decline(reason, declinedBy))
       auditService.logEvent(application.toPrisonerDeclinedFromWaitingListEvent())
@@ -466,7 +476,7 @@ class WaitingListService(
     val statusBefore = this.status
 
     apply {
-      status = WaitingListStatus.REMOVED
+      status = REMOVED
       updatedTime = LocalDateTime.now()
       updatedBy = removedBy
     }
@@ -480,7 +490,7 @@ class WaitingListService(
 internal fun PrisonerWaitingListApplicationRequest.failIfNotAllowableStatus() {
   require(
     status != null &&
-      listOf(WaitingListStatus.ALLOCATED, WaitingListStatus.REMOVED, WaitingListStatus.WITHDRAWN).none { it == status },
+      listOf(ALLOCATED, REMOVED, WaitingListStatus.WITHDRAWN).none { it == status },
   ) {
     "Only statuses of PENDING, APPROVED and DECLINED are allowed when adding a prisoner to a waiting list"
   }

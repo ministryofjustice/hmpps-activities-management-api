@@ -15,6 +15,7 @@ services:
 
   test-localstack:
     image: localstack/localstack:4
+    # image: localstack/localstack:4-arm64
     container_name: activities-test-localstack
     networks:
       - hmpps

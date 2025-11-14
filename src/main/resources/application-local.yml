@@ -100,5 +100,74 @@ prison-locations:
 aws:
   s3:
     ap:
-      bucket: moj-reg-dev
-      project: hmpps-activities-management-dev
+      bucket: default-localstack-bucket
+      project: default-localstack-project
+  sqs:
+    endpoint: https://sqs.localhost.localstack.cloud:4567/
+
+hmpps.sqs:
+  provider: localstack
+  localstackUrl: http://localhost:14566
+  queues:
+    activities:
+      queueName: ${random.uuid}
+      subscribeFilter: '{"eventType":[ "prisoner-offender-search.prisoner.received", "prisoner-offender-search.prisoner.released", "prison-offender-events.prisoner.activities-changed", "prison-offender-events.prisoner.appointments-changed", "prisoner-offender-search.prisoner.alerts-updated"]}'
+      dlqName: ${random.uuid}
+      subscribeTopicId: domainevents
+      dlqMaxReceiveCount: 1
+      visibilityTimeout: 1
+    domaineventsqueue:
+      queueName: domainevents-queue
+      subscribeTopicId: domainevents
+    audit:
+      queueName: ${random.uuid}
+    updatefromexternalsystemevents:
+      queueName: ${random.uuid}
+      dlqName: ${random.uuid}
+    activitiesmanagementjobs:
+      queueName:  ${random.uuid}
+      dlqName:  ${random.uuid}
+  topics:
+    domainevents:
+      arn: arn:aws:sns:eu-west-2:000000000000:domainevents-topic
+    outboundtopic:
+      arn: arn:aws:sns:eu-west-2:000000000000:${random.uuid}
+
+feature:
+  event:
+    prison-offender-events:
+      prisoner:
+        activities-changed: true
+        appointments-changed: true
+    prisoner-offender-search:
+      prisoner:
+        received: true
+        released: true
+        alerts-updated: true
+    activities:
+      prisoner:
+        allocated: true
+        allocation-amended: true
+        attendance-amended: true
+        attendance-created: true
+        attendance-deleted: true
+        attendance-expired: true
+      activity-schedule:
+        amended: true
+        created: true
+      scheduled-instance:
+        amended: true
+    appointments:
+      appointment-instance:
+        cancelled: true
+        created: true
+        deleted: true
+        updated: true
+        uncancelled: true
+  events.sns.enabled: true
+
+  jobs.sqs:
+    deallocate.ending.enabled: true
+    deallocate.expiring.enabled: true
+    activate.allocations.enabled: true
+    manage.attendances.enabled: true

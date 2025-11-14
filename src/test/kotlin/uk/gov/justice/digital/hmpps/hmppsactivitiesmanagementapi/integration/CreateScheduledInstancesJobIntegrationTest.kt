@@ -1,31 +1,56 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.jdbc.core.queryForObject
-import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.ACTIVITY_SCHEDULE_UPDATED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.JobIntegrationTestHelper
 import java.time.DayOfWeek
 import java.time.LocalDate
 
-@Deprecated("Remove when scheduled instances job always uses SQS")
-@TestPropertySource(
-  properties = [
-    "feature.jobs.sqs.schedules.enabled=false",
-    "feature.jobs.sqs.activate.allocations.enabled=false",
-    "feature.jobs.sqs.deallocate.ending.enabled=false",
-    "feature.jobs.sqs.deallocate.expiring.enabled=false",
-    "feature.jobs.sqs.manage.attendances.enabled=false",
-    "feature.jobs.sqs.manage.appointment.attendees.enabled=false",
-  ],
-)
 class CreateScheduledInstancesJobIntegrationTest : LocalStackTestBase() {
 
+  @Autowired
+  private lateinit var scheduleInstancesRepository: ScheduledInstanceRepository
+
+  @Autowired
+  private lateinit var jobHelper: JobIntegrationTestHelper
+
   private val today: LocalDate = TimeSource.today()
+
+  @Sql("classpath:test_data/seed-scheduled-instances-for-multiple-prisons.sql")
+  @Test
+  fun `creates instances for multiple prisons`() {
+    updateSlotsToRunToday()
+    updateToRunOnBankHolidays(true)
+
+    waitForJobs({ webTestClient.createScheduledInstances() })
+
+    val scheduledInstances = scheduleInstancesRepository.findAll()
+
+    with(scheduledInstances) {
+      assertThat(this).hasSize(2)
+      assertThat(scheduledInstances.filter { it.activitySchedule.activity.prisonCode == "PVI" }).hasSize(1)
+      assertThat(scheduledInstances.filter { it.activitySchedule.activity.prisonCode == "IWI" }).hasSize(1)
+    }
+
+    assertThat(scheduleInstancesRepository.count()).isEqualTo(2)
+
+    validateOutboundEvents(
+      ExpectedOutboundEvent(ACTIVITY_SCHEDULE_UPDATED, 1),
+      ExpectedOutboundEvent(ACTIVITY_SCHEDULE_UPDATED, 2),
+    )
+
+    jobHelper.verifyJobComplete(JobType.SCHEDULES)
+  }
 
   @Sql("classpath:test_data/seed-activity-with-old-instances.sql")
   @Test
@@ -54,7 +79,7 @@ class CreateScheduledInstancesJobIntegrationTest : LocalStackTestBase() {
 
   @Sql("classpath:test_data/seed-activity-with-old-instances.sql")
   @Test
-  fun `Do not create instances for activity sessions when not marked as running on a bank holiday`() {
+  fun `do not create instances for activity sessions when not marked as running on a bank holiday`() {
     updateSlotsToRunToday()
     updateToRunOnBankHolidays(false)
 

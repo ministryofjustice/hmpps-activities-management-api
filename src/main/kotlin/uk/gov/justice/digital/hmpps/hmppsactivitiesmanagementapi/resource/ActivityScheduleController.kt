@@ -464,7 +464,7 @@ class ActivityScheduleController(
   @ResponseBody
   @Operation(
     summary = "Get a schedules waiting list applications",
-    description = "Returns zero or more activity schedule waiting list applications.",
+    description = "Returns zero or more activity schedule waiting list applications. Excludes applications that are REMOVED or ALLOCATED.",
   )
   @ApiResponses(
     value = [
