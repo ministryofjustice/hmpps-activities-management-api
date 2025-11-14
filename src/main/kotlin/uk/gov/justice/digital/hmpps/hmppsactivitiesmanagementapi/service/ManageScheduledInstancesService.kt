@@ -36,19 +36,6 @@ class ManageScheduledInstancesService(
     private val log = LoggerFactory.getLogger(this::class.java)
   }
 
-  @Transactional(propagation = Propagation.REQUIRED)
-  fun create() {
-    val today = LocalDate.now(clock)
-    val endDay = today.plusDays(daysInAdvance!!)
-
-    log.info("Scheduled instances job running from $today until $endDay")
-
-    rolloutPrisonService.getRolloutPrisons()
-      .forEach { prison ->
-        createSchedules(prison.prisonCode)
-      }
-  }
-
   fun sendCreateSchedulesEvents(job: Job) {
     val today = LocalDate.now(clock)
     val endDay = today.plusDays(daysInAdvance!!)

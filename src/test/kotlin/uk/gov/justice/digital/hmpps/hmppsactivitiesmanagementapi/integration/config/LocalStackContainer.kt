@@ -28,11 +28,11 @@ object LocalStackContainer {
     if (localstackIsRunning()) return null
     val logConsumer = Slf4jLogConsumer(log).withPrefix("localstack")
     return LocalStackContainer(
-      DockerImageName.parse("localstack/localstack").withTag("3"),
+      DockerImageName.parse("localstack/localstack").withTag("4"),
     ).apply {
       // You can do things here like setup default buckets as shown
       // the bucket shown here (default-localstack-bucket) isn't used anywhere, that's because none of this config will
-      // be incldued in the container set up in the pipeline
+      // be included in the container set up in the pipeline
       // Instead, the default bucket is created in the AWSLocalStackConfig file using the aws kotlin sdk
       withCopyToContainer(
         Transferable.of(
