@@ -6,6 +6,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
@@ -54,6 +55,7 @@ class WaitingListService(
   private val telemetryClient: TelemetryClient,
   private val auditService: AuditService,
   private val nonAssociationsApiClient: NonAssociationsApiClient,
+  @Value("\${waiting-list.prisoner-search-limit:1000}") private val prisonerSearchLimit: Long = 1000,
 ) {
   companion object {
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
@@ -77,6 +79,10 @@ class WaitingListService(
     if (waitingLists.isEmpty()) return@runBlocking emptyList()
 
     val prisonerNumbers = waitingLists.map { it.prisonerNumber }
+
+    require(prisonerNumbers.size <= prisonerSearchLimit) {
+      "Cannot get prisoner details for waiting list with more than $prisonerSearchLimit prisoners who have not been removed or allocated"
+    }
 
     val prisonersAsync = async { prisonerSearchApiClient.findByPrisonerNumbersAsync(prisonerNumbers) }
 
