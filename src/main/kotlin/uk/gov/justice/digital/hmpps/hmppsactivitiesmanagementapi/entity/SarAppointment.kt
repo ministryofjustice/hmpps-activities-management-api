@@ -20,6 +20,7 @@ data class SarAppointment(
   val startTime: LocalTime,
   val endTime: LocalTime?,
   val extraInformation: String?,
+  val prisonerExtraInformation: String?,
   val attended: String,
   val createdDate: LocalDate,
 

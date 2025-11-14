@@ -31,12 +31,14 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EXTRA
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.FREQUENCY_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.HAS_CUSTOM_NAME_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.HAS_EXTRA_INFORMATION_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.HAS_PRISONER_EXTRA_INFORMATION_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.INTERNAL_LOCATION_DESCRIPTION_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.INTERNAL_LOCATION_ID_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.IS_REPEAT_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.NUMBER_OF_APPOINTMENTS_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ORIGINAL_ID_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISONER_COUNT_METRIC_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISONER_EXTRA_INFORMATION_LENGTH_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISON_CODE_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.START_DATE_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.START_TIME_PROPERTY_KEY
@@ -179,7 +181,8 @@ class AppointmentCreateDomainService(
       IS_REPEAT_PROPERTY_KEY to (schedule != null).toString(),
       FREQUENCY_PROPERTY_KEY to (schedule?.frequency?.toString() ?: ""),
       NUMBER_OF_APPOINTMENTS_PROPERTY_KEY to (schedule?.numberOfAppointments?.toString() ?: ""),
-      HAS_EXTRA_INFORMATION_PROPERTY_KEY to (extraInformation?.isNotEmpty() == true).toString(),
+      HAS_EXTRA_INFORMATION_PROPERTY_KEY to (!extraInformation.isNullOrEmpty()).toString(),
+      HAS_PRISONER_EXTRA_INFORMATION_PROPERTY_KEY to (!prisonerExtraInformation.isNullOrEmpty()).toString(),
       EVENT_TIER_PROPERTY_KEY to (tier?.description ?: ""),
       EVENT_ORGANISER_PROPERTY_KEY to (organiser?.description ?: ""),
       ORIGINAL_ID_PROPERTY_KEY to (if (originalAppointmentId == 0L) "" else originalAppointmentId.toString()),
@@ -191,6 +194,7 @@ class AppointmentCreateDomainService(
       APPOINTMENT_INSTANCE_COUNT_METRIC_KEY to (prisonNumberBookingIdMap.size * (schedule?.numberOfAppointments ?: 1)).toDouble(),
       CUSTOM_NAME_LENGTH_METRIC_KEY to (customName?.length ?: 0).toDouble(),
       EXTRA_INFORMATION_LENGTH_METRIC_KEY to (extraInformation?.length ?: 0).toDouble(),
+      PRISONER_EXTRA_INFORMATION_LENGTH_METRIC_KEY to (prisonerExtraInformation?.length ?: 0).toDouble(),
       EVENT_TIME_MS_METRIC_KEY to (System.currentTimeMillis() - startTimeInMs).toDouble(),
     )
 
@@ -213,7 +217,7 @@ class AppointmentCreateDomainService(
         isRepeat = schedule != null,
         frequency = schedule?.frequency,
         numberOfAppointments = schedule?.numberOfAppointments,
-        hasExtraInformation = extraInformation?.isNotEmpty() == true,
+        hasExtraInformation = !extraInformation.isNullOrEmpty() || !prisonerExtraInformation.isNullOrEmpty(),
         prisonerNumbers = prisonNumberBookingIdMap.keys.toList(),
         createdTime = createdTime,
         createdBy = createdBy,
@@ -247,6 +251,7 @@ fun AppointmentSeries.createAndAddAppointment(sequenceNumber: Int, startDate: Lo
   endTime = this.endTime,
   unlockNotes = this.unlockNotes,
   extraInformation = this.extraInformation,
+  prisonerExtraInformation = this.prisonerExtraInformation,
   createdTime = this.createdTime,
   createdBy = this.createdBy,
   updatedTime = this.updatedTime,

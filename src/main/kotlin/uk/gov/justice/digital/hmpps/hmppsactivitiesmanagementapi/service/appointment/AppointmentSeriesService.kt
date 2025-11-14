@@ -182,6 +182,7 @@ class AppointmentSeriesService(
       startTime = startTime!!,
       endTime = endTime,
       extraInformation = extraInformation?.trim()?.takeUnless(String::isBlank),
+      prisonerExtraInformation = prisonerExtraInformation?.trim()?.takeUnless(String::isBlank),
       createdBy = createdBy,
     ).also { appointmentSeries ->
       appointmentSeries.appointmentOrganiser = organiser

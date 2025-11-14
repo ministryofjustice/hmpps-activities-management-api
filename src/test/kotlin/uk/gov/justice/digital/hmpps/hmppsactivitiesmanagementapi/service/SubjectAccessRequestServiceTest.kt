@@ -66,6 +66,7 @@ class SubjectAccessRequestServiceTest {
     startTime = LocalTime.of(9, 30),
     endTime = LocalTime.of(11, 45),
     extraInformation = "Prayer session",
+    prisonerExtraInformation = "Please arrive 10 mins early",
     attended = "Yes",
     createdDate = TimeSource.yesterday(),
     category = "Activity",

@@ -143,6 +143,18 @@ data class AppointmentSetAppointment(
     example = "This appointment will help adjusting to life outside of prison",
   )
   val extraInformation: String? = null,
+
+  @field:Size(max = 400, message = "Prisoner extra information must not exceed {max} characters")
+  @Schema(
+    description =
+    """
+    Prisoner extra information for the prisoner or prisoners attending the appointment or appointments.
+    Shown only on the appointments details page and on printed movement slips. Wing staff will be notified there is
+    prisoner extra information via the unlock list.
+    """,
+    example = "Please arrive 10 minutes early",
+  )
+  val prisonerExtraInformation: String? = null,
 ) {
   @AssertTrue(message = "End time must be after the start time")
   private fun isEndTime() = startTime == null || endTime == null || endTime > startTime

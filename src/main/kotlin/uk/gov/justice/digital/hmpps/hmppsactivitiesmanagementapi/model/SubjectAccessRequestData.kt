@@ -161,6 +161,9 @@ data class SarAppointment(
   @Schema(description = "Any extra information about the appointment, can be null", example = "Discuss God")
   val extraInformation: String?,
 
+  @Schema(description = "Any extra information for the prisoner attending ", example = "Please arrive 10 minutes early")
+  val prisonerExtraInformation: String? = null,
+
   @Schema(description = "The attendance of the appointment", allowableValues = ["Yes", "No", "Unmarked"], example = "Yes")
   val attended: String,
 
@@ -176,6 +179,7 @@ data class SarAppointment(
     appointment.startTime,
     appointment.endTime,
     appointment.extraInformation,
+    appointment.prisonerExtraInformation,
     appointment.attended,
     appointment.createdDate,
   )

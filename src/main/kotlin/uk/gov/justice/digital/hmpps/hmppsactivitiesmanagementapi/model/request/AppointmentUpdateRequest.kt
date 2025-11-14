@@ -110,6 +110,18 @@ data class AppointmentUpdateRequest(
   )
   val extraInformation: String? = null,
 
+  @field:Size(max = 400, message = "Prisoner extra information must not exceed {max} characters")
+  @Schema(
+    description =
+    """
+    Updated prisoner extra information for the prisoner or prisoners attending the appointment or appointments.
+    Shown only on the appointments details page and on printed movement slips. Wing staff will be notified there is
+    prisoner extra information via the unlock list.
+    """,
+    example = "Please arrive 10 minutes early",
+  )
+  val prisonerExtraInformation: String? = null,
+
   @Schema(
     description = "The prisoner or prisoners to remove from the appointment or appointments",
     example = "[\"A1234BC\"]",
