@@ -95,6 +95,7 @@ class WaitingListServiceTest {
     telemetryClient,
     auditService,
     nonAssociationsApiClient,
+    1,
   )
   private val waitingListCaptor = argumentCaptor<WaitingList>()
 
@@ -477,6 +478,51 @@ class WaitingListServiceTest {
       service.getWaitingListsBySchedule(1L)
     }
     exception.message isEqualTo "Prisoner 123456 not found for waiting list id 1"
+  }
+
+  @Test
+  fun `get waiting lists by the schedule identifier throws exception when there are too many prisoners`() {
+    val schedule = activityEntity(prisonCode = PENTONVILLE_PRISON_CODE).schedules().first()
+    val allocation = schedule.allocations().first()
+
+    val waitingList1 = WaitingList(
+      waitingListId = 99,
+      prisonCode = PENTONVILLE_PRISON_CODE,
+      activitySchedule = schedule,
+      prisonerNumber = "123456",
+      bookingId = 100L,
+      applicationDate = TimeSource.today(),
+      requestedBy = "Fred",
+      comments = "Some random test comments",
+      createdBy = "Bob",
+      initialStatus = WaitingListStatus.DECLINED,
+    ).apply {
+      this.allocation = allocation
+      this.updatedBy = "Test"
+      this.updatedTime = TimeSource.now()
+      this.declinedReason = "Needs to attend level one activity first"
+    }
+
+    val waitingList2 = waitingList1.copy(prisonerNumber = "333333")
+
+    scheduleRepository.stub {
+      on { scheduleRepository.findById(1L) } doReturn Optional.of(schedule)
+    }
+
+    waitingListRepository.stub {
+      on { findByActivitySchedule(schedule, listOf(REMOVED, ALLOCATED)) } doReturn listOf(waitingList1, waitingList2)
+    }
+
+    val exception = assertThrows<IllegalArgumentException> {
+      service.getWaitingListsBySchedule(1L)
+    }
+    exception.message isEqualTo "Cannot get prisoner details for waiting list with more than 1 prisoners who have not been removed or allocated"
+
+    coVerify(exactly = 0) {
+      nonAssociationsApiClient.getNonAssociationsInvolving(any(), any())
+    }
+
+    verifyNoInteractions(prisonerSearchApiClient)
   }
 
   @Test
