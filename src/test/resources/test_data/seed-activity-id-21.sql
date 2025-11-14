@@ -15,3 +15,6 @@ values (1, 'MDI', 'A4065DZ', 1207485, '2023-06-23', 1, 1, 'Fred Bloggs', 'PENDIN
 
 insert into waiting_list (waiting_list_id, prison_code, prisoner_number, booking_id, application_date, activity_id, activity_schedule_id, requested_by, status, creation_time, created_by, comments, declined_reason, updated_time, updated_by, allocation_id)
 values (2, 'MDI', 'A4065BB', 1207477, '2023-06-23', 1, 1, 'Mary Smith', 'REMOVED', '2023-08-02 13:37:47.534000', 'test user', 'The prisoner has specifically requested to attend this activity', null, null, null, null);
+
+insert into waiting_list (waiting_list_id, prison_code, prisoner_number, booking_id, application_date, activity_id, activity_schedule_id, requested_by, status, creation_time, created_by, comments, declined_reason, updated_time, updated_by, allocation_id)
+values (3, 'MDI', 'A45599X', 1207488, '2023-06-23', 1, 1, 'Alice Speings', 'ALLOCATED', '2023-08-02 13:37:47.534000', 'test user', 'The prisoner has specifically requested to attend this activity', null, null, null, null);
