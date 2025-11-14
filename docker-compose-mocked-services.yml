@@ -1,34 +1,6 @@
 version: "3"
+
 services:
-  db:
-    image: postgres:latest
-#    image: arm64v8/postgres:17
-    networks:
-      - hmpps
-    container_name: activities-db
-    restart: always
-    ports:
-      - "5432:5432"
-    environment:
-      POSTGRES_DB: activities-management-db
-      POSTGRES_USER: activities-management
-      POSTGRES_PASSWORD: activities-management
-      DPR_USER: dpr_user
-      DPR_PASSWORD: dpr_password
-
-  local-stack-aws:
-    image: localstack/localstack:4
-    networks:
-      - hmpps
-    container_name: localstack
-    ports:
-      - "14566:4566"
-    environment:
-      - SERVICES=sns,sqs,s3
-    volumes:
-      - "./localstack:/etc/localstack/init/ready.d"
-      - "${LOCALSTACK_VOLUME_DIR:-./volume}:/var/lib/localstack"
-
   prison-api:
     image: wiremock/wiremock:latest
     container_name: prison-api
