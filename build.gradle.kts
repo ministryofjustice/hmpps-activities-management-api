@@ -32,7 +32,7 @@ dependencies {
   implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
   implementation("org.springframework.boot:spring-boot-starter-webflux")
   implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-  implementation("org.springframework.data:spring-data-envers:3.5.5")
+  implementation("org.springframework.data:spring-data-envers:3.5.6")
   implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:5.6.1")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.10.2")
@@ -54,7 +54,7 @@ dependencies {
     }
   }
 
-  implementation("aws.sdk.kotlin:s3:1.5.82")
+  implementation("aws.sdk.kotlin:s3:1.5.83")
 
   // Other dependencies
   implementation("org.apache.commons:commons-text:1.14.0")
@@ -65,16 +65,16 @@ dependencies {
   runtimeOnly("org.postgresql:postgresql")
 
   // Test dependencies
-  testImplementation("org.wiremock:wiremock-standalone:3.13.1")
+  testImplementation("org.wiremock:wiremock-standalone:3.13.2")
   testImplementation("org.springframework.boot:spring-boot-testcontainers")
   testImplementation("org.testcontainers:postgresql")
   testImplementation("org.testcontainers:localstack:1.21.3")
   testImplementation("io.jsonwebtoken:jjwt-impl:0.13.0")
   testImplementation("io.jsonwebtoken:jjwt-jackson:0.13.0")
   testImplementation("org.mockito:mockito-inline:5.2.0")
-  testImplementation("net.javacrumbs.json-unit:json-unit:5.0.0")
-  testImplementation("net.javacrumbs.json-unit:json-unit-assertj:5.0.0")
-  testImplementation("net.javacrumbs.json-unit:json-unit-json-path:5.0.0")
+  testImplementation("net.javacrumbs.json-unit:json-unit:5.1.0")
+  testImplementation("net.javacrumbs.json-unit:json-unit-assertj:5.1.0")
+  testImplementation("net.javacrumbs.json-unit:json-unit-json-path:5.1.0")
   testImplementation("org.springframework.security:spring-security-test")
   testImplementation("org.springframework.boot:spring-boot-starter-test")
   testImplementation("org.awaitility:awaitility-kotlin")
