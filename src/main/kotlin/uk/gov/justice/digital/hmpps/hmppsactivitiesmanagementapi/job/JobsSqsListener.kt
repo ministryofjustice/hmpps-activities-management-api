@@ -27,7 +27,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Suspend
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.UnsuspendAllocationsService
 import java.time.LocalDate
 
-@Profile("!test && !local")
+@Profile("!test")
 @Service
 class JobsSqsListener(
   private val scheduledInstancesService: ManageScheduledInstancesService,

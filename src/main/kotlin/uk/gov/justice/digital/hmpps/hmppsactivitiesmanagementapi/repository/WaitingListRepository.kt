@@ -22,7 +22,15 @@ interface WaitingListRepository :
     activitySchedule: ActivitySchedule,
   ): List<WaitingList>
 
-  fun findByActivitySchedule(activitySchedule: ActivitySchedule): List<WaitingList>
+  @Query(
+    """
+    select w from WaitingList w
+    where w.activitySchedule = :activitySchedule
+    and w.status not in :excludedStatuses 
+  """,
+  )
+  fun findByActivitySchedule(activitySchedule: ActivitySchedule, excludedStatuses: List<WaitingListStatus> = emptyList()): List<WaitingList>
+
   fun findByPrisonCodeAndPrisonerNumberAndStatusIn(prisonCode: String, prisonerNumber: String, statuses: Set<WaitingListStatus>): List<WaitingList>
   fun findByPrisonCodeAndStatusIn(prisonCode: String, statuses: Set<WaitingListStatus>): List<WaitingList>
   fun findByPrisonCodeAndPrisonerNumber(prisonCode: String, prisonerNumber: String): List<WaitingList>

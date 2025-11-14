@@ -54,7 +54,6 @@ import java.time.ZoneOffset
 @Deprecated("Remove when allocations job always uses SQS")
 @TestPropertySource(
   properties = [
-    "feature.jobs.sqs.schedules.enabled=false",
     "feature.jobs.sqs.activate.allocations.enabled=false",
     "feature.jobs.sqs.deallocate.ending.enabled=false",
     "feature.jobs.sqs.deallocate.expiring.enabled=false",

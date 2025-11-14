@@ -36,22 +36,21 @@ Useful tools but not essential:
 ./gradlew clean build
 ```
 
-## Running the service
+## Running the service locally
 
 There are two key environment variables needed to run the service. The system client id and secret used to retrieve the OAuth 2.0 access token needed for service to service API calls can be set as local environment variables.
 This allows API calls made from this service that do not use the caller's token to successfully authenticate.
 
 Add the following to a local `.env` file in the root folder of this project (_you can extract the credentials from the dev k8s project namespace_).
 
-N.B. you must escape any '$' characters with '\\$'
+**Note**: you must escape any '\$' characters with '\\$'
 
 ```
 export SYSTEM_CLIENT_ID="<system.client.id>"
 export SYSTEM_CLIENT_SECRET="<system.client.secret>"
 ```
 
-Start up the docker dependencies using the docker-compose file in the `hmpps-activities-management-api` service.
-
+**You will need Postgres DB and LocalStack containers to be running**:
 ```
 docker-compose up --remove-orphans
 ```
@@ -63,25 +62,9 @@ values required.
 ./run-local.sh
 ```
 
-Or, to run with default properties set in the docker-compose file
-```
-docker-compose pull && docker-compose up
-```
-
 Or, to use default port and properties
-
 ```
 SPRING_PROFILES_ACTIVE=dev ./gradlew bootRun
-```
-
-To simulate AWS SQS/SNS mode you need to have the localstack container running:
-
-```
-docker-compose -f docker-compose-localstack.yml up
-```
-
-```
-./run-localstack.sh
 ```
 
 You might need to set up your AWS config and credentials files:
