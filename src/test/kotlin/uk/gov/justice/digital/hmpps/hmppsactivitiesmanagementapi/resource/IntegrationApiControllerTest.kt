@@ -500,7 +500,7 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
       )
     }
 
-    private fun MockMvc.getScheduledInstancesForPrisoner(prisonCode: String, prisonerNumber: String, startDate: LocalDate, endDate: LocalDate, slot: TimeSlot) = get("/integration-api/prisons/$prisonCode/prisoner/$prisonerNumber/scheduled-instances?startDate=$startDate&endDate=$endDate&slot=$slot")
+    private fun MockMvc.getScheduledInstancesForPrisoner(prisonCode: String, prisonerNumber: String, startDate: LocalDate, endDate: LocalDate, slot: TimeSlot) = get("/integration-api/prisons/$prisonCode/$prisonerNumber/scheduled-instances?startDate=$startDate&endDate=$endDate&slot=$slot")
   }
 
   @Nested

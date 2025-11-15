@@ -216,7 +216,7 @@ class WaitingListApplicationControllerTest : ControllerTestBase<WaitingListAppli
     content = mapper.writeValueAsBytes(request)
   }
 
-  private fun MockMvc.addToWaitingListApplication(prisonCode: String, prisonerNumber: String, request: List<PrisonerWaitingListApplicationRequest>, includePrincipal: Boolean = true) = post("/waiting-list-applications/$prisonCode/prisoner/$prisonerNumber") {
+  private fun MockMvc.addToWaitingListApplication(prisonCode: String, prisonerNumber: String, request: List<PrisonerWaitingListApplicationRequest>, includePrincipal: Boolean = true) = post("/waiting-list-applications/$prisonCode/$prisonerNumber") {
     if (includePrincipal) {
       principal = Principal { "USERNAME" }
     }

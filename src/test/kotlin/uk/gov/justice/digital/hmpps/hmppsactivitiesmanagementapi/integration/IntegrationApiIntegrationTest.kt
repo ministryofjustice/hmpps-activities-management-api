@@ -655,7 +655,7 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
     ) = get()
       .uri { builder ->
         builder
-          .path("/integration-api/prisons/$prisonCode/prisoner/$prisonerNumber/scheduled-instances")
+          .path("/integration-api/prisons/$prisonCode/$prisonerNumber/scheduled-instances")
           .queryParam("startDate", startDate)
           .queryParam("endDate", endDate)
           .maybeQueryParam("slot", timeSlot)
