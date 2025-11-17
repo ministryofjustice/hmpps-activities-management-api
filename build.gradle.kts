@@ -48,13 +48,13 @@ dependencies {
   implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.14")
 
   // AWS
-  implementation("com.squareup.okhttp3:okhttp:5.3.0") {
+  implementation("com.squareup.okhttp3:okhttp:5.3.1") {
     version {
       strictly("5.0.0-alpha.14")
     }
   }
 
-  implementation("aws.sdk.kotlin:s3:1.5.82")
+  implementation("aws.sdk.kotlin:s3:1.5.83")
 
   // Other dependencies
   implementation("org.apache.commons:commons-text:1.14.0")
@@ -65,16 +65,16 @@ dependencies {
   runtimeOnly("org.postgresql:postgresql")
 
   // Test dependencies
-  testImplementation("org.wiremock:wiremock-standalone:3.13.1")
+  testImplementation("org.wiremock:wiremock-standalone:3.13.2")
   testImplementation("org.springframework.boot:spring-boot-testcontainers")
   testImplementation("org.testcontainers:postgresql")
   testImplementation("org.testcontainers:localstack:1.21.3")
   testImplementation("io.jsonwebtoken:jjwt-impl:0.13.0")
   testImplementation("io.jsonwebtoken:jjwt-jackson:0.13.0")
   testImplementation("org.mockito:mockito-inline:5.2.0")
-  testImplementation("net.javacrumbs.json-unit:json-unit:5.0.0")
-  testImplementation("net.javacrumbs.json-unit:json-unit-assertj:5.0.0")
-  testImplementation("net.javacrumbs.json-unit:json-unit-json-path:5.0.0")
+  testImplementation("net.javacrumbs.json-unit:json-unit:5.1.0")
+  testImplementation("net.javacrumbs.json-unit:json-unit-assertj:5.1.0")
+  testImplementation("net.javacrumbs.json-unit:json-unit-json-path:5.1.0")
   testImplementation("org.springframework.security:spring-security-test")
   testImplementation("org.springframework.boot:spring-boot-starter-test")
   testImplementation("org.awaitility:awaitility-kotlin")
