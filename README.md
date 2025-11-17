@@ -59,7 +59,7 @@ FEATURE_CANCEL_INSTANCE_PRIORITY_CHANGE_ENABLED=true
 - `DB_SERVER` should include the port of the local Postgres DB Docker container.
 
 #### Run LocalStack and Postgres Docker containers
-```bash
+```
 docker-compose up --remove-orphans
 ```
 
@@ -67,7 +67,7 @@ There is a script to help, which sets local profiles, port and DB connection pro
 values required.
 
 #### Run the service
-```bash
+```
 ./run-local.sh
 ```
 
@@ -94,7 +94,7 @@ aws_secret_access_key = bar
 
 ## Utilities
 
-There are some example scripts to simulate messages in the util_scripts/localstack folder.
+There are some example scripts to simulate publishing and consuming messages in the [util_scripts/localstack folder](util_scripts/localstack).
 
 ## Running tests
 
