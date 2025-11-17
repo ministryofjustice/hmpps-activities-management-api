@@ -19,12 +19,12 @@ Tools required:
 * [Docker](https://www.docker.com/)
 * [Docker Compose](https://docs.docker.com/compose/)
 
-Useful tools, but not essential:
+Useful tools that can be installed, using [Homebrew](https://brew.sh/), but are not essential:
 
-* KUBECTL not essential for building the project but will be needed for other tasks. Can be installed with `brew`.
-* [k9s](https://k9scli.io/) a terminal based UI to interact with your Kubernetes clusters. Can be installed with `brew`.
-* [jq](https://jqlang.github.io/jq/) a lightweight and flexible command-line JSON processor. Can be installed with `brew`.
-* AWS CLI not essential but useful if running localstack, interrogating queues etc. Can be installed with `brew`.
+* [kubectl](https://kubernetes.io/docs/reference/kubectl/) - not essential for building the project but will be needed for other tasks.
+* [k9s](https://k9scli.io/) - a terminal-based UI to interact with your Kubernetes clusters.
+* [jq](https://jqlang.github.io/jq/) - a lightweight and flexible command-line JSON processor.
+* [AWS CLI](https://aws.amazon.com/cli/) - useful if running [LocalStack](https://www.localstack.cloud/), interrogating queues, etc.
 
 ## Install gradle and build the project
 
