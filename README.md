@@ -58,7 +58,7 @@ FEATURE_CANCEL_INSTANCE_PRIORITY_CHANGE_ENABLED=true
 - `SYSTEM_CLIENT_ID` and `SYSTEM_CLIENT_SECRET` can be extracted from the Kubernetes secrets for the `DEV` environment.
 - `DB_SERVER` should include the port of the local Postgres DB Docker container.
 
-#### Run LocalSack and Postgres Docker containers
+#### Run LocalStack and Postgres Docker containers
 ```bash
 docker-compose up --remove-orphans
 ```
