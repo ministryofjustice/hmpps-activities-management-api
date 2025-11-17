@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - '**'
+    paths-ignore:
+      - README.md
   workflow_dispatch:
     inputs:
       additional_docker_tag:
