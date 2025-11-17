@@ -59,7 +59,6 @@ FEATURE_CANCEL_INSTANCE_PRIORITY_CHANGE_ENABLED=true
 - `DB_SERVER` should include the port of the local Postgres DB Docker container.
 
 #### Run LocalSack and Postgres Docker containers
-
 ```bash
 docker-compose up --remove-orphans
 ```
