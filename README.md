@@ -7,19 +7,19 @@
 
 This service provides access to the endpoints for the management of prisoner related activities and appointments.
 
-The main (but not only) client is the Activities Management UI found [here](https://github.com/ministryofjustice/hmpps-activities-management).
+The main, but not the only, client is the Activities Management UI found [here](https://github.com/ministryofjustice/hmpps-activities-management).
 
 ## Building the project
 
 Tools required:
 
-* JDK v25+
-* Kotlin (Intellij)
-* postgresql v17+
-* docker
-* docker-compose
+* JDK v25
+* Kotlin (Intellij) v2.2
+* PostgresSQL v17
+* [Docker](https://www.docker.com/)
+* [Docker Compose](https://docs.docker.com/compose/)
 
-Useful tools but not essential:
+Useful tools, but not essential:
 
 * KUBECTL not essential for building the project but will be needed for other tasks. Can be installed with `brew`.
 * [k9s](https://k9scli.io/) a terminal based UI to interact with your Kubernetes clusters. Can be installed with `brew`.
@@ -38,17 +38,27 @@ Useful tools but not essential:
 
 ## Running the service locally
 
-There are two key environment variables needed to run the service. The system client id and secret used to retrieve the OAuth 2.0 access token needed for service to service API calls can be set as local environment variables.
-This allows API calls made from this service that do not use the caller's token to successfully authenticate.
+Add a local `.env` file to the root of the project:
 
-Add the following to a local `.env` file in the root folder of this project (_you can extract the credentials from the dev k8s project namespace_).
-
-**Note**: you must escape any '\$' characters with '\\$'
-
+#### Set up the local environment variables
 ```
-export SYSTEM_CLIENT_ID="<system.client.id>"
-export SYSTEM_CLIENT_SECRET="<system.client.secret>"
+SYSTEM_CLIENT_ID=<system.client.id>
+SYSTEM_CLIENT_SECRET=<system.client.secret>
+DB_NAME=activities-management-db
+DB_PASS=activities-management
+DB_SERVER=localhost:<port>>
+DB_SSL_MODE=prefer
+DB_USER=activities-management
+DPR_PASSWORD=dpr_password
+DPR_USER=dpr_user
+FEATURE_CANCEL_INSTANCE_PRIORITY_CHANGE_ENABLED=true
 ```
+
+- You **must** escape any '\$' characters with '\\$'
+- `SYSTEM_CLIENT_ID` and `SYSTEM_CLIENT_SECRET` can be extracted from the Kubernetes secrets for the `DEV` environment.
+- `DB_SERVER` should include the port of the local Postgres DB Docker container.
+
+#### Run the Docker containers
 
 **You will need Postgres DB and LocalStack containers to be running**:
 ```
@@ -58,6 +68,7 @@ docker-compose up --remove-orphans
 There is a script to help, which sets local profiles, port and DB connection properties to the
 values required.
 
+#### Run the service
 ```
 ./run-local.sh
 ```
@@ -66,6 +77,7 @@ Or, to use default port and properties
 ```
 SPRING_PROFILES_ACTIVE=dev ./gradlew bootRun
 ```
+#### Optionally - configure AWS
 
 You might need to set up your AWS config and credentials files:
 
@@ -82,17 +94,19 @@ aws_access_key_id = foo
 aws_secret_access_key = bar
 ```
 
+## Utilities
+
 There are some example scripts to simulate messages in the util_scripts/localstack folder.
 
 ## Running tests
 
-Unit
+### Unit
 
 ```
 ./gradlew test 
  ```
 
-Integration
+### Integration
 
 ```
 ./gradlew integrationTest
@@ -126,7 +140,7 @@ To automatically update project dependencies, run:
 ./gradlew useLatestVersions
 ```
 
-#### Ktlint Gradle Tasks
+#### Ktint
 
 To run Ktlint check:
 ```
@@ -183,6 +197,21 @@ Apply the secret to each environment with `kubectl` using the file above as requ
 kubectl -n hmpps-activities-management-<dev|preprod|prod> apply -f sentry.yaml
 ```
 
+## Dependencies
+
+This service is dependent on the following services:
+
+* [Auth API](https://sign-in-dev.hmpps.service.justice.gov.uk/auth/swagger-ui/index.html) - authorisation and authentication
+* [Activities Management API](https://activities-api-dev.prison.service.justice.gov.uk/swagger-ui/index.html#/) - activities management api
+* [Case Notes API](https://dev.offender-case-notes.service.justice.gov.uk/swagger-ui/index.html#/) - case notes api
+* [Incentives API](https://incentives-api-dev.hmpps.service.justice.gov.uk/swagger-ui/index.html#/) - incentives api
+* [Locations Inside Prison API](https://locations-inside-prison-api-dev.hmpps.service.justice.gov.uk/swagger-ui/index.html#/) - locations inside prison api
+* [Manage Adjudications API](https://manage-adjudications-api-dev.hmpps.service.justice.gov.uk/swagger-ui/index.html#/) - manage adjudications api
+* [Nomis Mapping API](https://nomis-sync-prisoner-mapping-dev.hmpps.service.justice.gov.uk/swagger-ui/index.html#/) - nomis mapping api
+* [Non-Associations API](https://non-associations-api-dev.hmpps.service.justice.gov.uk/swagger-ui/index.html#/) - non-associations api
+* [Prison API](https://prison-api-dev.prison.service.justice.gov.uk/swagger-ui/index.html#/) - prison api
+* [Prisoner Search API](https://prisoner-search-dev.prison.service.justice.gov.uk/swagger-ui/index.html#/) - prisoner search api
+
 ## Runbook
 
 ### Re-running a job
@@ -211,7 +240,7 @@ In another terminal window a curl command to run the job (the one below is runni
 
 ### Manually raising events
 
-**IMPORTANT: As a rule of thumb once people are out of the prison in question we don't want to publish events for them. If in doubt check with the team responsible for the [sync](https://github.com/ministryofjustice/hmpps-prisoner-to-nomis-update) service.**
+**IMPORTANT: As a rule of thumb, once people are out of the prison in question, we don't want to publish events for them. If in doubt, check with the team responsible for the [sync](https://github.com/ministryofjustice/hmpps-prisoner-to-nomis-update) service.**
 
 There may be times we need to manually raise an event in production e.g. on the back of a bug fix.
 
@@ -264,7 +293,9 @@ union *
 
 ### Docker files
 
-There are two Docker files. `Dockerfile` is used by GitHuba Actions to build the API Docker image for deployment to the enviroments. `Dockerfile.local` is used by developers to build the API Docker image locally.
+There are two Docker files. 
+- `Dockerfile` is used by GitHub Actions to build the API Docker image for deployment to the enviroments. 
+- `Dockerfile.local` can be used by developers to build the API Docker image locally.
 
 ```shell
   docker build -f Dockerfile.local .
