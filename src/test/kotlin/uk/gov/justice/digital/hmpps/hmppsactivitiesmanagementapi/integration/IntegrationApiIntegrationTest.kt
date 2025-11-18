@@ -608,27 +608,6 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
       assertThat(scheduledInstances).allMatch { it.sessionDate.between(startDate, endDate) }
     }
 
-    @Deprecated("SAA-3814: Remove")
-    @Test
-    @Sql("classpath:test_data/seed-activity-integration-api-1.sql")
-    fun `deprecated - returns data in the date range with the correct prisoner number`() {
-      val startDate = LocalDate.of(2022, 10, 2)
-      val endDate = LocalDate.of(2022, 11, 4)
-
-      val scheduledInstances =
-        webTestClient.getScheduledInstancesForPrisonerByDeprecated(
-          prisonerNumber = prisonerNumber,
-          prisonCode = MOORLAND_PRISON_CODE,
-          startDate = startDate,
-          endDate = endDate,
-        )
-
-      assertThat(scheduledInstances).hasSize(8)
-      assertThat(scheduledInstances).allMatch { it.prisonerNumber == prisonerNumber }
-      assertThat(scheduledInstances).allMatch { it.prisonCode == MOORLAND_PRISON_CODE }
-      assertThat(scheduledInstances).allMatch { it.sessionDate.between(startDate, endDate) }
-    }
-
     @Test
     @Sql("classpath:test_data/seed-activity-integration-api-1.sql")
     fun `returns data with the time slot filter`() {
@@ -691,30 +670,6 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
       .expectBodyList(PrisonerScheduledActivity::class.java)
       .returnResult().responseBody
   }
-
-  @Deprecated("SAA-3814: Remove")
-  private fun WebTestClient.getScheduledInstancesForPrisonerByDeprecated(
-    prisonerNumber: String,
-    prisonCode: String,
-    startDate: LocalDate,
-    endDate: LocalDate,
-    timeSlot: TimeSlot? = null,
-  ) = get()
-    .uri { builder ->
-      builder
-        .path("/integration-api/prisons/$prisonCode/$prisonerNumber/scheduled-instances")
-        .queryParam("startDate", startDate)
-        .queryParam("endDate", endDate)
-        .maybeQueryParam("slot", timeSlot)
-        .build()
-    }
-    .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(roles = listOf(ROLE_HMPPS_INTEGRATION_API)))
-    .exchange()
-    .expectStatus().isOk
-    .expectHeader().contentType(MediaType.APPLICATION_JSON)
-    .expectBodyList(PrisonerScheduledActivity::class.java)
-    .returnResult().responseBody
 
   @Nested
   @DisplayName("getActivityScheduleSuitabilityCriteria")
