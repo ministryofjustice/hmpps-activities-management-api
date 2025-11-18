@@ -297,64 +297,6 @@ class IntegrationApiController(
   @PreAuthorize("hasAnyRole('ACTIVITIES__HMPPS_INTEGRATION_API')")
   fun getActivitySchedules(@PathVariable("activityId") activityId: Long): List<ActivityScheduleLite> = activityService.getSchedulesForActivity(activityId)
 
-  @Deprecated(message = "Use /prisons/{prisonCode}/prisoner/{prisonerNumber}/scheduled-instances")
-  @GetMapping(value = ["/prisons/{prisonCode}/{prisonerNumber}/scheduled-instances"])
-  @ResponseBody
-  @Operation(
-    summary = "Get a list of scheduled instances for a prisoner, prison, date range (max 3 months) and time slot (AM, PM or ED - optional)",
-    description = "Returns zero or more scheduled instances for a prisoner and date range (max 3 months).",
-  )
-  @ApiResponses(
-    value = [
-      ApiResponse(
-        responseCode = "200",
-        description = "Successful call - zero or more scheduled instance records found",
-        content = [
-          Content(
-            mediaType = "application/json",
-            array = ArraySchema(schema = Schema(implementation = ScheduledActivity::class)),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "401",
-        description = "Unauthorised, requires a valid Oauth2 token",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
-      ),
-      ApiResponse(
-        responseCode = "403",
-        description = "Forbidden, requires an appropriate role",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
-      ),
-    ],
-  )
-  @PreAuthorize("hasRole('ACTIVITIES__HMPPS_INTEGRATION_API')")
-  fun getScheduledInstancesForPrisonerDeprecated(
-    @PathVariable("prisonCode", required = true)
-    @Parameter(description = "The 3-character prison code.")
-    prisonCode: String,
-    @PathVariable("prisonerNumber", required = true)
-    @Parameter(description = "Prisoner Number")
-    prisonerNumber: String,
-    @RequestParam("startDate", required = true)
-    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-    @Parameter(description = "Start date of query (required). Format YYYY-MM-DD.")
-    startDate: LocalDate,
-    @RequestParam("endDate", required = true)
-    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-    @Parameter(description = "End date of query (required). The end date must be within 3 months of the start date. Format YYYY-MM-DD.")
-    endDate: LocalDate,
-    @RequestParam(value = "slot")
-    @Parameter(description = "The time slot (optional). If supplied, one of AM, PM or ED.")
-    slot: TimeSlot?,
-  ): List<ScheduledActivity> = scheduledInstanceService.getActivityScheduleInstancesForPrisonerByDateRange(
-    prisonCode = prisonCode,
-    prisonerNumber = prisonerNumber,
-    startDate = startDate,
-    endDate = endDate,
-    slot = slot,
-  )
-
   @GetMapping(value = ["/prisons/{prisonCode}/prisoner/{prisonerNumber}/scheduled-instances"])
   @ResponseBody
   @Operation(
