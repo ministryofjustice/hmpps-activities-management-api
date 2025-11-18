@@ -18,7 +18,7 @@ CREATE TABLE waitinglist_aud
     statusUpdatedTime              timestamp,
     allocation_id                  bigint,
     rev                            bigint            NOT NULL REFERENCES revision (id),
-    revtype                       smallint          NOT NULL,
+    revtype                        smallint          NOT NULL,
     PRIMARY KEY (waitingListId, rev)
 );
 

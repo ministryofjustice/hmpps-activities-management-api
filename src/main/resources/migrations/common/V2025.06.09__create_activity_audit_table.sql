@@ -7,6 +7,12 @@ CREATE TABLE revision
 
 CREATE SEQUENCE revision_seq INCREMENT BY 50;
 
+ALTER TABLE revision
+ADD COLUMN revisionTimeLocal timestamptz
+    GENERATED ALWAYS AS (
+        TO_TIMESTAMP("timestamp" / 1000.0) AT TIME ZONE 'Europe/London'
+    ) STORED;
+
 CREATE TABLE activity_aud
 (
     activity_id                  bigint    NOT NULL,
