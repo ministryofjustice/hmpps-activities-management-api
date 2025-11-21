@@ -230,6 +230,7 @@ class AppointmentSeriesServiceTest {
         entity.endTime,
         null,
         entity.extraInformation,
+        entity.prisonerExtraInformation,
         entity.createdTime,
         "CREATE.USER",
         entity.updatedTime,

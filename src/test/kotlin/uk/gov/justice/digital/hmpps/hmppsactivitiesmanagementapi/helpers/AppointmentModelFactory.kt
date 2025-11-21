@@ -248,6 +248,7 @@ fun appointmentSeriesDetails(
   LocalTime.of(10, 30),
   null,
   "Appointment series level comment",
+  "Prisoner level comment",
   createdTime,
   "CREATE.USER",
   updatedTime,

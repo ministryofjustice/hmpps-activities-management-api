@@ -252,6 +252,7 @@ data class AppointmentSeries(
     endTime,
     schedule?.toModel(),
     extraInformation,
+    prisonerExtraInformation,
     createdTime,
     createdBy,
     updatedTime,
