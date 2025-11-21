@@ -223,6 +223,7 @@ class AppointmentSeriesIntegrationTest : LocalStackTestBase() {
         LocalTime.of(10, 30),
         null,
         "Appointment series level comment",
+        "Prisoner series level comment",
         appointmentDetails.createdTime,
         "TEST.USER",
         null,
