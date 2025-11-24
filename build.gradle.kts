@@ -3,7 +3,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
 
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "9.1.4"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "9.2.0"
   kotlin("plugin.spring") version "2.2.21"
   kotlin("plugin.jpa") version "2.2.21"
   jacoco
@@ -24,7 +24,7 @@ configurations {
 }
 
 dependencies {
-  implementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter:1.8.1")
+  implementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter:1.8.2")
 
   // Spring boot dependencies
   implementation("org.springframework.boot:spring-boot-starter-security")
@@ -33,7 +33,7 @@ dependencies {
   implementation("org.springframework.boot:spring-boot-starter-webflux")
   implementation("org.springframework.boot:spring-boot-starter-data-jpa")
   implementation("org.springframework.data:spring-data-envers:4.0.0")
-  implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:5.6.1")
+  implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:5.6.2")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.10.2")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:1.10.2")
