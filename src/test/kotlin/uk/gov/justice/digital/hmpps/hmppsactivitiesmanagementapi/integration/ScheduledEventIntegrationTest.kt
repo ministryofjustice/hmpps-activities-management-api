@@ -399,7 +399,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
 
     @Test
     @Sql("classpath:test_data/seed-activity-with-advance-attendances-2.sql")
-    fun `POST - multiple prisoners - scheduled events should not return any future activity events for prisoners with advance attendance`() {
+    fun `POST - multiple prisoners - includes events where future not required is true`() {
       val prisonCode = "MDI"
       val prisonerNumbers = listOf("A11111A", "B22222B")
       val tomorrow = LocalDate.now().plusDays(1)
@@ -411,12 +411,24 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       val scheduledEvents = webTestClient.getScheduledEventsForMultiplePrisoners(prisonCode, prisonerNumbers.toSet(), tomorrow)
 
       with(scheduledEvents!!) {
-        assertThat(activities).hasSize(1)
-        with(activities!!.first()) {
-          assertThat(scheduledInstanceId).isEqualTo(1)
+        assertThat(activities).hasSize(3)
+
+        with(activities!!.first { it.prisonerNumber == "A11111A" && it.scheduledInstanceId == 1L }) {
           assertThat(summary).isEqualTo("Geography AM")
           assertThat(date).isEqualTo(tomorrow)
-          assertThat(prisonerNumber).isEqualTo("B22222B")
+          assertThat(attendanceReasonCode).isEqualTo("NOT_REQUIRED")
+        }
+
+        with(activities!!.first { it.prisonerNumber == "B22222B" && it.scheduledInstanceId == 1L }) {
+          assertThat(summary).isEqualTo("Geography AM")
+          assertThat(date).isEqualTo(tomorrow)
+          assertThat(attendanceReasonCode).isNull()
+        }
+
+        with(activities!!.first { it.prisonerNumber == "B22222B" && it.scheduledInstanceId == 2L }) {
+          assertThat(summary).isEqualTo("Maths AM")
+          assertThat(date).isEqualTo(tomorrow)
+          assertThat(attendanceReasonCode).isEqualTo("NOT_REQUIRED")
         }
       }
     }
@@ -427,10 +439,22 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
   inner class GetInternalLocationEvents {
     private val prisonCode = "MDI"
 
-    private val activityLocation1 = internalLocation(1L, prisonCode = prisonCode, description = "MDI-ACT-LOC1", userDescription = "Activity Location 1")
-    private val activityLocation2 = internalLocation(2L, prisonCode = prisonCode, description = "MDI-ACT-LOC2", userDescription = "Activity Location 2")
-    private val appointmentLocation1 = appointmentLocation(123, prisonCode, description = "MDI-APP-LOC1", userDescription = "Appointment Location 1")
-    private val visitsLocation = internalLocation(locationId = 5L, description = "MDI-VISIT-LOC", userDescription = "Visits Location")
+    private val activityLocation1 = internalLocation(
+      1L,
+      prisonCode = prisonCode,
+      description = "MDI-ACT-LOC1",
+      userDescription = "Activity Location 1",
+    )
+    private val activityLocation2 = internalLocation(
+      2L,
+      prisonCode = prisonCode,
+      description = "MDI-ACT-LOC2",
+      userDescription = "Activity Location 2",
+    )
+    private val appointmentLocation1 =
+      appointmentLocation(123, prisonCode, description = "MDI-APP-LOC1", userDescription = "Appointment Location 1")
+    private val visitsLocation =
+      internalLocation(locationId = 5L, description = "MDI-VISIT-LOC", userDescription = "Visits Location")
 
     val dpsLocationId1 = UUID.fromString("11111111-1111-1111-1111-111111111111")
     val dpsLocationId2 = UUID.fromString("22222222-2222-2222-2222-222222222222")
@@ -439,10 +463,15 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
 
     private val activityDpsLocation1 = dpsLocation(dpsLocationId1, prisonCode, "ACT-LOC1", "Activity Location 1")
     private val activityDpsLocation2 = dpsLocation(dpsLocationId2, prisonCode, "ACT-LOC2")
-    private val appointmentDpsLocation1 = dpsLocation(dpsLocationId123, prisonCode, "APP-LOC1", "Appointment Location 1")
+    private val appointmentDpsLocation1 =
+      dpsLocation(dpsLocationId123, prisonCode, "APP-LOC1", "Appointment Location 1")
     private val visitsDpsLocation5 = dpsLocation(dpsLocationId5, prisonCode, "VISIT-LOC", "Visits Location")
 
-    private val visit = PrisonApiPrisonerScheduleFixture.visitInstance(eventId = 8, locationId = visitsLocation.locationId, date = LocalDate.of(2022, 10, 1))
+    private val visit = PrisonApiPrisonerScheduleFixture.visitInstance(
+      eventId = 8,
+      locationId = visitsLocation.locationId,
+      date = LocalDate.of(2022, 10, 1),
+    )
 
     @BeforeEach
     fun setUp() {
@@ -465,15 +494,48 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
     @Test
     @Sql("classpath:test_data/seed-activity-id-3.sql")
     @Sql("classpath:test_data/seed-appointment-single-id-3.sql")
-    fun `get location events for date with activities, appointments and visits - 200 success`() {
-      val internalLocationIds = setOf(activityLocation1.locationId, activityLocation2.locationId, appointmentLocation1.locationId, visitsLocation.locationId)
+    fun `get locations for date with activities, appointments and visits - 200 success`() {
+      val internalLocationIds = setOf(
+        activityLocation1.locationId,
+        activityLocation2.locationId,
+        appointmentLocation1.locationId,
+        visitsLocation.locationId,
+      )
       val date = LocalDate.of(2022, 10, 1)
 
-      prisonApiMockServer.stubScheduledVisitsForLocation(prisonCode, activityLocation1.locationId, date, null, emptyList())
-      prisonApiMockServer.stubScheduledVisitsForLocation(prisonCode, activityLocation2.locationId, date, null, emptyList())
-      prisonApiMockServer.stubScheduledVisitsForLocation(prisonCode, appointmentLocation1.locationId, date, null, emptyList())
-      prisonApiMockServer.stubScheduledVisitsForLocation(prisonCode, visitsLocation.locationId, date, null, listOf(visit))
-      manageAdjudicationsApiMockServer.stubHearingsForDate(agencyId = prisonCode, date = date, body = mapper.writeValueAsString(HearingSummaryResponse(hearings = emptyList())))
+      prisonApiMockServer.stubScheduledVisitsForLocation(
+        prisonCode,
+        activityLocation1.locationId,
+        date,
+        null,
+        emptyList(),
+      )
+      prisonApiMockServer.stubScheduledVisitsForLocation(
+        prisonCode,
+        activityLocation2.locationId,
+        date,
+        null,
+        emptyList(),
+      )
+      prisonApiMockServer.stubScheduledVisitsForLocation(
+        prisonCode,
+        appointmentLocation1.locationId,
+        date,
+        null,
+        emptyList(),
+      )
+      prisonApiMockServer.stubScheduledVisitsForLocation(
+        prisonCode,
+        visitsLocation.locationId,
+        date,
+        null,
+        listOf(visit),
+      )
+      manageAdjudicationsApiMockServer.stubHearingsForDate(
+        agencyId = prisonCode,
+        date = date,
+        body = mapper.writeValueAsString(HearingSummaryResponse(hearings = emptyList())),
+      )
       nomisMappingApiMockServer.stubMappingsFromNomisIds(
         listOf(
           NomisDpsLocationMapping(dpsLocationId1, activityLocation1.locationId),
@@ -492,7 +554,101 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
         ),
       )
 
-      val result = webTestClient.getInternalLocationEvents(prisonCode, internalLocationIds, date)!!
+      val result = webTestClient.getLocations(prisonCode, internalLocationIds, date)!!
+
+      with(result) {
+        size isEqualTo 4
+        with(this.single { it.id == activityLocation1.locationId }) {
+          prisonCode isEqualTo prisonCode
+          code isEqualTo activityDpsLocation1.code
+          description isEqualTo activityDpsLocation1.localName
+          events.filter { it.scheduledInstanceId == 1L && it.eventType == "ACTIVITY" } hasSize 2
+        }
+        with(this.single { it.id == activityLocation2.locationId }) {
+          prisonCode isEqualTo prisonCode
+          code isEqualTo activityDpsLocation2.code
+          description isEqualTo activityDpsLocation2.localName
+          events.single { it.scheduledInstanceId == 6L }.eventType isEqualTo "ACTIVITY"
+        }
+        with(this.single { it.id == appointmentLocation1.locationId }) {
+          prisonCode isEqualTo prisonCode
+          code isEqualTo appointmentDpsLocation1.code
+          description isEqualTo appointmentDpsLocation1.localName
+          events.single { it.appointmentAttendeeId == 5L }.eventType isEqualTo "APPOINTMENT"
+        }
+        with(this.single { it.id == visitsLocation.locationId }) {
+          prisonCode isEqualTo prisonCode
+          code isEqualTo visitsDpsLocation5.code
+          description isEqualTo visitsDpsLocation5.localName
+          events.single { it.eventId == visit.eventId }.eventType isEqualTo "VISIT"
+        }
+      }
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-id-3.sql")
+    @Sql("classpath:test_data/seed-appointment-single-id-3.sql")
+    fun `get location events for date with activities, appointments and visits - 200 success`() {
+      val locationIds = setOf(
+        activityDpsLocation1.id,
+        activityDpsLocation2.id,
+        appointmentDpsLocation1.id,
+        visitsDpsLocation5.id,
+      )
+      val date = LocalDate.of(2022, 10, 1)
+
+      prisonApiMockServer.stubScheduledVisitsForLocation(
+        prisonCode,
+        activityLocation1.locationId,
+        date,
+        null,
+        emptyList(),
+      )
+      prisonApiMockServer.stubScheduledVisitsForLocation(
+        prisonCode,
+        activityLocation2.locationId,
+        date,
+        null,
+        emptyList(),
+      )
+      prisonApiMockServer.stubScheduledVisitsForLocation(
+        prisonCode,
+        appointmentLocation1.locationId,
+        date,
+        null,
+        emptyList(),
+      )
+      prisonApiMockServer.stubScheduledVisitsForLocation(
+        prisonCode,
+        visitsLocation.locationId,
+        date,
+        null,
+        listOf(visit),
+      )
+      manageAdjudicationsApiMockServer.stubHearingsForDate(
+        agencyId = prisonCode,
+        date = date,
+        body = mapper.writeValueAsString(HearingSummaryResponse(hearings = emptyList())),
+      )
+      nomisMappingApiMockServer.stubMappingsFromNomisIds(
+        listOf(
+          NomisDpsLocationMapping(dpsLocationId1, activityLocation1.locationId),
+          NomisDpsLocationMapping(dpsLocationId2, activityLocation2.locationId),
+          NomisDpsLocationMapping(dpsLocationId123, appointmentLocation1.locationId),
+          NomisDpsLocationMapping(dpsLocationId5, visitsLocation.locationId),
+        ),
+      )
+
+      nomisMappingApiMockServer.stubMappingsFromDpsIds(
+        listOf(
+          NomisDpsLocationMapping(dpsLocationId1, activityLocation1.locationId),
+          NomisDpsLocationMapping(dpsLocationId2, activityLocation2.locationId),
+          NomisDpsLocationMapping(dpsLocationId123, appointmentLocation1.locationId),
+          NomisDpsLocationMapping(dpsLocationId5, visitsLocation.locationId),
+        ),
+      )
+
+      val result = webTestClient.getLocationEvents(prisonCode, locationIds, date)!!
 
       with(result) {
         size isEqualTo 4
@@ -527,7 +683,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
     @Sql("classpath:test_data/seed-activity-id-3.sql")
     @Sql("classpath:test_data/seed-activity-id-3-on-wing.sql")
     @Sql("classpath:test_data/seed-appointment-single-id-3.sql")
-    fun `get location events ignores activities with location id and on-wing is true`() {
+    fun `get locations ignores activities with location id and on-wing is true`() {
       val internalLocationIds = setOf(activityLocation1.locationId, activityLocation2.locationId, appointmentLocation1.locationId, visitsLocation.locationId)
       val date = LocalDate.of(2022, 10, 1)
 
@@ -554,7 +710,74 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
         ),
       )
 
-      val result = webTestClient.getInternalLocationEvents(prisonCode, internalLocationIds, date)!!
+      val result = webTestClient.getLocations(prisonCode, internalLocationIds, date)!!
+
+      with(result) {
+        size isEqualTo 4
+        with(this.single { it.id == activityLocation1.locationId }) {
+          prisonCode isEqualTo prisonCode
+          code isEqualTo activityDpsLocation1.code
+          description isEqualTo activityDpsLocation1.localName
+          events.filter { it.eventType == "ACTIVITY" } hasSize 2
+        }
+        with(this.single { it.id == activityLocation2.locationId }) {
+          prisonCode isEqualTo prisonCode
+          code isEqualTo activityDpsLocation2.code
+          description isEqualTo activityDpsLocation2.localName
+          events.single { it.scheduledInstanceId == 6L }.eventType isEqualTo "ACTIVITY"
+        }
+        with(this.single { it.id == appointmentLocation1.locationId }) {
+          prisonCode isEqualTo prisonCode
+          code isEqualTo appointmentDpsLocation1.code
+          description isEqualTo appointmentDpsLocation1.localName
+          events.single { it.appointmentAttendeeId == 5L }.eventType isEqualTo "APPOINTMENT"
+        }
+        with(this.single { it.id == visitsLocation.locationId }) {
+          prisonCode isEqualTo prisonCode
+          code isEqualTo visitsDpsLocation5.code
+          description isEqualTo visitsDpsLocation5.localName
+          events.single { it.eventId == visit.eventId }.eventType isEqualTo "VISIT"
+        }
+      }
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-id-3.sql")
+    @Sql("classpath:test_data/seed-activity-id-3-on-wing.sql")
+    @Sql("classpath:test_data/seed-appointment-single-id-3.sql")
+    fun `get location events ignores activities with location id and on-wing is true`() {
+      val locationIds = setOf(
+        activityDpsLocation1.id,
+        activityDpsLocation2.id,
+        appointmentDpsLocation1.id,
+        visitsDpsLocation5.id,
+      )
+      val date = LocalDate.of(2022, 10, 1)
+
+      prisonApiMockServer.stubScheduledVisitsForLocation(prisonCode, activityLocation1.locationId, date, null, emptyList())
+      prisonApiMockServer.stubScheduledVisitsForLocation(prisonCode, activityLocation2.locationId, date, null, emptyList())
+      prisonApiMockServer.stubScheduledVisitsForLocation(prisonCode, appointmentLocation1.locationId, date, null, emptyList())
+      prisonApiMockServer.stubScheduledVisitsForLocation(prisonCode, visitsLocation.locationId, date, null, listOf(visit))
+      manageAdjudicationsApiMockServer.stubHearingsForDate(agencyId = prisonCode, date = date, body = mapper.writeValueAsString(HearingSummaryResponse(hearings = emptyList())))
+      nomisMappingApiMockServer.stubMappingsFromNomisIds(
+        listOf(
+          NomisDpsLocationMapping(dpsLocationId1, activityLocation1.locationId),
+          NomisDpsLocationMapping(dpsLocationId2, activityLocation2.locationId),
+          NomisDpsLocationMapping(dpsLocationId123, appointmentLocation1.locationId),
+          NomisDpsLocationMapping(dpsLocationId5, visitsLocation.locationId),
+        ),
+      )
+
+      nomisMappingApiMockServer.stubMappingsFromDpsIds(
+        listOf(
+          NomisDpsLocationMapping(dpsLocationId1, activityLocation1.locationId),
+          NomisDpsLocationMapping(dpsLocationId2, activityLocation2.locationId),
+          NomisDpsLocationMapping(dpsLocationId123, appointmentLocation1.locationId),
+          NomisDpsLocationMapping(dpsLocationId5, visitsLocation.locationId),
+        ),
+      )
+
+      val result = webTestClient.getLocationEvents(prisonCode, locationIds, date)!!
 
       with(result) {
         size isEqualTo 4
@@ -588,15 +811,38 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
     @Test
     @Sql("classpath:test_data/seed-activity-id-3.sql")
     @Sql("classpath:test_data/seed-appointment-single-id-3.sql")
-    fun `get location events for date and time slot with one activity only - 200 success`() {
-      val internalLocationIds = setOf(activityLocation1.locationId, activityLocation2.locationId, appointmentLocation1.locationId)
+    fun `get locations for date and time slot with one activity only - 200 success`() {
+      val internalLocationIds =
+        setOf(activityLocation1.locationId, activityLocation2.locationId, appointmentLocation1.locationId)
       val date = LocalDate.of(2022, 10, 1)
       val timeSlot = TimeSlot.PM
 
-      prisonApiMockServer.stubScheduledVisitsForLocation(prisonCode, activityLocation1.locationId, date, timeSlot, emptyList())
-      prisonApiMockServer.stubScheduledVisitsForLocation(prisonCode, activityLocation2.locationId, date, timeSlot, emptyList())
-      prisonApiMockServer.stubScheduledVisitsForLocation(prisonCode, appointmentLocation1.locationId, date, timeSlot, emptyList())
-      manageAdjudicationsApiMockServer.stubHearingsForDate(agencyId = prisonCode, date = date, body = mapper.writeValueAsString(HearingSummaryResponse(hearings = emptyList())))
+      prisonApiMockServer.stubScheduledVisitsForLocation(
+        prisonCode,
+        activityLocation1.locationId,
+        date,
+        timeSlot,
+        emptyList(),
+      )
+      prisonApiMockServer.stubScheduledVisitsForLocation(
+        prisonCode,
+        activityLocation2.locationId,
+        date,
+        timeSlot,
+        emptyList(),
+      )
+      prisonApiMockServer.stubScheduledVisitsForLocation(
+        prisonCode,
+        appointmentLocation1.locationId,
+        date,
+        timeSlot,
+        emptyList(),
+      )
+      manageAdjudicationsApiMockServer.stubHearingsForDate(
+        agencyId = prisonCode,
+        date = date,
+        body = mapper.writeValueAsString(HearingSummaryResponse(hearings = emptyList())),
+      )
       nomisMappingApiMockServer.stubMappingsFromNomisIds(
         listOf(
           NomisDpsLocationMapping(dpsLocationId1, activityLocation1.locationId),
@@ -613,7 +859,86 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
         ),
       )
 
-      val result = webTestClient.getInternalLocationEvents(prisonCode, internalLocationIds, date, timeSlot)!!
+      val result = webTestClient.getLocations(prisonCode, internalLocationIds, date, timeSlot)!!
+
+      with(result) {
+        size isEqualTo 3
+        with(this.single { it.id == activityLocation1.locationId }) {
+          prisonCode isEqualTo prisonCode
+          code isEqualTo activityDpsLocation1.code
+          description isEqualTo activityDpsLocation1.localName
+          events hasSize 0
+        }
+        with(this.single { it.id == activityLocation2.locationId }) {
+          prisonCode isEqualTo prisonCode
+          code isEqualTo activityDpsLocation2.code
+          description isEqualTo activityDpsLocation2.localName
+          events.single { it.scheduledInstanceId == 6L }.eventType isEqualTo "ACTIVITY"
+        }
+        with(this.single { it.id == appointmentLocation1.locationId }) {
+          prisonCode isEqualTo prisonCode
+          code isEqualTo appointmentDpsLocation1.code
+          description isEqualTo appointmentDpsLocation1.localName
+          events hasSize 0
+        }
+      }
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-id-3.sql")
+    @Sql("classpath:test_data/seed-appointment-single-id-3.sql")
+    fun `get location events for date and time slot with one activity only - 200 success`() {
+      val locationIds = setOf(
+        activityDpsLocation1.id,
+        activityDpsLocation2.id,
+        appointmentDpsLocation1.id,
+      )
+      val date = LocalDate.of(2022, 10, 1)
+      val timeSlot = TimeSlot.PM
+
+      prisonApiMockServer.stubScheduledVisitsForLocation(
+        prisonCode,
+        activityLocation1.locationId,
+        date,
+        timeSlot,
+        emptyList(),
+      )
+      prisonApiMockServer.stubScheduledVisitsForLocation(
+        prisonCode,
+        activityLocation2.locationId,
+        date,
+        timeSlot,
+        emptyList(),
+      )
+      prisonApiMockServer.stubScheduledVisitsForLocation(
+        prisonCode,
+        appointmentLocation1.locationId,
+        date,
+        timeSlot,
+        emptyList(),
+      )
+      manageAdjudicationsApiMockServer.stubHearingsForDate(
+        agencyId = prisonCode,
+        date = date,
+        body = mapper.writeValueAsString(HearingSummaryResponse(hearings = emptyList())),
+      )
+      nomisMappingApiMockServer.stubMappingsFromNomisIds(
+        listOf(
+          NomisDpsLocationMapping(dpsLocationId1, activityLocation1.locationId),
+          NomisDpsLocationMapping(dpsLocationId2, activityLocation2.locationId),
+          NomisDpsLocationMapping(dpsLocationId123, appointmentLocation1.locationId),
+        ),
+      )
+
+      nomisMappingApiMockServer.stubMappingsFromDpsIds(
+        listOf(
+          NomisDpsLocationMapping(dpsLocationId1, activityLocation1.locationId),
+          NomisDpsLocationMapping(dpsLocationId2, activityLocation2.locationId),
+          NomisDpsLocationMapping(dpsLocationId123, appointmentLocation1.locationId),
+        ),
+      )
+
+      val result = webTestClient.getLocationEvents(prisonCode, locationIds, date, timeSlot)!!
 
       with(result) {
         size isEqualTo 3
@@ -640,13 +965,17 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
 
     @Test
     @Sql("classpath:test_data/seed-activity-with-advance-attendances-2.sql")
-    fun `get location events ignores activities with future scheduled instance has not required advance attendance`() {
+    fun `get locations includes events where future not required is true`() {
       val internalLocationIds = setOf(1L)
       val tomorrow = LocalDate.now().plusDays(1)
 
       prisonApiMockServer.stubScheduledVisitsForLocation(prisonCode, 1, tomorrow, null, emptyList())
 
-      manageAdjudicationsApiMockServer.stubHearingsForDate(agencyId = prisonCode, date = tomorrow, body = mapper.writeValueAsString(HearingSummaryResponse(hearings = emptyList())))
+      manageAdjudicationsApiMockServer.stubHearingsForDate(
+        agencyId = prisonCode,
+        date = tomorrow,
+        body = mapper.writeValueAsString(HearingSummaryResponse(hearings = emptyList())),
+      )
 
       nomisMappingApiMockServer.stubMappingsFromNomisIds(
         listOf(
@@ -660,7 +989,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
         ),
       )
 
-      val result = webTestClient.getInternalLocationEvents(prisonCode, internalLocationIds, tomorrow)!!
+      val result = webTestClient.getLocations(prisonCode, internalLocationIds, tomorrow)!!
 
       with(result) {
         size isEqualTo 1
@@ -669,25 +998,95 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
           prisonCode isEqualTo prisonCode
           code isEqualTo activityDpsLocation1.code
           description isEqualTo activityDpsLocation1.localName
-          events hasSize 1
-          // Prisoner A11111A will be ignored because they are marked as not required for tomorrow's session
+          events hasSize 3
           with(events.first()) {
             eventType isEqualTo "ACTIVITY"
             scheduledInstanceId isEqualTo 1L
-            prisonerNumber isEqualTo "B22222B"
+            attendanceReasonCode isEqualTo "NOT_REQUIRED"
           }
         }
       }
     }
 
-    private fun WebTestClient.getInternalLocationEvents(
+    @Test
+    @Sql("classpath:test_data/seed-activity-with-advance-attendances-2.sql")
+    fun `get location events includes events where future not required is true`() {
+      val locationIds = setOf(UUID.fromString("11111111-1111-1111-1111-111111111111"))
+      val tomorrow = LocalDate.now().plusDays(1)
+
+      prisonApiMockServer.stubScheduledVisitsForLocation(prisonCode, 1, tomorrow, null, emptyList())
+
+      manageAdjudicationsApiMockServer.stubHearingsForDate(
+        agencyId = prisonCode,
+        date = tomorrow,
+        body = mapper.writeValueAsString(HearingSummaryResponse(hearings = emptyList())),
+      )
+
+      nomisMappingApiMockServer.stubMappingsFromNomisIds(
+        listOf(
+          NomisDpsLocationMapping(dpsLocationId1, 1),
+        ),
+      )
+
+      nomisMappingApiMockServer.stubMappingsFromDpsIds(
+        listOf(
+          NomisDpsLocationMapping(dpsLocationId1, 1),
+        ),
+      )
+
+      val result = webTestClient.getLocationEvents(prisonCode, locationIds, tomorrow)!!
+
+      with(result) {
+        size isEqualTo 1
+
+        with(this.first()) {
+          prisonCode isEqualTo prisonCode
+          code isEqualTo activityDpsLocation1.code
+          description isEqualTo activityDpsLocation1.localName
+          events hasSize 3
+          with(events.first()) {
+            eventType isEqualTo "ACTIVITY"
+            scheduledInstanceId isEqualTo 1L
+            attendanceReasonCode isEqualTo "NOT_REQUIRED"
+          }
+        }
+      }
+    }
+
+    private fun WebTestClient.getLocations(
       prisonCode: String,
       internalLocationIds: Set<Long>,
       date: LocalDate,
       timeSlot: TimeSlot? = null,
     ) = post()
-      .uri("/scheduled-events/prison/$prisonCode/locations?date=$date" + (timeSlot?.let { "&timeSlot=$timeSlot" } ?: ""))
+      .uri(
+        "/scheduled-events/prison/$prisonCode/locations?date=$date" + (
+          timeSlot?.let { "&timeSlot=$timeSlot" }
+            ?: ""
+          ),
+      )
       .bodyValue(internalLocationIds)
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .exchange()
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBodyList(InternalLocationEvents::class.java)
+      .returnResult().responseBody
+
+    private fun WebTestClient.getLocationEvents(
+      prisonCode: String,
+      dpsLocationIds: Set<UUID>,
+      date: LocalDate,
+      timeSlot: TimeSlot? = null,
+    ) = post()
+      .uri(
+        "/scheduled-events/prison/$prisonCode/location-events?date=$date" + (
+          timeSlot?.let { "&timeSlot=$timeSlot" }
+            ?: ""
+          ),
+      )
+      .bodyValue(dpsLocationIds)
       .accept(MediaType.APPLICATION_JSON)
       .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
       .exchange()
