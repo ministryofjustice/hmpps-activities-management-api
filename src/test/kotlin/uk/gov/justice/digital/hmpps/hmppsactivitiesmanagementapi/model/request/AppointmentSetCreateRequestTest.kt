@@ -153,9 +153,9 @@ class AppointmentSetCreateRequestTest {
   }
 
   @Test
-  fun `appointment prisoner extra information must not be more than 800 characters`() {
-    val request = appointmentSetCreateRequest(prisonerExtraInformation = "a".repeat(801), prisonerNumbers = listOf("A1234BC"))
-    assertSingleValidationError(validator.validate(request), "appointments[0].prisonerExtraInformation", "Prisoner extra information must not exceed 800 characters")
+  fun `appointment prisoner extra information must not be more than 400 characters`() {
+    val request = appointmentSetCreateRequest(prisonerExtraInformation = "a".repeat(401), prisonerNumbers = listOf("A1234BC"))
+    assertSingleValidationError(validator.validate(request), "appointments[0].prisonerExtraInformation", "Prisoner extra information must not exceed 400 characters")
   }
 
   private fun <T> assertSingleValidationError(
