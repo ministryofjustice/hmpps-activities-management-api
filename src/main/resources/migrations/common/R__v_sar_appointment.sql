@@ -1,3 +1,5 @@
+DROP VIEW IF EXISTS v_sar_appointment;
+
 CREATE OR REPLACE VIEW v_sar_appointment AS
 SELECT ap.prison_code AS prison_code,
        ap.appointment_id AS appointment_id,
