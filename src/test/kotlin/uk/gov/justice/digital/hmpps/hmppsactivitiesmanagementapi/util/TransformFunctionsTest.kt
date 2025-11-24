@@ -248,7 +248,7 @@ class TransformFunctionsTest {
   @DisplayName("prisonerScheduledActivityToScheduledEvents")
   inner class PrisonerScheduledActivityToScheduledEvents {
     @Test
-    fun `activity instance, to scheduled event`() {
+    fun `activity instance, with attendance, to scheduled event`() {
       val eventPriorities = EventPriorities(EventType.entries.associateWith { listOf(Priority(it.defaultPriority)) })
 
       val sessionDate = LocalDate.now()
@@ -332,6 +332,95 @@ class TransformFunctionsTest {
           issuePayment = true,
           attendanceStatus = "COMPLETED",
           attendanceReasonCode = "ATTENDED",
+        ),
+      )
+    }
+
+    @Test
+    fun `not required future activity instance, to scheduled event`() {
+      val eventPriorities = EventPriorities(EventType.entries.associateWith { listOf(Priority(it.defaultPriority)) })
+
+      val sessionDate = LocalDate.now()
+      val startTime = LocalTime.of(10, 0)
+      val endTime = LocalTime.of(11, 0)
+
+      val activitiesForPrisoners = listOf(
+        PrisonerScheduledActivity(
+          scheduledInstanceId = 1,
+          allocationId = 2,
+          prisonCode = "RSI",
+          sessionDate = sessionDate,
+          startTime = startTime,
+          endTime = endTime,
+          prisonerNumber = "ABC123",
+          bookingId = 90001,
+          internalLocationId = 333,
+          internalLocationCode = "LOC123",
+          internalLocationDescription = "LOC123",
+          inCell = true,
+          onWing = true,
+          offWing = true,
+          activityCategory = "SAA_OUT_OF_WORK",
+          activityId = 1,
+          timeSlot = TimeSlot.AM,
+          issuePayment = true,
+          attendanceStatus = null,
+          attendanceReasonCode = null,
+          paidActivity = true,
+          cancelled = true,
+          scheduleDescription = "Test Category",
+          possibleAdvanceAttendance = true,
+        ),
+      )
+
+      val location = Location(
+        locationId = 1, locationType = "VIDE", description = "video-room-a", locationUsage = "APP",
+        agencyId = "MDI", parentLocationId = 123, currentOccupancy = 2, locationPrefix = "MDI-prefix",
+        operationalCapacity = 2, userDescription = "Video Room A", internalLocationCode = "Room 1",
+      )
+
+      val prisonLocations = mapOf(333L to location)
+
+      val scheduledEvents = transformPrisonerScheduledActivityToScheduledEvents("RSI", eventPriorities, activitiesForPrisoners, prisonLocations)
+
+      assertThat(scheduledEvents.first()).isEqualTo(
+        ModelScheduledEvent(
+          prisonCode = "RSI",
+          eventSource = "SAA",
+          eventType = EventType.ACTIVITY.name,
+          scheduledInstanceId = 1,
+          bookingId = 90001,
+          internalLocationId = 333,
+          internalLocationCode = "LOC123",
+          internalLocationUserDescription = "Video Room A",
+          internalLocationDescription = "video-room-a",
+          eventId = null,
+          appointmentSeriesId = null,
+          appointmentId = null,
+          appointmentAttendeeId = null,
+          oicHearingId = null,
+          cancelled = true,
+          suspended = false,
+          categoryCode = "SAA_OUT_OF_WORK",
+          categoryDescription = "SAA_OUT_OF_WORK",
+          summary = "Test Category",
+          comments = null,
+          prisonerNumber = "ABC123",
+          inCell = true,
+          onWing = true,
+          offWing = true,
+          outsidePrison = false,
+          date = sessionDate,
+          startTime = startTime,
+          endTime = endTime,
+          priority = EventType.ACTIVITY.defaultPriority,
+          appointmentSeriesCancellationStartDate = null,
+          appointmentSeriesCancellationStartTime = null,
+          appointmentSeriesFrequency = null,
+          paidActivity = true,
+          issuePayment = true,
+          attendanceStatus = null,
+          attendanceReasonCode = "NOT_REQUIRED",
         ),
       )
     }
