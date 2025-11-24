@@ -104,9 +104,9 @@ class AppointmentUpdateRequestTest {
   }
 
   @Test
-  fun `appointment prisoner extra information must not be more than 800 characters`() {
-    val request = AppointmentUpdateRequest(prisonerExtraInformation = "a".repeat(801))
-    assertSingleValidationError(validator.validate(request), "prisonerExtraInformation", "Prisoner extra information must not exceed 800 characters")
+  fun `appointment prisoner extra information must not be more than 400 characters`() {
+    val request = AppointmentUpdateRequest(prisonerExtraInformation = "a".repeat(401))
+    assertSingleValidationError(validator.validate(request), "prisonerExtraInformation", "Prisoner extra information must not exceed 400 characters")
   }
 
   private fun assertSingleValidationError(validate: MutableSet<ConstraintViolation<AppointmentUpdateRequest>>, propertyName: String, message: String) {
