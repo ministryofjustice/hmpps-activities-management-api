@@ -148,7 +148,7 @@ data class AppointmentSeriesCreateRequest(
   )
   val extraInformation: String? = null,
 
-  @field:Size(max = 400, message = "Prisoner extra information must not exceed {max} characters")
+  @field:Size(max = 800, message = "Prisoner extra information must not exceed {max} characters")
   @Schema(
     description =
     """
