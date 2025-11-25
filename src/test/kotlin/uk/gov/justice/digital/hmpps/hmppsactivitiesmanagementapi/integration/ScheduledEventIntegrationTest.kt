@@ -999,11 +999,18 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
           code isEqualTo activityDpsLocation1.code
           description isEqualTo activityDpsLocation1.localName
           events hasSize 3
-          with(events.first()) {
-            eventType isEqualTo "ACTIVITY"
-            scheduledInstanceId isEqualTo 1L
-            attendanceReasonCode isEqualTo "NOT_REQUIRED"
-          }
+          events.filter { it.prisonerNumber == "A11111A" || it.prisonerNumber == "C33333C" }
+            .forEach {
+              it.eventType isEqualTo "ACTIVITY"
+              it.scheduledInstanceId isEqualTo 1L
+              it.attendanceReasonCode isEqualTo "NOT_REQUIRED"
+            }
+          events.filter { it.prisonerNumber == "B22222B" }
+            .forEach {
+              it.eventType isEqualTo "ACTIVITY"
+              it.scheduledInstanceId isEqualTo 1L
+              it.attendanceReasonCode isEqualTo null
+            }
         }
       }
     }
@@ -1044,11 +1051,18 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
           code isEqualTo activityDpsLocation1.code
           description isEqualTo activityDpsLocation1.localName
           events hasSize 3
-          with(events.first()) {
-            eventType isEqualTo "ACTIVITY"
-            scheduledInstanceId isEqualTo 1L
-            attendanceReasonCode isEqualTo "NOT_REQUIRED"
-          }
+          events.filter { it.prisonerNumber == "A11111A" || it.prisonerNumber == "C33333C" }
+            .forEach {
+              it.eventType isEqualTo "ACTIVITY"
+              it.scheduledInstanceId isEqualTo 1L
+              it.attendanceReasonCode isEqualTo "NOT_REQUIRED"
+            }
+          events.filter { it.prisonerNumber == "B22222B" }
+            .forEach {
+              it.eventType isEqualTo "ACTIVITY"
+              it.scheduledInstanceId isEqualTo 1L
+              it.attendanceReasonCode isEqualTo null
+            }
         }
       }
     }

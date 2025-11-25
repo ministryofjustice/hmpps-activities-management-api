@@ -1,3 +1,4 @@
+-- ${flyway:timestamp}
 CREATE OR REPLACE VIEW v_appointment_instance
 AS
 SELECT aa.appointment_attendee_id AS appointment_instance_id,
