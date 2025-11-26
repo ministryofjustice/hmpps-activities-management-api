@@ -202,4 +202,15 @@ data class AppointmentSearchResult(
     example = "AAA01U",
   )
   val cancelledBy: String?,
+
+  @Schema(
+    description =
+    """
+    Prisoner extra information for the prisoner or prisoners attending the appointment or appointments.
+    Shown only on the appointments details page and on printed movement slips. Wing staff will be notified there is
+    prisoner extra information via the unlock list.
+    """,
+    example = "Please arrive 10 minutes early",
+  )
+  val prisonerExtraInformation: String? = null,
 )
