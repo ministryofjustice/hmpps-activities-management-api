@@ -239,6 +239,7 @@ internal fun appointmentSearchEntity(
   updatedTime = null,
   cancelledTime = null,
   cancelledBy = null,
+  prisonerExtraInformation = "Prisoner level comment",
 ).apply {
   attendees = listOf(
     appointmentAttendeeSearchEntity(

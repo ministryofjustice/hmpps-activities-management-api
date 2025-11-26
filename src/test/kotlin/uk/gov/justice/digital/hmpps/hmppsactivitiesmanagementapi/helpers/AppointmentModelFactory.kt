@@ -344,6 +344,7 @@ fun appointmentSearchResultModel(timeSlot: TimeSlot = TimeSlot.AM) = Appointment
   updatedTime = null,
   cancelledTime = null,
   cancelledBy = null,
+  prisonerExtraInformation = "Prisoner level comment",
 )
 
 fun appointmentSetDetails(

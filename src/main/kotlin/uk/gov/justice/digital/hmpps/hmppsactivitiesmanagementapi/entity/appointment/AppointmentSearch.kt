@@ -63,6 +63,8 @@ data class AppointmentSearch(
 
   val extraInformation: String?,
 
+  val prisonerExtraInformation: String?,
+
   val createdBy: String,
 
   val isEdited: Boolean,
@@ -119,6 +121,7 @@ data class AppointmentSearch(
     updatedTime = updatedTime,
     cancelledTime = cancelledTime,
     cancelledBy = cancelledBy,
+    prisonerExtraInformation = prisonerExtraInformation,
   )
 
   private fun startDateTime(): LocalDateTime = LocalDateTime.of(startDate, startTime)
