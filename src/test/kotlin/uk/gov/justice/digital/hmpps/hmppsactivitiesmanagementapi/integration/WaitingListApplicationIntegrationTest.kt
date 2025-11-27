@@ -546,7 +546,7 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
       applicationDate = LocalDate.of(2025, 1, 20),
       requestedBy = "Alice",
       comments = "Alice's second revision",
-      status = WaitingListStatus.WITHDRAWN
+      status = WaitingListStatus.WITHDRAWN,
     )
     webTestClient.patch()
       .uri("/waiting-list-applications/${waitingList.waitingListId}")
@@ -656,16 +656,16 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
 
   fun waitingListForTest(
     activitySchedule: ActivitySchedule,
-    status: WaitingListStatus
+    status: WaitingListStatus,
   ) = WaitingList(
     prisonCode = "MDI",
     prisonerNumber = "G4793VF",
     bookingId = 400,
-    applicationDate = LocalDate.of(2025,1,1),
+    applicationDate = LocalDate.of(2025, 1, 1),
     activitySchedule = activitySchedule,
     requestedBy = "Initial requester",
     comments = "Initial comment",
     createdBy = "Initial creator",
-    initialStatus = status
+    initialStatus = status,
   )
 }
