@@ -45,10 +45,10 @@ data class WaitingList(
   val createdBy: String,
 
   @Transient
-  private val initialStatus: WaitingListStatus,
+  private val initialStatus: WaitingListStatus? = null,
 ) {
   @Enumerated(EnumType.STRING)
-  var status: WaitingListStatus = initialStatus
+  var status: WaitingListStatus = initialStatus ?: WaitingListStatus.PENDING
     set(value) {
       if (value == WaitingListStatus.DECLINED) {
         require(isStatus(WaitingListStatus.PENDING, WaitingListStatus.APPROVED)) {

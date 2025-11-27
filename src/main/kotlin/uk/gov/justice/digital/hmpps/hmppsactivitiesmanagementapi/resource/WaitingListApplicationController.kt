@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.WaitingListApplication
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.WaitingListApplicationHistory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerWaitingListApplicationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListApplicationUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListSearchRequest
@@ -88,6 +89,60 @@ class WaitingListApplicationController(private val waitingListService: WaitingLi
   @CaseloadHeader
   @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
   fun getWaitingListById(@PathVariable("waitingListId") id: Long) = waitingListService.getWaitingListBy(id)
+
+  @GetMapping("/{waitingListId}/history")
+  @ResponseBody
+  @Operation(
+    summary = "Get the audit history of a waiting list application by its ID.",
+    description = "Returns a list of all changes made to the specified waiting list application.",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Audit history for a specified waiting list application found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = WaitingListApplicationHistory::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "The waiting list application for this ID was not found.",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  @CaseloadHeader
+  @PreAuthorize("hasAnyRole('ACTIVITY_ADMIN', 'PRISON')")
+  fun getWaitingListHistoryById(@PathVariable("waitingListId") id: Long): List<WaitingListApplicationHistory> = waitingListService.getWaitingListHistoryBy(id)
 
   @ResponseStatus(HttpStatus.ACCEPTED)
   @PatchMapping(value = ["/{waitingListId}"])

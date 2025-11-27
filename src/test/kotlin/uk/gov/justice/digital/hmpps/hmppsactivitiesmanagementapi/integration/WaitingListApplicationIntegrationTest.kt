@@ -13,6 +13,8 @@ import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.typeReference
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.asListOfType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
@@ -20,10 +22,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isClose
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.startsWith
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.WaitingListApplication
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.WaitingListApplicationHistory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerWaitingListApplicationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListApplicationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListApplicationUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListSearchRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AuditRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
@@ -33,8 +37,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_A
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
+import java.time.Duration
 import java.time.LocalDate
-import java.time.temporal.ChronoUnit
 
 @TestPropertySource(
   properties = [
@@ -49,6 +53,9 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
 
   @Autowired
   private lateinit var auditRepository: AuditRepository
+
+  @Autowired
+  private lateinit var activityScheduleRepository: ActivityScheduleRepository
 
   private val hmppsAuditEventCaptor = argumentCaptor<HmppsAuditEvent>()
 
@@ -356,7 +363,7 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
         assertThat(detailType).isEqualTo(uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditEventType.PRISONER_ADDED_TO_WAITING_LIST)
         assertThat(activityId).isEqualTo(index + 1L)
         assertThat(prisonCode).isEqualTo(MOORLAND_PRISON_CODE)
-        assertThat(recordedTime).isCloseTo(TimeSource.now(), within(60, ChronoUnit.SECONDS))
+        assertThat(recordedTime).isCloseTo(TimeSource.now(), within(Duration.ofSeconds(60)))
         assertThat(message).startsWith("Prisoner G4793VF was added to the waiting list for activity")
       }
     }
@@ -421,15 +428,15 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
   @Test
   fun `returns 403 when the user role is inappropriate`() {
     val prisonerNumber = "G4793VF"
-    val caseloadId: String = CASELOAD_ID
-
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(prisonerNumber)
     val requestList = createPrisonerWaitingListRequest(1, listOf(WaitingListStatus.PENDING))
+
     webTestClient.post()
-      .uri("/waiting-list-applications/MOORLAND_PRISON_CODE/$prisonerNumber")
+      .uri("/waiting-list-applications/$MOORLAND_PRISON_CODE/$prisonerNumber")
       .bodyValue(requestList)
       .accept(MediaType.APPLICATION_JSON)
       .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_PRISON)))
-      .header(CASELOAD_ID, caseloadId)
+      .header(CASELOAD_ID, MOORLAND_PRISON_CODE)
       .exchange()
       .expectStatus().isForbidden
   }
@@ -452,6 +459,150 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
 
     assertThat(waitingListRepository.findAll()).isEmpty()
     assertThat(auditRepository.findAll()).isEmpty()
+  }
+
+  @Sql("classpath:test_data/seed-activity-id-22.sql")
+  @Test
+  fun `returns 401 for an unauthorized user when retrieving the waiting list history`() {
+    val waitingListId = 1L
+    webTestClient.get()
+      .uri("/waiting-list-applications/$waitingListId/history")
+      .accept(MediaType.APPLICATION_JSON)
+      .header(CASELOAD_ID, "USERNAME")
+      .exchange()
+      .expectStatus().isUnauthorized
+  }
+
+  @Sql("classpath:test_data/seed-activity-id-22.sql")
+  @Test
+  fun `returns 403 for an inappropriate user role when retrieving the waiting list history`() {
+    val waitingListId = 1L
+
+    webTestClient.get()
+      .uri("/waiting-list-applications/$waitingListId/history")
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB)))
+      .header(CASELOAD_ID, MOORLAND_PRISON_CODE)
+      .exchange()
+      .expectStatus().isForbidden
+  }
+
+  @Sql("classpath:test_data/seed-activity-id-20.sql")
+  @Test
+  fun `returns 404 when waiting list id is not found`() {
+    val waitingListId = 1L
+
+    webTestClient.waitingListApplicationForHistory(waitingListId).expectStatus()
+      .isNotFound
+      .expectBody()
+      .jsonPath("$.userMessage").value<String> {
+        assertThat(it).contains("Waiting List 1 not found")
+      }
+
+    assertThat(waitingListRepository.findAll()).isEmpty()
+    assertThat(auditRepository.findAll()).isEmpty()
+  }
+
+  @Sql("classpath:test_data/seed-activity-id-22.sql")
+  @Test
+  fun `returns 200 when waiting list id exists but no audit history is present`() {
+    val waitingListId = 1L
+
+    webTestClient.waitingListApplicationForHistory(waitingListId).expectStatus()
+      .isOk()
+      .expectBodyList(WaitingListApplicationHistory::class.java)
+      .hasSize(0)
+  }
+
+  @Sql("classpath:test_data/seed-waiting-list-audit-history.sql")
+  @Test
+  fun `returns waiting list history ordered by latest first`() {
+    val activitySchedule = activityScheduleRepository.findById(1L).get()
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber("G4793VF")
+
+    // Create waiting list entity through repository
+    val waitingList = waitingListForTest(activitySchedule, WaitingListStatus.PENDING)
+
+    waitingListRepository.saveAndFlush(waitingList)
+
+    // Apply first update via update endpoint
+    val firstUpdate = WaitingListApplicationUpdateRequest(
+      applicationDate = LocalDate.of(2025, 1, 10),
+      requestedBy = "Fred",
+      comments = "Fred's first revision",
+      status = WaitingListStatus.APPROVED,
+    )
+    webTestClient.patch()
+      .uri("/waiting-list-applications/${waitingList.waitingListId}")
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB)))
+      .header(CASELOAD_ID, MOORLAND_PRISON_CODE)
+      .bodyValue(firstUpdate)
+      .exchange()
+      .expectStatus().isAccepted
+
+    // Apply second update via update endpoint
+    val secondUpdate = WaitingListApplicationUpdateRequest(
+      applicationDate = LocalDate.of(2025, 1, 20),
+      requestedBy = "Alice",
+      comments = "Alice's second revision",
+      status = WaitingListStatus.WITHDRAWN
+    )
+    webTestClient.patch()
+      .uri("/waiting-list-applications/${waitingList.waitingListId}")
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB)))
+      .header(CASELOAD_ID, MOORLAND_PRISON_CODE)
+      .bodyValue(secondUpdate)
+      .exchange()
+      .expectStatus().isAccepted
+
+    // GET the /history endpoint
+    val history = webTestClient.get()
+      .uri("/waiting-list-applications/${waitingList.waitingListId}/history")
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_ADMIN, ROLE_PRISON)))
+      .header(CASELOAD_ID, MOORLAND_PRISON_CODE)
+      .exchange()
+      .expectStatus().isOk
+      .expectBodyList(WaitingListApplicationHistory::class.java)
+      .returnResult()
+      .responseBody!!
+
+    // Assertions
+    assertThat(history).hasSize(3)
+
+    val original = history[2]
+    val firstRev = history[1]
+    val secondRev = history[0]
+
+    assertThat(original.comments).isEqualTo("Initial comment")
+    assertThat(original.status).isEqualTo(WaitingListStatus.PENDING)
+    assertThat(original.requestedBy).isEqualTo("Initial requester")
+    assertThat(original.applicationDate).isEqualTo(LocalDate.of(2025, 1, 1))
+    assertThat(original.revisionType).isEqualTo("ADD")
+
+    assertThat(firstRev.comments).isEqualTo("Fred's first revision")
+    assertThat(firstRev.status).isEqualTo(WaitingListStatus.APPROVED)
+    assertThat(firstRev.requestedBy).isEqualTo("Fred")
+    assertThat(firstRev.applicationDate).isEqualTo(LocalDate.of(2025, 1, 10))
+    assertThat(firstRev.revisionType).isEqualTo("MOD")
+
+    assertThat(secondRev.comments).isEqualTo("Alice's second revision")
+    assertThat(secondRev.status).isEqualTo(WaitingListStatus.WITHDRAWN)
+    assertThat(secondRev.requestedBy).isEqualTo("Alice")
+    assertThat(secondRev.applicationDate).isEqualTo(LocalDate.of(2025, 1, 20))
+    assertThat(secondRev.revisionType).isEqualTo("MOD")
+
+    history.forEach {
+      assertThat(it.id).isEqualTo(1L)
+      assertThat(it.revisionId).isNotNull
+      assertThat(it.revisionDateTime).isNotNull
+      assertThat(it.revisionUsername).isNotNull
+      assertThat(it.prisonCode).isEqualTo("MDI")
+      assertThat(it.prisonerNumber).isEqualTo("G4793VF")
+      assertThat(it.activityScheduleId).isEqualTo(1L)
+    }
   }
 
   private fun WebTestClient.waitingListApplication(
@@ -492,4 +643,29 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
     .expectHeader().contentType(MediaType.APPLICATION_JSON)
     .expectBody(typeReference<LinkedHashMap<String, Any>>())
     .returnResult().responseBody!!
+
+  private fun WebTestClient.waitingListApplicationForHistory(
+    waitingListId: Long,
+    caseloadId: String? = CASELOAD_ID,
+  ) = get()
+    .uri("/waiting-list-applications/$waitingListId/history")
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_ADMIN, ROLE_PRISON)))
+    .header(CASELOAD_ID, MOORLAND_PRISON_CODE)
+    .exchange()
+
+  fun waitingListForTest(
+    activitySchedule: ActivitySchedule,
+    status: WaitingListStatus
+  ) = WaitingList(
+    prisonCode = "MDI",
+    prisonerNumber = "G4793VF",
+    bookingId = 400,
+    applicationDate = LocalDate.of(2025,1,1),
+    activitySchedule = activitySchedule,
+    requestedBy = "Initial requester",
+    comments = "Initial comment",
+    createdBy = "Initial creator",
+    initialStatus = status
+  )
 }

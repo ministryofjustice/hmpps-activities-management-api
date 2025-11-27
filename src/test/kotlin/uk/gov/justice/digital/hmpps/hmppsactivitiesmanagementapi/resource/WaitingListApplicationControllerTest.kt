@@ -209,6 +209,46 @@ class WaitingListApplicationControllerTest : ControllerTestBase<WaitingListAppli
     }
   }
 
+  @Nested
+  @DisplayName("Authorization tests for retrieving waiting list application history")
+  inner class AuthorizationTestsForWaitingListApplicationHistory {
+    private val waitingListId = 100L
+
+    @Test
+    @WithMockUser(roles = ["PRISON"])
+    fun `200 response when user role is valid`() {
+      whenever(waitingListService.getWaitingListHistoryBy(waitingListId)).thenReturn(emptyList())
+      mockMvcWithSecurity.getWaitingListHistory(waitingListId, true).andExpect { status { isOk() } }
+      verify(waitingListService).getWaitingListHistoryBy(waitingListId)
+    }
+
+    @Test
+    fun `401 response when user is not authorized`() {
+      mockMvcWithSecurity.getWaitingListHistory(waitingListId, false)
+        .andExpect { status { isUnauthorized() } }
+      verify(waitingListService, never()).getWaitingListHistoryBy(any())
+    }
+
+    @Test
+    @WithMockUser(roles = ["INVALID_ROLE"])
+    fun `403 response when user role is invalid`() {
+      mockMvcWithSecurity.getWaitingListHistory(waitingListId).andExpect { status { isForbidden() } }
+      verify(waitingListService, never()).getWaitingListHistoryBy(any())
+    }
+
+    @Test
+    fun `404 response when waiting list for specified ID is not found`() {
+      doThrow(EntityNotFoundException("Waiting list application for 100 not found"))
+        .whenever(waitingListService).getWaitingListHistoryBy(waitingListId)
+      mockMvc.getWaitingListHistory(waitingListId, true).andExpect {
+        status { isNotFound() }
+        jsonPath("$.developerMessage") { value("Waiting list application for 100 not found") }
+        jsonPath("$.userMessage") { value("Not found: Waiting list application for 100 not found") }
+        verify(waitingListService).getWaitingListHistoryBy(waitingListId)
+      }
+    }
+  }
+
   private fun MockMvc.updatedWaitingList(id: Long, request: WaitingListApplicationUpdateRequest, user: Principal) = mockMvc.patch("/waiting-list-applications/$id") {
     principal = user
     accept = MediaType.APPLICATION_JSON
@@ -222,5 +262,11 @@ class WaitingListApplicationControllerTest : ControllerTestBase<WaitingListAppli
     }
     content = mapper.writeValueAsString(request)
     contentType = MediaType.APPLICATION_JSON
+  }
+
+  private fun MockMvc.getWaitingListHistory(waitingListId: Long, includePrincipal: Boolean = true) = get("/waiting-list-applications/$waitingListId/history") {
+    if (includePrincipal) {
+      principal = Principal { "USERNAME" }
+    }
   }
 }

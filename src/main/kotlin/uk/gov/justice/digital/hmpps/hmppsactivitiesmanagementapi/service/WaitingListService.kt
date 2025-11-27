@@ -1,9 +1,13 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import com.microsoft.applicationinsights.TelemetryClient
+import jakarta.persistence.EntityManager
 import jakarta.persistence.EntityNotFoundException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
+import org.hibernate.envers.AuditReaderFactory
+import org.hibernate.envers.RevisionType
+import org.hibernate.envers.query.AuditEntity
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
@@ -19,12 +23,14 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassoc
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isActiveAtPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.CustomRevisionEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus.ALLOCATED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus.APPROVED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus.REMOVED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.WaitingListApplication
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.WaitingListApplicationHistory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerWaitingListApplicationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListApplicationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListApplicationUpdateRequest
@@ -54,6 +60,7 @@ class WaitingListService(
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
   private val telemetryClient: TelemetryClient,
   private val auditService: AuditService,
+  private val entityManager: EntityManager,
   private val nonAssociationsApiClient: NonAssociationsApiClient,
   @Value("\${waiting-list.prisoner-search-limit:1000}") private val prisonerSearchLimit: Long = 1000,
 ) {
@@ -69,6 +76,75 @@ class WaitingListService(
     val prisoner =
       prisonerSearchApiClient.findByPrisonerNumber(waitingList.prisonerNumber) ?: throw NullPointerException("Prisoner ${waitingList.prisonerNumber} not found for waiting list id $id")
     return waitingList.toModel(determineEarliestReleaseDate(prisoner))
+  }
+
+  fun getWaitingListHistoryBy(waitingListId: Long): List<WaitingListApplicationHistory> {
+    val waitingList = waitingListRepository.findOrThrowNotFound(waitingListId)
+      .checkCaseloadAccess()
+
+    // Create Envers AuditReader
+    val auditReader = AuditReaderFactory.get(entityManager)
+
+    // Query all revisions for this entity
+    @Suppress("UNCHECKED_CAST")
+    val results = auditReader.createQuery()
+      .forRevisionsOfEntity(WaitingList::class.java, false, true)
+      .add(AuditEntity.id().eq(waitingList.waitingListId))
+      .addOrder(AuditEntity.revisionNumber().desc())
+      .resultList
+      .mapNotNull { it as? Array<Any?> }
+
+    if (results.isEmpty()) {
+      log.warn("No audit history found for waiting list id $waitingListId")
+      return emptyList()
+    }
+
+    // Map each revision
+    return results.map { row ->
+      val entity = row[0] as WaitingList
+      val revision = row[1] as CustomRevisionEntity
+      val revisionType = row[2] as RevisionType
+
+      mapToHistory(entity, revision, revisionType)
+    }
+  }
+
+  private fun mapToHistory(
+    entity: WaitingList,
+    revision: CustomRevisionEntity,
+    revisionType: RevisionType): WaitingListApplicationHistory {
+    return WaitingListApplicationHistory(
+      id = entity.waitingListId,
+      activityId = entity.safeActivityId(),
+      activityScheduleId = entity.activitySchedule.activityScheduleId,
+      allocationId = entity.allocation?.allocationId,
+      prisonCode = entity.prisonCode,
+      prisonerNumber = entity.prisonerNumber,
+      bookingId = entity.bookingId,
+      status = entity.status,
+      statusUpdatedTime = entity.statusUpdatedTime,
+      applicationDate = entity.applicationDate,
+      requestedBy = entity.requestedBy,
+      comments = entity.comments,
+      declinedReason = entity.declinedReason,
+      creationTime = entity.creationTime,
+      createdBy = entity.createdBy,
+      updatedTime = entity.updatedTime,
+      updatedBy = entity.updatedBy,
+      revisionId = (revision.id as Number).toLong(),
+      revisionType = mapRevisionType(revisionType),
+      revisionDateTime = revision.revisionDateTime,
+      revisionUsername = revision.username,
+    )
+    }
+
+  private fun WaitingList.safeActivityId(): Long =
+    this.activitySchedule.activity.activityId
+
+  private fun mapRevisionType(revisionType: RevisionType): String = when (revisionType) {
+    RevisionType.ADD -> "ADD"
+    RevisionType.MOD -> "MOD"
+    RevisionType.DEL -> "DEL"
   }
 
   fun getWaitingListsBySchedule(id: Long, includeNonAssociationsCheck: Boolean = true): List<WaitingListApplication> = runBlocking {
