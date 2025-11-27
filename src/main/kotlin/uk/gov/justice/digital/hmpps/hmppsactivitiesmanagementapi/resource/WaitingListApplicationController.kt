@@ -273,7 +273,7 @@ class WaitingListApplicationController(private val waitingListService: WaitingLi
     pageSize: Int?,
   ) = waitingListService.searchWaitingLists(prisonCode, request, pageNumber ?: 0, pageSize ?: 50)
 
-  @PostMapping(value = ["/{prisonCode}/{prisonerNumber}"])
+  @PostMapping(value = ["/{prisonCode}/prisoner/{prisonerNumber}"])
   @Operation(
     summary = "Adds a prisoner to up to five activity schedule waiting lists",
     description = "Adds the supplied waiting list creation requests to the selected activity schedules.",
@@ -341,5 +341,5 @@ class WaitingListApplicationController(private val waitingListService: WaitingLi
     request: List<PrisonerWaitingListApplicationRequest>,
   ): ResponseEntity<Any> = waitingListService.addPrisonerToMultipleActivities(prisonCode, prisonerNumber, request, principal.name).let { ResponseEntity.noContent().build() }
 
-  abstract inner class PagedWaitingListApplication : Page<WaitingListApplication>
+  abstract class PagedWaitingListApplication : Page<WaitingListApplication>
 }

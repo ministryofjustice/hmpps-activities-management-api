@@ -103,6 +103,12 @@ class AppointmentUpdateRequestTest {
     request.isPropertyUpdate() isEqualTo true
   }
 
+  @Test
+  fun `appointment prisoner extra information must not be more than 800 characters`() {
+    val request = AppointmentUpdateRequest(prisonerExtraInformation = "a".repeat(801))
+    assertSingleValidationError(validator.validate(request), "prisonerExtraInformation", "Prisoner extra information must not exceed 800 characters")
+  }
+
   private fun assertSingleValidationError(validate: MutableSet<ConstraintViolation<AppointmentUpdateRequest>>, propertyName: String, message: String) {
     assertThat(validate.size).isEqualTo(1)
     assertThat(validate.first().propertyPath.toString()).isEqualTo(propertyName)

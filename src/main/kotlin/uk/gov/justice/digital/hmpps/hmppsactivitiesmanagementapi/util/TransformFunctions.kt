@@ -9,6 +9,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.toAppointmentCategorySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.toAppointmentName
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AttendanceHistory
@@ -104,6 +105,8 @@ fun transformPrisonerScheduledActivityToScheduledEvents(
 ) = activitiesForPrisoners.map {
   val mayBeInternalLocation = it.internalLocationId?.toLong().let(prisonLocations::get)
 
+  val attendanceReason = it.attendanceReasonCode ?: if (it.possibleAdvanceAttendance) AttendanceReasonEnum.NOT_REQUIRED else null
+
   ModelScheduledEvent(
     prisonCode = prisonCode,
     eventSource = "SAA",
@@ -143,7 +146,7 @@ fun transformPrisonerScheduledActivityToScheduledEvents(
     paidActivity = it.paidActivity,
     issuePayment = it.issuePayment,
     attendanceStatus = it.attendanceStatus?.name,
-    attendanceReasonCode = it.attendanceReasonCode?.name,
+    attendanceReasonCode = attendanceReason?.name,
   )
 }
 

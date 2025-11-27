@@ -646,6 +646,7 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
 
       assertThat(scheduledInstances).hasSize(0)
     }
+
     private fun WebTestClient.getScheduledInstancesForPrisonerBy(
       prisonerNumber: String,
       prisonCode: String,
@@ -655,7 +656,7 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
     ) = get()
       .uri { builder ->
         builder
-          .path("/integration-api/prisons/$prisonCode/$prisonerNumber/scheduled-instances")
+          .path("/integration-api/prisons/$prisonCode/prisoner/$prisonerNumber/scheduled-instances")
           .queryParam("startDate", startDate)
           .queryParam("endDate", endDate)
           .maybeQueryParam("slot", timeSlot)

@@ -83,6 +83,8 @@ data class AppointmentSeries(
 
   val extraInformation: String? = null,
 
+  var prisonerExtraInformation: String? = null,
+
   val createdTime: LocalDateTime = LocalDateTime.now(),
 
   val createdBy: String,
@@ -212,6 +214,7 @@ data class AppointmentSeries(
     endTime = endTime,
     schedule = schedule?.toModel(),
     extraInformation = extraInformation,
+    prisonerExtraInformation = prisonerExtraInformation,
     createdTime = createdTime,
     createdBy = createdBy,
     updatedTime = updatedTime,
@@ -249,6 +252,7 @@ data class AppointmentSeries(
     endTime,
     schedule?.toModel(),
     extraInformation,
+    prisonerExtraInformation,
     createdTime,
     createdBy,
     updatedTime,

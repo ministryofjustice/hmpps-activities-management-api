@@ -80,7 +80,7 @@ fun AppointmentSet.toTelemetryPropertiesMap(
   DPS_LOCATION_ID_PROPERTY_KEY to (if (inCell) "" else dpsLocationId?.toString() ?: ""),
   INTERNAL_LOCATION_DESCRIPTION_PROPERTY_KEY to internalLocationDescription,
   START_DATE_PROPERTY_KEY to startDate.toString(),
-  EARLIEST_START_TIME_PROPERTY_KEY to appointments.mapNotNull { it.startTime }.takeUnless { it.isEmpty() }?.minOf { it }.toString(),
+  EARLIEST_START_TIME_PROPERTY_KEY to appointments.map { it.startTime }.takeUnless { it.isEmpty() }?.minOf { it }.toString(),
   LATEST_END_TIME_PROPERTY_KEY to appointments.mapNotNull { it.endTime }.takeUnless { it.isEmpty() }?.maxOf { it }.toString(),
   EVENT_TIER_PROPERTY_KEY to (tier?.description ?: ""),
   EVENT_ORGANISER_PROPERTY_KEY to (organiser?.description ?: ""),
@@ -92,6 +92,7 @@ fun AppointmentSet.toTelemetryMetricsMap() = mutableMapOf(
   APPOINTMENT_INSTANCE_COUNT_METRIC_KEY to appointments.size.toDouble(),
   CUSTOM_NAME_LENGTH_METRIC_KEY to (customName?.trim()?.length ?: 0).toDouble(),
   EXTRA_INFORMATION_COUNT_METRIC_KEY to appointments.mapNotNull { it.extraInformation?.trim()?.takeUnless(String::isBlank) }.size.toDouble(),
+  PRISONER_EXTRA_INFORMATION_COUNT_METRIC_KEY to appointments.mapNotNull { it.prisonerExtraInformation?.trim()?.takeUnless(String::isBlank) }.size.toDouble(),
   EVENT_TIME_MS_METRIC_KEY to 0.0,
 )
 
@@ -115,6 +116,7 @@ fun AppointmentUpdateRequest.toTelemetryPropertiesMap(
   START_TIME_CHANGED_PROPERTY_KEY to (this.startTime != null).toString(),
   END_TIME_CHANGED_PROPERTY_KEY to (this.endTime != null).toString(),
   EXTRA_INFORMATION_CHANGED_PROPERTY_KEY to (this.extraInformation != null).toString(),
+  PRISONER_EXTRA_INFORMATION_CHANGED_PROPERTY_KEY to (this.prisonerExtraInformation != null).toString(),
   APPLY_TO_PROPERTY_KEY to this.applyTo.toString(),
 )
 

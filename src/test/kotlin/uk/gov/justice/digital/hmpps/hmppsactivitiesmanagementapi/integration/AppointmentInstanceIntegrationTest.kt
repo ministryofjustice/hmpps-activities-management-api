@@ -50,6 +50,7 @@ class AppointmentInstanceIntegrationTest : IntegrationTestBase() {
         LocalTime.of(9, 0),
         LocalTime.of(10, 30),
         "Appointment level comment",
+        "Prisoner level comment",
         appointmentInstance.createdTime,
         "TEST.USER",
         null,

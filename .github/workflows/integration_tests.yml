@@ -39,7 +39,7 @@ jobs:
       GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.workers.max=2"
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Set up java
         uses: actions/setup-java@v5
@@ -95,7 +95,7 @@ jobs:
 
     steps:
       - name: Clone repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Setup Java
         uses: actions/setup-java@v5
@@ -131,7 +131,7 @@ jobs:
             build/reports/tests
 
       - name: Publish Test Report
-        uses: ctrf-io/github-test-reporter@2b72e348599485f3b2f9907126ae801da14bb6ad
+        uses: ctrf-io/github-test-reporter@27b102a97ccdba9f56029c7771726ccc1417f29a
         with:
           report-path: './build/test-results/integrationTest/*.xml'
           use-suite-name: true

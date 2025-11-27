@@ -416,7 +416,7 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
 
     val requestList = createPrisonerWaitingListRequest(1, listOf(WaitingListStatus.PENDING))
     webTestClient.post()
-      .uri("/waiting-list-applications/$MOORLAND_PRISON_CODE/$prisonerNumber")
+      .uri("/waiting-list-applications/$MOORLAND_PRISON_CODE/prisoner/$prisonerNumber")
       .bodyValue(requestList)
       .accept(MediaType.APPLICATION_JSON)
       .header(CASELOAD_ID, "USERNAME")
@@ -432,7 +432,7 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
     val requestList = createPrisonerWaitingListRequest(1, listOf(WaitingListStatus.PENDING))
 
     webTestClient.post()
-      .uri("/waiting-list-applications/$MOORLAND_PRISON_CODE/$prisonerNumber")
+      .uri("/waiting-list-applications/MOORLAND_PRISON_CODE/prisoner/$prisonerNumber")
       .bodyValue(requestList)
       .accept(MediaType.APPLICATION_JSON)
       .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_PRISON)))
@@ -623,7 +623,7 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
     request: List<PrisonerWaitingListApplicationRequest>,
     caseloadId: String? = CASELOAD_ID,
   ) = post()
-    .uri("/waiting-list-applications/$prisonCode/$prisonerNumber")
+    .uri("/waiting-list-applications/$prisonCode/prisoner/$prisonerNumber")
     .bodyValue(request)
     .accept(MediaType.APPLICATION_JSON)
     .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_ADMIN, ROLE_ACTIVITY_HUB)))

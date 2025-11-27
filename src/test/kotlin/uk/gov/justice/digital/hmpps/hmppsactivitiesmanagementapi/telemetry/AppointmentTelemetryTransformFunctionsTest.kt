@@ -41,7 +41,10 @@ class AppointmentTelemetryTransformFunctionsTest {
       extraInformation = null,
     ).appointments().apply {
       // Remove the extra info from this appointment
-      this.onEach { appointment -> appointment.extraInformation = null }
+      this.onEach { appointment ->
+        appointment.extraInformation = null
+        appointment.prisonerExtraInformation = null
+      }
     }
   }
 
@@ -90,6 +93,7 @@ class AppointmentTelemetryTransformFunctionsTest {
       CUSTOM_NAME_LENGTH_METRIC_KEY to 11.0,
       EXTRA_INFORMATION_COUNT_METRIC_KEY to 3.0,
       EVENT_TIME_MS_METRIC_KEY to 0.0,
+      PRISONER_EXTRA_INFORMATION_COUNT_METRIC_KEY to 3.0,
     )
   }
 
@@ -121,6 +125,7 @@ class AppointmentTelemetryTransformFunctionsTest {
       START_TIME_CHANGED_PROPERTY_KEY to false.toString(),
       END_TIME_CHANGED_PROPERTY_KEY to false.toString(),
       EXTRA_INFORMATION_CHANGED_PROPERTY_KEY to false.toString(),
+      PRISONER_EXTRA_INFORMATION_CHANGED_PROPERTY_KEY to false.toString(),
       APPLY_TO_PROPERTY_KEY to ApplyTo.THIS_APPOINTMENT.toString(),
     )
   }

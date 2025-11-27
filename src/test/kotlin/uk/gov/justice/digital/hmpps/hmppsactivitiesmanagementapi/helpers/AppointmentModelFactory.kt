@@ -53,6 +53,7 @@ fun appointmentSeriesModel(
   endTime = LocalTime.of(10, 30),
   schedule = null,
   extraInformation = "Appointment series level comment",
+  prisonerExtraInformation = "Prisoner level comment",
   createdTime = createdTime,
   createdBy = "CREATE.USER",
   updatedTime = updatedTime,
@@ -79,6 +80,7 @@ fun appointmentModel(createdTime: LocalDateTime = LocalDateTime.now(), updatedTi
   LocalTime.of(9, 0),
   LocalTime.of(10, 30),
   "Appointment level comment",
+  "Prisoner level comment",
   createdTime,
   "CREATE.USER",
   updatedTime,
@@ -111,6 +113,7 @@ fun appointmentInstanceModel(
   startTime = LocalTime.of(9, 0),
   endTime = LocalTime.of(10, 30),
   extraInformation = "Appointment level comment",
+  prisonerExtraInformation = "Prisoner level comment",
   createdTime = createdTime,
   createdBy = "CREATE.USER",
   updatedTime = updatedTime,
@@ -132,6 +135,7 @@ fun appointmentSeriesCreateRequest(
   startTime: LocalTime? = LocalTime.of(13, 0),
   endTime: LocalTime? = LocalTime.of(14, 30),
   extraInformation: String? = "Appointment level comment",
+  prisonerExtraInformation: String? = "Prisoner level comment",
   schedule: AppointmentSeriesSchedule? = null,
   originalAppointmentId: Long? = 0L,
 ) = AppointmentSeriesCreateRequest(
@@ -150,6 +154,7 @@ fun appointmentSeriesCreateRequest(
   endTime = endTime,
   schedule = schedule,
   extraInformation = extraInformation,
+  prisonerExtraInformation = prisonerExtraInformation,
   originalAppointmentId = originalAppointmentId,
 )
 
@@ -166,6 +171,7 @@ fun appointmentSetCreateRequest(
   startTime: LocalTime? = LocalTime.of(13, 0),
   endTime: LocalTime? = LocalTime.of(14, 30),
   extraInformation: String? = "Test comment",
+  prisonerExtraInformation: String? = "Prisoner level comment",
   prisonerNumbers: List<String?> = listOf("A1234BC", "A1234BD"),
 ) = AppointmentSetCreateRequest(
   categoryCode = categoryCode,
@@ -183,6 +189,7 @@ fun appointmentSetCreateRequest(
       startTime = startTime,
       endTime = endTime,
       extraInformation = extraInformation,
+      prisonerExtraInformation = prisonerExtraInformation,
     )
   }.toList(),
 )
@@ -241,6 +248,7 @@ fun appointmentSeriesDetails(
   LocalTime.of(10, 30),
   null,
   "Appointment series level comment",
+  "Prisoner level comment",
   createdTime,
   "CREATE.USER",
   updatedTime,
@@ -272,6 +280,7 @@ fun appointmentDetails(
   startTime: LocalTime = LocalTime.of(9, 0),
   endTime: LocalTime = LocalTime.of(10, 30),
   extraInformation: String = "Appointment level comment",
+  prisonerExtraInformation: String? = "Prisoner level comment",
   createdTime: LocalDateTime = LocalDateTime.now(),
   createdBy: String = "CREATE.USER",
   updatedTime: LocalDateTime? = LocalDateTime.now(),
@@ -297,6 +306,7 @@ fun appointmentDetails(
   endTime,
   false,
   extraInformation,
+  prisonerExtraInformation,
   createdTime,
   createdBy,
   updatedTime != null,
@@ -334,6 +344,7 @@ fun appointmentSearchResultModel(timeSlot: TimeSlot = TimeSlot.AM) = Appointment
   updatedTime = null,
   cancelledTime = null,
   cancelledBy = null,
+  prisonerExtraInformation = "Prisoner level comment",
 )
 
 fun appointmentSetDetails(

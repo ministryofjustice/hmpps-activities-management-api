@@ -43,6 +43,7 @@ internal fun appointmentSeriesEntity(
   startTime: LocalTime = LocalTime.of(9, 0),
   endTime: LocalTime = LocalTime.of(10, 30),
   extraInformation: String? = "Appointment series level comment",
+  prisonerExtraInformation: String? = "Prisoner level comment",
   createdTime: LocalDateTime = LocalDateTime.now().minusDays(1),
   createdBy: String = "CREATE.USER",
   updatedBy: String? = "UPDATE.USER",
@@ -71,6 +72,7 @@ internal fun appointmentSeriesEntity(
   startTime = startTime,
   endTime = endTime,
   extraInformation = extraInformation,
+  prisonerExtraInformation = prisonerExtraInformation,
   createdTime = createdTime,
   createdBy = createdBy,
   updatedTime = if (updatedBy == null) null else LocalDateTime.now(),
@@ -124,6 +126,7 @@ fun appointmentEntity(
   startTime = startTime,
   endTime = appointmentSeries.endTime,
   extraInformation = "Appointment level comment",
+  prisonerExtraInformation = "Prisoner level comment",
   createdTime = appointmentSeries.createdTime,
   createdBy = appointmentSeries.createdBy,
   updatedTime = updatedTime,
@@ -181,6 +184,7 @@ internal fun appointmentInstanceEntity(
   endTime = LocalTime.of(10, 30),
   unlockNotes = null,
   extraInformation = "Appointment level comment",
+  prisonerExtraInformation = "Prisoner level comment",
   createdTime = LocalDateTime.now().minusDays(1),
   createdBy = createdBy,
   isCancelled = isCancelled,
@@ -235,6 +239,7 @@ internal fun appointmentSearchEntity(
   updatedTime = null,
   cancelledTime = null,
   cancelledBy = null,
+  prisonerExtraInformation = "Prisoner level comment",
 ).apply {
   attendees = listOf(
     appointmentAttendeeSearchEntity(

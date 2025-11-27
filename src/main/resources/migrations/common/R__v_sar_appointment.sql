@@ -1,3 +1,4 @@
+-- ${flyway:timestamp}
 CREATE OR REPLACE VIEW v_sar_appointment AS
 SELECT ap.prison_code AS prison_code,
        ap.appointment_id AS appointment_id,
@@ -12,7 +13,8 @@ SELECT ap.prison_code AS prison_code,
            when apa.attended = false then 'No'
            else 'Unmarked'
        end AS attended,
-       ap.created_time as created_date
+       ap.created_time as created_date,
+       aps.prisoner_extra_information AS prisoner_extra_information
   FROM appointment ap
   JOIN appointment_series aps ON aps.appointment_series_id = ap.appointment_series_id
   JOIN appointment_attendee apa ON apa.appointment_id = ap.appointment_id;

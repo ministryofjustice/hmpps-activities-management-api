@@ -58,6 +58,8 @@ data class AppointmentInstance(
 
   val extraInformation: String?,
 
+  val prisonerExtraInformation: String?,
+
   val createdTime: LocalDateTime,
 
   val createdBy: String,
@@ -95,6 +97,7 @@ data class AppointmentInstance(
     startTime = startTime,
     endTime = endTime,
     extraInformation = extraInformation,
+    prisonerExtraInformation = prisonerExtraInformation,
     createdTime = createdTime,
     createdBy = createdBy,
     updatedTime = updatedTime,

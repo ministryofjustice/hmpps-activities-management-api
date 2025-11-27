@@ -132,6 +132,7 @@ class AppointmentSetIntegrationTest : AppointmentsIntegrationTestBase() {
             LocalTime.of(9, 0),
             LocalTime.of(9, 15),
             "Medical appointment for A1234BC",
+            "Arrive 10 minutes early",
             details.createdTime, createdBy, null, null,
             appointmentAttendeeId = 6,
           ),
@@ -144,6 +145,7 @@ class AppointmentSetIntegrationTest : AppointmentsIntegrationTestBase() {
             LocalTime.of(9, 15),
             LocalTime.of(9, 30),
             "Medical appointment for B2345CD",
+            "Arrive 10 minutes early",
             details.createdTime, createdBy, null, null,
             appointmentAttendeeId = 7,
           ),
@@ -156,6 +158,7 @@ class AppointmentSetIntegrationTest : AppointmentsIntegrationTestBase() {
             LocalTime.of(9, 30),
             LocalTime.of(9, 45),
             "Medical appointment for C3456DE",
+            "Arrive 10 minutes early",
             details.createdTime, createdBy, null, null,
             appointmentAttendeeId = 8,
           ),
@@ -274,6 +277,8 @@ class AppointmentSetIntegrationTest : AppointmentsIntegrationTestBase() {
       it.internalLocationId == 123L
       it.dpsLocationId == request.dpsLocationId
       !it.inCell
+      it.extraInformation == "Test comment"
+      it.prisonerExtraInformation == "Prisoner level comment"
     }
 
     validateOutboundEvents(

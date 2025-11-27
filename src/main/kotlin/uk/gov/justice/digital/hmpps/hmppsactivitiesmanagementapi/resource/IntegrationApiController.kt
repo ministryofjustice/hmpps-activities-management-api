@@ -297,7 +297,7 @@ class IntegrationApiController(
   @PreAuthorize("hasAnyRole('ACTIVITIES__HMPPS_INTEGRATION_API')")
   fun getActivitySchedules(@PathVariable("activityId") activityId: Long): List<ActivityScheduleLite> = activityService.getSchedulesForActivity(activityId)
 
-  @GetMapping(value = ["/prisons/{prisonCode}/{prisonerNumber}/scheduled-instances"])
+  @GetMapping(value = ["/prisons/{prisonCode}/prisoner/{prisonerNumber}/scheduled-instances"])
   @ResponseBody
   @Operation(
     summary = "Get a list of scheduled instances for a prisoner, prison, date range (max 3 months) and time slot (AM, PM or ED - optional)",
@@ -597,7 +597,7 @@ class IntegrationApiController(
     pageSize: Int?,
   ) = waitingListService.searchWaitingLists(prisonCode, request, pageNumber ?: 0, pageSize ?: 50)
 
-  abstract inner class PagedWaitingListApplication : Page<WaitingListApplication>
+  abstract class PagedWaitingListApplication : Page<WaitingListApplication>
 
   @Operation(
     summary = "Get list of activities running at a specified prison. " +

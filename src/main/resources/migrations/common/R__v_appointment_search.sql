@@ -30,7 +30,8 @@ SELECT a.appointment_series_id,
        a.cancelled_time,
        a.cancelled_by,
        CASE WHEN a.in_cell THEN null ELSE a.dps_location_id END                     AS dps_location_id,
-       a.is_deleted
+       a.is_deleted,
+       a.prisoner_extra_information
 FROM appointment a
          JOIN appointment_series asrs on asrs.appointment_series_id = a.appointment_series_id
          LEFT JOIN appointment_series_schedule asch on asrs.appointment_series_schedule_id = asch.appointment_series_schedule_id
