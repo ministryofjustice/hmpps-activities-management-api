@@ -17,38 +17,65 @@
     "destination": "console"
   },
   "sampling": {
-    "percentage": 100
+    "percentage": 100,
+    "overrides": [
+      {
+        "telemetryType": "dependency",
+        "attributes": [
+          {
+            "key": "db.system",
+            "value": "postgresql",
+            "matchType": "strict"
+          }
+        ],
+        "percentage": 10
+      },
+      {
+        "telemetryType": "dependency",
+        "attributes": [
+          {
+            "key": "server.address",
+            "value": "(sign-in|sts.eu).*",
+            "matchType": "regexp"
+          }
+        ],
+        "percentage": 10
+      },
+      {
+        "telemetryType": "request",
+        "attributes": [
+          {
+            "key": "url.path",
+            "value": "/health.*",
+            "matchType": "regexp"
+          }
+        ],
+        "percentage": 10
+      },
+      {
+        "telemetryType": "request",
+        "attributes": [
+          {
+            "key": "url.path",
+            "value": "/info",
+            "matchType": "strict"
+          }
+        ],
+        "percentage": 10
+      }
+    ]
   },
   "preview": {
-    "sampling": {
-      "overrides": [
-        {
-          "attributes": [
-            {
-              "key": "http.url",
-              "value": "https?://[^/]+/health.*",
-              "matchType": "regexp"
-            }
-          ],
-          "percentage": 100
-        },
-        {
-          "telemetryType": "dependency",
-          "attributes": [
-            {
-              "key": "job.system",
-              "value": "spring_scheduling",
-              "matchType": "strict"
-            },
-            {
-              "key": "code.namespace",
-              "value": "io.awspring.cloud.sqs.listener.acknowledgement.BatchingAcknowledgementProcessor.*",
-              "matchType": "regexp"
-            }
-          ],
-          "percentage": 0
+    "processors": [
+      {
+        "type": "metric-filter",
+        "exclude": {
+          "matchType": "regexp",
+          "metricNames": [
+            "(cache|executor|disk|http|logback|spring_).*"
+          ]
         }
-      ]
-    }
+      }
+    ]
   }
 }
