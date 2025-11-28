@@ -432,7 +432,7 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
     val requestList = createPrisonerWaitingListRequest(1, listOf(WaitingListStatus.PENDING))
 
     webTestClient.post()
-      .uri("/waiting-list-applications/MOORLAND_PRISON_CODE/prisoner/$prisonerNumber")
+      .uri("/waiting-list-applications/$MOORLAND_PRISON_CODE/prisoner/$prisonerNumber")
       .bodyValue(requestList)
       .accept(MediaType.APPLICATION_JSON)
       .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_PRISON)))
@@ -517,13 +517,28 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
   @Sql("classpath:test_data/seed-waiting-list-audit-history.sql")
   @Test
   fun `returns waiting list history ordered by latest first`() {
-    val activitySchedule = activityScheduleRepository.findById(1L).get()
     prisonerSearchApiMockServer.stubSearchByPrisonerNumber("G4793VF")
 
-    // Create waiting list entity through repository
-    val waitingList = waitingListForTest(activitySchedule, WaitingListStatus.PENDING)
+    val waitingList = listOf(
+      PrisonerWaitingListApplicationRequest(
+        activityScheduleId = 1L,
+        applicationDate = LocalDate.of(2025, 1, 1),
+        requestedBy = "Initial requester",
+        comments = "Initial comment",
+        status = WaitingListStatus.PENDING,
+      ),
+    )
 
-    waitingListRepository.saveAndFlush(waitingList)
+    webTestClient.post()
+      .uri("/waiting-list-applications/$MOORLAND_PRISON_CODE/prisoner/G4793VF")
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB, ROLE_ACTIVITY_ADMIN)))
+      .header(CASELOAD_ID, MOORLAND_PRISON_CODE)
+      .bodyValue(waitingList)
+      .exchange()
+      .expectStatus().isNoContent
+
+    val waitingListId = waitingListRepository.findAll().first().waitingListId
 
     // Apply first update via update endpoint
     val firstUpdate = WaitingListApplicationUpdateRequest(
@@ -533,7 +548,7 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
       status = WaitingListStatus.APPROVED,
     )
     webTestClient.patch()
-      .uri("/waiting-list-applications/${waitingList.waitingListId}")
+      .uri("/waiting-list-applications/$waitingListId")
       .accept(MediaType.APPLICATION_JSON)
       .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB)))
       .header(CASELOAD_ID, MOORLAND_PRISON_CODE)
@@ -549,7 +564,7 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
       status = WaitingListStatus.WITHDRAWN,
     )
     webTestClient.patch()
-      .uri("/waiting-list-applications/${waitingList.waitingListId}")
+      .uri("/waiting-list-applications/$waitingListId")
       .accept(MediaType.APPLICATION_JSON)
       .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB)))
       .header(CASELOAD_ID, MOORLAND_PRISON_CODE)
@@ -559,7 +574,7 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
 
     // GET the /history endpoint
     val history = webTestClient.get()
-      .uri("/waiting-list-applications/${waitingList.waitingListId}/history")
+      .uri("/waiting-list-applications/$waitingListId/history")
       .accept(MediaType.APPLICATION_JSON)
       .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_ADMIN, ROLE_PRISON)))
       .header(CASELOAD_ID, MOORLAND_PRISON_CODE)
