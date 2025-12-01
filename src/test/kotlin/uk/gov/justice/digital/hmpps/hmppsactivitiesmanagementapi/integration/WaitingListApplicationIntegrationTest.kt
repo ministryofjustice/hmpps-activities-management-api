@@ -39,7 +39,6 @@ import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
-import java.time.ZonedDateTime
 
 @TestPropertySource(
   properties = [
@@ -617,7 +616,7 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
     val offsetFirstRevSeconds = rules.getOffset(firstRevLdnZoned.toInstant()).totalSeconds
     val offsetSecondRevSeconds = rules.getOffset(secondRevLdnZoned.toInstant()).totalSeconds
     if (isBST(firstRev.updatedTime)) {
-      assert(offsetFirstRevSeconds  == 3600)
+      assert(offsetFirstRevSeconds == 3600)
     } else {
       assert(offsetFirstRevSeconds == 0)
     }
