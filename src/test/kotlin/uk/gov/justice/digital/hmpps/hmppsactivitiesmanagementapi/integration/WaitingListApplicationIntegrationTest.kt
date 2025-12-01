@@ -13,8 +13,6 @@ import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.typeReference
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.asListOfType
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
@@ -39,6 +37,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAu
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import java.time.Duration
 import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.ZonedDateTime
 
 @TestPropertySource(
   properties = [
@@ -609,11 +610,27 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
     assertThat(secondRev.applicationDate).isEqualTo(LocalDate.of(2025, 1, 20))
     assertThat(secondRev.revisionType).isEqualTo("MOD")
 
+    val firstRevLdnZoned = firstRev.updatedTime!!.atZone(ZoneId.of("Europe/London"))
+    val secondRevLdnZoned = secondRev.updatedTime!!.atZone(ZoneId.of("Europe/London"))
+    val rules = ZoneId.of("Europe/London").rules
+
+    val offsetFirstRevSeconds = rules.getOffset(firstRevLdnZoned.toInstant()).totalSeconds
+    val offsetSecondRevSeconds = rules.getOffset(secondRevLdnZoned.toInstant()).totalSeconds
+    if (isBST(firstRev.updatedTime)) {
+      assert(offsetFirstRevSeconds  == 3600)
+    } else {
+      assert(offsetFirstRevSeconds == 0)
+    }
+
+    if (isBST(secondRev.updatedTime)) {
+      assert(offsetSecondRevSeconds == 3600)
+    } else {
+      assert(offsetSecondRevSeconds == 0)
+    }
+
     history.forEach {
       assertThat(it.id).isEqualTo(1L)
       assertThat(it.revisionId).isNotNull
-      assertThat(it.revisionDateTime).isNotNull
-      assertThat(it.revisionUsername).isNotNull
       assertThat(it.prisonCode).isEqualTo("MDI")
       assertThat(it.prisonerNumber).isEqualTo("G4793VF")
       assertThat(it.activityScheduleId).isEqualTo(1L)
@@ -669,18 +686,9 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
     .header(CASELOAD_ID, MOORLAND_PRISON_CODE)
     .exchange()
 
-  fun waitingListForTest(
-    activitySchedule: ActivitySchedule,
-    status: WaitingListStatus,
-  ) = WaitingList(
-    prisonCode = "MDI",
-    prisonerNumber = "G4793VF",
-    bookingId = 400,
-    applicationDate = LocalDate.of(2025, 1, 1),
-    activitySchedule = activitySchedule,
-    requestedBy = "Initial requester",
-    comments = "Initial comment",
-    createdBy = "Initial creator",
-    initialStatus = status,
-  )
+  private fun isBST(localDateTime: LocalDateTime?): Boolean {
+    val zone = ZoneId.of("Europe/London")
+    val rules = zone.rules
+    return rules.isDaylightSavings(localDateTime?.atZone(zone)?.toInstant())
+  }
 }

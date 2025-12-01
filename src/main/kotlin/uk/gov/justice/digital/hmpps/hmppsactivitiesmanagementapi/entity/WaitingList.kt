@@ -12,6 +12,7 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
 import org.hibernate.envers.Audited
+import org.hibernate.envers.NotAudited
 import org.hibernate.envers.RelationTargetAuditMode
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -73,9 +74,10 @@ data class WaitingList(
 
   @ManyToOne
   @JoinColumn(name = "activity_id", nullable = false)
-  @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
+  @NotAudited
   val activity: Activity = activitySchedule.activity
 
+  @NotAudited
   val creationTime: LocalDateTime = LocalDateTime.now()
 
   var declinedReason: String? = null
@@ -93,7 +95,7 @@ data class WaitingList(
 
   @OneToOne
   @JoinColumn(name = "allocation_id", nullable = true)
-  @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
+  @NotAudited
   var allocation: Allocation? = null
 
   fun isStatus(vararg s: WaitingListStatus) = s.any { it == status }

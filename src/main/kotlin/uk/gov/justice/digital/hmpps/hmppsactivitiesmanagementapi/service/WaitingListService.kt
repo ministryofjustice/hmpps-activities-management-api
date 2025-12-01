@@ -115,9 +115,7 @@ class WaitingListService(
     revisionType: RevisionType,
   ): WaitingListApplicationHistory = WaitingListApplicationHistory(
     id = entity.waitingListId,
-    activityId = entity.safeActivityId(),
     activityScheduleId = entity.activitySchedule.activityScheduleId,
-    allocationId = entity.allocation?.allocationId,
     prisonCode = entity.prisonCode,
     prisonerNumber = entity.prisonerNumber,
     bookingId = entity.bookingId,
@@ -127,17 +125,12 @@ class WaitingListService(
     requestedBy = entity.requestedBy,
     comments = entity.comments,
     declinedReason = entity.declinedReason,
-    creationTime = entity.creationTime,
     createdBy = entity.createdBy,
-    updatedTime = entity.updatedTime,
-    updatedBy = entity.updatedBy,
+    updatedTime = revision.revisionDateTime,
+    updatedBy = revision.username,
     revisionId = (revision.id as Number).toLong(),
     revisionType = mapRevisionType(revisionType),
-    revisionDateTime = revision.revisionDateTime,
-    revisionUsername = revision.username,
   )
-
-  private fun WaitingList.safeActivityId(): Long = this.activitySchedule.activity.activityId
 
   private fun mapRevisionType(revisionType: RevisionType): String = when (revisionType) {
     RevisionType.ADD -> "ADD"

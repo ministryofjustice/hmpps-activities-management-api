@@ -1731,10 +1731,9 @@ class WaitingListServiceTest {
       assertThat(history.requestedBy).isEqualTo("test_requester")
       assertThat(history.createdBy).isEqualTo("test_creator")
       assertThat(history.revisionId).isEqualTo(10)
-      assertThat(history.revisionUsername).isEqualTo("user1")
-      assertThat(history.revisionDateTime).isEqualTo(LocalDateTime.of(2025, 1, 1, 10, 10))
       assertThat(history.revisionType).isEqualTo("MOD")
-      assertThat(history.updatedBy).isEqualTo("test_updater")
+      assertThat(history.updatedBy).isEqualTo("user1")
+      assertThat(history.updatedTime).isEqualTo(LocalDateTime.of(2025, 1, 1, 10, 10))
     }
   }
 
@@ -1780,19 +1779,17 @@ class WaitingListServiceTest {
       assertThat(latestRevision.comments).isEqualTo("new_comment")
       assertThat(latestRevision.applicationDate).isEqualTo(LocalDate.of(2025, 1, 1))
       assertThat(latestRevision.requestedBy).isEqualTo("new_user")
-      assertThat(latestRevision.updatedBy).isEqualTo("new_updater")
+      assertThat(latestRevision.updatedBy).isEqualTo("user2")
       assertThat(latestRevision.revisionId).isEqualTo(11)
-      assertThat(latestRevision.revisionUsername).isEqualTo("user2")
-      assertThat(latestRevision.revisionDateTime).isEqualTo(LocalDateTime.of(2025, 2, 2, 20, 20))
+      assertThat(latestRevision.updatedTime).isEqualTo(LocalDateTime.of(2025, 2, 2, 20, 20))
       assertThat(latestRevision.revisionType).isEqualTo("MOD")
 
       assertThat(previousRevision.status).isEqualTo(WaitingListStatus.PENDING)
       assertThat(previousRevision.comments).isEqualTo("old_comment")
       assertThat(previousRevision.requestedBy).isEqualTo("old_user")
-      assertThat(previousRevision.updatedBy).isEqualTo("old_updater")
+      assertThat(previousRevision.updatedBy).isEqualTo("user1")
       assertThat(previousRevision.revisionId).isEqualTo(10)
-      assertThat(previousRevision.revisionUsername).isEqualTo("user1")
-      assertThat(previousRevision.revisionDateTime).isEqualTo(LocalDateTime.of(2025, 1, 1, 10, 10))
+      assertThat(previousRevision.updatedTime).isEqualTo(LocalDateTime.of(2025, 1, 1, 10, 10))
       assertThat(previousRevision.revisionType).isEqualTo("ADD")
 
       historyResult.forEach { history ->
@@ -1858,6 +1855,7 @@ class WaitingListServiceTest {
     comments: String = "test_comment",
     createdBy: String = "test_creator",
     updatedBy: String? = "test_updater",
+    updatedTime: LocalDateTime? = LocalDateTime.of(2025, 1, 10, 10, 10),
     status: WaitingListStatus = WaitingListStatus.PENDING,
     activityId: Long = 100L,
     scheduleId: Long = 200L,
@@ -1890,6 +1888,7 @@ class WaitingListServiceTest {
     ).apply {
       this.allocation = allocation
       this.updatedBy = updatedBy
+      this.updatedTime = updatedTime
     }
   }
 

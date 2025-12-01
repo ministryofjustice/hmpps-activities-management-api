@@ -15,22 +15,10 @@ data class WaitingListApplicationHistory(
   val id: Long,
 
   @Schema(
-    description = "The internally-generated ID for the associated activity",
-    example = "1000",
-  )
-  val activityId: Long,
-
-  @Schema(
     description = "The internally-generated ID for the associated activity schedule",
     example = "222222",
   )
   val activityScheduleId: Long,
-
-  @Schema(
-    description = "The internally-generated ID for the associated allocation",
-    example = "333333",
-  )
-  val allocationId: Long? = null,
 
   @Schema(
     description = "The prison code for this waiting list",
@@ -89,13 +77,6 @@ data class WaitingListApplicationHistory(
   val declinedReason: String? = null,
 
   @Schema(
-    description = "The date and time the waiting list was first created",
-    example = "2023-00-03T12:00:00",
-  )
-  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
-  val creationTime: LocalDateTime,
-
-  @Schema(
     description = "The person who created the waiting list i.e the user at the time",
     example = "Jon Doe",
   )
@@ -123,15 +104,4 @@ data class WaitingListApplicationHistory(
     description = "The value for the type of revision: 0 - ADD, 1 - MOD, 2 - DEL",
   )
   val revisionType: String,
-
-  @Schema(
-    description = "The date and time when this revision was created",
-  )
-  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
-  val revisionDateTime: LocalDateTime,
-
-  @Schema(
-    description = "The username of the user that created this revision",
-  )
-  val revisionUsername: String,
 )
