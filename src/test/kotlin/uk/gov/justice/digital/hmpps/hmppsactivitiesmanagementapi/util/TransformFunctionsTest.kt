@@ -470,6 +470,7 @@ class TransformFunctionsTest {
           issuePayment = null,
           attendanceStatus = null,
           attendanceReasonCode = null,
+          prisonerComments = "Prisoner level comment",
         ),
       )
     }
@@ -515,6 +516,7 @@ class TransformFunctionsTest {
           issuePayment = null,
           attendanceStatus = null,
           attendanceReasonCode = null,
+          prisonerComments = "Prisoner level comment",
         ),
       )
     }
@@ -564,6 +566,7 @@ class TransformFunctionsTest {
           issuePayment = null,
           attendanceStatus = null,
           attendanceReasonCode = null,
+          prisonerComments = "Prisoner level comment",
         ),
       )
     }

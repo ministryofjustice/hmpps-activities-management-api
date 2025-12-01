@@ -131,4 +131,7 @@ data class ScheduledEvent(
 
   @Schema(description = "The code for the activity (non) attendance reason", example = "SICK")
   val attendanceReasonCode: String?,
+
+  @Schema(description = "Any prisoner specific comments supplied that relate to this event", example = "Please arrive 10 minutes early.")
+  val prisonerComments: String? = null,
 )
