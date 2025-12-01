@@ -198,6 +198,7 @@ fun transformAppointmentInstanceToScheduledEvents(
       it.customName,
     ),
     comments = it.extraInformation,
+    prisonerComments = it.prisonerExtraInformation,
     prisonerNumber = it.prisonerNumber,
     inCell = it.inCell,
     onWing = false,
