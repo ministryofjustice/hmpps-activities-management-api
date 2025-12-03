@@ -72,9 +72,7 @@ class WaitingListService(
     val waitingList = waitingListRepository
       .findOrThrowNotFound(id)
       .checkCaseloadAccess()
-
-    val prisoner =
-      prisonerSearchApiClient.findByPrisonerNumber(waitingList.prisonerNumber) ?: throw NullPointerException("Prisoner ${waitingList.prisonerNumber} not found for waiting list id $id")
+    val prisoner = prisonerSearchApiClient.findByPrisonerNumber(waitingList.prisonerNumber) ?: throw NullPointerException("Prisoner ${waitingList.prisonerNumber} not found for waiting list id $id")
     return waitingList.toModel(determineEarliestReleaseDate(prisoner))
   }
 
@@ -105,17 +103,46 @@ class WaitingListService(
       val revision = row[1] as CustomRevisionEntity
       val revisionType = row[2] as RevisionType
 
-      mapToHistory(entity, revision, revisionType)
+      mapToHistoryFromAudit(entity, revision, revisionType)
     }
   }
 
-  private fun mapToHistory(
+//    private fun mapToHistory(
+//      entity: WaitingList,
+//      revision: CustomRevisionEntity,
+//      revisionType: RevisionType,
+//    ): WaitingListApplicationHistory = WaitingListApplicationHistory(
+//      id = entity.waitingListId,
+//      activityId = entity.safeActivityId(),
+//      activityScheduleId = entity.activitySchedule.activityScheduleId,
+//      allocationId = entity.allocation?.allocationId,
+//      prisonCode = entity.prisonCode,
+//      prisonerNumber = entity.prisonerNumber,
+//      bookingId = entity.bookingId,
+//      status = entity.status,
+//      statusUpdatedTime = entity.statusUpdatedTime,
+//      applicationDate = entity.applicationDate,
+//      requestedBy = entity.requestedBy,
+//      comments = entity.comments,
+//      declinedReason = entity.declinedReason,
+//      creationTime = entity.creationTime,
+//      createdBy = entity.createdBy,
+//      updatedTime = revision.revisionDateTime,
+//      updatedBy = revision.username,
+//      revisionId = (revision.id as Number).toLong(),
+//      revisionType = mapRevisionType(revisionType),
+//    )
+
+  private fun mapToHistoryFromAudit(
     entity: WaitingList,
     revision: CustomRevisionEntity,
     revisionType: RevisionType,
   ): WaitingListApplicationHistory = WaitingListApplicationHistory(
     id = entity.waitingListId,
+    activityId = entity.safeActivityId(),
+//    activityId = entity.activity.activityId,
     activityScheduleId = entity.activitySchedule.activityScheduleId,
+    allocationId = entity.allocation?.allocationId,
     prisonCode = entity.prisonCode,
     prisonerNumber = entity.prisonerNumber,
     bookingId = entity.bookingId,
@@ -125,12 +152,16 @@ class WaitingListService(
     requestedBy = entity.requestedBy,
     comments = entity.comments,
     declinedReason = entity.declinedReason,
+    creationTime = entity.creationTime,
     createdBy = entity.createdBy,
     updatedTime = revision.revisionDateTime,
     updatedBy = revision.username,
-    revisionId = (revision.id as Number).toLong(),
+    revisionId = revision.id.toLong(),
     revisionType = mapRevisionType(revisionType),
   )
+
+    private fun WaitingList.safeActivityId(): Long =
+      this.activitySchedule.activity.activityId
 
   private fun mapRevisionType(revisionType: RevisionType): String = when (revisionType) {
     RevisionType.ADD -> "ADD"

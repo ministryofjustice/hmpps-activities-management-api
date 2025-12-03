@@ -12,37 +12,49 @@ data class WaitingListApplicationHistory(
     description = "The internally-generated ID for this waiting list",
     example = "111111",
   )
-  val id: Long,
+  val id: Long? = null,
+
+  @Schema(
+    description = "The internally-generated ID for the associated activity",
+    example = "1000",
+  )
+  val activityId: Long? = null,
 
   @Schema(
     description = "The internally-generated ID for the associated activity schedule",
     example = "222222",
   )
-  val activityScheduleId: Long,
+  val activityScheduleId: Long? = null,
+
+  @Schema(
+    description = "The internally-generated ID for the associated allocation",
+    example = "333333",
+  )
+  val allocationId: Long? = null,
 
   @Schema(
     description = "The prison code for this waiting list",
     example = "PVI",
   )
-  val prisonCode: String,
+  val prisonCode: String? = null,
 
   @Schema(
     description = "The prisoner number (NOMIS ID) for this waiting list",
     example = "A1234AA",
   )
-  val prisonerNumber: String,
+  val prisonerNumber: String? = null,
 
   @Schema(
     description = "The prisoner booking id (NOMIS ID) for this waiting list",
     example = "10001",
   )
-  val bookingId: Long,
+  val bookingId: Long? = null,
 
   @Schema(
     description = "The status of this waiting list",
     example = "PENDING",
   )
-  val status: WaitingListStatus,
+  val status: WaitingListStatus? = null,
 
   @Schema(
     description = "The date and time the waiting list status was last updated",
@@ -56,13 +68,13 @@ data class WaitingListApplicationHistory(
     example = "2023-06-23",
   )
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
-  val applicationDate: LocalDate,
+  val applicationDate: LocalDate? = null,
 
   @Schema(
     description = "The person who made the request for this waiting list",
     example = "Fred Bloggs",
   )
-  val requestedBy: String,
+  val requestedBy: String? = null,
 
   @Schema(
     description = "Any particular comments related to this waiting list",
@@ -77,10 +89,17 @@ data class WaitingListApplicationHistory(
   val declinedReason: String? = null,
 
   @Schema(
+    description = "The date and time the waiting list was first created",
+    example = "2023-00-03T12:00:00",
+  )
+  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+  val creationTime: LocalDateTime? = null,
+
+  @Schema(
     description = "The person who created the waiting list i.e the user at the time",
     example = "Jon Doe",
   )
-  val createdBy: String,
+  val createdBy: String? = null,
 
   @Schema(
     description = "The date and time the waiting list was last updated",

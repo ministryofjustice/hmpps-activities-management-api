@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
+import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EntityListeners
 import jakarta.persistence.EnumType
@@ -12,7 +13,6 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
 import org.hibernate.envers.Audited
-import org.hibernate.envers.NotAudited
 import org.hibernate.envers.RelationTargetAuditMode
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -21,17 +21,21 @@ import java.time.LocalDateTime
 @Audited
 @Table(name = "waiting_list")
 @EntityListeners(AuditableEntityListener::class)
-data class WaitingList(
+class WaitingList(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val waitingListId: Long = 0,
+  val waitingListId: Long? = null,
 
+  @Column(nullable = false)
   val prisonCode: String,
 
+  @Column(nullable = false)
   val prisonerNumber: String,
 
+  @Column(nullable = false)
   val bookingId: Long,
 
+  @Column(nullable = false)
   var applicationDate: LocalDate,
 
   @ManyToOne
@@ -39,17 +43,20 @@ data class WaitingList(
   @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
   val activitySchedule: ActivitySchedule,
 
+  @Column(nullable = false)
   var requestedBy: String,
 
+  @Column(nullable = true)
   var comments: String? = null,
 
+  @Column(nullable = false)
   val createdBy: String,
 
   @Transient
-  private val initialStatus: WaitingListStatus? = null,
+  private val initialStatus: WaitingListStatus,
 ) {
   @Enumerated(EnumType.STRING)
-  var status: WaitingListStatus = initialStatus ?: WaitingListStatus.PENDING
+  var status: WaitingListStatus = initialStatus
     set(value) {
       if (value == WaitingListStatus.DECLINED) {
         require(isStatus(WaitingListStatus.PENDING, WaitingListStatus.APPROVED)) {
@@ -74,10 +81,10 @@ data class WaitingList(
 
   @ManyToOne
   @JoinColumn(name = "activity_id", nullable = false)
-  @NotAudited
-  val activity: Activity = activitySchedule.activity
+  @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
+  var activity: Activity = activitySchedule.activity
 
-  @NotAudited
+  @Column(nullable = false)
   val creationTime: LocalDateTime = LocalDateTime.now()
 
   var declinedReason: String? = null
@@ -95,7 +102,7 @@ data class WaitingList(
 
   @OneToOne
   @JoinColumn(name = "allocation_id", nullable = true)
-  @NotAudited
+  @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
   var allocation: Allocation? = null
 
   fun isStatus(vararg s: WaitingListStatus) = s.any { it == status }
