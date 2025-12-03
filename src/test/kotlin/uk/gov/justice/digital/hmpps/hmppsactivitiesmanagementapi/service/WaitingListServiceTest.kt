@@ -5,16 +5,11 @@ import io.mockk.clearAllMocks
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
-import jakarta.persistence.EntityManager
 import jakarta.persistence.EntityNotFoundException
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
-import org.hibernate.envers.AuditReader
-import org.hibernate.envers.AuditReaderFactory
 import org.hibernate.envers.RevisionType
-import org.hibernate.envers.query.AuditQuery
-import org.hibernate.envers.query.AuditQueryCreator
 import org.junit.jupiter.api.Assertions.assertDoesNotThrow
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -22,7 +17,6 @@ import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
-import org.mockito.Mockito.mockStatic
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
@@ -73,6 +67,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Wait
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.NUMBER_OF_RESULTS_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISONER_NUMBER_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.AuditQueryHelper
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.CaseloadAccessException
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.DEFAULT_CASELOAD_PENTONVILLE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.FakeCaseLoad
@@ -96,10 +91,7 @@ class WaitingListServiceTest {
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
   private val telemetryClient: TelemetryClient = mock()
   private val auditService: AuditService = mock()
-  private val entityManager: EntityManager = mock()
-  private val auditReader: AuditReader = mock()
-  private val auditQueryCreator: AuditQueryCreator = mock()
-  private val auditQuery: AuditQuery = mock()
+  private val auditQueryHelper: AuditQueryHelper = mock()
   private val nonAssociationsApiClient: NonAssociationsApiClient = mockk()
   private val declinedEventCaptor = argumentCaptor<PrisonerDeclinedFromWaitingListEvent>()
   private val removedEventCaptor = argumentCaptor<PrisonerRemovedFromWaitingListEvent>()
@@ -111,7 +103,7 @@ class WaitingListServiceTest {
     prisonerSearchApiClient,
     telemetryClient,
     auditService,
-    entityManager,
+    auditQueryHelper,
     nonAssociationsApiClient,
     1,
   )
@@ -1733,45 +1725,42 @@ class WaitingListServiceTest {
 
   @Test
   fun `should return the audit history for a single revision`() {
-    val waitingList = buildWaitingList()
+    val waitingList = buildWaitingList(1L)
+    val waitingListId = waitingList.waitingListId!!
     val revision = buildRevision(10, "user1", LocalDateTime.of(2025, 1, 1, 10, 10))
 
-    mockAuditQuery(waitingList)
+    whenever(waitingListRepository.findById(waitingListId))
+      .thenReturn(Optional.of(waitingList))
 
-    val resultRow: Array<Any?> = arrayOf(waitingList, revision, RevisionType.MOD)
-    val results: List<Any> = listOf(resultRow)
-    doReturn(results).whenever(auditQuery).resultList
+    whenever(auditQueryHelper.getRevisionsForEntity(WaitingList::class, waitingListId))
+      .thenReturn(listOf(Triple(waitingList, revision, RevisionType.MOD)))
 
-    mockStatic(AuditReaderFactory::class.java).use { mockedStatic ->
-      mockedStatic.`when`<AuditReader> { AuditReaderFactory.get(entityManager) }
-        .thenReturn(auditReader)
+    val historyResult = service.getWaitingListHistoryBy(waitingListId)
 
-      val historyResult = service.getWaitingListHistoryBy(1L)
-
-      assertThat(historyResult).hasSize(1)
-      val history = historyResult.first()
-      assertThat(history.id).isEqualTo(1L)
-      assertThat(history.status).isEqualTo(WaitingListStatus.PENDING)
-      assertThat(history.comments).isEqualTo("test_comment")
-      assertThat(history.applicationDate).isEqualTo(LocalDate.of(2025, 1, 1))
-      assertThat(history.requestedBy).isEqualTo("test_requester")
-      assertThat(history.revisionId).isEqualTo(10)
-      assertThat(history.revisionType).isEqualTo("MOD")
-    }
+    assertThat(historyResult).hasSize(1)
+    val history = historyResult.first()
+    assertThat(history.id).isEqualTo(1L)
+    assertThat(history.status).isEqualTo(WaitingListStatus.PENDING)
+    assertThat(history.comments).isEqualTo("test_comment")
+    assertThat(history.applicationDate).isEqualTo(LocalDate.of(2025, 1, 1))
+    assertThat(history.requestedBy).isEqualTo("test_requester")
+    assertThat(history.revisionId).isEqualTo(10)
+    assertThat(history.revisionType).isEqualTo("MOD")
   }
 
   @Test
   fun `should return the audit history for multiple revisions in descending order`() {
     val oldWaitingList = buildWaitingList(
+      id = 1L,
       comments = "old_comment",
       status = WaitingListStatus.PENDING,
       requestedBy = "old_user",
       updatedBy = "old_updater",
     )
     val oldRevision = buildRevision(10, "user1", LocalDateTime.of(2025, 1, 1, 10, 10))
-    mockAuditQuery(oldWaitingList)
 
     val newWaitingList = buildWaitingList(
+      id = 1L,
       comments = "new_comment",
       status = WaitingListStatus.APPROVED,
       requestedBy = "new_user",
@@ -1779,42 +1768,41 @@ class WaitingListServiceTest {
     )
     val newRevision = buildRevision(11, "user2", LocalDateTime.of(2025, 2, 2, 20, 20))
 
-    mockAuditQuery(newWaitingList)
+    val waitingListId = newWaitingList.waitingListId!!
 
-    val results: List<Any> = listOf(
-      arrayOf(newWaitingList, newRevision, RevisionType.MOD),
-      arrayOf(oldWaitingList, oldRevision, RevisionType.ADD),
-    )
-    doReturn(results).whenever(auditQuery).resultList
+    whenever(waitingListRepository.findById(waitingListId))
+      .thenReturn(Optional.of(newWaitingList))
 
-    mockStatic(AuditReaderFactory::class.java).use { mockedStatic ->
-      mockedStatic.`when`<AuditReader> { AuditReaderFactory.get(entityManager) }
-        .thenReturn(auditReader)
+    whenever(auditQueryHelper.getRevisionsForEntity(WaitingList::class, waitingListId))
+      .thenReturn(
+        listOf(
+          Triple(newWaitingList, newRevision, RevisionType.MOD),
+          Triple(oldWaitingList, oldRevision, RevisionType.MOD),
+        ),
+      )
 
-      val historyResult = service.getWaitingListHistoryBy(1L)
+    val historyResult = service.getWaitingListHistoryBy(waitingListId)
 
-      assertThat(historyResult).hasSize(2)
+    assertThat(historyResult).hasSize(2)
 
-      val latestRevision = historyResult[0]
-      val previousRevision = historyResult[1]
+    val latestRevision = historyResult[0]
+    val previousRevision = historyResult[1]
 
-      assertThat(latestRevision.status).isEqualTo(WaitingListStatus.APPROVED)
-      assertThat(latestRevision.comments).isEqualTo("new_comment")
-      assertThat(latestRevision.applicationDate).isEqualTo(LocalDate.of(2025, 1, 1))
-      assertThat(latestRevision.requestedBy).isEqualTo("new_user")
-      assertThat(latestRevision.revisionId).isEqualTo(11)
-      assertThat(latestRevision.revisionType).isEqualTo("MOD")
+    assertThat(latestRevision.status).isEqualTo(WaitingListStatus.APPROVED)
+    assertThat(latestRevision.comments).isEqualTo("new_comment")
+    assertThat(latestRevision.requestedBy).isEqualTo("new_user")
+    assertThat(latestRevision.revisionId).isEqualTo(11)
+    assertThat(latestRevision.revisionType).isEqualTo("MOD")
 
-      assertThat(previousRevision.status).isEqualTo(WaitingListStatus.PENDING)
-      assertThat(previousRevision.comments).isEqualTo("old_comment")
-      assertThat(previousRevision.requestedBy).isEqualTo("old_user")
-      assertThat(previousRevision.revisionId).isEqualTo(10)
-      assertThat(previousRevision.revisionType).isEqualTo("ADD")
+    assertThat(previousRevision.status).isEqualTo(WaitingListStatus.PENDING)
+    assertThat(previousRevision.comments).isEqualTo("old_comment")
+    assertThat(previousRevision.requestedBy).isEqualTo("old_user")
+    assertThat(previousRevision.revisionId).isEqualTo(10)
+    assertThat(previousRevision.revisionType).isEqualTo("MOD")
 
-      historyResult.forEach { history ->
-        assertThat(history.id).isEqualTo(1L)
-        assertThat(history.applicationDate).isEqualTo(LocalDate.of(2025, 1, 1))
-      }
+    historyResult.forEach { history ->
+      assertThat(history.id).isEqualTo(1L)
+      assertThat(history.applicationDate).isEqualTo(LocalDate.of(2025, 1, 1))
     }
   }
 
@@ -1832,17 +1820,15 @@ class WaitingListServiceTest {
   @Test
   fun `should return empty list when waiting list exists but has no audit history`() {
     val waitingList = buildWaitingList(1L)
+    val waitingListId = waitingList.waitingListId!!
 
-    mockAuditQuery(waitingList)
-    doReturn(emptyList<Any>()).whenever(auditQuery).resultList
+    whenever(waitingListRepository.findById(waitingListId))
+      .thenReturn(Optional.of(waitingList))
 
-    mockStatic(AuditReaderFactory::class.java).use { mockedStatic ->
-      mockedStatic.`when`<AuditReader> { AuditReaderFactory.get(entityManager) }
-        .thenReturn(auditReader)
-
-      val result = service.getWaitingListHistoryBy(1L)
-      assertThat(result).isEmpty()
-    }
+    whenever(auditQueryHelper.getRevisionsForEntity(WaitingList::class, waitingListId))
+      .thenReturn(emptyList())
+    val result = service.getWaitingListHistoryBy(waitingListId)
+    assertThat(result).isEmpty()
   }
 
   @Test
@@ -1851,14 +1837,6 @@ class WaitingListServiceTest {
     addCaseloadIdToRequestHeader("WRONG_CASELOAD_ID")
     whenever(waitingListRepository.findById(waitingListId)).thenReturn(Optional.of(waitingList))
     assertThatThrownBy { service.getWaitingListHistoryBy(waitingListId) }.isInstanceOf(CaseloadAccessException::class.java)
-  }
-
-  private fun mockAuditQuery(waitingList: WaitingList) {
-    whenever(waitingListRepository.findById(1L)).thenReturn(Optional.of(waitingList))
-    whenever(auditReader.createQuery()).thenReturn(auditQueryCreator)
-    whenever(auditQueryCreator.forRevisionsOfEntity(WaitingList::class.java, false, true)).thenReturn(auditQuery)
-    whenever(auditQuery.add(any())).thenReturn(auditQuery)
-    whenever(auditQuery.addOrder(any())).thenReturn(auditQuery)
   }
 
   private fun buildWaitingList(

@@ -1,13 +1,10 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import com.microsoft.applicationinsights.TelemetryClient
-import jakarta.persistence.EntityManager
 import jakarta.persistence.EntityNotFoundException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
-import org.hibernate.envers.AuditReaderFactory
 import org.hibernate.envers.RevisionType
-import org.hibernate.envers.query.AuditEntity
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
@@ -43,6 +40,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.find
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISONER_NUMBER_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.activityMetricsMap
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.AuditQueryHelper
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.determineEarliestReleaseDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.hasNonAssociations
@@ -60,7 +58,7 @@ class WaitingListService(
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
   private val telemetryClient: TelemetryClient,
   private val auditService: AuditService,
-  private val entityManager: EntityManager,
+  private val auditQueryHelper: AuditQueryHelper,
   private val nonAssociationsApiClient: NonAssociationsApiClient,
   @Value("\${waiting-list.prisoner-search-limit:1000}") private val prisonerSearchLimit: Long = 1000,
 ) {
@@ -81,28 +79,26 @@ class WaitingListService(
       .checkCaseloadAccess()
 
     // Create Envers AuditReader
-    val auditReader = AuditReaderFactory.get(entityManager)
+//    val auditReader = AuditReaderFactory.get(entityManager)
 
     // Query all revisions for this entity
-    @Suppress("UNCHECKED_CAST")
-    val results = auditReader.createQuery()
-      .forRevisionsOfEntity(WaitingList::class.java, false, true)
-      .add(AuditEntity.id().eq(waitingList.waitingListId))
-      .addOrder(AuditEntity.revisionNumber().desc())
-      .resultList
-      .mapNotNull { it as? Array<Any?> }
+//    @Suppress("UNCHECKED_CAST")
+//    val results = auditReader.createQuery()
+//      .forRevisionsOfEntity(WaitingList::class.java, false, true)
+//      .add(AuditEntity.id().eq(waitingList.waitingListId))
+//      .addOrder(AuditEntity.revisionNumber().desc())
+//      .resultList
+//      .mapNotNull { it as? Array<Any?> }
 
-    if (results.isEmpty()) {
+    val revisions = auditQueryHelper.getRevisionsForEntity(WaitingList::class, waitingListId)
+
+    if (revisions.isEmpty()) {
       log.warn("No audit history found for waiting list id $waitingListId")
       return emptyList()
     }
 
     // Map each revision
-    return results.map { row ->
-      val entity = row[0] as WaitingList
-      val revision = row[1] as CustomRevisionEntity
-      val revisionType = row[2] as RevisionType
-
+    return revisions.map { (entity, revision, revisionType) ->
       mapToHistoryFromAudit(entity, revision, revisionType)
     }
   }
