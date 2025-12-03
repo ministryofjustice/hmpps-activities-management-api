@@ -13,7 +13,7 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
 import org.hibernate.envers.Audited
-import org.hibernate.envers.RelationTargetAuditMode
+import org.hibernate.envers.NotAudited
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -26,21 +26,24 @@ class WaitingList(
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   val waitingListId: Long? = null,
 
+  @NotAudited
   @Column(nullable = false)
   val prisonCode: String,
 
+  @NotAudited
   @Column(nullable = false)
   val prisonerNumber: String,
 
+  @NotAudited
   @Column(nullable = false)
   val bookingId: Long,
 
   @Column(nullable = false)
   var applicationDate: LocalDate,
 
+  @NotAudited
   @ManyToOne
   @JoinColumn(name = "activity_schedule_id", nullable = false)
-  @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
   val activitySchedule: ActivitySchedule,
 
   @Column(nullable = false)
@@ -49,6 +52,7 @@ class WaitingList(
   @Column(nullable = true)
   var comments: String? = null,
 
+  @NotAudited
   @Column(nullable = false)
   val createdBy: String,
 
@@ -81,12 +85,14 @@ class WaitingList(
 
   @ManyToOne
   @JoinColumn(name = "activity_id", nullable = false)
-  @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
+  @NotAudited
   var activity: Activity = activitySchedule.activity
 
+  @NotAudited
   @Column(nullable = false)
   val creationTime: LocalDateTime = LocalDateTime.now()
 
+  @NotAudited
   var declinedReason: String? = null
     set(value) {
       require(status == WaitingListStatus.DECLINED) { "Cannot set the declined reason when status is not declined" }
@@ -94,15 +100,18 @@ class WaitingList(
       field = value
     }
 
+  @NotAudited
   var updatedTime: LocalDateTime? = null
 
+  @NotAudited
   var updatedBy: String? = null
 
+  @NotAudited
   var statusUpdatedTime: LocalDateTime? = null
 
+  @NotAudited
   @OneToOne
   @JoinColumn(name = "allocation_id", nullable = true)
-  @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
   var allocation: Allocation? = null
 
   fun isStatus(vararg s: WaitingListStatus) = s.any { it == status }

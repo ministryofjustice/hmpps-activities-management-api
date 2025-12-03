@@ -107,61 +107,19 @@ class WaitingListService(
     }
   }
 
-//    private fun mapToHistory(
-//      entity: WaitingList,
-//      revision: CustomRevisionEntity,
-//      revisionType: RevisionType,
-//    ): WaitingListApplicationHistory = WaitingListApplicationHistory(
-//      id = entity.waitingListId,
-//      activityId = entity.safeActivityId(),
-//      activityScheduleId = entity.activitySchedule.activityScheduleId,
-//      allocationId = entity.allocation?.allocationId,
-//      prisonCode = entity.prisonCode,
-//      prisonerNumber = entity.prisonerNumber,
-//      bookingId = entity.bookingId,
-//      status = entity.status,
-//      statusUpdatedTime = entity.statusUpdatedTime,
-//      applicationDate = entity.applicationDate,
-//      requestedBy = entity.requestedBy,
-//      comments = entity.comments,
-//      declinedReason = entity.declinedReason,
-//      creationTime = entity.creationTime,
-//      createdBy = entity.createdBy,
-//      updatedTime = revision.revisionDateTime,
-//      updatedBy = revision.username,
-//      revisionId = (revision.id as Number).toLong(),
-//      revisionType = mapRevisionType(revisionType),
-//    )
-
   private fun mapToHistoryFromAudit(
     entity: WaitingList,
     revision: CustomRevisionEntity,
     revisionType: RevisionType,
   ): WaitingListApplicationHistory = WaitingListApplicationHistory(
     id = entity.waitingListId,
-    activityId = entity.safeActivityId(),
-//    activityId = entity.activity.activityId,
-    activityScheduleId = entity.activitySchedule.activityScheduleId,
-    allocationId = entity.allocation?.allocationId,
-    prisonCode = entity.prisonCode,
-    prisonerNumber = entity.prisonerNumber,
-    bookingId = entity.bookingId,
     status = entity.status,
-    statusUpdatedTime = entity.statusUpdatedTime,
     applicationDate = entity.applicationDate,
     requestedBy = entity.requestedBy,
     comments = entity.comments,
-    declinedReason = entity.declinedReason,
-    creationTime = entity.creationTime,
-    createdBy = entity.createdBy,
-    updatedTime = revision.revisionDateTime,
-    updatedBy = revision.username,
     revisionId = revision.id.toLong(),
     revisionType = mapRevisionType(revisionType),
   )
-
-    private fun WaitingList.safeActivityId(): Long =
-      this.activitySchedule.activity.activityId
 
   private fun mapRevisionType(revisionType: RevisionType): String = when (revisionType) {
     RevisionType.ADD -> "ADD"

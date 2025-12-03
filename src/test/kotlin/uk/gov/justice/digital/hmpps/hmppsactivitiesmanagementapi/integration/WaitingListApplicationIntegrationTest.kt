@@ -609,30 +609,9 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
     assertThat(secondRev.applicationDate).isEqualTo(LocalDate.of(2025, 1, 20))
     assertThat(secondRev.revisionType).isEqualTo("MOD")
 
-    val firstRevLdnZoned = firstRev.updatedTime!!.atZone(ZoneId.of("Europe/London"))
-    val secondRevLdnZoned = secondRev.updatedTime!!.atZone(ZoneId.of("Europe/London"))
-    val rules = ZoneId.of("Europe/London").rules
-
-    val offsetFirstRevSeconds = rules.getOffset(firstRevLdnZoned.toInstant()).totalSeconds
-    val offsetSecondRevSeconds = rules.getOffset(secondRevLdnZoned.toInstant()).totalSeconds
-    if (isBST(firstRev.updatedTime)) {
-      assert(offsetFirstRevSeconds == 3600)
-    } else {
-      assert(offsetFirstRevSeconds == 0)
-    }
-
-    if (isBST(secondRev.updatedTime)) {
-      assert(offsetSecondRevSeconds == 3600)
-    } else {
-      assert(offsetSecondRevSeconds == 0)
-    }
-
     history.forEach {
       assertThat(it.id).isEqualTo(1L)
       assertThat(it.revisionId).isNotNull
-      assertThat(it.prisonCode).isEqualTo("MDI")
-      assertThat(it.prisonerNumber).isEqualTo("G4793VF")
-      assertThat(it.activityScheduleId).isEqualTo(1L)
     }
   }
 
