@@ -75,20 +75,8 @@ class WaitingListService(
   }
 
   fun getWaitingListHistoryBy(waitingListId: Long): List<WaitingListApplicationHistory> {
-    val waitingList = waitingListRepository.findOrThrowNotFound(waitingListId)
+    waitingListRepository.findOrThrowNotFound(waitingListId)
       .checkCaseloadAccess()
-
-    // Create Envers AuditReader
-//    val auditReader = AuditReaderFactory.get(entityManager)
-
-    // Query all revisions for this entity
-//    @Suppress("UNCHECKED_CAST")
-//    val results = auditReader.createQuery()
-//      .forRevisionsOfEntity(WaitingList::class.java, false, true)
-//      .add(AuditEntity.id().eq(waitingList.waitingListId))
-//      .addOrder(AuditEntity.revisionNumber().desc())
-//      .resultList
-//      .mapNotNull { it as? Array<Any?> }
 
     val revisions = auditQueryHelper.getRevisionsForEntity(WaitingList::class, waitingListId)
 
