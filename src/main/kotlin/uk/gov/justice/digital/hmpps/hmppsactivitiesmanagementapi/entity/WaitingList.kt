@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
+import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EntityListeners
 import jakarta.persistence.EnumType
@@ -11,33 +12,48 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
+import org.hibernate.envers.Audited
+import org.hibernate.envers.NotAudited
 import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Entity
+@Audited
 @Table(name = "waiting_list")
 @EntityListeners(AuditableEntityListener::class)
-data class WaitingList(
+class WaitingList(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val waitingListId: Long = 0,
+  val waitingListId: Long? = null,
 
+  @NotAudited
+  @Column(nullable = false)
   val prisonCode: String,
 
+  @NotAudited
+  @Column(nullable = false)
   val prisonerNumber: String,
 
+  @NotAudited
+  @Column(nullable = false)
   val bookingId: Long,
 
+  @Column(nullable = false)
   var applicationDate: LocalDate,
 
+  @NotAudited
   @ManyToOne
   @JoinColumn(name = "activity_schedule_id", nullable = false)
   val activitySchedule: ActivitySchedule,
 
+  @Column(nullable = false)
   var requestedBy: String,
 
+  @Column(nullable = true)
   var comments: String? = null,
 
+  @NotAudited
+  @Column(nullable = false)
   val createdBy: String,
 
   @Transient
@@ -69,10 +85,14 @@ data class WaitingList(
 
   @ManyToOne
   @JoinColumn(name = "activity_id", nullable = false)
-  val activity: Activity = activitySchedule.activity
+  @NotAudited
+  var activity: Activity = activitySchedule.activity
 
+  @NotAudited
+  @Column(nullable = false)
   val creationTime: LocalDateTime = LocalDateTime.now()
 
+  @NotAudited
   var declinedReason: String? = null
     set(value) {
       require(status == WaitingListStatus.DECLINED) { "Cannot set the declined reason when status is not declined" }
@@ -80,12 +100,16 @@ data class WaitingList(
       field = value
     }
 
+  @NotAudited
   var updatedTime: LocalDateTime? = null
 
+  @NotAudited
   var updatedBy: String? = null
 
+  @NotAudited
   var statusUpdatedTime: LocalDateTime? = null
 
+  @NotAudited
   @OneToOne
   @JoinColumn(name = "allocation_id", nullable = true)
   var allocation: Allocation? = null

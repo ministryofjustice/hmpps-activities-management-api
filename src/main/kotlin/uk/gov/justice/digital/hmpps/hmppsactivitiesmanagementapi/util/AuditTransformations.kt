@@ -67,7 +67,7 @@ fun EntityWaitingList.toPrisonerAddedToWaitingListEvent() = PrisonerAddedToWaiti
 )
 
 fun EntityWaitingList.toPrisonerDeclinedFromWaitingListEvent() = PrisonerDeclinedFromWaitingListEvent(
-  waitingListId = waitingListId,
+  waitingListId = waitingListId ?: error("Waiting list id should never be null"),
   activityId = activity.activityId,
   scheduleId = activitySchedule.activityScheduleId,
   activityName = activity.summary,
@@ -78,7 +78,7 @@ fun EntityWaitingList.toPrisonerDeclinedFromWaitingListEvent() = PrisonerDecline
 )
 
 fun EntityWaitingList.toPrisonerRemovedFromWaitingListEvent() = PrisonerRemovedFromWaitingListEvent(
-  waitingListId = waitingListId,
+  waitingListId = waitingListId ?: error("Waiting list id should never be null"),
   activityId = activity.activityId,
   scheduleId = activitySchedule.activityScheduleId,
   activityName = activity.summary,

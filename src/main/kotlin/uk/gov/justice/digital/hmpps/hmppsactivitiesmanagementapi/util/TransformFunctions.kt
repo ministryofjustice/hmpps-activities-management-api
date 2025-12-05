@@ -528,7 +528,7 @@ fun ScheduledInstanceAttendanceSummary.toModel() = (
   )
 
 fun EntityWaitingList.toModel(earliestReleaseDate: EarliestReleaseDate, nonAssociations: Boolean? = false) = ModelWaitingListApplication(
-  id = waitingListId,
+  id = waitingListId ?: error("Waiting list id should never be null"),
   prisonCode = prisonCode,
   activityId = activitySchedule.activity.activityId,
   scheduleId = activitySchedule.activityScheduleId,
