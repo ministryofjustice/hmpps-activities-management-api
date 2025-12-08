@@ -4,7 +4,6 @@ import com.microsoft.applicationinsights.TelemetryClient
 import jakarta.persistence.EntityNotFoundException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
-import org.hibernate.envers.RevisionType
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
@@ -40,7 +39,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.find
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISONER_NUMBER_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.activityMetricsMap
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.AuditQueryHelper
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.determineEarliestReleaseDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.hasNonAssociations
@@ -58,7 +56,6 @@ class WaitingListService(
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
   private val telemetryClient: TelemetryClient,
   private val auditService: AuditService,
-  private val auditQueryHelper: AuditQueryHelper,
   private val nonAssociationsApiClient: NonAssociationsApiClient,
   @Value("\${waiting-list.prisoner-search-limit:1000}") private val prisonerSearchLimit: Long = 1000,
 ) {
@@ -78,37 +75,29 @@ class WaitingListService(
     waitingListRepository.findOrThrowNotFound(waitingListId)
       .checkCaseloadAccess()
 
-    val revisions = auditQueryHelper.getRevisionsForEntity(WaitingList::class, waitingListId)
+    val revisions = waitingListRepository.findRevisions(waitingListId)
+      .content
+      .sortedByDescending { it.metadata.revisionNumber.orElse(0) }
 
     if (revisions.isEmpty()) {
       log.warn("No audit history found for waiting list id $waitingListId")
       return emptyList()
     }
 
-    // Map each revision
-    return revisions.map { (entity, revision, revisionType) ->
-      mapToHistoryFromAudit(entity, revision, revisionType)
+    return revisions.map { rev ->
+      val entity = rev.entity
+      val revision = rev.metadata.getDelegate<CustomRevisionEntity>()
+
+      WaitingListApplicationHistory(
+        id = entity.waitingListId,
+        status = entity.status,
+        applicationDate = entity.applicationDate,
+        requestedBy = entity.requestedBy,
+        comments = entity.comments,
+        updatedBy = revision.username,
+        updatedDateTime = revision.revisionDateTime,
+      )
     }
-  }
-
-  private fun mapToHistoryFromAudit(
-    entity: WaitingList,
-    revision: CustomRevisionEntity,
-    revisionType: RevisionType,
-  ): WaitingListApplicationHistory = WaitingListApplicationHistory(
-    id = entity.waitingListId,
-    status = entity.status,
-    applicationDate = entity.applicationDate,
-    requestedBy = entity.requestedBy,
-    comments = entity.comments,
-    revisionId = revision.id.toLong(),
-    revisionType = mapRevisionType(revisionType),
-  )
-
-  private fun mapRevisionType(revisionType: RevisionType): String = when (revisionType) {
-    RevisionType.ADD -> "ADD"
-    RevisionType.MOD -> "MOD"
-    RevisionType.DEL -> "DEL"
   }
 
   fun getWaitingListsBySchedule(id: Long, includeNonAssociationsCheck: Boolean = true): List<WaitingListApplication> = runBlocking {

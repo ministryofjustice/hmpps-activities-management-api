@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 @Schema(description = "Represents a historical snapshot of a waiting list application for a given ID.")
 data class WaitingListApplicationHistory(
@@ -39,12 +40,15 @@ data class WaitingListApplicationHistory(
   val comments: String? = null,
 
   @Schema(
-    description = "The internally generated ID for this revision",
+    description = "The person who made the latest changes to the waiting list",
+    example = "Jane Doe",
   )
-  val revisionId: Long,
+  val updatedBy: String,
 
   @Schema(
-    description = "The value for the type of revision: 0 - ADD, 1 - MOD, 2 - DEL",
+    description = "The date and time the waiting list was last updated",
+    example = "2023-00-04T16:30:00",
   )
-  val revisionType: String,
+  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+  val updatedDateTime: LocalDateTime,
 )

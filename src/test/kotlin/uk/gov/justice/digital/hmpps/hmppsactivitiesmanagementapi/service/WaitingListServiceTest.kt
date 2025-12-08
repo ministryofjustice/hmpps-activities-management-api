@@ -9,7 +9,6 @@ import jakarta.persistence.EntityNotFoundException
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
-import org.hibernate.envers.RevisionType
 import org.junit.jupiter.api.Assertions.assertDoesNotThrow
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -33,13 +32,13 @@ import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
+import org.springframework.data.history.Revision
+import org.springframework.data.history.RevisionMetadata
+import org.springframework.data.history.Revisions
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.api.NonAssociationsApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.model.NonAssociation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.CustomRevisionEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
@@ -67,7 +66,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Wait
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.NUMBER_OF_RESULTS_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISONER_NUMBER_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.AuditQueryHelper
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.CaseloadAccessException
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.DEFAULT_CASELOAD_PENTONVILLE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.FakeCaseLoad
@@ -91,7 +89,6 @@ class WaitingListServiceTest {
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
   private val telemetryClient: TelemetryClient = mock()
   private val auditService: AuditService = mock()
-  private val auditQueryHelper: AuditQueryHelper = mock()
   private val nonAssociationsApiClient: NonAssociationsApiClient = mockk()
   private val declinedEventCaptor = argumentCaptor<PrisonerDeclinedFromWaitingListEvent>()
   private val removedEventCaptor = argumentCaptor<PrisonerRemovedFromWaitingListEvent>()
@@ -103,7 +100,6 @@ class WaitingListServiceTest {
     prisonerSearchApiClient,
     telemetryClient,
     auditService,
-    auditQueryHelper,
     nonAssociationsApiClient,
     1,
   )
@@ -1727,25 +1723,37 @@ class WaitingListServiceTest {
   fun `should return the audit history for a single revision`() {
     val waitingList = buildWaitingList(1L)
     val waitingListId = waitingList.waitingListId!!
-    val revision = buildRevision(10, "user1", LocalDateTime.of(2025, 1, 1, 10, 10))
+
+    val revisionEntity = CustomRevisionEntity(
+      username = "user1",
+      revisionDateTime = LocalDateTime.of(2025, 1, 1, 10, 10),
+    )
+
+    val metadata = mock<RevisionMetadata<Int>>()
+    whenever(metadata.revisionNumber).thenReturn(Optional.of(10))
+    whenever(metadata.getDelegate<CustomRevisionEntity>()).thenReturn(revisionEntity)
+
+    val revision = mock<Revision<Int, WaitingList>>()
+    whenever(revision.entity).thenReturn(waitingList)
+    whenever(revision.metadata).thenReturn(metadata)
 
     whenever(waitingListRepository.findById(waitingListId))
       .thenReturn(Optional.of(waitingList))
 
-    whenever(auditQueryHelper.getRevisionsForEntity(WaitingList::class, waitingListId))
-      .thenReturn(listOf(Triple(waitingList, revision, RevisionType.MOD)))
+    whenever(waitingListRepository.findRevisions(waitingListId))
+      .thenReturn(Revisions.of(listOf(revision)))
 
     val historyResult = service.getWaitingListHistoryBy(waitingListId)
 
     assertThat(historyResult).hasSize(1)
     val history = historyResult.first()
-    assertThat(history.id).isEqualTo(1L)
+    assertThat(history.id).isEqualTo(waitingListId)
     assertThat(history.status).isEqualTo(WaitingListStatus.PENDING)
     assertThat(history.comments).isEqualTo("test_comment")
     assertThat(history.applicationDate).isEqualTo(LocalDate.of(2025, 1, 1))
     assertThat(history.requestedBy).isEqualTo("test_requester")
-    assertThat(history.revisionId).isEqualTo(10)
-    assertThat(history.revisionType).isEqualTo("MOD")
+    assertThat(history.updatedBy).isEqualTo("user1")
+    assertThat(history.updatedDateTime).isEqualTo(LocalDateTime.of(2025, 1, 1, 10, 10))
   }
 
   @Test
@@ -1757,7 +1765,19 @@ class WaitingListServiceTest {
       requestedBy = "old_user",
       updatedBy = "old_updater",
     )
-    val oldRevision = buildRevision(10, "user1", LocalDateTime.of(2025, 1, 1, 10, 10))
+
+    val oldRevisionEntity = CustomRevisionEntity(
+      username = "user1",
+      revisionDateTime = LocalDateTime.of(2025, 1, 1, 10, 10),
+    )
+
+    val oldMetadata = mock<RevisionMetadata<Int>>()
+    whenever(oldMetadata.revisionNumber).thenReturn(Optional.of(10))
+    whenever(oldMetadata.getDelegate<CustomRevisionEntity>()).thenReturn(oldRevisionEntity)
+
+    val oldRevision = mock<Revision<Int, WaitingList>>()
+    whenever(oldRevision.entity).thenReturn(oldWaitingList)
+    whenever(oldRevision.metadata).thenReturn(oldMetadata)
 
     val newWaitingList = buildWaitingList(
       id = 1L,
@@ -1766,39 +1786,50 @@ class WaitingListServiceTest {
       requestedBy = "new_user",
       updatedBy = "new_updater",
     )
-    val newRevision = buildRevision(11, "user2", LocalDateTime.of(2025, 2, 2, 20, 20))
+
+    val newRevisionEntity = CustomRevisionEntity(
+      username = "user2",
+      revisionDateTime = LocalDateTime.of(2025, 2, 2, 20, 20),
+    )
+
+    val newMetadata = mock<RevisionMetadata<Int>>()
+    whenever(newMetadata.revisionNumber).thenReturn(Optional.of(11))
+    whenever(newMetadata.getDelegate<CustomRevisionEntity>()).thenReturn(newRevisionEntity)
+
+    val newRevision = mock<Revision<Int, WaitingList>>()
+    whenever(newRevision.entity).thenReturn(newWaitingList)
+    whenever(newRevision.metadata).thenReturn(newMetadata)
 
     val waitingListId = newWaitingList.waitingListId!!
+
+    val sortedRevisions = listOf(newRevision, oldRevision)
+      .sortedByDescending { it.metadata.revisionNumber.get() }
+
+    val revisions: Revisions<Int, WaitingList> = Revisions.of(sortedRevisions)
 
     whenever(waitingListRepository.findById(waitingListId))
       .thenReturn(Optional.of(newWaitingList))
 
-    whenever(auditQueryHelper.getRevisionsForEntity(WaitingList::class, waitingListId))
-      .thenReturn(
-        listOf(
-          Triple(newWaitingList, newRevision, RevisionType.MOD),
-          Triple(oldWaitingList, oldRevision, RevisionType.MOD),
-        ),
-      )
+    whenever(waitingListRepository.findRevisions(waitingListId))
+      .thenReturn(revisions)
 
     val historyResult = service.getWaitingListHistoryBy(waitingListId)
 
     assertThat(historyResult).hasSize(2)
 
-    val latestRevision = historyResult[0]
-    val previousRevision = historyResult[1]
+    val (latestRevision, previousRevision) = historyResult
 
     assertThat(latestRevision.status).isEqualTo(WaitingListStatus.APPROVED)
     assertThat(latestRevision.comments).isEqualTo("new_comment")
     assertThat(latestRevision.requestedBy).isEqualTo("new_user")
-    assertThat(latestRevision.revisionId).isEqualTo(11)
-    assertThat(latestRevision.revisionType).isEqualTo("MOD")
+    assertThat(latestRevision.updatedBy).isEqualTo("user2")
+    assertThat(latestRevision.updatedDateTime).isEqualTo(LocalDateTime.of(2025, 2, 2, 20, 20))
 
     assertThat(previousRevision.status).isEqualTo(WaitingListStatus.PENDING)
     assertThat(previousRevision.comments).isEqualTo("old_comment")
     assertThat(previousRevision.requestedBy).isEqualTo("old_user")
-    assertThat(previousRevision.revisionId).isEqualTo(10)
-    assertThat(previousRevision.revisionType).isEqualTo("MOD")
+    assertThat(previousRevision.updatedBy).isEqualTo("user1")
+    assertThat(previousRevision.updatedDateTime).isEqualTo(LocalDateTime.of(2025, 1, 1, 10, 10))
 
     historyResult.forEach { history ->
       assertThat(history.id).isEqualTo(1L)
@@ -1825,9 +1856,11 @@ class WaitingListServiceTest {
     whenever(waitingListRepository.findById(waitingListId))
       .thenReturn(Optional.of(waitingList))
 
-    whenever(auditQueryHelper.getRevisionsForEntity(WaitingList::class, waitingListId))
-      .thenReturn(emptyList())
+    whenever(waitingListRepository.findRevisions(waitingListId))
+      .thenReturn(Revisions.none())
+
     val result = service.getWaitingListHistoryBy(waitingListId)
+
     assertThat(result).isEmpty()
   }
 
@@ -1852,21 +1885,9 @@ class WaitingListServiceTest {
     updatedTime: LocalDateTime? = LocalDateTime.of(2025, 1, 10, 10, 10),
     status: WaitingListStatus = WaitingListStatus.PENDING,
     activityId: Long = 100L,
-    scheduleId: Long = 200L,
-    allocationId: Long? = 300L,
   ): WaitingList {
-    val activity: Activity = mock()
-    whenever(activity.activityId).thenReturn(activityId)
-
-    val activitySchedule: ActivitySchedule = mock()
-    whenever(activitySchedule.activityScheduleId).thenReturn(scheduleId)
-    whenever(activitySchedule.activity).thenReturn(activity)
-
-    val allocation: Allocation? = allocationId?.let {
-      mock<Allocation>().apply {
-        whenever(this.allocationId).thenReturn(it)
-      }
-    }
+    val activity = activityEntity(activityId = activityId, prisonCode = prisonCode)
+    val activitySchedule = activity.schedules().first()
 
     return WaitingList(
       waitingListId = id,
@@ -1880,15 +1901,8 @@ class WaitingListServiceTest {
       createdBy = createdBy,
       initialStatus = status,
     ).apply {
-      this.allocation = allocation
       this.updatedBy = updatedBy
       this.updatedTime = updatedTime
     }
   }
-
-  private fun buildRevision(
-    id: Int,
-    username: String,
-    revisionDateTime: LocalDateTime,
-  ): CustomRevisionEntity = CustomRevisionEntity(username, revisionDateTime).apply { this.id = id }
 }

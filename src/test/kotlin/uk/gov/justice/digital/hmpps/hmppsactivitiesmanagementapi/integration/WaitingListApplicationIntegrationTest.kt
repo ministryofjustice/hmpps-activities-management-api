@@ -532,7 +532,7 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
     webTestClient.post()
       .uri("/waiting-list-applications/$MOORLAND_PRISON_CODE/prisoner/G4793VF")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB, ROLE_ACTIVITY_ADMIN)))
+      .headers(setAuthorisation(user = "Tom", isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB, ROLE_ACTIVITY_ADMIN)))
       .header(CASELOAD_ID, MOORLAND_PRISON_CODE)
       .bodyValue(waitingList)
       .exchange()
@@ -550,7 +550,7 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
     webTestClient.patch()
       .uri("/waiting-list-applications/$waitingListId")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB)))
+      .headers(setAuthorisation(user = "Fred", isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB)))
       .header(CASELOAD_ID, MOORLAND_PRISON_CODE)
       .bodyValue(firstUpdate)
       .exchange()
@@ -566,7 +566,7 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
     webTestClient.patch()
       .uri("/waiting-list-applications/$waitingListId")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB)))
+      .headers(setAuthorisation(user = "Alice", isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB)))
       .header(CASELOAD_ID, MOORLAND_PRISON_CODE)
       .bodyValue(secondUpdate)
       .exchange()
@@ -595,23 +595,40 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
     assertThat(original.status).isEqualTo(WaitingListStatus.PENDING)
     assertThat(original.requestedBy).isEqualTo("Initial requester")
     assertThat(original.applicationDate).isEqualTo(LocalDate.of(2025, 1, 1))
-    assertThat(original.revisionType).isEqualTo("ADD")
+    assertThat(original.updatedBy).isEqualTo("Tom")
 
     assertThat(firstRev.comments).isEqualTo("Fred's first revision")
     assertThat(firstRev.status).isEqualTo(WaitingListStatus.APPROVED)
     assertThat(firstRev.requestedBy).isEqualTo("Fred")
     assertThat(firstRev.applicationDate).isEqualTo(LocalDate.of(2025, 1, 10))
-    assertThat(firstRev.revisionType).isEqualTo("MOD")
+    assertThat(firstRev.updatedBy).isEqualTo("Fred")
 
     assertThat(secondRev.comments).isEqualTo("Alice's second revision")
     assertThat(secondRev.status).isEqualTo(WaitingListStatus.WITHDRAWN)
     assertThat(secondRev.requestedBy).isEqualTo("Alice")
     assertThat(secondRev.applicationDate).isEqualTo(LocalDate.of(2025, 1, 20))
-    assertThat(secondRev.revisionType).isEqualTo("MOD")
+    assertThat(secondRev.updatedBy).isEqualTo("Alice")
 
+    // updatedDateTime conversion to BST and GMT
+    val firstRevLdnZoned = firstRev.updatedDateTime!!.atZone(ZoneId.of("Europe/London"))
+    val secondRevLdnZoned = secondRev.updatedDateTime!!.atZone(ZoneId.of("Europe/London"))
+    val rules = ZoneId.of("Europe/London").rules
+
+    val offsetFirstRevSeconds = rules.getOffset(firstRevLdnZoned.toInstant()).totalSeconds
+    val offsetSecondRevSeconds = rules.getOffset(secondRevLdnZoned.toInstant()).totalSeconds
+    if (isBST(firstRev.updatedDateTime)) {
+      assert(offsetFirstRevSeconds == 3600)
+    } else {
+      assert(offsetFirstRevSeconds == 0)
+    }
+
+    if (isBST(secondRev.updatedDateTime)) {
+      assert(offsetSecondRevSeconds == 3600)
+    } else {
+      assert(offsetSecondRevSeconds == 0)
+    }
     history.forEach {
       assertThat(it.id).isEqualTo(1L)
-      assertThat(it.revisionId).isNotNull
     }
   }
 
@@ -656,7 +673,6 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
 
   private fun WebTestClient.waitingListApplicationForHistory(
     waitingListId: Long,
-    caseloadId: String? = CASELOAD_ID,
   ) = get()
     .uri("/waiting-list-applications/$waitingListId/history")
     .accept(MediaType.APPLICATION_JSON)

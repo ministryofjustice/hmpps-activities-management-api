@@ -10,16 +10,9 @@ import java.time.LocalDateTime
 @Entity
 @Table(name = "revision")
 @RevisionEntity(CustomRevisionListener::class)
-class CustomRevisionEntity(
-  @Column(name = "username", nullable = false)
-  var username: String = "",
+open class CustomRevisionEntity(
+  var username: String,
 
-  @Column(
-    name = "revision_date_time",
-    insertable = false,
-    updatable = false,
-  )
-  var revisionDateTime: LocalDateTime? = null,
-) : DefaultRevisionEntity() {
-  protected constructor() : this(username = "")
-}
+  @Column(insertable = false)
+  var revisionDateTime: LocalDateTime,
+) : DefaultRevisionEntity()
