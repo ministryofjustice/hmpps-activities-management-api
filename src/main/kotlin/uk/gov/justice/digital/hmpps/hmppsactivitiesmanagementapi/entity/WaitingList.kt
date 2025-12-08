@@ -11,33 +11,41 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
+import org.hibernate.envers.Audited
+import org.hibernate.envers.NotAudited
 import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Entity
+@Audited
 @Table(name = "waiting_list")
 @EntityListeners(AuditableEntityListener::class)
-data class WaitingList(
+class WaitingList(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   val waitingListId: Long = 0,
 
+  @NotAudited
   val prisonCode: String,
 
+  @NotAudited
   val prisonerNumber: String,
 
+  @NotAudited
   val bookingId: Long,
 
   var applicationDate: LocalDate,
 
+  @NotAudited
   @ManyToOne
-  @JoinColumn(name = "activity_schedule_id", nullable = false)
+  @JoinColumn(name = "activity_schedule_id")
   val activitySchedule: ActivitySchedule,
 
   var requestedBy: String,
 
   var comments: String? = null,
 
+  @NotAudited
   val createdBy: String,
 
   @Transient
@@ -68,11 +76,14 @@ data class WaitingList(
     }
 
   @ManyToOne
-  @JoinColumn(name = "activity_id", nullable = false)
+  @JoinColumn(name = "activity_id")
+  @NotAudited
   val activity: Activity = activitySchedule.activity
 
+  @NotAudited
   val creationTime: LocalDateTime = LocalDateTime.now()
 
+  @NotAudited
   var declinedReason: String? = null
     set(value) {
       require(status == WaitingListStatus.DECLINED) { "Cannot set the declined reason when status is not declined" }
@@ -80,14 +91,18 @@ data class WaitingList(
       field = value
     }
 
+  @NotAudited
   var updatedTime: LocalDateTime? = null
 
+  @NotAudited
   var updatedBy: String? = null
 
+  @NotAudited
   var statusUpdatedTime: LocalDateTime? = null
 
+  @NotAudited
   @OneToOne
-  @JoinColumn(name = "allocation_id", nullable = true)
+  @JoinColumn(name = "allocation_id")
   var allocation: Allocation? = null
 
   fun isStatus(vararg s: WaitingListStatus) = s.any { it == status }

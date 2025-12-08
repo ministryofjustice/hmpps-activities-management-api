@@ -19,12 +19,14 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassoc
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isActiveAtPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.CustomRevisionEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus.ALLOCATED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus.APPROVED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus.REMOVED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.WaitingListApplication
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.WaitingListApplicationHistory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerWaitingListApplicationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListApplicationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListApplicationUpdateRequest
@@ -65,10 +67,37 @@ class WaitingListService(
     val waitingList = waitingListRepository
       .findOrThrowNotFound(id)
       .checkCaseloadAccess()
-
-    val prisoner =
-      prisonerSearchApiClient.findByPrisonerNumber(waitingList.prisonerNumber) ?: throw NullPointerException("Prisoner ${waitingList.prisonerNumber} not found for waiting list id $id")
+    val prisoner = prisonerSearchApiClient.findByPrisonerNumber(waitingList.prisonerNumber) ?: throw NullPointerException("Prisoner ${waitingList.prisonerNumber} not found for waiting list id $id")
     return waitingList.toModel(determineEarliestReleaseDate(prisoner))
+  }
+
+  fun getWaitingListHistoryBy(waitingListId: Long): List<WaitingListApplicationHistory> {
+    waitingListRepository.findOrThrowNotFound(waitingListId)
+      .checkCaseloadAccess()
+
+    val revisions = waitingListRepository.findRevisions(waitingListId)
+      .content
+      .sortedByDescending { it.metadata.revisionNumber.orElse(0) }
+
+    if (revisions.isEmpty()) {
+      log.warn("No audit history found for waiting list id $waitingListId")
+      return emptyList()
+    }
+
+    return revisions.map { rev ->
+      val entity = rev.entity
+      val revision = rev.metadata.getDelegate<CustomRevisionEntity>()
+
+      WaitingListApplicationHistory(
+        id = entity.waitingListId,
+        status = entity.status,
+        applicationDate = entity.applicationDate,
+        requestedBy = entity.requestedBy,
+        comments = entity.comments,
+        updatedBy = revision.username,
+        updatedDateTime = revision.revisionDateTime,
+      )
+    }
   }
 
   fun getWaitingListsBySchedule(id: Long, includeNonAssociationsCheck: Boolean = true): List<WaitingListApplication> = runBlocking {

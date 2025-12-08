@@ -32,10 +32,14 @@ import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
+import org.springframework.data.history.Revision
+import org.springframework.data.history.RevisionMetadata
+import org.springframework.data.history.Revisions
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.api.NonAssociationsApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.model.NonAssociation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.CustomRevisionEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus.ALLOCATED
@@ -65,9 +69,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.Telem
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.CaseloadAccessException
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.DEFAULT_CASELOAD_PENTONVILLE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.FakeCaseLoad
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.determineEarliestReleaseDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModel
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.util.*
 
 @ExtendWith(FakeCaseLoad::class)
@@ -102,6 +108,7 @@ class WaitingListServiceTest {
   private val prisonCode = PENTONVILLE_PRISON_CODE
   private val prisonerNumber = "AB1234C"
   private val createdBy = "Creator"
+  val waitingListId = 100L
 
   private fun createPrisonerWaitingListRequest(size: Int): List<PrisonerWaitingListApplicationRequest> = List(size) { index ->
     PrisonerWaitingListApplicationRequest(
@@ -486,7 +493,7 @@ class WaitingListServiceTest {
     val allocation = schedule.allocations().first()
 
     val waitingList1 = WaitingList(
-      waitingListId = 99,
+      waitingListId = 99L,
       prisonCode = PENTONVILLE_PRISON_CODE,
       activitySchedule = schedule,
       prisonerNumber = "123456",
@@ -503,7 +510,23 @@ class WaitingListServiceTest {
       this.declinedReason = "Needs to attend level one activity first"
     }
 
-    val waitingList2 = waitingList1.copy(prisonerNumber = "333333")
+    val waitingList2 = WaitingList(
+      waitingListId = 100L,
+      prisonCode = PENTONVILLE_PRISON_CODE,
+      activitySchedule = schedule,
+      prisonerNumber = "333333",
+      bookingId = 101L,
+      applicationDate = TimeSource.today(),
+      requestedBy = "Fred",
+      comments = "Some random test comments",
+      createdBy = "Bob",
+      initialStatus = WaitingListStatus.DECLINED,
+    ).apply {
+      this.allocation = allocation
+      this.updatedBy = "Test"
+      this.updatedTime = TimeSource.now()
+      this.declinedReason = "Needs to attend level one activity first"
+    }
 
     scheduleRepository.stub {
       on { scheduleRepository.findById(1L) } doReturn Optional.of(schedule)
@@ -1229,13 +1252,23 @@ class WaitingListServiceTest {
 
         val moreRecentApplication =
           waitingList(waitingListId = 2, prisonCode = PENTONVILLE_PRISON_CODE, initialStatus = WaitingListStatus.PENDING)
+
+        val originalWaitingListDuplicate = waitingList(
+          waitingListId = it.waitingListId,
+          prisonCode = it.prisonCode,
+          prisonerNumber = it.prisonerNumber,
+          initialStatus = it.status,
+          applicationDate = it.applicationDate,
+          requestedBy = it.requestedBy,
+          comments = it.comments,
+        )
         whenever(
           waitingListRepository.findByPrisonCodeAndPrisonerNumberAndActivitySchedule(
             it.prisonCode,
             it.prisonerNumber,
             it.activitySchedule,
           ),
-        ) doReturn listOf(it.copy(), moreRecentApplication)
+        ) doReturn listOf(originalWaitingListDuplicate, moreRecentApplication)
       }
 
     assertThatThrownBy {
@@ -1684,5 +1717,192 @@ class WaitingListServiceTest {
       mapOf(PRISONER_NUMBER_PROPERTY_KEY to "AB1234C"),
       mapOf(NUMBER_OF_RESULTS_METRIC_KEY to 1.0),
     )
+  }
+
+  @Test
+  fun `should return the audit history for a single revision`() {
+    val waitingList = buildWaitingList(1L)
+    val waitingListId = waitingList.waitingListId
+
+    val revisionEntity = CustomRevisionEntity(
+      username = "user1",
+      revisionDateTime = LocalDateTime.of(2025, 1, 1, 10, 10),
+    )
+
+    val metadata = mock<RevisionMetadata<Int>>()
+    whenever(metadata.revisionNumber).thenReturn(Optional.of(10))
+    whenever(metadata.getDelegate<CustomRevisionEntity>()).thenReturn(revisionEntity)
+
+    val revision = mock<Revision<Int, WaitingList>>()
+    whenever(revision.entity).thenReturn(waitingList)
+    whenever(revision.metadata).thenReturn(metadata)
+
+    whenever(waitingListRepository.findById(waitingListId))
+      .thenReturn(Optional.of(waitingList))
+
+    whenever(waitingListRepository.findRevisions(waitingListId))
+      .thenReturn(Revisions.of(listOf(revision)))
+
+    val historyResult = service.getWaitingListHistoryBy(waitingListId)
+
+    assertThat(historyResult).hasSize(1)
+    val history = historyResult.first()
+    assertThat(history.id).isEqualTo(waitingListId)
+    assertThat(history.status).isEqualTo(WaitingListStatus.PENDING)
+    assertThat(history.comments).isEqualTo("test_comment")
+    assertThat(history.applicationDate).isEqualTo(LocalDate.of(2025, 1, 1))
+    assertThat(history.requestedBy).isEqualTo("test_requester")
+    assertThat(history.updatedBy).isEqualTo("user1")
+    assertThat(history.updatedDateTime).isEqualTo(LocalDateTime.of(2025, 1, 1, 10, 10))
+  }
+
+  @Test
+  fun `should return the audit history for multiple revisions in descending order`() {
+    val oldWaitingList = buildWaitingList(
+      id = 1L,
+      comments = "old_comment",
+      status = WaitingListStatus.PENDING,
+      requestedBy = "old_user",
+      updatedBy = "old_updater",
+    )
+
+    val oldRevisionEntity = CustomRevisionEntity(
+      username = "user1",
+      revisionDateTime = LocalDateTime.of(2025, 1, 1, 10, 10),
+    )
+
+    val oldMetadata = mock<RevisionMetadata<Int>>()
+    whenever(oldMetadata.revisionNumber).thenReturn(Optional.of(10))
+    whenever(oldMetadata.getDelegate<CustomRevisionEntity>()).thenReturn(oldRevisionEntity)
+
+    val oldRevision = mock<Revision<Int, WaitingList>>()
+    whenever(oldRevision.entity).thenReturn(oldWaitingList)
+    whenever(oldRevision.metadata).thenReturn(oldMetadata)
+
+    val newWaitingList = buildWaitingList(
+      id = 1L,
+      comments = "new_comment",
+      status = WaitingListStatus.APPROVED,
+      requestedBy = "new_user",
+      updatedBy = "new_updater",
+    )
+
+    val newRevisionEntity = CustomRevisionEntity(
+      username = "user2",
+      revisionDateTime = LocalDateTime.of(2025, 2, 2, 20, 20),
+    )
+
+    val newMetadata = mock<RevisionMetadata<Int>>()
+    whenever(newMetadata.revisionNumber).thenReturn(Optional.of(11))
+    whenever(newMetadata.getDelegate<CustomRevisionEntity>()).thenReturn(newRevisionEntity)
+
+    val newRevision = mock<Revision<Int, WaitingList>>()
+    whenever(newRevision.entity).thenReturn(newWaitingList)
+    whenever(newRevision.metadata).thenReturn(newMetadata)
+
+    val waitingListId = newWaitingList.waitingListId
+
+    val sortedRevisions = listOf(newRevision, oldRevision)
+      .sortedByDescending { it.metadata.revisionNumber.get() }
+
+    val revisions: Revisions<Int, WaitingList> = Revisions.of(sortedRevisions)
+
+    whenever(waitingListRepository.findById(waitingListId))
+      .thenReturn(Optional.of(newWaitingList))
+
+    whenever(waitingListRepository.findRevisions(waitingListId))
+      .thenReturn(revisions)
+
+    val historyResult = service.getWaitingListHistoryBy(waitingListId)
+
+    assertThat(historyResult).hasSize(2)
+
+    val (latestRevision, previousRevision) = historyResult
+
+    assertThat(latestRevision.status).isEqualTo(WaitingListStatus.APPROVED)
+    assertThat(latestRevision.comments).isEqualTo("new_comment")
+    assertThat(latestRevision.requestedBy).isEqualTo("new_user")
+    assertThat(latestRevision.updatedBy).isEqualTo("user2")
+    assertThat(latestRevision.updatedDateTime).isEqualTo(LocalDateTime.of(2025, 2, 2, 20, 20))
+
+    assertThat(previousRevision.status).isEqualTo(WaitingListStatus.PENDING)
+    assertThat(previousRevision.comments).isEqualTo("old_comment")
+    assertThat(previousRevision.requestedBy).isEqualTo("old_user")
+    assertThat(previousRevision.updatedBy).isEqualTo("user1")
+    assertThat(previousRevision.updatedDateTime).isEqualTo(LocalDateTime.of(2025, 1, 1, 10, 10))
+
+    historyResult.forEach { history ->
+      assertThat(history.id).isEqualTo(1L)
+      assertThat(history.applicationDate).isEqualTo(LocalDate.of(2025, 1, 1))
+    }
+  }
+
+  @Test
+  fun `should throw exception when waiting list does not exist`() {
+    whenever(waitingListRepository.findById(waitingListId)).thenReturn(Optional.empty())
+
+    assertThrows<EntityNotFoundException> {
+      service.getWaitingListHistoryBy(waitingListId)
+    }.also {
+      assertThat(it.message).isEqualTo("Waiting List 100 not found")
+    }
+  }
+
+  @Test
+  fun `should return empty list when waiting list exists but has no audit history`() {
+    val waitingList = buildWaitingList(1L)
+    val waitingListId = waitingList.waitingListId
+
+    whenever(waitingListRepository.findById(waitingListId))
+      .thenReturn(Optional.of(waitingList))
+
+    whenever(waitingListRepository.findRevisions(waitingListId))
+      .thenReturn(Revisions.none())
+
+    val result = service.getWaitingListHistoryBy(waitingListId)
+
+    assertThat(result).isEmpty()
+  }
+
+  @Test
+  fun `should throw caseload exception if caseload id header does not match`() {
+    val waitingList = buildWaitingList(waitingListId)
+    addCaseloadIdToRequestHeader("WRONG_CASELOAD_ID")
+    whenever(waitingListRepository.findById(waitingListId)).thenReturn(Optional.of(waitingList))
+    assertThatThrownBy { service.getWaitingListHistoryBy(waitingListId) }.isInstanceOf(CaseloadAccessException::class.java)
+  }
+
+  private fun buildWaitingList(
+    id: Long = 1L,
+    prisonCode: String = "PVI",
+    prisonerNumber: String = "AB1234C",
+    bookingId: Long = 400L,
+    applicationDate: LocalDate = LocalDate.of(2025, 1, 1),
+    requestedBy: String = "test_requester",
+    comments: String = "test_comment",
+    createdBy: String = "test_creator",
+    updatedBy: String? = "test_updater",
+    updatedTime: LocalDateTime? = LocalDateTime.of(2025, 1, 10, 10, 10),
+    status: WaitingListStatus = WaitingListStatus.PENDING,
+    activityId: Long = 100L,
+  ): WaitingList {
+    val activity = activityEntity(activityId = activityId, prisonCode = prisonCode)
+    val activitySchedule = activity.schedules().first()
+
+    return WaitingList(
+      waitingListId = id,
+      prisonCode = prisonCode,
+      prisonerNumber = prisonerNumber,
+      bookingId = bookingId,
+      applicationDate = applicationDate,
+      activitySchedule = activitySchedule,
+      requestedBy = requestedBy,
+      comments = comments,
+      createdBy = createdBy,
+      initialStatus = status,
+    ).apply {
+      this.updatedBy = updatedBy
+      this.updatedTime = updatedTime
+    }
   }
 }
