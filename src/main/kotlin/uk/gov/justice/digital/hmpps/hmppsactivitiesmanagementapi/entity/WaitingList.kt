@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
-import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EntityListeners
 import jakarta.persistence.EnumType
@@ -24,36 +23,29 @@ import java.time.LocalDateTime
 class WaitingList(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val waitingListId: Long? = null,
+  val waitingListId: Long = 0,
 
   @NotAudited
-  @Column(nullable = false)
   val prisonCode: String,
 
   @NotAudited
-  @Column(nullable = false)
   val prisonerNumber: String,
 
   @NotAudited
-  @Column(nullable = false)
   val bookingId: Long,
 
-  @Column(nullable = false)
   var applicationDate: LocalDate,
 
   @NotAudited
   @ManyToOne
-  @JoinColumn(name = "activity_schedule_id", nullable = false)
+  @JoinColumn(name = "activity_schedule_id")
   val activitySchedule: ActivitySchedule,
 
-  @Column(nullable = false)
   var requestedBy: String,
 
-  @Column(nullable = true)
   var comments: String? = null,
 
   @NotAudited
-  @Column(nullable = false)
   val createdBy: String,
 
   @Transient
@@ -84,12 +76,11 @@ class WaitingList(
     }
 
   @ManyToOne
-  @JoinColumn(name = "activity_id", nullable = false)
+  @JoinColumn(name = "activity_id")
   @NotAudited
-  var activity: Activity = activitySchedule.activity
+  val activity: Activity = activitySchedule.activity
 
   @NotAudited
-  @Column(nullable = false)
   val creationTime: LocalDateTime = LocalDateTime.now()
 
   @NotAudited
@@ -111,7 +102,7 @@ class WaitingList(
 
   @NotAudited
   @OneToOne
-  @JoinColumn(name = "allocation_id", nullable = true)
+  @JoinColumn(name = "allocation_id")
   var allocation: Allocation? = null
 
   fun isStatus(vararg s: WaitingListStatus) = s.any { it == status }
