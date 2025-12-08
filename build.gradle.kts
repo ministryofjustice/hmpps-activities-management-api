@@ -54,10 +54,10 @@ dependencies {
     }
   }
 
-  implementation("aws.sdk.kotlin:s3:1.5.95")
+  implementation("aws.sdk.kotlin:s3:1.5.97")
 
   // Other dependencies
-  implementation("org.apache.commons:commons-text:1.14.0")
+  implementation("org.apache.commons:commons-text:1.15.0")
 
   // Database dependencies
   runtimeOnly("org.flywaydb:flyway-core")
@@ -79,7 +79,7 @@ dependencies {
   testImplementation("org.springframework.boot:spring-boot-starter-test")
   testImplementation("org.awaitility:awaitility-kotlin")
   testImplementation("org.skyscreamer:jsonassert")
-  testImplementation("io.mockk:mockk:1.14.6")
+  testImplementation("io.mockk:mockk:1.14.7")
 }
 
 kotlin {
