@@ -4,8 +4,8 @@ import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
 
 plugins {
   id("uk.gov.justice.hmpps.gradle-spring-boot") version "9.2.0"
-  kotlin("plugin.spring") version "2.2.21"
-  kotlin("plugin.jpa") version "2.2.21"
+  kotlin("plugin.spring") version "2.3.0"
+  kotlin("plugin.jpa") version "2.3.0"
   jacoco
   id("org.openapi.generator") version "7.17.0"
   id("io.sentry.jvm.gradle") version "5.12.2"
@@ -54,7 +54,7 @@ dependencies {
     }
   }
 
-  implementation("aws.sdk.kotlin:s3:1.5.102")
+  implementation("aws.sdk.kotlin:s3:1.5.104")
 
   // Other dependencies
   implementation("org.apache.commons:commons-text:1.15.0")
@@ -68,7 +68,7 @@ dependencies {
   testImplementation("org.wiremock:wiremock-standalone:3.13.2")
   testImplementation("org.springframework.boot:spring-boot-testcontainers")
   testImplementation("org.testcontainers:postgresql")
-  testImplementation("org.testcontainers:localstack:1.21.3")
+  testImplementation("org.testcontainers:localstack:1.21.4")
   testImplementation("io.jsonwebtoken:jjwt-impl:0.13.0")
   testImplementation("io.jsonwebtoken:jjwt-jackson:0.13.0")
   testImplementation("org.mockito:mockito-inline:5.2.0")
