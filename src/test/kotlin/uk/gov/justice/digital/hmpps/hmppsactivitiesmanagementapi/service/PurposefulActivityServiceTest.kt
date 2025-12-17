@@ -26,10 +26,10 @@ class PurposefulActivityServiceTest {
   @Test
   fun `test convertToCsv with valid input`() {
     val reportData = mutableListOf(
-      arrayOf("John", mockDate, 123L, 456),
-      arrayOf("Jane", mockDate, 789L, 101112),
-      arrayOf("Alice", mockDate, null, 131415),
-      arrayOf(null, mockDate, 161718L, 192021),
+      arrayOf<Any?>("John", mockDate, 123L, 456),
+      arrayOf<Any?>("Jane", mockDate, 789L, 101112),
+      arrayOf<Any?>("Alice", mockDate, null, 131415),
+      arrayOf<Any?>(null, mockDate, 161718L, 192021),
     ).stream()
 
     val expectedCsv = """
