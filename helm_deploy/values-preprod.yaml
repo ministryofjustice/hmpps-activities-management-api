@@ -8,7 +8,7 @@ generic-service:
     host: activities-api-preprod.prison.service.justice.gov.uk
 
   env:
-    JAVA_OPTS: "-Xmx1300m"
+    JAVA_OPTS: "-Xmx2g"
     HMPPS_AUTH_URL: https://sign-in-preprod.hmpps.service.justice.gov.uk/auth
     PRISON_API_URL: https://prison-api-preprod.prison.service.justice.gov.uk
     PRISONER_SEARCH_API_URL: https://prisoner-search-preprod.prison.service.justice.gov.uk
@@ -40,10 +40,10 @@ generic-service:
   resources:
     requests:
       cpu: 10m
-      memory: 768Mi
+      memory: 1Gi
     limits:
       cpu: 2000m
-      memory: 2048Mi
+      memory: 4Gi
 
 # CloudPlatform AlertManager receiver to route prometheus alerts to slack
 # See https://user-guide.cloud-platform.service.justice.gov.uk/documentation/monitoring-an-app/how-to-create-alarms.html#creating-your-own-custom-alerts
