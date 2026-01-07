@@ -10,6 +10,7 @@ import org.springframework.http.client.reactive.ReactorClientHttpConnector
 import org.springframework.http.codec.ClientCodecConfigurer
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientProvider
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientProviderBuilder
 import org.springframework.security.oauth2.client.endpoint.DefaultClientCredentialsTokenResponseClient
 import org.springframework.security.oauth2.client.endpoint.OAuth2ClientCredentialsGrantRequest
@@ -26,6 +27,7 @@ import org.springframework.web.reactive.function.client.WebClient
 import reactor.netty.http.client.HttpClient
 import uk.gov.justice.hmpps.kotlin.auth.authorisedWebClient
 import uk.gov.justice.hmpps.kotlin.auth.healthWebClient
+import uk.gov.justice.hmpps.kotlin.auth.oAuth2AuthorizedClientProvider
 import java.time.Duration
 
 @Configuration
@@ -43,12 +45,15 @@ class WebClientConfiguration(
   @Value("\${api.health-timeout:2s}") private val healthTimeout: Duration,
   @Value("\${api.timeout:30s}") private val apiTimeout: Duration,
   @Value("\${prison.api.timeout:10s}") private val shorterTimeout: Duration,
-  private val webClientBuilder: WebClient.Builder,
+  @Value("\${auth.timeout:2s}") private val authTimeout: Duration,
 ) {
 
   companion object {
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
+
+  @Bean
+  fun authorizedClientProvider(): OAuth2AuthorizedClientProvider = oAuth2AuthorizedClientProvider(authTimeout)
 
   @Bean
   fun oauthApiHealthWebClient(builder: WebClient.Builder) = builder.healthWebClient(oauthApiUrl, healthTimeout)
