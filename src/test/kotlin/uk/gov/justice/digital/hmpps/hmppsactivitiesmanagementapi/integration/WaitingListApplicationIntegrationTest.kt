@@ -307,6 +307,49 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
     }
   }
 
+  @Sql("classpath:test_data/seed-activity-id-20.sql")
+  @Test
+  fun `add prisoner to a waiting list when they have a future allocation that was ended`() {
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber("G4793VF")
+
+    val request = WaitingListApplicationRequest(
+      prisonerNumber = "G4793VF",
+      activityScheduleId = 2L,
+      applicationDate = TimeSource.today(),
+      requestedBy = "Bob",
+      comments = "Some comments from Bob",
+      status = WaitingListStatus.PENDING,
+    )
+
+    assertThat(waitingListRepository.findAll()).isEmpty()
+    assertThat(auditRepository.findAll()).isEmpty()
+
+    webTestClient.waitingListApplication(MOORLAND_PRISON_CODE, request, MOORLAND_PRISON_CODE).expectStatus().isNoContent
+
+    val persisted = waitingListRepository.findAll().also { assertThat(it).hasSize(1) }.first()
+
+    with(persisted) {
+      assertThat(prisonerNumber).isEqualTo("G4793VF")
+      assertThat(activitySchedule.activityScheduleId).isEqualTo(2L)
+      assertThat(applicationDate).isToday()
+      assertThat(requestedBy).isEqualTo("Bob")
+      assertThat(comments).isEqualTo("Some comments from Bob")
+      assertThat(status).isEqualTo(WaitingListStatus.PENDING)
+    }
+
+    val localAuditRecord = auditRepository.findAll().also { assertThat(it).hasSize(1) }.first()
+
+    with(localAuditRecord) {
+      auditType isEqualTo uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditType.PRISONER
+      detailType isEqualTo uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditEventType.PRISONER_ADDED_TO_WAITING_LIST
+      activityId isEqualTo 2L
+      prisonCode isEqualTo MOORLAND_PRISON_CODE
+      prisonerNumber isEqualTo "G4793VF"
+      recordedTime isCloseTo TimeSource.now()
+      message startsWith "Prisoner G4793VF was added to the waiting list for activity 'English'(2) with a status of PENDING. Event created on ${TimeSource.today()}"
+    }
+  }
+
   private fun createPrisonerWaitingListRequest(size: Int, statuses: List<WaitingListStatus>): List<PrisonerWaitingListApplicationRequest> = List(size) { index ->
     PrisonerWaitingListApplicationRequest(
       activityScheduleId = index + 1L,
@@ -448,13 +491,13 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
 
     prisonerSearchApiMockServer.stubSearchByPrisonerNumber(prisonerNumber)
 
-    val requestList = createPrisonerWaitingListRequest(2, listOf(WaitingListStatus.PENDING))
+    val requestList = createPrisonerWaitingListRequest(3, listOf(WaitingListStatus.PENDING))
 
     webTestClient.prisonerWaitingListApplication(MOORLAND_PRISON_CODE, prisonerNumber, requestList).expectStatus()
       .isNotFound
       .expectBody()
       .jsonPath("$.userMessage").value<String> {
-        assertThat(it).contains("Activity schedule 2 not found")
+        assertThat(it).contains("Activity schedule 3 not found")
       }
 
     assertThat(waitingListRepository.findAll()).isEmpty()

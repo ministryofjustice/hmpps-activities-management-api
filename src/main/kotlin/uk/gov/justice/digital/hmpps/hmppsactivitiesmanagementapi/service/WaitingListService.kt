@@ -334,7 +334,14 @@ class WaitingListService(
   }
 
   private fun ActivitySchedule.failIfActivelyAllocated(prisonerNumber: String) {
-    require(allocations().none { it.prisonerNumber == prisonerNumber && (it.endDate == null || it.endDate!! > LocalDate.now()) }) {
+    val isAlreadyAllocated = allocations().any {
+      (it.prisonerNumber == prisonerNumber) &&
+        (it.deallocatedReason == null) &&
+        (it.endDate == null || it.endDate!! > LocalDate.now()) &&
+        it.deallocatedReason == null
+    }
+
+    require(!isAlreadyAllocated) {
       "Cannot add prisoner to the waiting list because they are already allocated"
     }
   }
