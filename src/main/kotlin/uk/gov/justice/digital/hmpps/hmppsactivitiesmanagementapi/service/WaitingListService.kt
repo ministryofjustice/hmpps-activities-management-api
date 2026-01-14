@@ -337,8 +337,7 @@ class WaitingListService(
     val isAlreadyAllocated = allocations().any {
       (it.prisonerNumber == prisonerNumber) &&
         (it.deallocatedReason == null) &&
-        (it.endDate == null || it.endDate!! > LocalDate.now()) &&
-        it.deallocatedReason == null
+        (it.endDate == null || it.endDate!! > LocalDate.now())
     }
 
     require(!isAlreadyAllocated) {
