@@ -40,6 +40,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassoc
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.CustomRevisionEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus.ALLOCATED
@@ -355,7 +356,7 @@ class WaitingListServiceTest {
   }
 
   @Test
-  fun `add prisoner to waiting list succeeds`() {
+  fun `successfully adds a prisoner when there are no allocations`() {
     prisonerSearchApiClient.stub {
       on { findByPrisonerNumber(prisonerNumber = "123456") } doReturn activeInPentonvillePrisoner
     }
@@ -368,6 +369,65 @@ class WaitingListServiceTest {
       comments = "Bob's comments",
       status = WaitingListStatus.PENDING,
     )
+
+    service.addPrisoner(DEFAULT_CASELOAD_PENTONVILLE, request, "Test user")
+
+    verify(waitingListRepository).saveAndFlush(waitingListCaptor.capture())
+    verify(telemetryClient).trackEvent(
+      TelemetryEvent.PRISONER_ADDED_TO_WAITLIST.value,
+      mapOf(PRISONER_NUMBER_PROPERTY_KEY to "123456"),
+      mapOf(NUMBER_OF_RESULTS_METRIC_KEY to 1.0),
+    )
+
+    with(waitingListCaptor.firstValue) {
+      prisonerNumber isEqualTo "123456"
+      activitySchedule isEqualTo schedule
+      applicationDate isEqualTo TimeSource.today()
+      requestedBy isEqualTo "Bob"
+      comments isEqualTo "Bob's comments"
+      status isEqualTo WaitingListStatus.PENDING
+    }
+  }
+
+  @Test
+  fun `successfully adds a prisoner when there is a future allocation that has been deallocated`() {
+    prisonerSearchApiClient.stub {
+      on { findByPrisonerNumber(prisonerNumber = "123456") } doReturn activeInPentonvillePrisoner
+    }
+
+    val request = WaitingListApplicationRequest(
+      prisonerNumber = "123456",
+      activityScheduleId = 1L,
+      applicationDate = TimeSource.today(),
+      requestedBy = "Bob",
+      comments = "Bob's comments",
+      status = WaitingListStatus.PENDING,
+    )
+
+    schedule.allocatePrisoner(
+      prisonerNumber = "123456".toPrisonerNumber(),
+      payBand = mock(),
+      bookingId = 1L,
+      startDate = TimeSource.tomorrow(),
+      allocatedBy = "Test",
+    )
+
+    schedule.deallocatePrisonerOn(
+      prisonerNumber = "123456",
+      date = TimeSource.today(),
+      reason = DeallocationReason.TRANSFERRED,
+      by = "Test",
+    )
+
+    waitingListRepository.stub {
+      on {
+        findByPrisonCodeAndPrisonerNumberAndActivitySchedule(
+          DEFAULT_CASELOAD_PENTONVILLE,
+          "123456",
+          schedule,
+        )
+      } doReturn emptyList()
+    }
 
     service.addPrisoner(DEFAULT_CASELOAD_PENTONVILLE, request, "Test user")
 
