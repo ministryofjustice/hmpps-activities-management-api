@@ -69,7 +69,7 @@ class DailyAppointmentsMetricsJobIntegrationTest : IntegrationTestBase() {
           Pair("MDI", "MFV"),
           Pair("RSI", "MGPNT"),
           Pair("RSI", "MMHS"),
-          Pair("RSI", "MFV")
+          Pair("RSI", "MFV"),
         ),
       )
 
