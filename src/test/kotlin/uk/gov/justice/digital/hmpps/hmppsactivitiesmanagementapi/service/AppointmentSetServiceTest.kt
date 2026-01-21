@@ -261,7 +261,7 @@ class AppointmentSetServiceTest {
       whenever(principal.name).thenReturn(createdBy)
 
       whenever(appointmentCategoryService.getAll())
-        .thenReturn(mapOf("MEDO" to appointmentCategory(categoryCode, "Medical - Doctor")))
+        .thenReturn(mapOf("MEDO" to appointmentCategory(categoryCode, "Medical - GP or nurse triage")))
 
       whenever(locationService.getLocationDetailsForAppointmentsMapByDpsLocationId(prisonCode))
         .thenReturn(mapOf(dpsLocationId to appointmentLocationDetails(internalLocationId, dpsLocationId, prisonCode, "HB1 Doctors")))

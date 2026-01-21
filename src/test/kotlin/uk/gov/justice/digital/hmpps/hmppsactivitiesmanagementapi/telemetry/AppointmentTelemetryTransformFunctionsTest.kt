@@ -51,14 +51,14 @@ class AppointmentTelemetryTransformFunctionsTest {
   @Test
   fun `create appointment set to telemetry properties`() {
     appointmentSetWithThreeAppointments.toModel().toTelemetryPropertiesMap(
-      "Medical - Doctor",
+      "Medical - GP or nurse triage",
       "HB1 Doctors",
     ) isEqualTo mutableMapOf(
       USER_PROPERTY_KEY to "CREATE.USER",
       PRISON_CODE_PROPERTY_KEY to "TPR",
       APPOINTMENT_SET_ID_PROPERTY_KEY to "1",
       CATEGORY_CODE_PROPERTY_KEY to "MEDO",
-      CATEGORY_DESCRIPTION_PROPERTY_KEY to "Medical - Doctor",
+      CATEGORY_DESCRIPTION_PROPERTY_KEY to "Medical - GP or nurse triage",
       HAS_CUSTOM_NAME_PROPERTY_KEY to "true",
       INTERNAL_LOCATION_ID_PROPERTY_KEY to "123",
       DPS_LOCATION_ID_PROPERTY_KEY to "44444444-1111-2222-3333-444444444444",
@@ -75,7 +75,7 @@ class AppointmentTelemetryTransformFunctionsTest {
   fun `create appointment set to telemetry properties no earliest or latest time`() {
     with(
       appointmentSetWithThreeAppointments.toModel().copy(appointments = emptyList()).toTelemetryPropertiesMap(
-        "Medical - Doctor",
+        "Medical - GP or nurse triage",
         "HB1 Doctors",
       ),
     ) {

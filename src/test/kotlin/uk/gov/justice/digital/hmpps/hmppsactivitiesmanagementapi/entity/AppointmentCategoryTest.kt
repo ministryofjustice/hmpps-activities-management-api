@@ -21,10 +21,10 @@ class AppointmentCategoryTest {
     assertThat(
       appointmentCategory(
         "MEDO",
-        "Medical - Doctor",
+        "Medical - GP or nurse triage",
       ).toAppointmentCategorySummary("MEDO"),
     ).isEqualTo(
-      AppointmentCategorySummary("MEDO", "Medical - Doctor"),
+      AppointmentCategorySummary("MEDO", "Medical - GP or nurse triage"),
     )
   }
 
@@ -34,20 +34,20 @@ class AppointmentCategoryTest {
       listOf(
         appointmentCategory(
           "MEDO",
-          "Medical - Doctor",
+          "Medical - GP or nurse triage",
         ),
       ).toAppointmentCategorySummary(),
     ).isEqualTo(
-      listOf(AppointmentCategorySummary("MEDO", "Medical - Doctor")),
+      listOf(AppointmentCategorySummary("MEDO", "Medical - GP or nurse triage")),
     )
   }
 
   @Test
   fun `appointment code to appointment name mapping`() {
     assertThat(
-      appointmentCategory("MEDO", "Medical - Doctor")
+      appointmentCategory("MEDO", "Medical - GP or nurse triage")
         .toAppointmentName("MEDO", "John's doctor appointment"),
-    ).isEqualTo("John's doctor appointment (Medical - Doctor)")
+    ).isEqualTo("John's doctor appointment (Medical - GP or nurse triage)")
   }
 
   @Test
@@ -59,9 +59,9 @@ class AppointmentCategoryTest {
   @Test
   fun `appointment code to appointment name mapping with no description`() {
     assertThat(
-      appointmentCategory("MEDO", "Medical - Doctor")
+      appointmentCategory("MEDO", "Medical - GP or nurse triage")
         .toAppointmentName("MEDO", null),
-    ).isEqualTo("Medical - Doctor")
+    ).isEqualTo("Medical - GP or nurse triage")
   }
 
   @Test

@@ -37,7 +37,7 @@ class DailyAppointmentsMetricsJobIntegrationTest : IntegrationTestBase() {
     webTestClient.generateAppointmentsMetrics()
 
     await untilAsserted {
-      verify(telemetryClient, times(276)).trackEvent(
+      verify(telemetryClient, times(267)).trackEvent(
         eq(TelemetryEvent.APPOINTMENTS_AGGREGATE_METRICS.value),
         telemetryPropertyMap.capture(),
         telemetryMetricsMap.capture(),
@@ -61,14 +61,14 @@ class DailyAppointmentsMetricsJobIntegrationTest : IntegrationTestBase() {
           Pair("RSI", "OIC"),
           Pair("RSI", "EDUC"),
           Pair("RSI", "VLB"),
-          Pair("PVI", "MGPNT"),
-          Pair("PVI", "MMHS"),
+          Pair("PVI", "MAAS"),
+          Pair("PVI", "MSUS"),
           Pair("PVI", "MFV"),
-          Pair("MDI", "MGPNT"),
-          Pair("MDI", "MMHS"),
+          Pair("MDI", "MAAS"),
+          Pair("MDI", "MSUS"),
           Pair("MDI", "MFV"),
-          Pair("RSI", "MGPNT"),
-          Pair("RSI", "MMHS"),
+          Pair("RSI", "MAAS"),
+          Pair("RSI", "MSUS"),
           Pair("RSI", "MFV"),
         ),
       )
@@ -85,7 +85,7 @@ class DailyAppointmentsMetricsJobIntegrationTest : IntegrationTestBase() {
     webTestClient.generateAppointmentsMetrics()
 
     await untilAsserted {
-      verify(telemetryClient, times(276)).trackEvent(eq(TelemetryEvent.APPOINTMENTS_AGGREGATE_METRICS.value), telemetryPropertyMap.capture(), telemetryMetricsMap.capture())
+      verify(telemetryClient, times(267)).trackEvent(eq(TelemetryEvent.APPOINTMENTS_AGGREGATE_METRICS.value), telemetryPropertyMap.capture(), telemetryMetricsMap.capture())
       // this test is flakey and relies on order of prisons.  also probably pointless, given no one uses these daily metrics in app insights
       with(telemetryMetricsMap.firstValue) {
         this[APPOINTMENT_COUNT_METRIC_KEY] isEqualTo 5.0
