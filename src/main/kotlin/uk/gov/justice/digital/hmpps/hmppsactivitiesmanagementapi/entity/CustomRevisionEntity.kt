@@ -11,8 +11,8 @@ import java.time.LocalDateTime
 @Table(name = "revision")
 @RevisionEntity(CustomRevisionListener::class)
 open class CustomRevisionEntity(
-  var username: String,
+  open var username: String,
 
   @Column(insertable = false)
-  var revisionDateTime: LocalDateTime,
+  open var revisionDateTime: LocalDateTime,
 ) : DefaultRevisionEntity()
