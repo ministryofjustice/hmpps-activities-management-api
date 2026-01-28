@@ -8,7 +8,7 @@ plugins {
   kotlin("plugin.jpa") version "2.3.0"
   jacoco
   id("org.openapi.generator") version "7.19.0"
-  id("io.sentry.jvm.gradle") version "5.12.2"
+  id("io.sentry.jvm.gradle") version "6.0.0"
 }
 
 allOpen {
@@ -54,7 +54,7 @@ dependencies {
     }
   }
 
-  implementation("aws.sdk.kotlin:s3:1.5.123")
+  implementation("aws.sdk.kotlin:s3:1.6.4")
 
   // Other dependencies
   implementation("org.apache.commons:commons-text:1.15.0")
@@ -79,7 +79,7 @@ dependencies {
   testImplementation("org.springframework.boot:spring-boot-starter-test")
   testImplementation("org.awaitility:awaitility-kotlin")
   testImplementation("org.skyscreamer:jsonassert")
-  testImplementation("io.mockk:mockk:1.14.7")
+  testImplementation("io.mockk:mockk:1.14.9")
 }
 
 kotlin {
