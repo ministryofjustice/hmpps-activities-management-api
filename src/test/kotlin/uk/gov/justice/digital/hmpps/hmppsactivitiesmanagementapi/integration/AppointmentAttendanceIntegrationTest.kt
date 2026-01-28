@@ -278,7 +278,7 @@ class AppointmentAttendanceIntegrationTest : AppointmentsIntegrationTestBase() {
         AppointmentAttendanceSummary(
           12,
           prisonCode,
-          "Medical - Doctor",
+          "Medical - GP or nurse triage",
           AppointmentLocationSummary(789, dpsLocation3.id, prisonCode, "Health Care Centre"),
           false,
           date,
@@ -296,7 +296,7 @@ class AppointmentAttendanceIntegrationTest : AppointmentsIntegrationTestBase() {
         AppointmentAttendanceSummary(
           13,
           prisonCode,
-          "Medical - Doctor",
+          "Medical - GP or nurse triage",
           AppointmentLocationSummary(789, dpsLocation3.id, prisonCode, "Health Care Centre"),
           false,
           date,
@@ -314,7 +314,7 @@ class AppointmentAttendanceIntegrationTest : AppointmentsIntegrationTestBase() {
         AppointmentAttendanceSummary(
           14,
           prisonCode,
-          "Medical - Doctor",
+          "Medical - GP or nurse triage",
           AppointmentLocationSummary(789, dpsLocation3.id, prisonCode, "Health Care Centre"),
           false,
           date,
