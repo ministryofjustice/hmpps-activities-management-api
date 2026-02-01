@@ -304,6 +304,15 @@ class AppointmentSearchServiceTest {
   }
 
   @Test
+  fun `start date cannot be before end date`() {
+    val request = AppointmentSearchRequest(startDate = LocalDate.of(2025, 2, 27), endDate = LocalDate.of(2025, 2, 26))
+
+    assertThatThrownBy { service.searchAppointments("TPR", request, principal) }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Start date cannot be after end date")
+  }
+
+  @Test
   fun `search by date range throws an exception when date range is more than one month`() {
     val request = AppointmentSearchRequest(startDate = LocalDate.of(2025, 2, 27), endDate = LocalDate.of(2025, 3, 27))
 
