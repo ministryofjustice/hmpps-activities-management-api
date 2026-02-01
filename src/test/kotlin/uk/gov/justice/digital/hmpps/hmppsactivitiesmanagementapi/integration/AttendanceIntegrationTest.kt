@@ -48,7 +48,7 @@ class AttendanceIntegrationTest : LocalStackTestBase() {
         ),
       )
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf(ROLE_ACTIVITY_ADMIN)))
+      .headers(setAuthorisationAsClient(roles = listOf(ROLE_ACTIVITY_ADMIN)))
       .exchange()
       .expectStatus().isNoContent
 
@@ -56,7 +56,7 @@ class AttendanceIntegrationTest : LocalStackTestBase() {
       .get()
       .uri("attendances/1")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf(ROLE_ACTIVITY_ADMIN)))
+      .headers(setAuthorisationAsClient(roles = listOf(ROLE_ACTIVITY_ADMIN)))
       .exchange()
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -101,7 +101,7 @@ class AttendanceIntegrationTest : LocalStackTestBase() {
         ),
       )
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf(ROLE_ACTIVITY_ADMIN)))
+      .headers(setAuthorisationAsClient(roles = listOf(ROLE_ACTIVITY_ADMIN)))
       .exchange()
       .expectStatus().isNoContent
 
@@ -132,7 +132,7 @@ class AttendanceIntegrationTest : LocalStackTestBase() {
         ),
       )
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf("ROLE_NOT_ALLOWED")))
+      .headers(setAuthorisationAsClient(roles = listOf("ROLE_NOT_ALLOWED")))
       .exchange()
       .expectStatus().isForbidden
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -171,7 +171,7 @@ class AttendanceIntegrationTest : LocalStackTestBase() {
         ),
       )
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf(ROLE_ACTIVITY_ADMIN)))
+      .headers(setAuthorisationAsClient(roles = listOf(ROLE_ACTIVITY_ADMIN)))
       .exchange()
       .expectStatus().isNoContent
 
@@ -221,7 +221,7 @@ class AttendanceIntegrationTest : LocalStackTestBase() {
   fun `get suspended prisoner activity attendance`() {
     webTestClient.get()
       .uri("/attendances/$RISLEY_PRISON_CODE/suspended?date=${LocalDate.now()}")
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
       .exchange()
       .expectStatus().isOk
       .expectBody()
@@ -243,7 +243,7 @@ class AttendanceIntegrationTest : LocalStackTestBase() {
   private fun WebTestClient.getAllAttendanceByDate(prisonCode: String, sessionDate: LocalDate, eventTierType: EventTierType? = null) = get()
     .uri("/attendances/$prisonCode/$sessionDate${eventTierType?.let { "?eventTier=${it.name}" } ?: ""}")
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
     .exchange()
     .expectStatus().isOk
     .expectHeader().contentType(MediaType.APPLICATION_JSON)

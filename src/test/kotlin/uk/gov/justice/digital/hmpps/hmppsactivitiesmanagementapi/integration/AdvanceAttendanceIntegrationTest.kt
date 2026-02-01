@@ -33,7 +33,7 @@ class AdvanceAttendanceIntegrationTest : ActivitiesIntegrationTestBase() {
 
     val attendance = webTestClient.createAdvanceAttendance(request)
 
-    with(attendance) {
+    with(attendance!!) {
       assertThat(id).isNotNull
       assertThat(scheduleInstanceId).isEqualTo(1)
       assertThat(prisonerNumber).isEqualTo("G4793VF")
@@ -56,7 +56,7 @@ class AdvanceAttendanceIntegrationTest : ActivitiesIntegrationTestBase() {
 
     val attendance = webTestClient.createAdvanceAttendance(request)
 
-    with(attendance) {
+    with(attendance!!) {
       assertThat(id).isNotNull
       assertThat(scheduleInstanceId).isEqualTo(2)
       assertThat(prisonerNumber).isEqualTo("G4793VF")
@@ -81,7 +81,7 @@ class AdvanceAttendanceIntegrationTest : ActivitiesIntegrationTestBase() {
 
     val updatedAttendance = webTestClient.updateAdvanceAttendance(attendance!!.id, AdvanceAttendanceUpdateRequest(issuePayment = false))
 
-    with(updatedAttendance) {
+    with(updatedAttendance!!) {
       assertThat(id).isNotNull
       assertThat(scheduleInstanceId).isEqualTo(1)
       assertThat(prisonerNumber).isEqualTo("G4793VF")
@@ -114,7 +114,7 @@ class AdvanceAttendanceIntegrationTest : ActivitiesIntegrationTestBase() {
 
     val retrievedAttendance = webTestClient.retrieveAdvanceAttendance(attendance.id)
 
-    with(retrievedAttendance) {
+    with(retrievedAttendance!!) {
       assertThat(id).isNotNull
       assertThat(scheduleInstanceId).isEqualTo(1)
       assertThat(prisonerNumber).isEqualTo("G4793VF")
@@ -143,12 +143,12 @@ class AdvanceAttendanceIntegrationTest : ActivitiesIntegrationTestBase() {
 
     val attendance = webTestClient.createAdvanceAttendance(request)
 
-    webTestClient.deleteAdvanceAttendance(attendance.id)
+    webTestClient.deleteAdvanceAttendance(attendance!!.id)
 
     webTestClient.get()
       .uri("/advance-attendances/${attendance.id}")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_ADMIN)))
+      .headers(setAuthorisationAsUser(roles = listOf(ROLE_ACTIVITY_ADMIN)))
       .header(CASELOAD_ID, "PVI")
       .exchange()
       .expectStatus().isNotFound
@@ -158,7 +158,7 @@ class AdvanceAttendanceIntegrationTest : ActivitiesIntegrationTestBase() {
     .uri("/advance-attendances/$id")
     .bodyValue(request)
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_ADMIN)))
+    .headers(setAuthorisationAsUser(roles = listOf(ROLE_ACTIVITY_ADMIN)))
     .header(CASELOAD_ID, "PVI")
     .exchange()
     .expectStatus().isAccepted
@@ -169,7 +169,7 @@ class AdvanceAttendanceIntegrationTest : ActivitiesIntegrationTestBase() {
   private fun WebTestClient.deleteAdvanceAttendance(id: Long) = delete()
     .uri("/advance-attendances/$id")
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_ADMIN)))
+    .headers(setAuthorisationAsUser(roles = listOf(ROLE_ACTIVITY_ADMIN)))
     .header(CASELOAD_ID, "PVI")
     .exchange()
     .expectStatus().isOk

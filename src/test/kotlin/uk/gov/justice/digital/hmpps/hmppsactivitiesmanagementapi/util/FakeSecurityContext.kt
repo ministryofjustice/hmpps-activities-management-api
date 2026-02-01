@@ -7,7 +7,7 @@ import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.springframework.security.core.context.SecurityContext
 import org.springframework.security.core.context.SecurityContextHolder
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.AuthAwareAuthenticationToken
+import uk.gov.justice.hmpps.kotlin.auth.AuthAwareAuthenticationToken
 
 const val DEFAULT_USERNAME = "Bob"
 
@@ -18,15 +18,15 @@ class FakeSecurityContext(val username: String = DEFAULT_USERNAME) :
   private val authentication: AuthAwareAuthenticationToken = mock {
     on { principal } doReturn username
     on { name } doReturn username
-    on { isUserToken } doReturn true
+    on { userName } doReturn username
   }
   private val securityContext: SecurityContext = mock { on { authentication } doReturn authentication }
 
-  override fun beforeEach(context: ExtensionContext?) {
+  override fun beforeEach(context: ExtensionContext) {
     SecurityContextHolder.setContext(securityContext)
   }
 
-  override fun afterEach(context: ExtensionContext?) {
+  override fun afterEach(context: ExtensionContext) {
     SecurityContextHolder.clearContext()
   }
 }

@@ -19,7 +19,7 @@ class DailyActivityMetricsJobIntegrationTest : IntegrationTestBase() {
   fun `generate daily metrics`() {
     webTestClient.post()
       .uri("/job/activities-metrics")
-      .headers(setAuthorisation(roles = listOf()))
+      .headers(setAuthorisationAsClient(roles = listOf()))
       .exchange()
       .expectStatus().isCreated
 

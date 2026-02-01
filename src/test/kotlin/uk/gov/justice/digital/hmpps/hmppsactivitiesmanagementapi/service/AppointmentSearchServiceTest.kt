@@ -17,9 +17,11 @@ import org.mockito.kotlin.spy
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
+import org.springframework.data.jpa.domain.Specification
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalTimeRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.rangeTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentSearch
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategory
@@ -56,7 +58,7 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
-import java.util.UUID
+import java.util.*
 
 @ExtendWith(FakeSecurityContext::class)
 class AppointmentSearchServiceTest {
@@ -131,7 +133,7 @@ class AppointmentSearchServiceTest {
     val request = AppointmentSearchRequest(startDate = LocalDate.now())
     val result = appointmentSearchEntity()
 
-    whenever(appointmentSearchRepository.findAll(any())).thenReturn(listOf(result))
+    whenever(appointmentSearchRepository.findAll(any<Specification<AppointmentSearch>>())).thenReturn(listOf(result))
     whenever(appointmentAttendeeSearchRepository.findByAppointmentIds(listOf(result.appointmentId))).thenReturn(result.attendees)
     whenever(locationService.getLocationDetailsForAppointmentsMap(result.prisonCode))
       .thenReturn(mapOf(result.internalLocationId!! to appointmentLocationDetails(result.internalLocationId!!, result.dpsLocationId!!, "TPR")))
@@ -174,7 +176,7 @@ class AppointmentSearchServiceTest {
 
     whenever(prisonRegimeService.getTimeRangeForPrisonAndTimeSlot("TPR", request.timeSlots?.get(0) ?: TimeSlot.PM, LocalDate.now().dayOfWeek))
       .thenReturn(LocalTimeRange(LocalTime.of(0, 0), LocalTime.of(13, 0)))
-    whenever(appointmentSearchRepository.findAll(any())).thenReturn(listOf(result))
+    whenever(appointmentSearchRepository.findAll(any<Specification<AppointmentSearch>>())).thenReturn(listOf(result))
     whenever(appointmentAttendeeSearchRepository.findByAppointmentIds(listOf(result.appointmentId))).thenReturn(result.attendees)
     whenever(locationService.getLocationDetailsForAppointmentsMap(result.prisonCode))
       .thenReturn(mapOf(result.internalLocationId!! to appointmentLocationDetails(result.internalLocationId!!, result.dpsLocationId!!, "TPR")))
@@ -220,7 +222,7 @@ class AppointmentSearchServiceTest {
       .thenReturn(LocalTimeRange(LocalTime.of(0, 0), LocalTime.of(13, 0)))
     whenever(prisonRegimeService.getTimeRangeForPrisonAndTimeSlot("TPR", TimeSlot.PM, LocalDate.now().dayOfWeek))
       .thenReturn(LocalTimeRange(LocalTime.of(13, 0), LocalTime.of(17, 59)))
-    whenever(appointmentSearchRepository.findAll(any())).thenReturn(listOf(result))
+    whenever(appointmentSearchRepository.findAll(any<Specification<AppointmentSearch>>())).thenReturn(listOf(result))
     whenever(appointmentAttendeeSearchRepository.findByAppointmentIds(listOf(result.appointmentId))).thenReturn(result.attendees)
     whenever(locationService.getLocationDetailsForAppointmentsMap(result.prisonCode))
       .thenReturn(mapOf(result.internalLocationId!! to appointmentLocationDetails(result.internalLocationId!!, result.dpsLocationId!!, "TPR")))
@@ -263,7 +265,7 @@ class AppointmentSearchServiceTest {
     val request = AppointmentSearchRequest(startDate = LocalDate.now(), endDate = LocalDate.now().plusDays(27))
     val result = appointmentSearchEntity()
 
-    whenever(appointmentSearchRepository.findAll(any())).thenReturn(listOf(result))
+    whenever(appointmentSearchRepository.findAll(any<Specification<AppointmentSearch>>())).thenReturn(listOf(result))
     whenever(appointmentAttendeeSearchRepository.findByAppointmentIds(listOf(result.appointmentId))).thenReturn(result.attendees)
     whenever(locationService.getLocationDetailsForAppointmentsMap(result.prisonCode))
       .thenReturn(mapOf(result.internalLocationId!! to appointmentLocationDetails(result.internalLocationId!!, result.dpsLocationId!!, "TPR")))
@@ -319,7 +321,7 @@ class AppointmentSearchServiceTest {
       .thenReturn(LocalTimeRange(LocalTime.of(0, 0), LocalTime.of(13, 0)))
     whenever(prisonRegimeService.getTimeRangeForPrisonAndTimeSlot("TPR", request.timeSlots?.get(0) ?: TimeSlot.PM, request.endDate!!.dayOfWeek))
       .thenReturn(LocalTimeRange(LocalTime.of(0, 30), LocalTime.of(12, 30)))
-    whenever(appointmentSearchRepository.findAll(any())).thenReturn(listOf(result))
+    whenever(appointmentSearchRepository.findAll(any<Specification<AppointmentSearch>>())).thenReturn(listOf(result))
     whenever(appointmentAttendeeSearchRepository.findByAppointmentIds(listOf(result.appointmentId))).thenReturn(result.attendees)
     whenever(locationService.getLocationDetailsForAppointmentsMap(result.prisonCode))
       .thenReturn(mapOf(result.internalLocationId!! to appointmentLocationDetails(result.internalLocationId!!, result.dpsLocationId!!, "TPR")))
@@ -371,7 +373,7 @@ class AppointmentSearchServiceTest {
       .thenReturn(LocalTimeRange(LocalTime.of(0, 30), LocalTime.of(12, 30)))
     whenever(prisonRegimeService.getTimeRangeForPrisonAndTimeSlot("TPR", TimeSlot.PM, request.endDate.dayOfWeek))
       .thenReturn(LocalTimeRange(LocalTime.of(12, 30), LocalTime.of(17, 30)))
-    whenever(appointmentSearchRepository.findAll(any())).thenReturn(listOf(result))
+    whenever(appointmentSearchRepository.findAll(any<Specification<AppointmentSearch>>())).thenReturn(listOf(result))
     whenever(appointmentAttendeeSearchRepository.findByAppointmentIds(listOf(result.appointmentId))).thenReturn(result.attendees)
     whenever(locationService.getLocationDetailsForAppointmentsMap(result.prisonCode))
       .thenReturn(mapOf(result.internalLocationId!! to appointmentLocationDetails(result.internalLocationId!!, result.dpsLocationId!!, "TPR")))
@@ -417,7 +419,7 @@ class AppointmentSearchServiceTest {
     val request = AppointmentSearchRequest(startDate = LocalDate.now(), categoryCode = "TEST")
     val result = appointmentSearchEntity()
 
-    whenever(appointmentSearchRepository.findAll(any())).thenReturn(listOf(result))
+    whenever(appointmentSearchRepository.findAll(any<Specification<AppointmentSearch>>())).thenReturn(listOf(result))
     whenever(appointmentAttendeeSearchRepository.findByAppointmentIds(listOf(result.appointmentId))).thenReturn(result.attendees)
     whenever(locationService.getLocationDetailsForAppointmentsMap(result.prisonCode))
       .thenReturn(mapOf(result.internalLocationId!! to appointmentLocationDetails(result.internalLocationId!!, result.dpsLocationId!!, "TPR")))
@@ -459,7 +461,7 @@ class AppointmentSearchServiceTest {
     val request = AppointmentSearchRequest(startDate = LocalDate.now(), dpsLocationId = UUID.fromString("44444444-1111-2222-3333-444444444444"))
     val result = appointmentSearchEntity()
 
-    whenever(appointmentSearchRepository.findAll(any())).thenReturn(listOf(result))
+    whenever(appointmentSearchRepository.findAll(any<Specification<AppointmentSearch>>())).thenReturn(listOf(result))
     whenever(appointmentAttendeeSearchRepository.findByAppointmentIds(listOf(result.appointmentId))).thenReturn(result.attendees)
     whenever(locationService.getLocationDetailsForAppointmentsMap(result.prisonCode))
       .thenReturn(mapOf(result.internalLocationId!! to appointmentLocationDetails(result.internalLocationId!!, result.dpsLocationId!!, "TPR")))
@@ -501,7 +503,7 @@ class AppointmentSearchServiceTest {
     val request = AppointmentSearchRequest(startDate = LocalDate.now(), internalLocationId = 123)
     val result = appointmentSearchEntity()
 
-    whenever(appointmentSearchRepository.findAll(any())).thenReturn(listOf(result))
+    whenever(appointmentSearchRepository.findAll(any<Specification<AppointmentSearch>>())).thenReturn(listOf(result))
     whenever(appointmentAttendeeSearchRepository.findByAppointmentIds(listOf(result.appointmentId))).thenReturn(result.attendees)
     whenever(locationService.getLocationDetailsForAppointmentsMap(result.prisonCode))
       .thenReturn(mapOf(result.internalLocationId!! to appointmentLocationDetails(result.internalLocationId!!, result.dpsLocationId!!, "TPR")))
@@ -543,7 +545,7 @@ class AppointmentSearchServiceTest {
     val request = AppointmentSearchRequest(startDate = LocalDate.now(), inCell = true)
     val result = appointmentSearchEntity(inCell = true)
 
-    whenever(appointmentSearchRepository.findAll(any())).thenReturn(listOf(result))
+    whenever(appointmentSearchRepository.findAll(any<Specification<AppointmentSearch>>())).thenReturn(listOf(result))
     whenever(appointmentAttendeeSearchRepository.findByAppointmentIds(listOf(result.appointmentId))).thenReturn(result.attendees)
     whenever(locationService.getLocationDetailsForAppointmentsMap(result.prisonCode))
       .thenReturn(emptyMap())
@@ -561,7 +563,7 @@ class AppointmentSearchServiceTest {
     val request = AppointmentSearchRequest(startDate = LocalDate.now(), prisonerNumbers = listOf("A1234BC"))
     val result = appointmentSearchEntity()
 
-    whenever(appointmentSearchRepository.findAll(any())).thenReturn(listOf(result))
+    whenever(appointmentSearchRepository.findAll(any<Specification<AppointmentSearch>>())).thenReturn(listOf(result))
     whenever(appointmentAttendeeSearchRepository.findByAppointmentIds(listOf(result.appointmentId))).thenReturn(result.attendees)
     whenever(locationService.getLocationDetailsForAppointmentsMap(result.prisonCode))
       .thenReturn(mapOf(result.internalLocationId!! to appointmentLocationDetails(result.internalLocationId!!, result.dpsLocationId!!, "TPR")))
@@ -603,7 +605,7 @@ class AppointmentSearchServiceTest {
     val request = AppointmentSearchRequest(startDate = LocalDate.now(), createdBy = "CREATE.USER")
     val result = appointmentSearchEntity()
 
-    whenever(appointmentSearchRepository.findAll(any())).thenReturn(listOf(result))
+    whenever(appointmentSearchRepository.findAll(any<Specification<AppointmentSearch>>())).thenReturn(listOf(result))
     whenever(appointmentAttendeeSearchRepository.findByAppointmentIds(listOf(result.appointmentId))).thenReturn(result.attendees)
     whenever(locationService.getLocationDetailsForAppointmentsMap(result.prisonCode))
       .thenReturn(mapOf(result.internalLocationId!! to appointmentLocationDetails(result.internalLocationId!!, result.dpsLocationId!!, "TPR")))
@@ -650,7 +652,7 @@ class AppointmentSearchServiceTest {
     val groupAppointmentNoAttendee = appointmentSearchEntity(4, 4, AppointmentType.GROUP, prisonCode, 4).apply { attendees = emptyList() }
     val results = listOf(individualAppointmentOneAttendee, individualAppointmentNoAttendee, groupAppointmentOneAttendee, groupAppointmentNoAttendee)
 
-    whenever(appointmentSearchRepository.findAll(any())).thenReturn(results)
+    whenever(appointmentSearchRepository.findAll(any<Specification<AppointmentSearch>>())).thenReturn(results)
     whenever(appointmentAttendeeSearchRepository.findByAppointmentIds(results.map { it.appointmentId })).thenReturn(results.flatMap { it.attendees })
     whenever(locationService.getLocationDetailsForAppointmentsMap(prisonCode))
       .thenReturn(mapOf(123L to appointmentLocationDetails(123L, UUID.fromString("44444444-1111-2222-3333-444444444444"), prisonCode)))
@@ -666,7 +668,7 @@ class AppointmentSearchServiceTest {
     val request = AppointmentSearchRequest(startDate = LocalDate.now(), createdBy = "CREATE.USER")
     val result = appointmentSearchEntity()
 
-    whenever(appointmentSearchRepository.findAll(any())).thenReturn(listOf(result))
+    whenever(appointmentSearchRepository.findAll(any<Specification<AppointmentSearch>>())).thenReturn(listOf(result))
     whenever(appointmentAttendeeSearchRepository.findByAppointmentIds(listOf(result.appointmentId))).thenReturn(result.attendees)
     whenever(locationService.getLocationDetailsForAppointmentsMap(result.prisonCode))
       .thenReturn(mapOf(result.internalLocationId!! to appointmentLocationDetails(result.internalLocationId!!, result.dpsLocationId!!, "TPR")))

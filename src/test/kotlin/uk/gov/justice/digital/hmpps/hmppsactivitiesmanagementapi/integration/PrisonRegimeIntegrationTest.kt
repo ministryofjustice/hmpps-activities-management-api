@@ -85,7 +85,7 @@ class PrisonRegimeIntegrationTest : IntegrationTestBase() {
           .build()
       }
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
       .header(CASELOAD_ID, "RDI")
       .exchange()
       .expectStatus().isNotFound
@@ -98,7 +98,7 @@ class PrisonRegimeIntegrationTest : IntegrationTestBase() {
         .build()
     }
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
     .header(CASELOAD_ID, agencyId)
     .exchange()
     .expectStatus().isOk

@@ -4,7 +4,7 @@ import jakarta.transaction.Transactional
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isAtDifferentLocationTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isOutOfPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isPermanentlyReleased
@@ -28,7 +28,7 @@ import java.time.LocalDateTime
 @Service
 class ManageAppointmentAttendeesService(
   private val rolloutPrisonService: RolloutPrisonService,
-  private val prisonerSearch: PrisonerSearchApiApplicationClient,
+  private val prisonerSearchApiClient: PrisonerSearchApiClient,
   private val appointmentAttendeeService: AppointmentAttendeeService,
   private val appointmentRepository: AppointmentRepository,
   private val prisonApiClient: PrisonApiClient,
@@ -85,7 +85,7 @@ class ManageAppointmentAttendeesService(
     }
 
     val prisonPlan = rolloutPrisonService.getByPrisonCode(code = prisonCode)
-    val prisoners = prisonerSearch.findByPrisonerNumbers(getPrisonNumbersForFutureAppointments(prisonCode, daysAfterNow))
+    val prisoners = prisonerSearchApiClient.findByPrisonerNumbers(getPrisonNumbersForFutureAppointments(prisonCode, daysAfterNow))
     log.info("Found ${prisoners.size} prisoners for future appointments in prison code '$prisonCode' taking place within '$daysAfterNow' day(s)")
 
     val permanentlyReleasedPrisoners = prisoners.permanentlyReleased()
@@ -119,6 +119,7 @@ class ManageAppointmentAttendeesService(
     }
   }
 
+  // TODO: Could be improved
   private fun getPrisonNumbersForFutureAppointments(prisonCode: String, daysAfterNow: Long) = LocalDateRange(LocalDate.now(), LocalDate.now().plusDays(daysAfterNow)).flatMap { date ->
     appointmentRepository.findAllByPrisonCodeAndStartDate(prisonCode, date).flatMap { it.prisonerNumbers() }
   }.distinct()

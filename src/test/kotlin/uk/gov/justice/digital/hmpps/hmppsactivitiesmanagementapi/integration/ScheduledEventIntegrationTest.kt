@@ -80,7 +80,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       .uri("/scheduled-events/prison/$prisonCode?date=$date")
       .bodyValue(prisonerNumbers)
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
       .exchange()
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -1081,7 +1081,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       )
       .bodyValue(internalLocationIds)
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
       .exchange()
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -1102,7 +1102,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       )
       .bodyValue(dpsLocationIds)
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
       .exchange()
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)

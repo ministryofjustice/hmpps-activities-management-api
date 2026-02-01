@@ -36,7 +36,7 @@ class ActivityCategoryIntegrationTest : IntegrationTestBase() {
   private fun WebTestClient.getActivityCategories() = get()
     .uri("/activity-categories")
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
     .exchange()
     .expectStatus().isOk
     .expectHeader().contentType(MediaType.APPLICATION_JSON)

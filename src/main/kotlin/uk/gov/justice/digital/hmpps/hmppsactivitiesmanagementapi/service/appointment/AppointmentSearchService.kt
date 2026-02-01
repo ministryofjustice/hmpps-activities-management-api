@@ -1,9 +1,11 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment
 
 import com.microsoft.applicationinsights.TelemetryClient
+import org.springframework.data.jpa.domain.Specification
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.rangeTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentSearch
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.toResults
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSearchRequest
@@ -61,6 +63,10 @@ class AppointmentSearchService(
     var spec = appointmentSearchSpecification.prisonCodeEquals(prisonCode)
 
     with(request) {
+      require(endDate == null || !startDate.isAfter(endDate)) {
+        "Start date cannot be after end date"
+      }
+
       require(endDate == null || Period.between(startDate, endDate).toTotalMonths() < 1) {
         "End date cannot be more than one month after the start date"
       }
@@ -71,7 +77,7 @@ class AppointmentSearchService(
 
       val datesSpec = startDate.rangeTo(endDate ?: startDate).map { date ->
         val dateSpec = appointmentSearchSpecification.startDateEquals(date)
-        val timeSlotSpecs = timeSlots?.map { slot ->
+        val timeSlotSpecs: List<Specification<AppointmentSearch>> = timeSlots?.map { slot ->
           val timeRange = prisonRegimeService.getTimeRangeForPrisonAndTimeSlot(
             prisonCode = prisonCode,
             timeSlot = slot,
@@ -84,10 +90,14 @@ class AppointmentSearchService(
           )
         } ?: listOf()
 
-        dateSpec.and(timeSlotSpecs.reduceOrNull { acc, spec -> acc.or(spec) }) ?: spec
-      }.reduceOrNull { acc, spec -> acc.or(spec) }
+        if (timeSlotSpecs.isEmpty()) {
+          dateSpec
+        } else {
+          dateSpec.and(timeSlotSpecs.reduce { acc, spec -> acc.or(spec) })
+        }
+      }.reduce { acc, spec -> acc.or(spec) }
 
-      spec = spec.and(datesSpec) ?: spec
+      spec = spec.and(datesSpec)
 
       categoryCode?.apply {
         spec = spec.and(appointmentSearchSpecification.categoryCodeEquals(categoryCode))

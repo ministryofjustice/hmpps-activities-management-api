@@ -10,7 +10,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.CacheCon
 
 @Service
 class BankHolidayApiClient(@Qualifier("bankHolidayApiWebClient") private val webClient: WebClient) {
-  private inline fun <reified T> typeReference() = object : ParameterizedTypeReference<T>() {}
+  private inline fun <reified T : Any> typeReference() = object : ParameterizedTypeReference<T>() {}
 
   @Cacheable(CacheConfiguration.BANK_HOLIDAYS_CACHE_NAME)
   fun getBankHolidays(): BankHolidays = webClient.get()

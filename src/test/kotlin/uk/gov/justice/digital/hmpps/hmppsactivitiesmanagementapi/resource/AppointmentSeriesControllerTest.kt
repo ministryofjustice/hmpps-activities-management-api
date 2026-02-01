@@ -4,11 +4,12 @@ import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions.assertThat
 import org.hamcrest.Matchers
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.mock
+import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest
 import org.springframework.http.MediaType
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.bean.override.mockito.MockitoBean
@@ -20,15 +21,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.appointment.AppointmentSeriesController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.AppointmentSeriesService
-import java.security.Principal
 
 @WebMvcTest(controllers = [AppointmentSeriesController::class])
 @ContextConfiguration(classes = [AppointmentSeriesController::class])
-class AppointmentSeriesControllerTest : ControllerTestBase<AppointmentSeriesController>() {
+class AppointmentSeriesControllerTest : ControllerTestBase() {
   @MockitoBean
   private lateinit var appointmentSeriesService: AppointmentSeriesService
-
-  override fun controller() = AppointmentSeriesController(appointmentSeriesService)
 
   @Test
   fun `200 response when get appointment series by valid id`() {
@@ -121,13 +119,10 @@ class AppointmentSeriesControllerTest : ControllerTestBase<AppointmentSeriesCont
     val request = appointmentSeriesCreateRequest()
     val expectedResponse = appointmentSeriesEntity().toModel()
 
-    val mockPrincipal: Principal = mock()
-
-    whenever(appointmentSeriesService.createAppointmentSeries(request, mockPrincipal)).thenReturn(expectedResponse)
+    whenever(appointmentSeriesService.createAppointmentSeries(eq(request), any())).thenReturn(expectedResponse)
 
     val response =
       mockMvc.post("/appointment-series") {
-        principal = mockPrincipal
         contentType = MediaType.APPLICATION_JSON
         content = mapper.writeValueAsBytes(
           request,

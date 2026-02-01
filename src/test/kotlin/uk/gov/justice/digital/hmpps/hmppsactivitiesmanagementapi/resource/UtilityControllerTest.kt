@@ -7,7 +7,7 @@ import org.mockito.kotlin.eq
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest
 import org.springframework.http.MediaType
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.bean.override.mockito.MockitoBean
@@ -27,7 +27,7 @@ import java.util.*
 
 @WebMvcTest(controllers = [UtilityController::class])
 @ContextConfiguration(classes = [UtilityController::class])
-class UtilityControllerTest : ControllerTestBase<UtilityController>() {
+class UtilityControllerTest : ControllerTestBase() {
 
   @MockitoBean
   private lateinit var outboundEventsService: OutboundEventsService
@@ -39,12 +39,6 @@ class UtilityControllerTest : ControllerTestBase<UtilityController>() {
   private lateinit var migrateCaseNotesUUIDService: MigrateCaseNotesUUIDService
 
   private val identifierCaptor = argumentCaptor<Long>()
-
-  override fun controller() = UtilityController(
-    outboundEventsService,
-    activityLocationService,
-    migrateCaseNotesUUIDService,
-  )
 
   @Test
   fun `201 response when outbound event is published`() {

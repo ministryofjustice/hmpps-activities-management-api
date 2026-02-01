@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest
 import org.springframework.http.MediaType
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.bean.override.mockito.MockitoBean
@@ -26,7 +26,7 @@ import java.util.*
 
 @WebMvcTest(controllers = [ScheduledEventController::class])
 @ContextConfiguration(classes = [ScheduledEventController::class])
-class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController>() {
+class ScheduledEventControllerTest : ControllerTestBase() {
 
   @MockitoBean
   private lateinit var scheduledEventService: ScheduledEventService
@@ -36,8 +36,6 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
 
   @MockitoBean
   private lateinit var internalLocationService: InternalLocationService
-
-  override fun controller() = ScheduledEventController(scheduledEventService, appointmentCategoryService, internalLocationService)
 
   @BeforeEach
   fun setupMocks() {

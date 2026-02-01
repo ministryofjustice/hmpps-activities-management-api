@@ -32,7 +32,7 @@ class PurposefulActivityIntegrationTest : IntegrationTestBase() {
   private fun WebTestClient.executePurposefulActivityReportJob() {
     post()
       .uri("/job/purposeful-activity-reports")
-      .headers(setAuthorisation(roles = listOf()))
+      .headers(setAuthorisationAsClient(roles = listOf()))
       .exchange()
       .expectStatus().isAccepted
   }

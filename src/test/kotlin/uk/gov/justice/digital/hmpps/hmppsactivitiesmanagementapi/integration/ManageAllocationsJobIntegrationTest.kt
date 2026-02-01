@@ -186,7 +186,7 @@ class ManageAllocationsJobIntegrationTest : LocalStackTestBase() {
       this.filter { it.prisonerNumber == "B11111B" && it.prisonerStatus == PENDING } hasSize 1
     }
 
-    assertThat(webTestClient.getScheduledInstancesByIds(1).first().advanceAttendances).extracting("prisonerNumber").containsOnly("A11111A", "B11111B")
+    assertThat(webTestClient.getScheduledInstancesByIds(1)!!.first().advanceAttendances).extracting("prisonerNumber").containsOnly("A11111A", "B11111B")
 
     waitForJobs({ webTestClient.manageAllocations(withDeallocateExpiring = true) })
 
@@ -199,7 +199,7 @@ class ManageAllocationsJobIntegrationTest : LocalStackTestBase() {
 
     expiredAllocations.forEach { allocation -> allocation isDeallocatedWithReason TEMPORARILY_RELEASED }
 
-    assertThat(webTestClient.getScheduledInstancesByIds(1).first().advanceAttendances).extracting("prisonerNumber").containsOnly("B11111B")
+    assertThat(webTestClient.getScheduledInstancesByIds(1)!!.first().advanceAttendances).extracting("prisonerNumber").containsOnly("B11111B")
   }
 
   @Sql("classpath:test_data/seed-offender-with-waiting-list-application.sql")
@@ -346,14 +346,14 @@ class ManageAllocationsJobIntegrationTest : LocalStackTestBase() {
 
     prisonerSearchApiMockServer.stubSearchByPrisonerNumber(prisoner)
 
-    with(webTestClient.getAllocation(1)) {
+    with(webTestClient.getAllocation(1)!!) {
       status isEqualTo AUTO_SUSPENDED
       suspendedTime isNotEqualTo null
       suspendedReason isNotEqualTo null
       suspendedBy isNotEqualTo null
     }
 
-    with(webTestClient.getAttendanceById(1)) {
+    with(webTestClient.getAttendanceById(1)!!) {
       status isEqualTo AttendanceStatus.COMPLETED.toString()
       attendanceReason!!.code isEqualTo AttendanceReasonEnum.AUTO_SUSPENDED.toString()
       issuePayment isEqualTo false
@@ -366,14 +366,14 @@ class ManageAllocationsJobIntegrationTest : LocalStackTestBase() {
       ExpectedOutboundEvent(PRISONER_ATTENDANCE_AMENDED, 1),
     )
 
-    with(webTestClient.getAllocation(1)) {
+    with(webTestClient.getAllocation(1)!!) {
       status isEqualTo ACTIVE
       suspendedTime isEqualTo null
       suspendedReason isEqualTo null
       suspendedBy isEqualTo null
     }
 
-    with(webTestClient.getAttendanceById(1)) {
+    with(webTestClient.getAttendanceById(1)!!) {
       status isEqualTo AttendanceStatus.WAITING.toString()
       attendanceReason isEqualTo null
       issuePayment isEqualTo null
@@ -391,14 +391,14 @@ class ManageAllocationsJobIntegrationTest : LocalStackTestBase() {
 
     prisonerSearchApiMockServer.stubSearchByPrisonerNumber(prisoner)
 
-    with(webTestClient.getAllocation(1)) {
+    with(webTestClient.getAllocation(1)!!) {
       status isEqualTo AUTO_SUSPENDED
       suspendedTime isNotEqualTo null
       suspendedReason isNotEqualTo null
       suspendedBy isNotEqualTo null
     }
 
-    with(webTestClient.getAttendanceById(1)) {
+    with(webTestClient.getAttendanceById(1)!!) {
       status isEqualTo AttendanceStatus.COMPLETED.toString()
       attendanceReason!!.code isEqualTo AttendanceReasonEnum.AUTO_SUSPENDED.toString()
       issuePayment isEqualTo false
@@ -411,14 +411,14 @@ class ManageAllocationsJobIntegrationTest : LocalStackTestBase() {
       ExpectedOutboundEvent(PRISONER_ATTENDANCE_AMENDED, 1),
     )
 
-    with(webTestClient.getAllocation(1)) {
+    with(webTestClient.getAllocation(1)!!) {
       status isEqualTo SUSPENDED
       suspendedTime isCloseTo LocalDateTime.now()
       suspendedReason isEqualTo "Planned suspension"
       suspendedBy isEqualTo "MRS BLOGS"
     }
 
-    with(webTestClient.getAttendanceById(1)) {
+    with(webTestClient.getAttendanceById(1)!!) {
       status isEqualTo AttendanceStatus.COMPLETED.toString()
       attendanceReason!!.code isEqualTo AttendanceReasonEnum.SUSPENDED.toString()
       issuePayment isEqualTo false
@@ -445,7 +445,7 @@ class ManageAllocationsJobIntegrationTest : LocalStackTestBase() {
     validateNoMessagesSent()
 
     (1L..3L).forEach { allocationId ->
-      webTestClient.getAllocation(allocationId).status isEqualTo AUTO_SUSPENDED
+      webTestClient.getAllocation(allocationId)!!.status isEqualTo AUTO_SUSPENDED
     }
   }
 

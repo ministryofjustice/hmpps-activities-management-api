@@ -5,7 +5,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest
 import org.springframework.http.MediaType
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.bean.override.mockito.MockitoBean
@@ -18,15 +18,13 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata
 
 @WebMvcTest(controllers = [RolloutController::class])
 @ContextConfiguration(classes = [RolloutController::class])
-class RolloutControllerTest : ControllerTestBase<RolloutController>() {
+class RolloutControllerTest : ControllerTestBase() {
 
   @MockitoBean
   private lateinit var prisonService: RolloutPrisonService
 
   @MockitoBean
   private lateinit var prisonRegimeService: PrisonRegimeService
-
-  override fun controller() = RolloutController(prisonService, prisonRegimeService)
 
   @Test
   fun `200 response when get prison by code found`() {

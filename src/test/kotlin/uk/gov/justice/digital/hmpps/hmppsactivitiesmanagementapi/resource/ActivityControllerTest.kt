@@ -10,9 +10,8 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest
 import org.springframework.http.MediaType
-import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.MockMvc
@@ -38,18 +37,17 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.A
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityService
+import uk.gov.justice.hmpps.test.kotlin.auth.WithMockAuthUser
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 
 @WebMvcTest(controllers = [ActivityController::class])
 @ContextConfiguration(classes = [ActivityController::class])
-class ActivityControllerTest : ControllerTestBase<ActivityController>() {
+class ActivityControllerTest : ControllerTestBase() {
 
   @MockitoBean
   private lateinit var activityService: ActivityService
-
-  override fun controller() = ActivityController(activityService)
 
   @Test
   fun `createActivity - success`() {
@@ -60,7 +58,6 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
 
     val response =
       mockMvc.post("/activities") {
-        principal = user
         accept = MediaType.APPLICATION_JSON
         contentType = MediaType.APPLICATION_JSON
         content = mapper.writeValueAsBytes(
@@ -80,7 +77,6 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
   @Test
   fun `createActivity - no request body`() {
     mockMvc.post("/activities") {
-      principal = user
       accept = MediaType.APPLICATION_JSON
       contentType = MediaType.APPLICATION_JSON
       content = null
@@ -102,7 +98,6 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
   @Test
   fun `createActivity - invalid, empty json`() {
     mockMvc.post("/activities") {
-      principal = user
       accept = MediaType.APPLICATION_JSON
       contentType = MediaType.APPLICATION_JSON
       content = "{}"
@@ -129,7 +124,6 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
     val createActivityRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-invalid-1.json")
 
     mockMvc.post("/activities") {
-      principal = user
       accept = MediaType.APPLICATION_JSON
       contentType = MediaType.APPLICATION_JSON
       content = mapper.writeValueAsBytes(
@@ -159,7 +153,6 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
     val createActivityRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-invalid-2.json")
 
     mockMvc.post("/activities") {
-      principal = user
       accept = MediaType.APPLICATION_JSON
       contentType = MediaType.APPLICATION_JSON
       content = mapper.writeValueAsBytes(
@@ -188,7 +181,6 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
     val createActivityRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-invalid-3.json")
 
     mockMvc.post("/activities") {
-      principal = user
       accept = MediaType.APPLICATION_JSON
       contentType = MediaType.APPLICATION_JSON
       content = mapper.writeValueAsBytes(
@@ -311,7 +303,6 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
 
     val response =
       mockMvc.patch("/activities/$PENTONVILLE_PRISON_CODE/activityId/17") {
-        principal = user
         accept = MediaType.APPLICATION_JSON
         contentType = MediaType.APPLICATION_JSON
         content = mapper.writeValueAsBytes(
@@ -331,7 +322,6 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
   @Test
   fun `updateActivity - fails for paid activity with no pay rates`() {
     mockMvc.patch("/activities/$PENTONVILLE_PRISON_CODE/activityId/1") {
-      principal = user
       accept = MediaType.APPLICATION_JSON
       contentType = MediaType.APPLICATION_JSON
       content = mapper.writeValueAsBytes(ActivityUpdateRequest(paid = true))
@@ -354,7 +344,6 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
   @Test
   fun `updateActivity - no request body`() {
     mockMvc.patch("/activities/$PENTONVILLE_PRISON_CODE/activityId/17") {
-      principal = user
       accept = MediaType.APPLICATION_JSON
       contentType = MediaType.APPLICATION_JSON
       content = null
@@ -382,7 +371,6 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
     )
 
     mockMvc.patch("/activities/$PENTONVILLE_PRISON_CODE/activityId/17") {
-      principal = user
       accept = MediaType.APPLICATION_JSON
       contentType = MediaType.APPLICATION_JSON
       content = mapper.writeValueAsBytes(
@@ -398,13 +386,13 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
   }
 
   @Test
+  @WithMockAuthUser(roles = ["ACTIVITY_HUB"])
   fun `404 not found response while getting activity pay history for an invalid activity id`() {
     whenever(activityService.getActivityPayHistory(1)).thenThrow(
       EntityNotFoundException("not found"),
     )
 
     mockMvc.get("/activities/1/pay-history") {
-      principal = user
       accept = MediaType.APPLICATION_JSON
       contentType = MediaType.APPLICATION_JSON
     }
@@ -417,6 +405,7 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
   }
 
   @Test
+  @WithMockAuthUser(roles = ["ACTIVITY_HUB"])
   fun `200 response while getting activity pay history for a valid activity id`() {
     val expectedModel = listOf(
       ActivityPayHistory(
@@ -467,7 +456,6 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
     whenever(activityService.getActivityPayHistory(1)).thenReturn(expectedModel)
 
     val response = mockMvc.get("/activities/1/pay-history") {
-      principal = user
       accept = MediaType.APPLICATION_JSON
       contentType = MediaType.APPLICATION_JSON
     }
@@ -489,27 +477,25 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
     @DisplayName("Create activity")
     inner class CreateAuthTests {
       @Test
-      @WithMockUser(roles = ["ACTIVITY_HUB"])
       fun `createActivity (ROLE_ACTIVITY_HUB) - 201`() {
-        mockMvcWithSecurity.post("/activities") {
+        mockMvc.post("/activities") {
           contentType = MediaType.APPLICATION_JSON
           content = mapper.writeValueAsBytes(activityCreateRequest())
         }.andExpect { status { isCreated() } }
       }
 
       @Test
-      @WithMockUser(roles = ["ACTIVITY_ADMIN"])
       fun `createActivity (ROLE_ACTIVITY_ADMIN) - 201`() {
-        mockMvcWithSecurity.post("/activities") {
+        mockMvc.post("/activities") {
           contentType = MediaType.APPLICATION_JSON
           content = mapper.writeValueAsBytes(activityCreateRequest())
         }.andExpect { status { isCreated() } }
       }
 
       @Test
-      @WithMockUser(roles = ["PRISON"])
+      @WithMockAuthUser(roles = ["PRISON"])
       fun `createActivity (ROLE_PRISON) - 403`() {
-        mockMvcWithSecurity.post("/activities") {
+        mockMvc.post("/activities") {
           contentType = MediaType.APPLICATION_JSON
           content = mapper.writeValueAsBytes(activityCreateRequest())
         }.andExpect { status { isForbidden() } }
@@ -520,33 +506,31 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
     @DisplayName("Update activity")
     inner class UpdateAuthTests {
       @Test
-      @WithMockUser(roles = ["ACTIVITY_HUB"])
       fun `updateActivity (ROLE_ACTIVITY_HUB) - 202`() {
         val updateActivityRequest = mapper.read<ActivityUpdateRequest>("activity/activity-update-request-2.json")
 
-        mockMvcWithSecurity.patch("/activities/$PENTONVILLE_PRISON_CODE/activityId/17") {
+        mockMvc.patch("/activities/$PENTONVILLE_PRISON_CODE/activityId/17") {
           contentType = MediaType.APPLICATION_JSON
           content = mapper.writeValueAsBytes(updateActivityRequest)
         }.andExpect { status { isAccepted() } }
       }
 
       @Test
-      @WithMockUser(roles = ["ACTIVITY_ADMIN"])
       fun `updateActivity (ROLE_ACTIVITY_ADMIN) - 202`() {
         val updateActivityRequest = mapper.read<ActivityUpdateRequest>("activity/activity-update-request-2.json")
 
-        mockMvcWithSecurity.patch("/activities/$PENTONVILLE_PRISON_CODE/activityId/17") {
+        mockMvc.patch("/activities/$PENTONVILLE_PRISON_CODE/activityId/17") {
           contentType = MediaType.APPLICATION_JSON
           content = mapper.writeValueAsBytes(updateActivityRequest)
         }.andExpect { status { isAccepted() } }
       }
 
       @Test
-      @WithMockUser(roles = ["PRISON"])
+      @WithMockAuthUser(roles = ["PRISON"])
       fun `updateActivity (ROLE_PRISON) - 403`() {
         val updateActivityRequest = mapper.read<ActivityUpdateRequest>("activity/activity-update-request-2.json")
 
-        mockMvcWithSecurity.patch("/activities/$PENTONVILLE_PRISON_CODE/activityId/17") {
+        mockMvc.patch("/activities/$PENTONVILLE_PRISON_CODE/activityId/17") {
           contentType = MediaType.APPLICATION_JSON
           content = mapper.writeValueAsBytes(updateActivityRequest)
         }.andExpect { status { isForbidden() } }
@@ -557,9 +541,9 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
     @DisplayName("Get filtered activity by id")
     inner class GetFilteredActivityByIdTests {
       @Test
-      @WithMockUser(roles = ["NOMIS_ACTIVITIES"])
+      @WithMockAuthUser(roles = ["NOMIS_ACTIVITIES"])
       fun `Get filtered activity by id (ROLE_NOMIS_ACTIVITIES) - 200`() {
-        mockMvcWithSecurity.get("/activities/1/filtered") {
+        mockMvc.get("/activities/1/filtered") {
           contentType = MediaType.APPLICATION_JSON
           header(CASELOAD_ID, "MDI")
         }.andExpect { status { isOk() } }
@@ -570,27 +554,27 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
     @DisplayName("Get pay rate history activity by id")
     inner class GetActivityPayHistoryAuthTests {
       @Test
-      @WithMockUser(roles = ["PRISON"])
+      @WithMockAuthUser(roles = ["PRISON"])
       fun `Get activity pay rate history by id (PRISON) - 200`() {
-        mockMvcWithSecurity.get("/activities/1/pay-history") {
+        mockMvc.get("/activities/1/pay-history") {
           contentType = MediaType.APPLICATION_JSON
           header(CASELOAD_ID, "MDI")
         }.andExpect { status { isOk() } }
       }
 
       @Test
-      @WithMockUser(roles = ["ACTIVITY_HUB"])
+      @WithMockAuthUser(roles = ["ACTIVITY_HUB"])
       fun `Get activity pay rate history by id (ACTIVITY_HUB) - 200`() {
-        mockMvcWithSecurity.get("/activities/1/pay-history") {
+        mockMvc.get("/activities/1/pay-history") {
           contentType = MediaType.APPLICATION_JSON
           header(CASELOAD_ID, "MDI")
         }.andExpect { status { isOk() } }
       }
 
       @Test
-      @WithMockUser(roles = ["NOMIS_ACTIVITIES"])
+      @WithMockAuthUser(roles = ["NOMIS_ACTIVITIES"])
       fun `Get activity pay rate history by id (NOMIS_ACTIVITIES) - 403`() {
-        mockMvcWithSecurity.get("/activities/1/pay-history") {
+        mockMvc.get("/activities/1/pay-history") {
           contentType = MediaType.APPLICATION_JSON
           header(CASELOAD_ID, "MDI")
         }.andExpect { status { isForbidden() } }

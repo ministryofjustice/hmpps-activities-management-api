@@ -9,8 +9,8 @@ import org.mockito.kotlin.whenever
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.context.SecurityContext
 import org.springframework.security.core.context.SecurityContextHolder
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.AuthAwareAuthenticationToken
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_ACTIVITY_ADMIN
+import uk.gov.justice.hmpps.kotlin.auth.AuthAwareAuthenticationToken
 
 class CheckCaseLoadAccessTest {
 
@@ -56,7 +56,6 @@ class CheckCaseLoadAccessTest {
     SecurityContextHolder.setContext(securityContext)
 
     whenever(securityContext.authentication).thenReturn(token)
-    whenever(token.isUserToken).thenReturn(isUserToken)
 
     if (hasAdminRole) {
       val roles = setOf(SimpleGrantedAuthority(ROLE_ACTIVITY_ADMIN))

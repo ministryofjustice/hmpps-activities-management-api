@@ -62,7 +62,7 @@ class AppointmentSeriesIntegrationTest : LocalStackTestBase() {
   fun `get appointment series by unknown id returns 404 not found`() {
     webTestClient.get()
       .uri("/appointment-series/-1")
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
       .exchange()
       .expectStatus().isNotFound
   }
@@ -172,7 +172,7 @@ class AppointmentSeriesIntegrationTest : LocalStackTestBase() {
   fun `get appointment series details by unknown id returns 404 not found`() {
     webTestClient.get()
       .uri("/appointment-series/-1/details")
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
       .exchange()
       .expectStatus().isNotFound
   }
@@ -785,7 +785,7 @@ class AppointmentSeriesIntegrationTest : LocalStackTestBase() {
 
   private fun WebTestClient.getAppointmentSeriesById(id: Long) = get()
     .uri("/appointment-series/$id")
-    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
     .exchange()
     .expectStatus().isOk
     .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -794,7 +794,7 @@ class AppointmentSeriesIntegrationTest : LocalStackTestBase() {
 
   private fun WebTestClient.getAppointmentSeriesDetailsById(id: Long) = get()
     .uri("/appointment-series/$id/details")
-    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
     .exchange()
     .expectStatus().isOk
     .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -806,8 +806,8 @@ class AppointmentSeriesIntegrationTest : LocalStackTestBase() {
   ) = post()
     .uri("/appointment-series")
     .bodyValue(request)
-    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
-    .header(CASELOAD_ID, request.prisonCode)
+    .headers(setAuthorisationAsUser(roles = listOf(ROLE_PRISON)))
+    .header(CASELOAD_ID, request.prisonCode!!)
     .exchange()
     .expectStatus().isCreated
     .expectHeader().contentType(MediaType.APPLICATION_JSON)

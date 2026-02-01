@@ -25,7 +25,7 @@ class AttendanceReconIntegrationTest : IntegrationTestBase() {
     webTestClient.get()
       .uri("/synchronisation/reconciliation/attendances/PVI?date=$yesterday")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf()))
+      .headers(setAuthorisationAsClient(roles = listOf()))
       .exchange()
       .expectStatus().isForbidden
   }
@@ -36,7 +36,7 @@ class AttendanceReconIntegrationTest : IntegrationTestBase() {
     webTestClient.get()
       .uri("/synchronisation/reconciliation/attendances/PVI?date=$yesterday")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf("INVALID_ROLE")))
+      .headers(setAuthorisationAsClient(roles = listOf("INVALID_ROLE")))
       .exchange()
       .expectStatus().isForbidden
   }
@@ -47,7 +47,7 @@ class AttendanceReconIntegrationTest : IntegrationTestBase() {
     webTestClient.get()
       .uri("/synchronisation/reconciliation/attendances/PVI")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+      .headers(setAuthorisationAsClient(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
       .exchange()
       .expectStatus().isBadRequest
   }
@@ -58,7 +58,7 @@ class AttendanceReconIntegrationTest : IntegrationTestBase() {
     webTestClient.get()
       .uri("/synchronisation/reconciliation/attendances/RSI?date=$yesterday")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+      .headers(setAuthorisationAsClient(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
       .exchange()
       .expectStatus().isOk
       .expectBody()
@@ -73,7 +73,7 @@ class AttendanceReconIntegrationTest : IntegrationTestBase() {
     webTestClient.get()
       .uri("/synchronisation/reconciliation/attendances/PVI?date=$yesterday")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+      .headers(setAuthorisationAsClient(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
       .exchange()
       .expectStatus().isOk
       .expectBody()

@@ -7,7 +7,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerReceivedHandler
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.activeInMoorlandPrisoner
@@ -17,7 +17,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata
 
 class PrisonerReceivedEventHandlerTest {
   private val rolloutPrisonService = RolloutPrisonService("MDI", "MDI", "MDI")
-  private val prisonerSearchApiClient: PrisonerSearchApiApplicationClient = mock()
+  private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
   private val prisonerReceivedHandler: PrisonerReceivedHandler = mock()
 
   private val handler = PrisonerReceivedEventHandler(rolloutPrisonService, prisonerSearchApiClient, prisonerReceivedHandler)

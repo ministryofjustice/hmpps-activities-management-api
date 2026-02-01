@@ -65,14 +65,14 @@ class AppointmentInstanceIntegrationTest : IntegrationTestBase() {
   fun `get appointment instance by unknown id returns 404 not found`() {
     webTestClient.get()
       .uri("/appointment-instances/-1")
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
       .exchange()
       .expectStatus().isNotFound
   }
 
   private fun WebTestClient.getAppointmentInstanceById(id: Long) = get()
     .uri("/appointment-instances/$id")
-    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
     .exchange()
     .expectStatus().isOk
     .expectHeader().contentType(MediaType.APPLICATION_JSON)

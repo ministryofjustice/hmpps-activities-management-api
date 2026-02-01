@@ -29,6 +29,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.MultipleAppointmentAttendanceRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentAttendeeSearchResult
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CASELOAD_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
@@ -95,7 +96,7 @@ class AppointmentAttendanceIntegrationTest : AppointmentsIntegrationTestBase() {
     val organiserCode = if (status == AttendanceStatus.EVENT_TIER) "&organiserCode=PRISON_STAFF" else ""
     webTestClient.get()
       .uri("/appointments/$RISLEY_PRISON_CODE/${status.name}/attendance?date=${LocalDate.now().minusDays(1)}$incLudeEventTier$organiserCode")
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
       .exchange()
       .expectStatus().isOk
       .expectBody()
@@ -110,7 +111,7 @@ class AppointmentAttendanceIntegrationTest : AppointmentsIntegrationTestBase() {
     stubForAttendanceSummaries(RISLEY_PRISON_CODE)
     webTestClient.get()
       .uri("/appointments/$RISLEY_PRISON_CODE/${AttendanceStatus.ATTENDED}/attendance?date=${LocalDate.now().minusDays(1)}&prisonerNumber=B2345CD&customName=CusTom&categoryCode=EDUC")
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
       .exchange()
       .expectStatus().isOk
       .expectBody()
@@ -660,7 +661,7 @@ class AppointmentAttendanceIntegrationTest : AppointmentsIntegrationTestBase() {
     additionalFilters: String = "",
   ) = get()
     .uri("/appointments/$prisonCode/attendance-summaries?date=$date$additionalFilters")
-    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
     .exchange()
     .expectStatus().isOk
     .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -673,7 +674,8 @@ class AppointmentAttendanceIntegrationTest : AppointmentsIntegrationTestBase() {
   ) = put()
     .uri("/appointments/updateAttendances?action=$action")
     .bodyValue(requests)
-    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .headers(setAuthorisationAsUser(roles = listOf(ROLE_PRISON)))
+    .header(CASELOAD_ID, RISLEY_PRISON_CODE)
     .exchange()
     .expectStatus().isNoContent
 }

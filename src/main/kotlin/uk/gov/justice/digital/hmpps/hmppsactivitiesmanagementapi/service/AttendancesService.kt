@@ -54,7 +54,7 @@ class AttendancesService(
     val attendanceReasonsByCode = attendanceReasonRepository.findAll().associateBy { it.code }
 
     val markedAttendanceIds = transactionHandler.newSpringTransaction {
-      val attendanceUpdatesById = attendances.associateBy { it.id }
+      val attendanceUpdatesById = attendances.associateBy { it.id!! }
 
       attendanceRepository.findAllById(attendanceUpdatesById.keys).onEach { attendance ->
         val updateRequest = attendanceUpdatesById[attendance.attendanceId]!!

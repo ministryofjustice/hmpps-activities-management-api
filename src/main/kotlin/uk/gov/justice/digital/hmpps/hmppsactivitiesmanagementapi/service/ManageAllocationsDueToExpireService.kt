@@ -4,7 +4,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isAtDifferentLocationTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isOutOfPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.ifNotEmpty
@@ -33,7 +33,7 @@ class ManageAllocationsDueToExpireService(
   private val waitingListService: WaitingListService,
   private val transactionHandler: TransactionHandler,
   private val prisonApiClient: PrisonApiClient,
-  private val prisonerSearch: PrisonerSearchApiApplicationClient,
+  private val prisonerSearchApiClient: PrisonerSearchApiClient,
   private val jobsSqsService: JobsSqsService,
   private val jobService: JobService,
   private val allocationRepository: AllocationRepository,
@@ -126,7 +126,7 @@ class ManageAllocationsDueToExpireService(
   }
 
   private fun getExpiredPrisoners(prison: RolloutPrisonPlan, prisonerNumbers: Set<String>): Set<String> {
-    val prisoners = prisonerSearch.findByPrisonerNumbers(prisonerNumbers.toList())
+    val prisoners = prisonerSearchApiClient.findByPrisonerNumbers(prisonerNumbers.toList())
 
     if (prisoners.isEmpty()) {
       log.error("No matches for prisoner numbers $prisonerNumbers found via prisoner search for prison ${prison.prisonCode}")

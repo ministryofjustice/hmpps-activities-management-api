@@ -5,7 +5,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest
 import org.springframework.http.MediaType
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.bean.override.mockito.MockitoBean
@@ -17,11 +17,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appoint
 
 @WebMvcTest(controllers = [AppointmentInstanceController::class])
 @ContextConfiguration(classes = [AppointmentInstanceController::class])
-class AppointmentInstanceControllerTest : ControllerTestBase<AppointmentInstanceController>() {
+class AppointmentInstanceControllerTest : ControllerTestBase() {
   @MockitoBean
   private lateinit var appointmentInstanceService: AppointmentInstanceService
-
-  override fun controller() = AppointmentInstanceController(appointmentInstanceService)
 
   @Test
   fun `200 response when get appointment instance by valid id`() {

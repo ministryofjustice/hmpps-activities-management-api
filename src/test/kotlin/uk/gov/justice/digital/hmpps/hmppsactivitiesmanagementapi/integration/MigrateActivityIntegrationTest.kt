@@ -351,7 +351,7 @@ class MigrateActivityIntegrationTest : LocalStackTestBase() {
     val error = webTestClient.post()
       .uri("/migrate/${PENTONVILLE_PRISON_CODE}/move-activity-start-dates?activityStartDate=${LocalDate.now()}")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf("ROLE_NOT_ALLOWED")))
+      .headers(setAuthorisationAsClient(roles = listOf("ROLE_NOT_ALLOWED")))
       .exchange()
       .expectStatus().isForbidden
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -372,7 +372,7 @@ class MigrateActivityIntegrationTest : LocalStackTestBase() {
     val error = webTestClient.post()
       .uri("/migrate/${PENTONVILLE_PRISON_CODE}/move-activity-start-dates?activityStartDate=${LocalDate.now()}")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf(ROLE_NOMIS_ACTIVITIES)))
+      .headers(setAuthorisationAsClient(roles = listOf(ROLE_NOMIS_ACTIVITIES)))
       .exchange()
       .expectStatus().isBadRequest
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -495,18 +495,18 @@ class MigrateActivityIntegrationTest : LocalStackTestBase() {
   private fun WebTestClient.migrateActivity(request: ActivityMigrateRequest, roles: List<String>) = post()
     .uri("/migrate/activity")
     .bodyValue(request)
-    .headers(setAuthorisation(roles = roles))
+    .headers(setAuthorisationAsClient(roles = roles))
     .exchange()
 
   private fun WebTestClient.migrateAllocation(request: AllocationMigrateRequest, roles: List<String>) = post()
     .uri("/migrate/allocation")
     .bodyValue(request)
-    .headers(setAuthorisation(roles = roles))
+    .headers(setAuthorisationAsClient(roles = roles))
     .exchange()
 
   private fun WebTestClient.deleteCascade(prisonCode: String, activityId: Long, roles: List<String>) = delete()
     .uri("/migrate/delete-activity/prison/$prisonCode/id/$activityId")
-    .headers(setAuthorisation(roles = roles))
+    .headers(setAuthorisationAsClient(roles = roles))
     .exchange()
 
   private fun stubPrisonerSearch(prisonCode: String, prisonerNumber: String, active: Boolean = true) = prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
@@ -527,7 +527,7 @@ class MigrateActivityIntegrationTest : LocalStackTestBase() {
   ) = post()
     .uri("/migrate/$prisonCode/move-activity-start-dates?activityStartDate=$activityStartDate")
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_NOMIS_ACTIVITIES)))
+    .headers(setAuthorisationAsUser(roles = listOf(ROLE_NOMIS_ACTIVITIES)))
     .header(CASELOAD_ID, prisonCode)
     .exchange()
     .expectStatus().isOk

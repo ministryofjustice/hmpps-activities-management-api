@@ -174,7 +174,7 @@ class AuditIntegrationTest : IntegrationTestBase() {
       ),
     )
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(roles = listOf(ROLE_ACTIVITY_ADMIN)))
+    .headers(setAuthorisationAsClient(roles = listOf(ROLE_ACTIVITY_ADMIN)))
     .exchange()
     .expectStatus().isOk
     .expectHeader().contentType(MediaType.APPLICATION_JSON)

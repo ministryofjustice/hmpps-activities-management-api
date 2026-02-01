@@ -7,7 +7,7 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
@@ -21,7 +21,7 @@ class ManageAllocationsServiceTest {
   private val allocationRepository: AllocationRepository = mock()
   private val outboundEventsService: OutboundEventsService = mock()
   private val monitoringService: MonitoringService = mock()
-  private val prisonerSearchApiApplicationClient: PrisonerSearchApiApplicationClient = mock()
+  private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
   private val prisonerReceivedHandler: PrisonerReceivedHandler = mock()
 
   private val service =
@@ -29,7 +29,7 @@ class ManageAllocationsServiceTest {
       allocationRepository,
       outboundEventsService,
       monitoringService,
-      prisonerSearchApiApplicationClient,
+      prisonerSearchApiClient,
       prisonerReceivedHandler,
     )
 
@@ -45,7 +45,7 @@ class ManageAllocationsServiceTest {
       on { status } doReturn "ACTIVE IN"
     }
 
-    whenever(prisonerSearchApiApplicationClient.findByPrisonerNumber(allocation.prisonerNumber)) doReturn prisoner
+    whenever(prisonerSearchApiClient.findByPrisonerNumber(allocation.prisonerNumber)) doReturn prisoner
 
     service.fixPrisonersIncorrectlyAutoSuspended()
 
@@ -66,7 +66,7 @@ class ManageAllocationsServiceTest {
       on { status } doReturn "ACTIVE IN"
     }
 
-    whenever(prisonerSearchApiApplicationClient.findByPrisonerNumber(allocation1.prisonerNumber)) doReturn prisoner
+    whenever(prisonerSearchApiClient.findByPrisonerNumber(allocation1.prisonerNumber)) doReturn prisoner
 
     service.fixPrisonersIncorrectlyAutoSuspended()
 
@@ -87,7 +87,7 @@ class ManageAllocationsServiceTest {
       on { status } doReturn "ACTIVE IN"
     }
 
-    whenever(prisonerSearchApiApplicationClient.findByPrisonerNumber(allocation2.prisonerNumber)) doReturn prisoner
+    whenever(prisonerSearchApiClient.findByPrisonerNumber(allocation2.prisonerNumber)) doReturn prisoner
 
     service.fixPrisonersIncorrectlyAutoSuspended()
 
@@ -114,8 +114,8 @@ class ManageAllocationsServiceTest {
       on { status } doReturn "ACTIVE IN"
     }
 
-    whenever(prisonerSearchApiApplicationClient.findByPrisonerNumber(allocation1.prisonerNumber)) doReturn prisoner1
-    whenever(prisonerSearchApiApplicationClient.findByPrisonerNumber(allocation2.prisonerNumber)) doReturn prisoner2
+    whenever(prisonerSearchApiClient.findByPrisonerNumber(allocation1.prisonerNumber)) doReturn prisoner1
+    whenever(prisonerSearchApiClient.findByPrisonerNumber(allocation2.prisonerNumber)) doReturn prisoner2
 
     service.fixPrisonersIncorrectlyAutoSuspended()
 
@@ -136,7 +136,7 @@ class ManageAllocationsServiceTest {
       on { status } doReturn "ACTIVE OUT"
     }
 
-    whenever(prisonerSearchApiApplicationClient.findByPrisonerNumber(allocation.prisonerNumber)) doReturn prisoner
+    whenever(prisonerSearchApiClient.findByPrisonerNumber(allocation.prisonerNumber)) doReturn prisoner
 
     service.fixPrisonersIncorrectlyAutoSuspended()
 
@@ -156,8 +156,8 @@ class ManageAllocationsServiceTest {
       on { status } doReturn "ACTIVE IN"
     }
 
-    whenever(prisonerSearchApiApplicationClient.findByPrisonerNumber(allocation1.prisonerNumber)) doReturn null
-    whenever(prisonerSearchApiApplicationClient.findByPrisonerNumber(allocation2.prisonerNumber)) doReturn prisoner2
+    whenever(prisonerSearchApiClient.findByPrisonerNumber(allocation1.prisonerNumber)) doReturn null
+    whenever(prisonerSearchApiClient.findByPrisonerNumber(allocation2.prisonerNumber)) doReturn prisoner2
 
     service.fixPrisonersIncorrectlyAutoSuspended()
 

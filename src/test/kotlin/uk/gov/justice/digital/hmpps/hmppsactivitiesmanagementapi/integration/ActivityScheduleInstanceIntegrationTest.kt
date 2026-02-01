@@ -90,7 +90,7 @@ class ActivityScheduleInstanceIntegrationTest : LocalStackTestBase() {
       webTestClient.get()
         .uri("/scheduled-instances/1")
         .accept(MediaType.APPLICATION_JSON)
-        .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_PRISON)))
+        .headers(setAuthorisationAsUser(roles = listOf(ROLE_PRISON)))
         .header(CASELOAD_ID, "MDI")
         .exchange()
         .expectStatus().isForbidden
@@ -102,7 +102,7 @@ class ActivityScheduleInstanceIntegrationTest : LocalStackTestBase() {
       webTestClient.get()
         .uri("/scheduled-instances/1")
         .accept(MediaType.APPLICATION_JSON)
-        .headers(setAuthorisation(isClientToken = true, roles = listOf(ROLE_ACTIVITY_ADMIN)))
+        .headers(setAuthorisationAsClient(roles = listOf(ROLE_ACTIVITY_ADMIN)))
         .exchange()
         .expectStatus().isOk
     }
@@ -113,7 +113,7 @@ class ActivityScheduleInstanceIntegrationTest : LocalStackTestBase() {
       webTestClient.get()
         .uri("/scheduled-instances/1")
         .accept(MediaType.APPLICATION_JSON)
-        .headers(setAuthorisation(isClientToken = true, roles = listOf(ROLE_ACTIVITY_ADMIN)))
+        .headers(setAuthorisationAsClient(roles = listOf(ROLE_ACTIVITY_ADMIN)))
         .exchange()
         .expectStatus().isOk
     }
@@ -210,7 +210,7 @@ class ActivityScheduleInstanceIntegrationTest : LocalStackTestBase() {
       webTestClient.get()
         .uri("/scheduled-instances/1/scheduled-attendees")
         .accept(MediaType.APPLICATION_JSON)
-        .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_PRISON)))
+        .headers(setAuthorisationAsUser(roles = listOf(ROLE_PRISON)))
         .header(CASELOAD_ID, "MDI")
         .exchange()
         .expectStatus().isForbidden
@@ -296,7 +296,7 @@ class ActivityScheduleInstanceIntegrationTest : LocalStackTestBase() {
       webTestClient.post()
         .uri("/scheduled-instances/scheduled-attendees")
         .accept(MediaType.APPLICATION_JSON)
-        .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_PRISON)))
+        .headers(setAuthorisationAsUser(roles = listOf(ROLE_PRISON)))
         .header(CASELOAD_ID, "MDI")
         .bodyValue(listOf(1))
         .exchange()
@@ -946,7 +946,7 @@ class ActivityScheduleInstanceIntegrationTest : LocalStackTestBase() {
   private fun WebTestClient.getScheduledInstanceById(id: Long) = get()
     .uri("/scheduled-instances/$id")
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
     .header(CASELOAD_ID, "PVI")
     .exchange()
     .expectStatus().isOk
@@ -957,7 +957,7 @@ class ActivityScheduleInstanceIntegrationTest : LocalStackTestBase() {
   private fun WebTestClient.getScheduledAttendeesByInstanceId(id: Long) = get()
     .uri("/scheduled-instances/$id/scheduled-attendees")
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
     .header(CASELOAD_ID, "PVI")
     .exchange()
     .expectStatus().isOk
@@ -968,7 +968,7 @@ class ActivityScheduleInstanceIntegrationTest : LocalStackTestBase() {
   private fun WebTestClient.getScheduledAttendeesByInstanceIds(ids: List<Long>) = post()
     .uri("/scheduled-instances/scheduled-attendees")
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
     .header(CASELOAD_ID, "PVI")
     .bodyValue(ids)
     .exchange()
@@ -981,14 +981,15 @@ class ActivityScheduleInstanceIntegrationTest : LocalStackTestBase() {
     .uri("/scheduled-instances/$id/uncancel")
     .bodyValue(UncancelScheduledInstanceRequest(username, displayName))
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
     .exchange()
 
   private fun WebTestClient.updateScheduledInstance(id: Long, cancelledReason: String?, comment: String?, issuePayment: Boolean?) = put()
     .uri("/scheduled-instances/$id")
     .bodyValue(ScheduledInstancedUpdateRequest(cancelledReason, comment, issuePayment))
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .headers(setAuthorisationAsUser(roles = listOf(ROLE_PRISON)))
+    .header(CASELOAD_ID, PENTONVILLE_PRISON_CODE)
     .exchange()
 
   private fun WebTestClient.cancelScheduledInstances(
@@ -1001,7 +1002,7 @@ class ActivityScheduleInstanceIntegrationTest : LocalStackTestBase() {
     .uri("/scheduled-instances/cancel")
     .bodyValue(ScheduleInstancesCancelRequest(ids, reason, username, comment, issuePayment))
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
     .exchange()
 
   private fun WebTestClient.uncancelScheduledInstances(
@@ -1010,7 +1011,7 @@ class ActivityScheduleInstanceIntegrationTest : LocalStackTestBase() {
     .uri("/scheduled-instances/uncancel")
     .bodyValue(ScheduleInstancesUncancelRequest(ids))
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
     .exchange()
 
   private fun WebTestClient.getScheduledInstancesBy(
@@ -1030,7 +1031,7 @@ class ActivityScheduleInstanceIntegrationTest : LocalStackTestBase() {
         .build()
     }
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
     .exchange()
     .expectStatus().isOk
     .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -1045,7 +1046,7 @@ class ActivityScheduleInstanceIntegrationTest : LocalStackTestBase() {
         .build()
     }
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
     .header(CASELOAD_ID, PENTONVILLE_PRISON_CODE)
     .exchange()
     .expectStatus().isOk

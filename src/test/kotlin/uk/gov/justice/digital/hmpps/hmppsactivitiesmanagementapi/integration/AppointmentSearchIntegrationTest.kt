@@ -74,7 +74,7 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
     webTestClient.post()
       .uri("/appointments/OTH/search")
       .bodyValue(request)
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
       .header(CASELOAD_ID, "OTH")
       .exchange()
       .expectStatus().isBadRequest
@@ -398,7 +398,7 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
   ) = post()
     .uri("/appointments/$prisonCode/search")
     .bodyValue(request)
-    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
     .header(CASELOAD_ID, prisonCode)
     .exchange()
     .expectStatus().isAccepted

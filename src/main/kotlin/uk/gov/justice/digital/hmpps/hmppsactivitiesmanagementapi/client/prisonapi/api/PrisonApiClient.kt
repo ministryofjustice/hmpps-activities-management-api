@@ -27,7 +27,7 @@ import java.util.*
 
 typealias PrisonLocations = Map<Long, Location>
 
-inline fun <reified T> typeReference() = object : ParameterizedTypeReference<T>() {}
+inline fun <reified T : Any> typeReference() = object : ParameterizedTypeReference<T>() {}
 
 /**
  * Provides a client to the prison API

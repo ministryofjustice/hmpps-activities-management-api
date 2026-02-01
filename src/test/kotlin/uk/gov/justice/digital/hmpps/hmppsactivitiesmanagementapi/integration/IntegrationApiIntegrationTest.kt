@@ -135,7 +135,7 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
 
       webTestClient.get()
         .uri("/integration-api/attendances/prisoner/$prisonerNumber?startDate=2022-10-10&endDate=2022-10-11&prisonCode=ABC")
-        .headers(setAuthorisation(roles = listOf(ROLE_HMPPS_INTEGRATION_API)))
+        .headers(setAuthorisationAsClient(roles = listOf(ROLE_HMPPS_INTEGRATION_API)))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -148,7 +148,7 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
 
       webTestClient.get()
         .uri("/integration-api/attendances/prisoner/$prisonerNumber")
-        .headers(setAuthorisation(roles = listOf(ROLE_HMPPS_INTEGRATION_API)))
+        .headers(setAuthorisationAsClient(roles = listOf(ROLE_HMPPS_INTEGRATION_API)))
         .exchange()
         .expectStatus().isBadRequest
         .expectBody()
@@ -160,7 +160,7 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
 
       webTestClient.get()
         .uri("/integration-api/attendances/prisoner/$prisonerNumber?startDate=2022-10-10&endDate=2022-12-11")
-        .headers(setAuthorisation(roles = listOf(ROLE_HMPPS_INTEGRATION_API)))
+        .headers(setAuthorisationAsClient(roles = listOf(ROLE_HMPPS_INTEGRATION_API)))
         .exchange()
         .expectStatus().isBadRequest
         .expectBody()
@@ -174,7 +174,7 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
     ) = get()
       .uri("/integration-api/attendances/prisoner/$prisonerNumber?startDate=$startDate&endDate=$endDate${prisonCode?.let { "&prisonCode=$it" } ?: ""}")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf(ROLE_HMPPS_INTEGRATION_API)))
+      .headers(setAuthorisationAsClient(roles = listOf(ROLE_HMPPS_INTEGRATION_API)))
       .exchange()
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -204,7 +204,7 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
     private fun WebTestClient.getAttendanceReasons() = get()
       .uri("/integration-api/attendance-reasons")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf(ROLE_HMPPS_INTEGRATION_API)))
+      .headers(setAuthorisationAsClient(roles = listOf(ROLE_HMPPS_INTEGRATION_API)))
       .exchange()
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -237,7 +237,7 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
       webTestClient.get()
         .uri("/integration-api/schedules/1")
         .accept(MediaType.APPLICATION_JSON)
-        .headers(setAuthorisation(isClientToken = false))
+        .headers(setAuthorisationAsUser())
         .header(CASELOAD_ID, "MDI")
         .exchange()
         .expectStatus().isForbidden
@@ -251,7 +251,7 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
       webTestClient.get()
         .uri("/integration-api/schedules/1")
         .accept(MediaType.APPLICATION_JSON)
-        .headers(setAuthorisation(isClientToken = false))
+        .headers(setAuthorisationAsUser())
         .header(CASELOAD_ID, "MDI")
         .exchange()
         .expectStatus().isForbidden
@@ -265,7 +265,7 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
           .build(scheduleId)
       }
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf(ROLE_HMPPS_INTEGRATION_API)))
+      .headers(setAuthorisationAsClient(roles = listOf(ROLE_HMPPS_INTEGRATION_API)))
       .header(CASELOAD_ID, caseLoadId)
       .exchange()
       .expectStatus().isOk
@@ -575,7 +575,7 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
     private fun WebTestClient.getSchedulesOfAnActivity(id: Long) = get()
       .uri("/integration-api/activities/$id/schedules")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf(ROLE_HMPPS_INTEGRATION_API)))
+      .headers(setAuthorisationAsClient(roles = listOf(ROLE_HMPPS_INTEGRATION_API)))
       .exchange()
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -663,7 +663,7 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
           .build()
       }
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf(ROLE_HMPPS_INTEGRATION_API)))
+      .headers(setAuthorisationAsClient(roles = listOf(ROLE_HMPPS_INTEGRATION_API)))
       .exchange()
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -699,7 +699,7 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
             .build()
         }
         .accept(MediaType.APPLICATION_JSON)
-        .headers(setAuthorisation(roles = listOf(ROLE_HMPPS_INTEGRATION_API)))
+        .headers(setAuthorisationAsClient(roles = listOf(ROLE_HMPPS_INTEGRATION_API)))
         .exchange()
         .expectStatus().isNotFound
     }
@@ -713,7 +713,7 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
           .build()
       }
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf(ROLE_HMPPS_INTEGRATION_API)))
+      .headers(setAuthorisationAsClient(roles = listOf(ROLE_HMPPS_INTEGRATION_API)))
       .exchange()
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -727,7 +727,7 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
     private fun WebTestClient.getWaitingListsBy(scheduleId: Long, caseLoadId: String = MOORLAND_PRISON_CODE) = get()
       .uri("/integration-api/schedules/$scheduleId/waiting-list-applications")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_HMPPS_INTEGRATION_API)))
+      .headers(setAuthorisationAsUser(roles = listOf(ROLE_HMPPS_INTEGRATION_API)))
       .header(CASELOAD_ID, caseLoadId)
       .exchange()
       .expectStatus().isOk
@@ -851,7 +851,7 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
       request: WaitingListSearchRequest,
     ): LinkedHashMap<String, Any> = post().uri("/integration-api/waiting-list-applications/$prisonCode/search")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_HMPPS_INTEGRATION_API)))
+      .headers(setAuthorisationAsUser(roles = listOf(ROLE_HMPPS_INTEGRATION_API)))
       .header(CASELOAD_ID, prisonCode)
       .bodyValue(request)
       .exchange()
@@ -907,7 +907,7 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
     fun WebTestClient.getActivitiesIntegrationApi(prisonCode: String, nameSearch: String? = null): List<ActivitySummary?>? = get()
       .uri("/integration-api/prison/$prisonCode/activities" + (nameSearch?.let { "?nameSearch=$nameSearch" } ?: ""))
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf(ROLE_HMPPS_INTEGRATION_API)))
+      .headers(setAuthorisationAsClient(roles = listOf(ROLE_HMPPS_INTEGRATION_API)))
       .exchange()
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)

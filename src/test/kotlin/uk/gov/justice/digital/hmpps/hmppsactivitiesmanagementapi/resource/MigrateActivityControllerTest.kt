@@ -11,7 +11,7 @@ import org.mockito.kotlin.reset
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest
 import org.springframework.http.MediaType
 import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.context.ContextConfiguration
@@ -26,17 +26,17 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.N
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityMigrateResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AllocationMigrateResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.MigrateActivityService
+import uk.gov.justice.hmpps.test.kotlin.auth.WithMockAuthUser
 import java.time.LocalDate
 import java.time.LocalTime
 
 @WebMvcTest(controllers = [MigrateActivityController::class])
 @ContextConfiguration(classes = [MigrateActivityController::class])
-class MigrateActivityControllerTest : ControllerTestBase<MigrateActivityController>() {
+@WithMockAuthUser(roles = ["NOMIS_ACTIVITIES"])
+class MigrateActivityControllerTest : ControllerTestBase() {
 
   @MockitoBean
   private lateinit var migrateActivityService: MigrateActivityService
-
-  override fun controller() = MigrateActivityController(migrateActivityService)
 
   @BeforeEach
   fun resetMocks() {
@@ -49,7 +49,6 @@ class MigrateActivityControllerTest : ControllerTestBase<MigrateActivityControll
     whenever(migrateActivityService.migrateActivity(activityRequest)).thenReturn(expectedResponse)
 
     val response = mockMvc.post("/migrate/activity") {
-      principal = user
       accept = MediaType.APPLICATION_JSON
       contentType = MediaType.APPLICATION_JSON
       content = mapper.writeValueAsBytes(activityRequest)
@@ -70,7 +69,6 @@ class MigrateActivityControllerTest : ControllerTestBase<MigrateActivityControll
       .thenThrow(ValidationException("Generic validation exception"))
 
     mockMvc.post("/migrate/activity") {
-      principal = user
       accept = MediaType.APPLICATION_JSON
       contentType = MediaType.APPLICATION_JSON
       content = mapper.writeValueAsBytes(activityRequest)
@@ -96,7 +94,6 @@ class MigrateActivityControllerTest : ControllerTestBase<MigrateActivityControll
     whenever(migrateActivityService.migrateAllocation(allocationRequest)).thenReturn(expectedResponse)
 
     val response = mockMvc.post("/migrate/allocation") {
-      principal = user
       accept = MediaType.APPLICATION_JSON
       contentType = MediaType.APPLICATION_JSON
       content = mapper.writeValueAsBytes(allocationRequest)
@@ -114,7 +111,6 @@ class MigrateActivityControllerTest : ControllerTestBase<MigrateActivityControll
   @Test
   fun `Move activity start dates - 400 - Missing start date`() {
     mockMvc.post("/migrate/PVI/move-activity-start-dates") {
-      principal = user
       accept = MediaType.APPLICATION_JSON
       contentType = MediaType.APPLICATION_JSON
       content = mapper.writeValueAsBytes(allocationRequest)
@@ -142,7 +138,6 @@ class MigrateActivityControllerTest : ControllerTestBase<MigrateActivityControll
     whenever(migrateActivityService.moveActivityStartDates("PVI", tomorrow)).thenReturn(expectedResponse)
 
     val response = mockMvc.post("/migrate/PVI/move-activity-start-dates?activityStartDate=$tomorrow") {
-      principal = user
       accept = MediaType.APPLICATION_JSON
       contentType = MediaType.APPLICATION_JSON
       content = mapper.writeValueAsBytes(allocationRequest)
@@ -163,7 +158,6 @@ class MigrateActivityControllerTest : ControllerTestBase<MigrateActivityControll
       .thenThrow(ValidationException("Generic validation exception"))
 
     mockMvc.post("/migrate/allocation") {
-      principal = user
       accept = MediaType.APPLICATION_JSON
       contentType = MediaType.APPLICATION_JSON
       content = mapper.writeValueAsBytes(allocationRequest)
@@ -192,7 +186,7 @@ class MigrateActivityControllerTest : ControllerTestBase<MigrateActivityControll
       @Test
       @WithMockUser(roles = ["NOMIS_ACTIVITIES"])
       fun `Migrate allocation (ROLE_NOMIS_ACTIVITIES) - 200`() {
-        mockMvcWithSecurity.post("/migrate/allocation") {
+        mockMvc.post("/migrate/allocation") {
           contentType = MediaType.APPLICATION_JSON
           content = mapper.writeValueAsBytes(allocationRequest)
         }.andExpect { status { isOk() } }
@@ -201,7 +195,7 @@ class MigrateActivityControllerTest : ControllerTestBase<MigrateActivityControll
       @Test
       @WithMockUser(roles = ["NOMIS_APPOINTMENTS"])
       fun `Migrate allocation (ROLE_NOMIS_APPOINTMENTS) - 403`() {
-        mockMvcWithSecurity.post("/migrate/allocation") {
+        mockMvc.post("/migrate/allocation") {
           contentType = MediaType.APPLICATION_JSON
           content = mapper.writeValueAsBytes(allocationRequest)
         }.andExpect { status { isForbidden() } }
@@ -210,7 +204,7 @@ class MigrateActivityControllerTest : ControllerTestBase<MigrateActivityControll
       @Test
       @WithMockUser(roles = ["ACTIVITY_HUB"])
       fun `Migrate allocation (ROLE_ACTIVITY_HUB) - 403`() {
-        mockMvcWithSecurity.post("/migrate/allocation") {
+        mockMvc.post("/migrate/allocation") {
           contentType = MediaType.APPLICATION_JSON
           content = mapper.writeValueAsBytes(allocationRequest)
         }.andExpect { status { isForbidden() } }
@@ -219,7 +213,7 @@ class MigrateActivityControllerTest : ControllerTestBase<MigrateActivityControll
       @Test
       @WithMockUser(roles = ["UNKNOWN"])
       fun `Migrate allocation (ROLE_UNKNOWN) - 403`() {
-        mockMvcWithSecurity.post("/migrate/allocation") {
+        mockMvc.post("/migrate/allocation") {
           contentType = MediaType.APPLICATION_JSON
           content = mapper.writeValueAsBytes(allocationRequest)
         }.andExpect { status { isForbidden() } }
@@ -232,7 +226,7 @@ class MigrateActivityControllerTest : ControllerTestBase<MigrateActivityControll
       @Test
       @WithMockUser(roles = ["NOMIS_ACTIVITIES"])
       fun `Migrate activity (ROLE_NOMIS_ACTIVITIES) - 200`() {
-        mockMvcWithSecurity.post("/migrate/activity") {
+        mockMvc.post("/migrate/activity") {
           contentType = MediaType.APPLICATION_JSON
           content = mapper.writeValueAsBytes(activityRequest)
         }.andExpect { status { isOk() } }
@@ -241,7 +235,7 @@ class MigrateActivityControllerTest : ControllerTestBase<MigrateActivityControll
       @Test
       @WithMockUser(roles = ["NOMIS_APPOINTMENTS"])
       fun `Migrate activity (ROLE_NOMIS_APPOINTMENTS) - 403`() {
-        mockMvcWithSecurity.post("/migrate/allocation") {
+        mockMvc.post("/migrate/allocation") {
           contentType = MediaType.APPLICATION_JSON
           content = mapper.writeValueAsBytes(allocationRequest)
         }.andExpect { status { isForbidden() } }
@@ -250,7 +244,7 @@ class MigrateActivityControllerTest : ControllerTestBase<MigrateActivityControll
       @Test
       @WithMockUser(roles = ["ACTIVITY_HUB"])
       fun `Migrate activity (ROLE_ACTIVITY_HUB) - 403`() {
-        mockMvcWithSecurity.post("/migrate/activity") {
+        mockMvc.post("/migrate/activity") {
           contentType = MediaType.APPLICATION_JSON
           content = mapper.writeValueAsBytes(activityRequest)
         }.andExpect { status { isForbidden() } }
@@ -259,7 +253,7 @@ class MigrateActivityControllerTest : ControllerTestBase<MigrateActivityControll
       @Test
       @WithMockUser(roles = ["UNKNOWN"])
       fun `Migrate activity (ROLE_UNKNOWN) - 403`() {
-        mockMvcWithSecurity.post("/migrate/activity") {
+        mockMvc.post("/migrate/activity") {
           contentType = MediaType.APPLICATION_JSON
           content = mapper.writeValueAsBytes(activityRequest)
         }.andExpect { status { isForbidden() } }
@@ -272,7 +266,7 @@ class MigrateActivityControllerTest : ControllerTestBase<MigrateActivityControll
       @Test
       @WithMockUser(roles = ["NOMIS_ACTIVITIES"])
       fun `Delete activity (ROLE_NOMIS_ACTIVITIES) - 200`() {
-        mockMvcWithSecurity.delete("/migrate/delete-activity/prison/MDI/id/1") {
+        mockMvc.delete("/migrate/delete-activity/prison/MDI/id/1") {
           contentType = MediaType.APPLICATION_JSON
           content = mapper.writeValueAsBytes(activityRequest)
         }.andExpect { status { isOk() } }
@@ -281,7 +275,7 @@ class MigrateActivityControllerTest : ControllerTestBase<MigrateActivityControll
       @Test
       @WithMockUser(roles = ["NOMIS_APPOINTMENTS"])
       fun `Delete activity (ROLE_NOMIS_APPOINTMENTS) - 403`() {
-        mockMvcWithSecurity.delete("/migrate/delete-activity/prison/MDI/id/1") {
+        mockMvc.delete("/migrate/delete-activity/prison/MDI/id/1") {
           contentType = MediaType.APPLICATION_JSON
           content = mapper.writeValueAsBytes(allocationRequest)
         }.andExpect { status { isForbidden() } }
@@ -290,7 +284,7 @@ class MigrateActivityControllerTest : ControllerTestBase<MigrateActivityControll
       @Test
       @WithMockUser(roles = ["ACTIVITY_HUB"])
       fun `Delete activity (ROLE_ACTIVITY_HUB) - 403`() {
-        mockMvcWithSecurity.delete("/migrate/delete-activity/prison/MDI/id/1") {
+        mockMvc.delete("/migrate/delete-activity/prison/MDI/id/1") {
           contentType = MediaType.APPLICATION_JSON
           content = mapper.writeValueAsBytes(activityRequest)
         }.andExpect { status { isForbidden() } }
@@ -299,7 +293,7 @@ class MigrateActivityControllerTest : ControllerTestBase<MigrateActivityControll
       @Test
       @WithMockUser(roles = ["UNKNOWN"])
       fun `Delete activity (ROLE_UNKNOWN) - 403`() {
-        mockMvcWithSecurity.delete("/migrate/delete-activity/prison/MDI/id/1") {
+        mockMvc.delete("/migrate/delete-activity/prison/MDI/id/1") {
           contentType = MediaType.APPLICATION_JSON
           content = mapper.writeValueAsBytes(activityRequest)
         }.andExpect { status { isForbidden() } }
@@ -314,7 +308,7 @@ class MigrateActivityControllerTest : ControllerTestBase<MigrateActivityControll
       @Test
       @WithMockUser(roles = ["NOMIS_ACTIVITIES"])
       fun `Move activity start dates (ROLE_NOMIS_ACTIVITIES) - 200`() {
-        mockMvcWithSecurity.post("/migrate/MDI/move-activity-start-dates?activityStartDate=$tomorrow") {
+        mockMvc.post("/migrate/MDI/move-activity-start-dates?activityStartDate=$tomorrow") {
           contentType = MediaType.APPLICATION_JSON
           content = mapper.writeValueAsBytes(activityRequest)
         }.andExpect { status { isOk() } }
@@ -323,7 +317,7 @@ class MigrateActivityControllerTest : ControllerTestBase<MigrateActivityControll
       @Test
       @WithMockUser(roles = ["ACTIVITY_ADMIN"])
       fun `Move activity start dates (ROLE_ACTIVITY_ADMIN) - 200`() {
-        mockMvcWithSecurity.post("/migrate/MDI/move-activity-start-dates?activityStartDate=$tomorrow") {
+        mockMvc.post("/migrate/MDI/move-activity-start-dates?activityStartDate=$tomorrow") {
           contentType = MediaType.APPLICATION_JSON
           content = mapper.writeValueAsBytes(activityRequest)
         }.andExpect { status { isOk() } }
@@ -332,7 +326,7 @@ class MigrateActivityControllerTest : ControllerTestBase<MigrateActivityControll
       @Test
       @WithMockUser(roles = ["NOMIS_APPOINTMENTS"])
       fun `Move activity start dates (ROLE_NOMIS_APPOINTMENTS) - 403`() {
-        mockMvcWithSecurity.post("/migrate/MDI/move-activity-start-dates?activityStartDate=$tomorrow") {
+        mockMvc.post("/migrate/MDI/move-activity-start-dates?activityStartDate=$tomorrow") {
           contentType = MediaType.APPLICATION_JSON
           content = mapper.writeValueAsBytes(allocationRequest)
         }.andExpect { status { isForbidden() } }
@@ -341,7 +335,7 @@ class MigrateActivityControllerTest : ControllerTestBase<MigrateActivityControll
       @Test
       @WithMockUser(roles = ["ACTIVITY_HUB"])
       fun `Move activity start dates (ROLE_ACTIVITY_HUB) - 403`() {
-        mockMvcWithSecurity.post("/migrate/MDI/move-activity-start-dates?activityStartDate=$tomorrow") {
+        mockMvc.post("/migrate/MDI/move-activity-start-dates?activityStartDate=$tomorrow") {
           contentType = MediaType.APPLICATION_JSON
           content = mapper.writeValueAsBytes(activityRequest)
         }.andExpect { status { isForbidden() } }
@@ -350,7 +344,7 @@ class MigrateActivityControllerTest : ControllerTestBase<MigrateActivityControll
       @Test
       @WithMockUser(roles = ["UNKNOWN"])
       fun `Move activity start dates (ROLE_UNKNOWN) - 403`() {
-        mockMvcWithSecurity.post("/migrate/MDI/move-activity-start-dates?activityStartDate=$tomorrow") {
+        mockMvc.post("/migrate/MDI/move-activity-start-dates?activityStartDate=$tomorrow") {
           contentType = MediaType.APPLICATION_JSON
           content = mapper.writeValueAsBytes(activityRequest)
         }.andExpect { status { isForbidden() } }

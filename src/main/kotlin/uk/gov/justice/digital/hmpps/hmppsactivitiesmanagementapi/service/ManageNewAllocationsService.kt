@@ -3,7 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isActiveInPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Job
@@ -23,7 +23,7 @@ import java.time.LocalDateTime
 class ManageNewAllocationsService(
   private val rolloutPrisonService: RolloutPrisonService,
   private val transactionHandler: TransactionHandler,
-  private val prisonerSearch: PrisonerSearchApiApplicationClient,
+  private val prisonerSearchApiClient: PrisonerSearchApiClient,
   private val jobsSqsService: JobsSqsService,
   private val jobService: JobService,
   private val allocationRepository: AllocationRepository,
@@ -82,7 +82,7 @@ class ManageNewAllocationsService(
 
     transactionHandler.newSpringTransaction {
       pendingAllocationsStartingOnOrBefore(today, prisonCode).let { allocations ->
-        val prisoners = prisonerSearch.findByPrisonerNumbers(allocations.map { it.prisonerNumber }.distinct())
+        val prisoners = prisonerSearchApiClient.findByPrisonerNumbers(allocations.map { it.prisonerNumber }.distinct())
 
         allocations.map { allocation -> allocation to prisoners.firstOrNull { it.prisonerNumber == allocation.prisonerNumber } }
       }

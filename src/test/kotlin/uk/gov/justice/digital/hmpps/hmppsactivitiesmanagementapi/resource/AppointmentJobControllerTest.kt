@@ -3,7 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.verify
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest
 import org.springframework.http.MediaType
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.bean.override.mockito.MockitoBean
@@ -13,11 +13,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.appoin
 
 @WebMvcTest(controllers = [AppointmentJobController::class])
 @ContextConfiguration(classes = [AppointmentJobController::class])
-class AppointmentJobControllerTest : ControllerTestBase<AppointmentJobController>() {
+class AppointmentJobControllerTest : ControllerTestBase() {
   @MockitoBean
   private lateinit var manageAppointmentAttendeesJob: ManageAppointmentAttendeesJob
-
-  override fun controller() = AppointmentJobController(manageAppointmentAttendeesJob)
 
   @Test
   fun `202 response when manage appointment attendees job started`() {

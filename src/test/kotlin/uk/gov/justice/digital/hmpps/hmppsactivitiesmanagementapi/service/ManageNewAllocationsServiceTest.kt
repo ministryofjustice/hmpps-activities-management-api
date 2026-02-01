@@ -12,7 +12,7 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Job
@@ -41,7 +41,7 @@ class ManageNewAllocationsServiceTest : JobsTestBase() {
     on { getRolloutPrisons() } doReturn listOf(rolloutPrison(PENTONVILLE_PRISON_CODE), rolloutPrison(MOORLAND_PRISON_CODE))
   }
   private val allocationRepository: AllocationRepository = mock()
-  private val prisonerSearch: PrisonerSearchApiApplicationClient = mock()
+  private val prisonerSearch: PrisonerSearchApiClient = mock()
   private val outboundEventsService: OutboundEventsService = mock()
   private val monitoringService: MonitoringService = mock()
   private val jobsSqsService: JobsSqsService = mock()

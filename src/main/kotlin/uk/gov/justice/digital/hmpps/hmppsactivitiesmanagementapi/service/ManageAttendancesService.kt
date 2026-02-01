@@ -4,7 +4,7 @@ import jakarta.persistence.EntityNotFoundException
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.between
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.ifNotEmpty
@@ -46,7 +46,7 @@ class ManageAttendancesService(
   private val prisonPayBandRepository: PrisonPayBandRepository,
   private val rolloutPrisonService: RolloutPrisonService,
   private val outboundEventsService: OutboundEventsService,
-  private val prisonerSearchApiClient: PrisonerSearchApiApplicationClient,
+  private val prisonerSearchApiClient: PrisonerSearchApiClient,
   private val transactionHandler: TransactionHandler,
   private val monitoringService: MonitoringService,
   private val clock: Clock,

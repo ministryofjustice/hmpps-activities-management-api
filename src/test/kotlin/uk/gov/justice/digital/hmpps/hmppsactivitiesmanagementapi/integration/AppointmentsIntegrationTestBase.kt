@@ -11,7 +11,7 @@ abstract class AppointmentsIntegrationTestBase : LocalStackTestBase() {
 
   fun WebTestClient.getAppointmentDetailsById(id: Long) = get()
     .uri("/appointments/$id/details")
-    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
     .exchange()
     .expectStatus().isOk
     .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -20,7 +20,7 @@ abstract class AppointmentsIntegrationTestBase : LocalStackTestBase() {
 
   fun WebTestClient.getAppointmentDetailsByIds(ids: List<Long>) = post()
     .uri("/appointments/details")
-    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
     .bodyValue(ids)
     .exchange()
     .expectStatus().isOk
@@ -30,7 +30,7 @@ abstract class AppointmentsIntegrationTestBase : LocalStackTestBase() {
 
   fun WebTestClient.getAppointmentSetDetailsById(id: Long) = get()
     .uri("/appointment-set/$id/details")
-    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
     .exchange()
     .expectStatus().isOk
     .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -47,7 +47,7 @@ abstract class AppointmentsIntegrationTestBase : LocalStackTestBase() {
 
   fun WebTestClient.getAppointmentSeriesById(id: Long) = get()
     .uri("/appointment-series/$id")
-    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
     .exchange()
     .expectStatus().isOk
     .expectHeader().contentType(MediaType.APPLICATION_JSON)

@@ -17,7 +17,7 @@ class FakeCaseLoad(private val caseloadId: String = DEFAULT_CASELOAD_PENTONVILLE
 
   private val mockRequest = MockHttpServletRequest()
 
-  override fun beforeEach(context: ExtensionContext?) {
+  override fun beforeEach(context: ExtensionContext) {
     RequestContextHolder.setRequestAttributes(
       ServletRequestAttributes(
         mockRequest.apply {
@@ -30,7 +30,7 @@ class FakeCaseLoad(private val caseloadId: String = DEFAULT_CASELOAD_PENTONVILLE
     )
   }
 
-  override fun afterEach(context: ExtensionContext?) {
+  override fun afterEach(context: ExtensionContext) {
     RequestContextHolder.setRequestAttributes(ServletRequestAttributes(mockRequest.apply { clearAttributes() }))
   }
 }

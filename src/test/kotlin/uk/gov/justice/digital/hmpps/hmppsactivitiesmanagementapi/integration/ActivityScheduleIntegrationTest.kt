@@ -168,7 +168,7 @@ class ActivityScheduleIntegrationTest : LocalStackTestBase() {
     webTestClient.get()
       .uri("/schedules/1/allocations")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(isClientToken = false))
+      .headers(setAuthorisationAsClient())
       .header(CASELOAD_ID, "MDI")
       .exchange()
       .expectStatus().isForbidden
@@ -182,7 +182,7 @@ class ActivityScheduleIntegrationTest : LocalStackTestBase() {
     webTestClient.get()
       .uri("/schedules/1/allocations")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(isClientToken = true, roles = listOf(ROLE_ACTIVITY_ADMIN)))
+      .headers(setAuthorisationAsClient(roles = listOf(ROLE_ACTIVITY_ADMIN)))
       .exchange()
       .expectStatus().isOk
   }
@@ -203,7 +203,7 @@ class ActivityScheduleIntegrationTest : LocalStackTestBase() {
         .build(scheduleId)
     }
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .headers(setAuthorisationAsUser(roles = listOf(ROLE_PRISON)))
     .header(CASELOAD_ID, caseLoadId)
     .exchange()
     .expectStatus().isOk
@@ -233,7 +233,7 @@ class ActivityScheduleIntegrationTest : LocalStackTestBase() {
     webTestClient.get()
       .uri("/schedules/1")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(isClientToken = false))
+      .headers(setAuthorisationAsClient())
       .header(CASELOAD_ID, "MDI")
       .exchange()
       .expectStatus().isForbidden
@@ -247,7 +247,7 @@ class ActivityScheduleIntegrationTest : LocalStackTestBase() {
     webTestClient.get()
       .uri("/schedules/1")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(isClientToken = false))
+      .headers(setAuthorisationAsClient())
       .header(CASELOAD_ID, "MDI")
       .exchange()
       .expectStatus().isForbidden
@@ -261,7 +261,7 @@ class ActivityScheduleIntegrationTest : LocalStackTestBase() {
         .build(scheduleId)
     }
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
     .header(CASELOAD_ID, caseLoadId)
     .exchange()
     .expectStatus().isOk
@@ -272,7 +272,7 @@ class ActivityScheduleIntegrationTest : LocalStackTestBase() {
   private fun WebTestClient.getAllAttendanceByDate(prisonCode: String, sessionDate: LocalDate, eventTierType: EventTierType? = null) = get()
     .uri("/attendances/$prisonCode/$sessionDate${eventTierType?.let { "?eventTier=${it.name}" } ?: ""}")
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .headers(setAuthorisationAsUser(roles = listOf(ROLE_PRISON)))
     .exchange()
     .expectStatus().isOk
     .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -454,7 +454,7 @@ class ActivityScheduleIntegrationTest : LocalStackTestBase() {
         ),
       )
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf("ROLE_NOT_ALLOWED")))
+      .headers(setAuthorisationAsUser(roles = listOf("ROLE_NOT_ALLOWED")))
       .exchange()
       .expectStatus().isForbidden
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -673,7 +673,7 @@ class ActivityScheduleIntegrationTest : LocalStackTestBase() {
     webTestClient.get()
       .uri("/schedules/1/candidates")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(isClientToken = false))
+      .headers(setAuthorisationAsClient())
       .header(CASELOAD_ID, "MDI")
       .exchange()
       .expectStatus().isForbidden
@@ -687,7 +687,7 @@ class ActivityScheduleIntegrationTest : LocalStackTestBase() {
     webTestClient.get()
       .uri("/schedules/1/candidates")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(isClientToken = true, roles = listOf(ROLE_ACTIVITY_ADMIN)))
+      .headers(setAuthorisationAsClient(roles = listOf(ROLE_ACTIVITY_ADMIN)))
       .exchange()
       .expectStatus().isOk
   }
@@ -1101,14 +1101,14 @@ class ActivityScheduleIntegrationTest : LocalStackTestBase() {
     .uri("/schedules/$scheduleId/allocations")
     .bodyValue(request)
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB)))
+    .headers(setAuthorisationAsUser(roles = listOf(ROLE_ACTIVITY_HUB)))
     .exchange()
 
   private fun WebTestClient.deallocatePrisoners(scheduleId: Long, request: PrisonerDeallocationRequest) = put()
     .uri("/schedules/$scheduleId/deallocate")
     .bodyValue(request)
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(roles = listOf(ROLE_ACTIVITY_ADMIN)))
+    .headers(setAuthorisationAsUser(roles = listOf(ROLE_ACTIVITY_ADMIN)))
     .exchange()
 
   private fun WebTestClient.getCandidateSuitability(
@@ -1118,7 +1118,7 @@ class ActivityScheduleIntegrationTest : LocalStackTestBase() {
   ) = get()
     .uri("/schedules/$scheduleId/suitability?prisonerNumber=$prisonerNumber")
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(roles = listOf(ROLE_ACTIVITY_ADMIN)))
+    .headers(setAuthorisationAsUser(roles = listOf(ROLE_ACTIVITY_ADMIN)))
     .header(CASELOAD_ID, caseLoadId)
     .exchange()
     .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -1132,7 +1132,7 @@ class ActivityScheduleIntegrationTest : LocalStackTestBase() {
   ) = get()
     .uri("/schedules/$scheduleId/candidates?noAllocations=$noAllocations&size=$pageSize&page=$pageNum")
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(roles = listOf(ROLE_ACTIVITY_ADMIN)))
+    .headers(setAuthorisationAsUser(roles = listOf(ROLE_ACTIVITY_ADMIN)))
     .header(CASELOAD_ID, caseLoadId)
     .exchange()
     .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -1145,7 +1145,7 @@ class ActivityScheduleIntegrationTest : LocalStackTestBase() {
         .build()
     }
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_PRISON)))
+    .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
     .header(CASELOAD_ID, caseLoadId)
     .exchange()
     .expectStatus().isOk
@@ -1160,7 +1160,7 @@ class ActivityScheduleIntegrationTest : LocalStackTestBase() {
   ) = get()
     .uri("/schedules/$scheduleId/non-associations?prisonerNumber=$prisonerNumber")
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(roles = listOf(ROLE_ACTIVITY_ADMIN)))
+    .headers(setAuthorisationAsUser(roles = listOf(ROLE_ACTIVITY_ADMIN)))
     .header(CASELOAD_ID, caseLoadId)
     .exchange()
     .expectHeader().contentType(MediaType.APPLICATION_JSON)
