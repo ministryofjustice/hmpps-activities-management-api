@@ -80,7 +80,7 @@ class AppointmentIntegrationTest : LocalStackTestBase() {
   fun `update appointment by unknown id returns 404 not found`() {
     webTestClient.patch()
       .uri("/appointments/-1")
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
       .bodyValue(AppointmentUpdateRequest())
       .exchange()
       .expectStatus().isNotFound
