@@ -18,7 +18,7 @@ class AttendanceSyncIntegrationTest : IntegrationTestBase() {
       webTestClient.get()
         .uri("/synchronisation/attendance/1")
         .accept(MediaType.APPLICATION_JSON)
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .headers(setAuthorisationAsClient(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
         .exchange()
         .expectStatus().isOk
         .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -52,7 +52,7 @@ class AttendanceSyncIntegrationTest : IntegrationTestBase() {
       webTestClient.get()
         .uri("/synchronisation/attendance/2")
         .accept(MediaType.APPLICATION_JSON)
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .headers(setAuthorisationAsClient(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
         .exchange()
         .expectStatus().isOk
         .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -88,7 +88,7 @@ class AttendanceSyncIntegrationTest : IntegrationTestBase() {
       webTestClient.get()
         .uri("/synchronisation/attendance/5")
         .accept(MediaType.APPLICATION_JSON)
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .headers(setAuthorisationAsClient(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
         .exchange()
         .expectStatus().isOk
         .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -122,7 +122,7 @@ class AttendanceSyncIntegrationTest : IntegrationTestBase() {
       webTestClient.get()
         .uri("/synchronisation/attendance/3")
         .accept(MediaType.APPLICATION_JSON)
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .headers(setAuthorisationAsClient(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
         .exchange()
         .expectStatus().isOk
         .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -156,7 +156,7 @@ class AttendanceSyncIntegrationTest : IntegrationTestBase() {
       webTestClient.get()
         .uri("/synchronisation/attendance/4")
         .accept(MediaType.APPLICATION_JSON)
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .headers(setAuthorisationAsClient(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
         .exchange()
         .expectStatus().isOk
         .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -189,7 +189,7 @@ class AttendanceSyncIntegrationTest : IntegrationTestBase() {
     webTestClient.get()
       .uri("/synchronisation/attendance/1")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf()))
+      .headers(setAuthorisationAsClient(roles = listOf()))
       .exchange()
       .expectStatus().isForbidden
   }
@@ -202,7 +202,7 @@ class AttendanceSyncIntegrationTest : IntegrationTestBase() {
     webTestClient.get()
       .uri("/synchronisation/attendance/1")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf("INVALID_ROLE")))
+      .headers(setAuthorisationAsClient(roles = listOf("INVALID_ROLE")))
       .exchange()
       .expectStatus().isForbidden
   }
@@ -215,7 +215,7 @@ class AttendanceSyncIntegrationTest : IntegrationTestBase() {
     webTestClient.get()
       .uri("/synchronisation/attendance/1111")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+      .headers(setAuthorisationAsClient(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
       .exchange()
       .expectStatus().isNotFound
   }
@@ -228,7 +228,7 @@ class AttendanceSyncIntegrationTest : IntegrationTestBase() {
     webTestClient.get()
       .uri("/synchronisation/attendance/INVALID")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+      .headers(setAuthorisationAsClient(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
       .exchange()
       .expectStatus().isBadRequest
   }

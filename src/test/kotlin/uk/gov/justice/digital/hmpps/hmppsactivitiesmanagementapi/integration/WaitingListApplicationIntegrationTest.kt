@@ -69,7 +69,7 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
   private fun WebTestClient.getById(id: Long) = get()
     .uri("/waiting-list-applications/$id")
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_PRISON)))
+    .headers(setAuthorisationAsUser(roles = listOf(ROLE_PRISON)))
     .header(CASELOAD_ID, MOORLAND_PRISON_CODE)
     .exchange()
     .expectStatus().isOk
@@ -156,7 +156,7 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
   private fun update(id: Long, request: WaitingListApplicationUpdateRequest) = webTestClient.patch()
     .uri("/waiting-list-applications/$id")
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB)))
+    .headers(setAuthorisationAsUser(roles = listOf(ROLE_ACTIVITY_HUB)))
     .header(CASELOAD_ID, MOORLAND_PRISON_CODE)
     .bodyValue(request)
     .exchange()
@@ -478,7 +478,7 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
       .uri("/waiting-list-applications/$MOORLAND_PRISON_CODE/prisoner/$prisonerNumber")
       .bodyValue(requestList)
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_PRISON)))
+      .headers(setAuthorisationAsUser(roles = listOf(ROLE_PRISON)))
       .header(CASELOAD_ID, MOORLAND_PRISON_CODE)
       .exchange()
       .expectStatus().isForbidden
@@ -524,7 +524,7 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
     webTestClient.get()
       .uri("/waiting-list-applications/$waitingListId/history")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB)))
+      .headers(setAuthorisationAsUser(roles = listOf(ROLE_ACTIVITY_HUB)))
       .header(CASELOAD_ID, MOORLAND_PRISON_CODE)
       .exchange()
       .expectStatus().isForbidden
@@ -575,7 +575,7 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
     webTestClient.post()
       .uri("/waiting-list-applications/$MOORLAND_PRISON_CODE/prisoner/G4793VF")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(user = "Tom", isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB, ROLE_ACTIVITY_ADMIN)))
+      .headers(setAuthorisationAsUser(username = "Tom", roles = listOf(ROLE_ACTIVITY_HUB, ROLE_ACTIVITY_ADMIN)))
       .header(CASELOAD_ID, MOORLAND_PRISON_CODE)
       .bodyValue(waitingList)
       .exchange()
@@ -593,7 +593,7 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
     webTestClient.patch()
       .uri("/waiting-list-applications/$waitingListId")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(user = "Fred", isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB)))
+      .headers(setAuthorisationAsUser(username = "Fred", roles = listOf(ROLE_ACTIVITY_HUB)))
       .header(CASELOAD_ID, MOORLAND_PRISON_CODE)
       .bodyValue(firstUpdate)
       .exchange()
@@ -609,7 +609,7 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
     webTestClient.patch()
       .uri("/waiting-list-applications/$waitingListId")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(user = "Alice", isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB)))
+      .headers(setAuthorisationAsUser(username = "Alice", roles = listOf(ROLE_ACTIVITY_HUB)))
       .header(CASELOAD_ID, MOORLAND_PRISON_CODE)
       .bodyValue(secondUpdate)
       .exchange()
@@ -619,7 +619,7 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
     val history = webTestClient.get()
       .uri("/waiting-list-applications/$waitingListId/history")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_ADMIN, ROLE_PRISON)))
+      .headers(setAuthorisationAsUser(roles = listOf(ROLE_ACTIVITY_ADMIN, ROLE_PRISON)))
       .header(CASELOAD_ID, MOORLAND_PRISON_CODE)
       .exchange()
       .expectStatus().isOk
@@ -653,8 +653,8 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
     assertThat(secondRev.updatedBy).isEqualTo("Alice")
 
     // updatedDateTime conversion to BST and GMT
-    val firstRevLdnZoned = firstRev.updatedDateTime!!.atZone(ZoneId.of("Europe/London"))
-    val secondRevLdnZoned = secondRev.updatedDateTime!!.atZone(ZoneId.of("Europe/London"))
+    val firstRevLdnZoned = firstRev.updatedDateTime.atZone(ZoneId.of("Europe/London"))
+    val secondRevLdnZoned = secondRev.updatedDateTime.atZone(ZoneId.of("Europe/London"))
     val rules = ZoneId.of("Europe/London").rules
 
     val offsetFirstRevSeconds = rules.getOffset(firstRevLdnZoned.toInstant()).totalSeconds
@@ -683,8 +683,8 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
     .uri("/allocations/$prisonCode/waiting-list-application")
     .bodyValue(application)
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB)))
-    .header(CASELOAD_ID, caseloadId)
+    .headers(setAuthorisationAsUser(roles = listOf(ROLE_ACTIVITY_HUB)))
+    .header(CASELOAD_ID, caseloadId!!)
     .exchange()
 
   private fun WebTestClient.prisonerWaitingListApplication(
@@ -696,8 +696,8 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
     .uri("/waiting-list-applications/$prisonCode/prisoner/$prisonerNumber")
     .bodyValue(request)
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_ADMIN, ROLE_ACTIVITY_HUB)))
-    .header(CASELOAD_ID, caseloadId)
+    .headers(setAuthorisationAsUser(roles = listOf(ROLE_ACTIVITY_ADMIN, ROLE_ACTIVITY_HUB)))
+    .header(CASELOAD_ID, caseloadId!!)
     .exchange()
 
   private fun WebTestClient.searchWaitingLists(
@@ -705,7 +705,7 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
     request: WaitingListSearchRequest,
   ): LinkedHashMap<String, Any> = post().uri("/waiting-list-applications/$prisonCode/search")
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_PRISON)))
+    .headers(setAuthorisationAsUser(roles = listOf(ROLE_PRISON)))
     .header(CASELOAD_ID, prisonCode)
     .bodyValue(request)
     .exchange()
@@ -719,7 +719,7 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
   ) = get()
     .uri("/waiting-list-applications/$waitingListId/history")
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_ADMIN, ROLE_PRISON)))
+    .headers(setAuthorisationAsUser(roles = listOf(ROLE_ACTIVITY_ADMIN, ROLE_PRISON)))
     .header(CASELOAD_ID, MOORLAND_PRISON_CODE)
     .exchange()
 

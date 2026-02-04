@@ -10,7 +10,7 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
@@ -47,7 +47,7 @@ class ManageAllocationsDueToExpireServiceTest {
   private val outboundEventsService: OutboundEventsService = mock()
   private val prisonApiClient: PrisonApiClient = mock()
   private val monitoringService: MonitoringService = mock()
-  private val prisonerSearch: PrisonerSearchApiApplicationClient = mock()
+  private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
   private val jobsSqsService: JobsSqsService = mock()
   private val jobService: JobService = mock()
 
@@ -58,7 +58,7 @@ class ManageAllocationsDueToExpireServiceTest {
       waitingListService,
       TransactionHandler(),
       prisonApiClient,
-      prisonerSearch,
+      prisonerSearchApiClient,
       jobsSqsService,
       jobService,
       allocationRepository,
@@ -89,7 +89,7 @@ class ManageAllocationsDueToExpireServiceTest {
     whenever(allocationRepository.findByPrisonCodePrisonerStatus(prison.prisonCode, listOf(PrisonerStatus.PENDING))) doReturn listOf(
       allocation,
     )
-    whenever(prisonerSearch.findByPrisonerNumbers(listOf(prisonerInAtOtherPrison.prisonerNumber))) doReturn listOf(prisonerInAtOtherPrison)
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(listOf(prisonerInAtOtherPrison.prisonerNumber))) doReturn listOf(prisonerInAtOtherPrison)
 
     whenever(prisonApiClient.getMovementsForPrisonersFromPrison(prison.prisonCode, setOf(allocation.prisonerNumber))) doReturn
       listOf(movement(prisonerNumber = allocation.prisonerNumber, movementDate = TimeSource.yesterday()))
@@ -117,7 +117,7 @@ class ManageAllocationsDueToExpireServiceTest {
     whenever(rolloutPrisonService.getRolloutPrisons()) doReturn listOf(prison)
     whenever(rolloutPrisonService.getByPrisonCode(prison.prisonCode)) doReturn prison
     whenever(allocationRepository.findByPrisonCodePrisonerStatus(prison.prisonCode, listOf(PrisonerStatus.PENDING))) doReturn listOf(allocation)
-    whenever(prisonerSearch.findByPrisonerNumbers(listOf(prisoner.prisonerNumber))) doReturn listOf(prisoner)
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(listOf(prisoner.prisonerNumber))) doReturn listOf(prisoner)
     whenever(prisonApiClient.getMovementsForPrisonersFromPrison(prison.prisonCode, setOf(allocation.prisonerNumber))) doReturn listOf(movement(prisonerNumber = allocation.prisonerNumber, movementDate = TimeSource.yesterday()))
 
     service.deallocateAllocationsDueToExpire()
@@ -142,7 +142,7 @@ class ManageAllocationsDueToExpireServiceTest {
     whenever(allocationRepository.findByPrisonCodePrisonerStatus(prison.prisonCode, listOf(PrisonerStatus.PENDING))) doReturn listOf(
       allocation,
     )
-    whenever(prisonerSearch.findByPrisonerNumbers(listOf(prisonerInAtOtherPrison.prisonerNumber))) doReturn listOf(prisonerInAtOtherPrison)
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(listOf(prisonerInAtOtherPrison.prisonerNumber))) doReturn listOf(prisonerInAtOtherPrison)
 
     whenever(prisonApiClient.getMovementsForPrisonersFromPrison(prison.prisonCode, setOf(allocation.prisonerNumber))) doReturn
       listOf(movement(prisonerNumber = allocation.prisonerNumber, fromPrisonCode = prison.prisonCode, movementDate = TimeSource.yesterday()))
@@ -193,7 +193,7 @@ class ManageAllocationsDueToExpireServiceTest {
 
     whenever(rolloutPrisonService.getRolloutPrisons()) doReturn listOf(prison)
     whenever(rolloutPrisonService.getByPrisonCode(prison.prisonCode)) doReturn prison
-    whenever(prisonerSearch.findByPrisonerNumbers(listOf(prisoner.prisonerNumber))) doReturn listOf(prisoner)
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(listOf(prisoner.prisonerNumber))) doReturn listOf(prisoner)
     whenever(waitingListService.fetchOpenApplicationsForPrison(prison.prisonCode)) doReturn listOf(waitingList(prisonerNumber = "A1234AA"))
     whenever(prisonApiClient.getMovementsForPrisonersFromPrison(prison.prisonCode, setOf("A1234AA"))) doReturn
       listOf(movement(prisonerNumber = "A1234AA", movementDate = TimeSource.yesterday()))
@@ -233,7 +233,7 @@ class ManageAllocationsDueToExpireServiceTest {
     whenever(allocationRepository.findByPrisonCodePrisonerStatus(prison.prisonCode, listOf(PrisonerStatus.PENDING))) doReturn listOf(
       allocation,
     )
-    whenever(prisonerSearch.findByPrisonerNumbers(listOf(prisonerInAtOtherPrison.prisonerNumber))) doReturn listOf(prisonerInAtOtherPrison)
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(listOf(prisonerInAtOtherPrison.prisonerNumber))) doReturn listOf(prisonerInAtOtherPrison)
 
     whenever(prisonApiClient.getMovementsForPrisonersFromPrison(prison.prisonCode, setOf(allocation.prisonerNumber))) doReturn
       listOf(movement(prisonerNumber = allocation.prisonerNumber, movementDate = TimeSource.yesterday()))
@@ -261,7 +261,7 @@ class ManageAllocationsDueToExpireServiceTest {
 
     whenever(rolloutPrisonService.getByPrisonCode(prison.prisonCode)) doReturn prison
     whenever(allocationRepository.findByPrisonCodePrisonerStatus(prison.prisonCode, listOf(PrisonerStatus.PENDING))) doReturn listOf(allocation)
-    whenever(prisonerSearch.findByPrisonerNumbers(listOf(prisoner.prisonerNumber))) doReturn listOf(prisoner)
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(listOf(prisoner.prisonerNumber))) doReturn listOf(prisoner)
     whenever(prisonApiClient.getMovementsForPrisonersFromPrison(prison.prisonCode, setOf(allocation.prisonerNumber))) doReturn listOf(movement(prisonerNumber = allocation.prisonerNumber, movementDate = TimeSource.yesterday()))
 
     service.handleEvent(123, PENTONVILLE_PRISON_CODE)
@@ -285,7 +285,7 @@ class ManageAllocationsDueToExpireServiceTest {
     whenever(allocationRepository.findByPrisonCodePrisonerStatus(prison.prisonCode, listOf(PrisonerStatus.PENDING))) doReturn listOf(
       allocation,
     )
-    whenever(prisonerSearch.findByPrisonerNumbers(listOf(prisonerInAtOtherPrison.prisonerNumber))) doReturn listOf(prisonerInAtOtherPrison)
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(listOf(prisonerInAtOtherPrison.prisonerNumber))) doReturn listOf(prisonerInAtOtherPrison)
 
     whenever(prisonApiClient.getMovementsForPrisonersFromPrison(prison.prisonCode, setOf(allocation.prisonerNumber))) doReturn
       listOf(movement(prisonerNumber = allocation.prisonerNumber, fromPrisonCode = prison.prisonCode, movementDate = TimeSource.yesterday()))
@@ -335,7 +335,7 @@ class ManageAllocationsDueToExpireServiceTest {
 
     whenever(rolloutPrisonService.getRolloutPrisons()) doReturn listOf(prison)
     whenever(rolloutPrisonService.getByPrisonCode(prison.prisonCode)) doReturn prison
-    whenever(prisonerSearch.findByPrisonerNumbers(listOf(prisoner.prisonerNumber))) doReturn listOf(prisoner)
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(listOf(prisoner.prisonerNumber))) doReturn listOf(prisoner)
     whenever(waitingListService.fetchOpenApplicationsForPrison(prison.prisonCode)) doReturn listOf(waitingList(prisonerNumber = "A1234AA"))
     whenever(prisonApiClient.getMovementsForPrisonersFromPrison(prison.prisonCode, setOf("A1234AA"))) doReturn
       listOf(movement(prisonerNumber = "A1234AA", movementDate = TimeSource.yesterday()))

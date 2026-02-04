@@ -46,7 +46,7 @@ class AppointmentDetailsIntegrationTest : AppointmentsIntegrationTestBase() {
   fun `get appointment details by unknown id returns 404 not found`() {
     webTestClient.get()
       .uri("/appointments/-1/details")
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
       .exchange()
       .expectStatus().isNotFound
   }
@@ -254,7 +254,7 @@ class AppointmentDetailsIntegrationTest : AppointmentsIntegrationTestBase() {
   fun `get multiple appointments by ids should return 400 if appointments are from different prisons`() {
     webTestClient.post()
       .uri("/appointments/details")
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
       .bodyValue(listOf(2, 5))
       .exchange()
       .expectStatus().isBadRequest

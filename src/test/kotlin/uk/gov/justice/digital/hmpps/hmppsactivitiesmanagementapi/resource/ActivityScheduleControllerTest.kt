@@ -8,13 +8,11 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
-import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest
 import org.springframework.http.MediaType
-import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.MockMvc
@@ -38,13 +36,13 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Waiting
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelAllocations
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelSchedule
-import java.security.Principal
+import uk.gov.justice.hmpps.test.kotlin.auth.WithMockAuthUser
 import java.time.LocalDate
 import java.time.LocalDateTime
 
 @WebMvcTest(controllers = [ActivityScheduleController::class])
 @ContextConfiguration(classes = [ActivityScheduleController::class])
-class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleController>() {
+class ActivityScheduleControllerTest : ControllerTestBase() {
 
   @MockitoBean
   private lateinit var activityScheduleService: ActivityScheduleService
@@ -54,8 +52,6 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
 
   @MockitoBean
   private lateinit var waitingListService: WaitingListService
-
-  override fun controller() = ActivityScheduleController(activityScheduleService, candidatesService, waitingListService)
 
   @Test
   fun `200 response when get allocations by schedule identifier`() {
@@ -173,13 +169,10 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
       startDate = TimeSource.tomorrow(),
     )
 
-    val mockPrincipal: Principal = mock()
-    whenever(mockPrincipal.name).thenReturn("THE USER NAME")
-
     mockMvc.allocate(1, request)
       .andExpect { status { isNoContent() } }
 
-    verify(activityScheduleService).allocatePrisoner(1, request, "USERNAME")
+    verify(activityScheduleService).allocatePrisoner(1, request, user.name)
   }
 
   @Test
@@ -212,23 +205,18 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
       caseNote = null,
     )
 
-    val mockPrincipal: Principal = mock()
-    whenever(mockPrincipal.name).thenReturn("THE USER NAME")
-
     mockMvc.deallocate(1, request)
       .andExpect { status { isNoContent() } }
 
-    verify(activityScheduleService).deallocatePrisoners(1, request, "USERNAME")
+    verify(activityScheduleService).deallocatePrisoners(1, request, user.name)
   }
 
   private fun MockMvc.allocate(scheduleId: Long, request: PrisonerAllocationRequest) = post("/schedules/$scheduleId/allocations") {
-    principal = Principal { "USERNAME" }
     content = mapper.writeValueAsString(request)
     contentType = MediaType.APPLICATION_JSON
   }
 
   private fun MockMvc.deallocate(scheduleId: Long, request: PrisonerDeallocationRequest) = put("/schedules/$scheduleId/deallocate") {
-    principal = Principal { "USERNAME" }
     content = mapper.writeValueAsString(request)
     contentType = MediaType.APPLICATION_JSON
   }
@@ -297,27 +285,26 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
       )
 
       @Test
-      @WithMockUser(roles = ["ACTIVITY_ADMIN"])
       fun `Allocate offender (ROLE_ACTIVITY_ADMIN) - 204`() {
-        mockMvcWithSecurity.post("/schedules/1/allocations") {
+        mockMvc.post("/schedules/1/allocations") {
           contentType = MediaType.APPLICATION_JSON
           content = mapper.writeValueAsBytes(prisonerAllocationRequest)
         }.andExpect { status { isNoContent() } }
       }
 
       @Test
-      @WithMockUser(roles = ["ACTIVITY_HUB"])
+      @WithMockAuthUser(roles = ["ACTIVITY_HUB"])
       fun `Allocate offender (ROLE_ACTIVITY_HUB) - 204`() {
-        mockMvcWithSecurity.post("/schedules/1/allocations") {
+        mockMvc.post("/schedules/1/allocations") {
           contentType = MediaType.APPLICATION_JSON
           content = mapper.writeValueAsBytes(prisonerAllocationRequest)
         }.andExpect { status { isNoContent() } }
       }
 
       @Test
-      @WithMockUser(roles = ["PRISON"])
+      @WithMockAuthUser(roles = ["PRISON"])
       fun `Allocate offender (ROLE_PRISON) - 403`() {
-        mockMvcWithSecurity.post("/schedules/1/allocations") {
+        mockMvc.post("/schedules/1/allocations") {
           contentType = MediaType.APPLICATION_JSON
           content = mapper.writeValueAsBytes(prisonerAllocationRequest)
         }.andExpect { status { isForbidden() } }
@@ -335,27 +322,26 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
       )
 
       @Test
-      @WithMockUser(roles = ["ACTIVITY_ADMIN"])
       fun `Deallocate offender (ROLE_ACTIVITY_ADMIN) - 204`() {
-        mockMvcWithSecurity.put("/schedules/1/deallocate") {
+        mockMvc.put("/schedules/1/deallocate") {
           contentType = MediaType.APPLICATION_JSON
           content = mapper.writeValueAsBytes(prisonerDeallocateRequest)
         }.andExpect { status { isNoContent() } }
       }
 
       @Test
-      @WithMockUser(roles = ["ACTIVITY_HUB"])
+      @WithMockAuthUser(roles = ["ACTIVITY_HUB"])
       fun `Deallocate offender (ROLE_ACTIVITY_HUB) - 204`() {
-        mockMvcWithSecurity.put("/schedules/1/deallocate") {
+        mockMvc.put("/schedules/1/deallocate") {
           contentType = MediaType.APPLICATION_JSON
           content = mapper.writeValueAsBytes(prisonerDeallocateRequest)
         }.andExpect { status { isNoContent() } }
       }
 
       @Test
-      @WithMockUser(roles = ["PRISON"])
+      @WithMockAuthUser(roles = ["PRISON"])
       fun `Deallocate offender (ROLE_PRISON) - 403`() {
-        mockMvcWithSecurity.put("/schedules/1/deallocate") {
+        mockMvc.put("/schedules/1/deallocate") {
           contentType = MediaType.APPLICATION_JSON
           content = mapper.writeValueAsBytes(prisonerDeallocateRequest)
         }.andExpect { status { isForbidden() } }
@@ -366,9 +352,9 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
     @DisplayName("Get schedule by id")
     inner class GetScheduleByIdTests {
       @Test
-      @WithMockUser(roles = ["NOMIS_ACTIVITIES"])
+      @WithMockAuthUser(roles = ["NOMIS_ACTIVITIES"])
       fun `Get schedule by id (ROLE_NOMIS_ACTIVITIES) - 200`() {
-        mockMvcWithSecurity.get("/schedules/1") {
+        mockMvc.get("/schedules/1") {
           contentType = MediaType.APPLICATION_JSON
           header(CASELOAD_ID, "MDI")
         }.andExpect { status { isOk() } }

@@ -142,6 +142,6 @@ class UtilityIntegrationTest : LocalStackTestBase() {
 
   private fun WebTestClient.updateCaseNotesUUID(roles: List<String>) = post()
     .uri("/utility/update-case-note-uuid")
-    .headers(setAuthorisation(roles = roles))
+    .headers(setAuthorisationAsClient(roles = roles))
     .exchange()
 }

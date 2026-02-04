@@ -129,6 +129,9 @@ class AuditServiceTest {
       val event = createEvent()
 
       featureSwitches.stub { on { isEnabled(Feature.HMPPS_AUDIT_ENABLED) } doReturn false }
+
+      whenever(auditRepository.save(any())).thenReturn(mock())
+
       AuditService(hmppsAuditApiClient, auditRepository, featureSwitches).logEvent(event)
 
       verify(hmppsAuditApiClient, never()).createEvent(any())
@@ -149,6 +152,8 @@ class AuditServiceTest {
     @Test
     fun `should log event correctly`() {
       val event = createEvent()
+
+      whenever(auditRepository.save(any())).thenReturn(mock())
 
       auditService.logEvent(event)
 

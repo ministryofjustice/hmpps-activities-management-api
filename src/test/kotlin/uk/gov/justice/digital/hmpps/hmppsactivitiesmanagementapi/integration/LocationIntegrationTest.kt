@@ -54,7 +54,7 @@ class LocationIntegrationTest : IntegrationTestBase() {
           .queryParam("groupName", groupName)
           .build(prisonCode)
       }
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
       .exchange()
       .expectStatus().isOk
       .expectBody()
@@ -76,7 +76,7 @@ class LocationIntegrationTest : IntegrationTestBase() {
           .queryParam("groupName", groupName)
           .build(prisonCode)
       }
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
       .exchange()
       .expectStatus().isOk
       .expectBody()
@@ -97,7 +97,7 @@ class LocationIntegrationTest : IntegrationTestBase() {
           .queryParam("groupName", groupName)
           .build(prisonCode)
       }
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
       .exchange()
       .expectStatus().isNotFound
       .expectBody()
@@ -119,7 +119,7 @@ class LocationIntegrationTest : IntegrationTestBase() {
           .queryParam("groupName", groupName)
           .build(prisonCode)
       }
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
       .exchange()
       .expectStatus().is5xxServerError
       .expectBody()
@@ -140,7 +140,7 @@ class LocationIntegrationTest : IntegrationTestBase() {
           .path("/locations/prison/{prisonCode}/location-groups")
           .build(prisonCode)
       }
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
       .exchange()
       .expectStatus().isOk
       .expectBody()
@@ -160,7 +160,7 @@ class LocationIntegrationTest : IntegrationTestBase() {
           .path("/locations/prison/{prisonCode}/location-groups")
           .build(prisonCode)
       }
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
       .exchange()
       .expectStatus().isOk
       .expectBody()
@@ -180,7 +180,7 @@ class LocationIntegrationTest : IntegrationTestBase() {
           .build(prisonCode)
       }
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
       .exchange()
       .expectStatus().isNotFound
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -396,7 +396,7 @@ class LocationIntegrationTest : IntegrationTestBase() {
         .queryParam("groupName", groupName)
         .build(prisonCode)
     }
-    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
     .exchange()
     .expectStatus().isOk
     .expectBody(LocationPrefixDto::class.java)
@@ -409,7 +409,7 @@ class LocationIntegrationTest : IntegrationTestBase() {
   ) = get()
     .uri("/locations/prison/$prisonCode/events-summaries?date=$date" + (timeSlot?.let { "&timeSlot=$timeSlot" } ?: ""))
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
     .exchange()
     .expectStatus().isOk
     .expectHeader().contentType(MediaType.APPLICATION_JSON)

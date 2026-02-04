@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest
 import org.springframework.http.MediaType
 import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.context.ContextConfiguration
@@ -30,12 +30,10 @@ import java.time.LocalTime
 
 @WebMvcTest(controllers = [ScheduledInstanceController::class])
 @ContextConfiguration(classes = [ScheduledInstanceController::class])
-class ScheduledInstanceControllerTest : ControllerTestBase<ScheduledInstanceController>() {
+class ScheduledInstanceControllerTest : ControllerTestBase() {
 
   @MockitoBean
   private lateinit var scheduledInstanceService: ScheduledInstanceService
-
-  override fun controller() = ScheduledInstanceController(scheduledInstanceService)
 
   @Test
   fun `200 response when get instance by ID found`() {
@@ -135,13 +133,12 @@ class ScheduledInstanceControllerTest : ControllerTestBase<ScheduledInstanceCont
     val request = ScheduledInstancedUpdateRequest("Staff unavailable", "Comment", true)
 
     mockMvc.put("/scheduled-instances/1") {
-      principal = user
       accept = MediaType.APPLICATION_JSON
       contentType = MediaType.APPLICATION_JSON
       content = mapper.writeValueAsBytes(request)
     }.andExpect { status { isNoContent() } }
 
-    verify(scheduledInstanceService).updateScheduledInstance(1, request, "USER")
+    verify(scheduledInstanceService).updateScheduledInstance(1, request, user.name)
   }
 
   @Test
@@ -151,7 +148,6 @@ class ScheduledInstanceControllerTest : ControllerTestBase<ScheduledInstanceCont
     ).thenThrow(IllegalArgumentException("Bad request"))
 
     mockMvc.put("/scheduled-instances/1") {
-      principal = user
       accept = MediaType.APPLICATION_JSON
       contentType = MediaType.APPLICATION_JSON
       content = mapper.writeValueAsBytes(ScheduleInstancesUncancelRequest(listOf(1)))
@@ -162,16 +158,15 @@ class ScheduledInstanceControllerTest : ControllerTestBase<ScheduledInstanceCont
   fun `updateScheduledInstance - 404 response when instance is not found`() {
     val request = ScheduledInstancedUpdateRequest("Staff unavailable", "Comment", true)
 
-    whenever(scheduledInstanceService.updateScheduledInstance(1, request, "USER")).thenThrow(EntityNotFoundException("not found"))
+    whenever(scheduledInstanceService.updateScheduledInstance(1, request, user.name)).thenThrow(EntityNotFoundException("not found"))
 
     mockMvc.put("/scheduled-instances/1") {
-      principal = user
       accept = MediaType.APPLICATION_JSON
       contentType = MediaType.APPLICATION_JSON
       content = mapper.writeValueAsBytes(request)
     }.andExpect { status { isNotFound() } }
 
-    verify(scheduledInstanceService).updateScheduledInstance(1, request, "USER")
+    verify(scheduledInstanceService).updateScheduledInstance(1, request, user.name)
   }
 
   @Nested
@@ -247,7 +242,7 @@ class ScheduledInstanceControllerTest : ControllerTestBase<ScheduledInstanceCont
       @Test
       @WithMockUser(roles = ["NOMIS_ACTIVITIES"])
       fun `Get schedule instance by id (ROLE_NOMIS_ACTIVITIES) - 200`() {
-        mockMvcWithSecurity.get("/scheduled-instances/1") {
+        mockMvc.get("/scheduled-instances/1") {
           contentType = MediaType.APPLICATION_JSON
           header(CASELOAD_ID, "MDI")
         }.andExpect { status { isOk() } }

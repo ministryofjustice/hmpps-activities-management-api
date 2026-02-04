@@ -92,7 +92,7 @@ class RolloutIntegrationTest : IntegrationTestBase() {
     .uri("/rollout/prison-regime/TST")
     .bodyValue(slots)
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(roles = listOf("ROLE_MIGRATE_ACTIVITIES")))
+    .headers(setAuthorisationAsClient(roles = listOf("ROLE_MIGRATE_ACTIVITIES")))
     .exchange()
     .expectStatus().isCreated
     .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -102,7 +102,7 @@ class RolloutIntegrationTest : IntegrationTestBase() {
   private fun WebTestClient.getPrisonByCode(code: String) = get()
     .uri("/rollout/$code")
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(roles = listOf(ROLE_ACTIVITY_ADMIN)))
+    .headers(setAuthorisationAsClient(roles = listOf(ROLE_ACTIVITY_ADMIN)))
     .exchange()
     .expectStatus().isOk
     .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -112,7 +112,7 @@ class RolloutIntegrationTest : IntegrationTestBase() {
   private fun WebTestClient.getRolledOutPrisons() = get()
     .uri("/rollout")
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(roles = listOf(ROLE_ACTIVITY_ADMIN)))
+    .headers(setAuthorisationAsClient(roles = listOf(ROLE_ACTIVITY_ADMIN)))
     .exchange()
     .expectStatus().isOk
     .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -122,7 +122,7 @@ class RolloutIntegrationTest : IntegrationTestBase() {
   private fun WebTestClient.getLiveRolledOutPrisons() = get()
     .uri("/rollout?prisonsLive=true")
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(roles = listOf(ROLE_ACTIVITY_ADMIN)))
+    .headers(setAuthorisationAsClient(roles = listOf(ROLE_ACTIVITY_ADMIN)))
     .exchange()
     .expectStatus().isOk
     .expectHeader().contentType(MediaType.APPLICATION_JSON)

@@ -76,7 +76,7 @@ class PrisonPayBandIntegrationTest : IntegrationTestBase() {
   private fun WebTestClient.getPrisonPayBands(prisonCode: String) = get()
     .uri("/prison/$prisonCode/prison-pay-bands")
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
     .exchange()
     .expectStatus().isOk
     .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -86,7 +86,7 @@ class PrisonPayBandIntegrationTest : IntegrationTestBase() {
   private fun WebTestClient.createPayBand(prisonCode: String, request: PrisonPayBandCreateRequest): PrisonPayBand? = post()
     .uri("/prison/$prisonCode/prison-pay-band")
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(roles = listOf(ROLE_ACTIVITY_ADMIN)))
+    .headers(setAuthorisationAsClient(roles = listOf(ROLE_ACTIVITY_ADMIN)))
     .bodyValue(request)
     .exchange()
     .expectStatus().isCreated
@@ -97,7 +97,7 @@ class PrisonPayBandIntegrationTest : IntegrationTestBase() {
   private fun WebTestClient.updatePayBand(prisonCode: String, prisonPayBandId: Long, request: PrisonPayBandUpdateRequest): PrisonPayBand? = patch()
     .uri("/prison/$prisonCode/prison-pay-band/$prisonPayBandId")
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(roles = listOf(ROLE_ACTIVITY_ADMIN)))
+    .headers(setAuthorisationAsClient(roles = listOf(ROLE_ACTIVITY_ADMIN)))
     .bodyValue(request)
     .exchange()
     .expectStatus().isOk

@@ -11,7 +11,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.skyscreamer.jsonassert.JSONAssert
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.Pageable
 import org.springframework.http.MediaType
@@ -66,7 +66,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelPrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
-import java.security.Principal
+import uk.gov.justice.hmpps.test.kotlin.auth.WithMockAuthUser
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -75,7 +75,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.
 
 @WebMvcTest(controllers = [IntegrationApiController::class])
 @ContextConfiguration(classes = [IntegrationApiController::class])
-class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController>() {
+@WithMockAuthUser(roles = ["ACTIVITIES__HMPPS_INTEGRATION_API"])
+class IntegrationApiControllerTest : ControllerTestBase() {
 
   @MockitoBean
   private lateinit var attendancesService: AttendancesService
@@ -100,17 +101,6 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
 
   @MockitoBean
   private lateinit var appointmentSearchService: AppointmentSearchService
-
-  override fun controller() = IntegrationApiController(
-    attendancesService,
-    scheduledInstanceService,
-    attendanceReasonService,
-    activityService,
-    activityScheduleService,
-    waitingListService,
-    prisonRegimeService,
-    appointmentSearchService,
-  )
 
   @Nested
   inner class GetDeallocationReasons {
@@ -636,11 +626,9 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
       val request = AppointmentSearchRequest(startDate = LocalDate.now())
       val expectedResponse = listOf(appointmentSearchResultModel())
 
-      val mockPrincipal: Principal = mock()
+      whenever(appointmentSearchService.searchAppointments(eq("TPR"), eq(request), any())).thenReturn(expectedResponse)
 
-      whenever(appointmentSearchService.searchAppointments("TPR", request, mockPrincipal)).thenReturn(expectedResponse)
-
-      val response = mockMvc.searchAppointments("TPR", request, mockPrincipal)
+      val response = mockMvc.searchAppointments("TPR", request)
         .andDo { print() }
         .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
         .andExpect { status { isAccepted() } }
@@ -652,9 +640,7 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
     private fun MockMvc.searchAppointments(
       prisonCode: String,
       request: AppointmentSearchRequest,
-      principal: Principal,
     ) = post("/integration-api/appointments/{prisonCode}/search", prisonCode) {
-      this.principal = principal
       contentType = MediaType.APPLICATION_JSON
       content = mapper.writeValueAsBytes(
         request,

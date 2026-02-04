@@ -4,11 +4,12 @@ import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions.assertThat
 import org.hamcrest.Matchers
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.mock
+import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest
 import org.springframework.http.MediaType
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.bean.override.mockito.MockitoBean
@@ -20,15 +21,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSetEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.appointment.AppointmentSetController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.AppointmentSetService
-import java.security.Principal
 
 @WebMvcTest(controllers = [AppointmentSetController::class])
 @ContextConfiguration(classes = [AppointmentSetController::class])
-class AppointmentSetControllerTest : ControllerTestBase<AppointmentSetController>() {
+class AppointmentSetControllerTest : ControllerTestBase() {
   @MockitoBean
   private lateinit var appointmentSetService: AppointmentSetService
-
-  override fun controller() = AppointmentSetController(appointmentSetService)
 
   @Test
   fun `200 response when get appointment set details by valid id`() {
@@ -111,13 +109,10 @@ class AppointmentSetControllerTest : ControllerTestBase<AppointmentSetController
     val request = appointmentSetCreateRequest()
     val expectedResponse = appointmentSetEntity().toModel()
 
-    val mockPrincipal: Principal = mock()
-
-    whenever(appointmentSetService.createAppointmentSet(request, mockPrincipal)).thenReturn(expectedResponse)
+    whenever(appointmentSetService.createAppointmentSet(eq(request), any())).thenReturn(expectedResponse)
 
     val response =
       mockMvc.post("/appointment-set") {
-        principal = mockPrincipal
         contentType = MediaType.APPLICATION_JSON
         content = mapper.writeValueAsBytes(
           request,

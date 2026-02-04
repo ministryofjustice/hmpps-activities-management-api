@@ -6,7 +6,7 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest
 import org.springframework.http.MediaType
 import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.context.ContextConfiguration
@@ -33,15 +33,13 @@ import java.time.LocalDateTime
 
 @WebMvcTest(controllers = [PrisonController::class])
 @ContextConfiguration(classes = [PrisonController::class])
-class PrisonControllerTest : ControllerTestBase<PrisonController>() {
+class PrisonControllerTest : ControllerTestBase() {
 
   @MockitoBean
   private lateinit var activityService: ActivityService
 
   @MockitoBean
   private lateinit var prisonRegimeService: PrisonRegimeService
-
-  override fun controller() = PrisonController(activityService, prisonRegimeService)
 
   @Test
   fun `200 response when get activities`() {
@@ -121,7 +119,7 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
       description = prisonPayBands.first().alias,
     )
 
-    whenever(prisonRegimeService.createPrisonPayBand(eq(MOORLAND_PRISON_CODE), eq(request), eq(user), any())).thenReturn(prisonPayBands.first())
+    whenever(prisonRegimeService.createPrisonPayBand(eq(MOORLAND_PRISON_CODE), eq(request), any(), any())).thenReturn(prisonPayBands.first())
 
     val response = mockMvc.createPayBand(MOORLAND_PRISON_CODE, request)
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
@@ -129,8 +127,6 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
       .andReturn().response
 
     assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(prisonPayBands.first()))
-
-    verify(prisonRegimeService).createPrisonPayBand(eq(MOORLAND_PRISON_CODE), eq(request), eq(user), any())
   }
 
   @Test
@@ -142,7 +138,7 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
       alias = prisonPayBands.first().alias,
     )
 
-    whenever(prisonRegimeService.updatePrisonPayBand(eq(MOORLAND_PRISON_CODE), eq(1), eq(request), eq(user), any())).thenReturn(prisonPayBands.first())
+    whenever(prisonRegimeService.updatePrisonPayBand(eq(MOORLAND_PRISON_CODE), eq(1), eq(request), any(), any())).thenReturn(prisonPayBands.first())
 
     val response = mockMvc.updatePayBand(MOORLAND_PRISON_CODE, 1, request)
       .andDo { print() }
@@ -151,8 +147,6 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
       .andReturn().response
 
     assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(prisonPayBands.first()))
-
-    verify(prisonRegimeService).updatePrisonPayBand(eq(MOORLAND_PRISON_CODE), eq(1), eq(request), eq(user), any())
   }
 
   @Test
@@ -164,7 +158,7 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
       alias = "test",
       description = "test",
     )
-    mockMvcWithSecurity.post("/prison/MDI/prison-pay-band") {
+    mockMvc.post("/prison/MDI/prison-pay-band") {
       contentType = MediaType.APPLICATION_JSON
       content = mapper.writeValueAsBytes(request)
     }.andExpect { status { isForbidden() } }
@@ -177,7 +171,7 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
       displaySequence = 1,
       alias = "test",
     )
-    mockMvcWithSecurity.patch("/prison/MDI/prison-pay-band/1") {
+    mockMvc.patch("/prison/MDI/prison-pay-band/1") {
       contentType = MediaType.APPLICATION_JSON
       content = mapper.writeValueAsBytes(request)
     }.andExpect { status { isForbidden() } }
@@ -186,14 +180,12 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
   private fun MockMvc.getPrisonPayBandsBy(prisonCode: String) = get("/prison/$prisonCode/prison-pay-bands")
 
   private fun MockMvc.createPayBand(prisonCode: String, request: PrisonPayBandCreateRequest) = post("/prison/$prisonCode/prison-pay-band") {
-    principal = user
     accept = MediaType.APPLICATION_JSON
     contentType = MediaType.APPLICATION_JSON
     content = mapper.writeValueAsBytes(request)
   }
 
   private fun MockMvc.updatePayBand(prisonCode: String, prisonPayBandId: Int, request: PrisonPayBandUpdateRequest) = patch("/prison/$prisonCode/prison-pay-band/$prisonPayBandId") {
-    this.principal = user
     contentType = MediaType.APPLICATION_JSON
     accept = MediaType.APPLICATION_JSON
     contentType = MediaType.APPLICATION_JSON

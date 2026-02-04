@@ -28,7 +28,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenote
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.model.CaseNote
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.api.NonAssociationsApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.model.NonAssociation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.trackEvent
@@ -76,15 +75,13 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelSch
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
-import java.util.Optional
-import java.util.UUID
+import java.util.*
 
 @ExtendWith(FakeSecurityContext::class, FakeCaseLoad::class)
 class ActivityScheduleServiceTest {
 
   private val repository: ActivityScheduleRepository = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
-  private val prisonerSearchAdminApiClient: PrisonerSearchApiApplicationClient = mock()
   private val caseNotesApiClient: CaseNotesApiClient = mock()
   private val prisonPayBandRepository: PrisonPayBandRepository = mock()
   private val waitingListRepository: WaitingListRepository = mock()
@@ -98,7 +95,6 @@ class ActivityScheduleServiceTest {
     ActivityScheduleService(
       repository,
       prisonerSearchApiClient,
-      prisonerSearchAdminApiClient,
       caseNotesApiClient,
       prisonPayBandRepository,
       waitingListRepository,

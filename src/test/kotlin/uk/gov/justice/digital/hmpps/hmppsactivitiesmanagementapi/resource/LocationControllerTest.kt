@@ -9,7 +9,7 @@ import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest
 import org.springframework.http.MediaType
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.bean.override.mockito.MockitoBean
@@ -27,7 +27,7 @@ import java.time.LocalDate
 
 @WebMvcTest(controllers = [LocationController::class])
 @ContextConfiguration(classes = [LocationController::class])
-class LocationControllerTest : ControllerTestBase<LocationController>() {
+class LocationControllerTest : ControllerTestBase() {
 
   @MockitoBean
   private lateinit var locationService: LocationService
@@ -40,8 +40,6 @@ class LocationControllerTest : ControllerTestBase<LocationController>() {
 
   private val groupName = "Houseblock 1"
   private val prisonCode = "MDI"
-
-  override fun controller() = LocationController(locationService, locationGroupServiceSelector, internalLocationService)
 
   @Test
   fun `Cell locations for group - 200 response when locations found`() {

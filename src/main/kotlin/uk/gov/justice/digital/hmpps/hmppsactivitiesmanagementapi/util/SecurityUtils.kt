@@ -8,7 +8,7 @@ object SecurityUtils {
   fun getUserNameForLoggedInUser(): String {
     val authentication = SecurityContextHolder.getContext().authentication
     if (authentication == null) return "activities-management-admin-1" // can only be called when the job from inside ingress is running
-    val principal = SecurityContextHolder.getContext().authentication.principal
+    val principal = authentication.principal
     return if (principal is UserDetails) {
       principal.username
     } else {

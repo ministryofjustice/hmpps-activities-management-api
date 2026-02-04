@@ -21,7 +21,7 @@ class AllocationReconIntegrationTest : IntegrationTestBase() {
     webTestClient.get()
       .uri("/synchronisation/reconciliation/allocations/PVI")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf()))
+      .headers(setAuthorisationAsClient(roles = listOf()))
       .exchange()
       .expectStatus().isForbidden
   }
@@ -32,7 +32,7 @@ class AllocationReconIntegrationTest : IntegrationTestBase() {
     webTestClient.get()
       .uri("/synchronisation/reconciliation/allocations/PVI")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf("INVALID_ROLE")))
+      .headers(setAuthorisationAsClient(roles = listOf("INVALID_ROLE")))
       .exchange()
       .expectStatus().isForbidden
   }
@@ -43,7 +43,7 @@ class AllocationReconIntegrationTest : IntegrationTestBase() {
     webTestClient.get()
       .uri("/synchronisation/reconciliation/allocations/RSI")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+      .headers(setAuthorisationAsClient(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
       .exchange()
       .expectStatus().isOk
       .expectBody()
@@ -57,7 +57,7 @@ class AllocationReconIntegrationTest : IntegrationTestBase() {
     webTestClient.get()
       .uri("/synchronisation/reconciliation/allocations/PVI")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+      .headers(setAuthorisationAsClient(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
       .exchange()
       .expectStatus().isOk
       .expectBody()

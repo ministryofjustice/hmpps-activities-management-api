@@ -87,7 +87,7 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
     val error = webTestClient.post()
       .uri("/migrate-appointment")
       .bodyValue(request)
-      .headers(setAuthorisation(roles = listOf()))
+      .headers(setAuthorisationAsClient(roles = listOf()))
       .exchange()
       .expectStatus().isForbidden
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -241,7 +241,7 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
   fun `delete migrated appointments - forbidden`() {
     val error = webTestClient.delete()
       .uri("/migrate-appointment/MDI?startDate=2023-09-25")
-      .headers(setAuthorisation(roles = listOf()))
+      .headers(setAuthorisationAsClient(roles = listOf()))
       .exchange()
       .expectStatus().isForbidden
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -382,7 +382,7 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
     val categoryCodes = "VLB,CALA,IMM,OIC,EDUC"
     val error = webTestClient.get()
       .uri("/migrate-appointment/RSI/summary?startDate=$startDate&categoryCodes=$categoryCodes")
-      .headers(setAuthorisation(roles = listOf()))
+      .headers(setAuthorisationAsClient(roles = listOf()))
       .exchange()
       .expectStatus().isForbidden
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -403,7 +403,7 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
   ) = post()
     .uri("/migrate-appointment")
     .bodyValue(request)
-    .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+    .headers(setAuthorisationAsClient(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
     .exchange()
     .expectStatus().isCreated
     .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -413,7 +413,7 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
   private fun WebTestClient.migrateRejectedAppointment(request: AppointmentMigrateRequest) = post()
     .uri("/migrate-appointment")
     .bodyValue(request)
-    .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+    .headers(setAuthorisationAsClient(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
     .exchange()
     .expectStatus().isCreated
     .expectBody(AppointmentInstance::class.java)
@@ -426,7 +426,7 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
   ) {
     delete()
       .uri("/migrate-appointment/$prisonCode?startDate=$startDate" + (categoryCode?.let { "&categoryCode=$categoryCode" } ?: ""))
-      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+      .headers(setAuthorisationAsClient(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
       .exchange()
       .expectStatus().isAccepted
   }
@@ -438,7 +438,7 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
   ) = get()
     .uri("/migrate-appointment/$prisonCode/summary?startDate=$startDate&categoryCodes=$categoryCodes")
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(roles = listOf("ROLE_MIGRATE_APPOINTMENTS")))
+    .headers(setAuthorisationAsClient(roles = listOf("ROLE_MIGRATE_APPOINTMENTS")))
     .exchange()
     .expectStatus().isOk
     .expectHeader().contentType(MediaType.APPLICATION_JSON)

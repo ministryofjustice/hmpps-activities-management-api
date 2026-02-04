@@ -105,7 +105,7 @@ class DailyAppointmentsMetricsJobIntegrationTest : IntegrationTestBase() {
   private fun WebTestClient.generateAppointmentsMetrics() {
     post()
       .uri("/job/appointments-metrics")
-      .headers(setAuthorisation(roles = listOf()))
+      .headers(setAuthorisationAsClient(roles = listOf()))
       .exchange()
       .expectStatus().isAccepted
   }

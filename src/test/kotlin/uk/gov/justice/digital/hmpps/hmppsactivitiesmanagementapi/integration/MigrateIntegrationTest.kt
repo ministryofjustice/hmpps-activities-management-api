@@ -648,7 +648,7 @@ class MigrateIntegrationTest : LocalStackTestBase() {
     return webTestClient.post()
       .uri("/migrate/activity")
       .bodyValue(request)
-      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+      .headers(setAuthorisationAsClient(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
       .exchange()
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -692,7 +692,7 @@ class MigrateIntegrationTest : LocalStackTestBase() {
     webTestClient.post()
       .uri("/migrate/allocation")
       .bodyValue(request)
-      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+      .headers(setAuthorisationAsClient(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
       .exchange()
       .expectStatus().isOk
   }
@@ -726,7 +726,7 @@ class MigrateIntegrationTest : LocalStackTestBase() {
         ),
       )
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB)))
+      .headers(setAuthorisationAsUser(roles = listOf(ROLE_ACTIVITY_HUB)))
       .header(CASELOAD_ID, "IWI")
       .exchange()
       .expectStatus().isAccepted
@@ -739,7 +739,7 @@ class MigrateIntegrationTest : LocalStackTestBase() {
         .build(scheduleId)
     }
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
     .header(CASELOAD_ID, "IWI")
     .exchange()
     .expectStatus().isOk
@@ -751,7 +751,7 @@ class MigrateIntegrationTest : LocalStackTestBase() {
     .uri("/activities/IWI/activityId/$activityId")
     .bodyValue(slots)
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB)))
+    .headers(setAuthorisationAsUser(roles = listOf(ROLE_ACTIVITY_HUB)))
     .header(CASELOAD_ID, "IWI")
     .exchange()
     .expectStatus().isAccepted
@@ -765,7 +765,7 @@ class MigrateIntegrationTest : LocalStackTestBase() {
     .uri("/activities")
     .bodyValue(activityCreateRequest)
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB)))
+    .headers(setAuthorisationAsUser(roles = listOf(ROLE_ACTIVITY_HUB)))
     .header(CASELOAD_ID, "IWI")
     .exchange()
     .expectStatus().isCreated

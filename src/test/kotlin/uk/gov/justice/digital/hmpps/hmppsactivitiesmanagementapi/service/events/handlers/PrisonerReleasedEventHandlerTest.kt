@@ -12,7 +12,7 @@ import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
@@ -32,7 +32,7 @@ import java.time.LocalDateTime
 
 class PrisonerReleasedEventHandlerTest {
   private val rolloutPrisonService = RolloutPrisonService("MDI", "MDI", "MDI")
-  private val prisonerSearchApiClient: PrisonerSearchApiApplicationClient = mock()
+  private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
   private val appointmentAttendeeService: AppointmentAttendeeService = mock()
   private val waitingListService: WaitingListService = mock()
   private val prisonerAllocationHandler: PrisonerAllocationHandler = mock()

@@ -3,7 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isAtDifferentLocationTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isInactiveOut
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isRestrictedPatient
@@ -26,7 +26,7 @@ class PrisonerReleasedEventHandler(
   private val rolloutPrisonService: RolloutPrisonService,
   private val appointmentAttendeeService: AppointmentAttendeeService,
   private val waitingListService: WaitingListService,
-  private val prisonSearchApiClient: PrisonerSearchApiApplicationClient,
+  private val prisonerSearchApiClient: PrisonerSearchApiClient,
   private val allocationHandler: PrisonerAllocationHandler,
   private val allocationRepository: AllocationRepository,
 ) : EventHandler<PrisonerReleasedEvent> {
@@ -87,7 +87,7 @@ class PrisonerReleasedEventHandler(
     "OFFENDER_RELEASED_EVENT",
   )
 
-  private fun getDetailsForReleasedPrisoner(event: PrisonerReleasedEvent) = prisonSearchApiClient.findByPrisonerNumber(prisonerNumber = event.prisonerNumber())
+  private fun getDetailsForReleasedPrisoner(event: PrisonerReleasedEvent) = prisonerSearchApiClient.findByPrisonerNumber(prisonerNumber = event.prisonerNumber())
     ?: throw NullPointerException("Prisoner search lookup failed for prisoner ${event.prisonerNumber()}")
 
   private fun getDeallocationReasonForReleasedPrisoner(prisoner: Prisoner, event: PrisonerReleasedEvent) = when {

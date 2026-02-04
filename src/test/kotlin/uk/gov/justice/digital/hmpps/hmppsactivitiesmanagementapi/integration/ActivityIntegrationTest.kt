@@ -499,7 +499,7 @@ class ActivityIntegrationTest : LocalStackTestBase() {
       .uri("/activities")
       .bodyValue(activityCreateRequest)
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf(ROLE_ACTIVITY_ADMIN)))
+      .headers(setAuthorisationAsClient(roles = listOf(ROLE_ACTIVITY_ADMIN)))
       .exchange()
       .expectStatus().is4xxClientError
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -549,7 +549,7 @@ class ActivityIntegrationTest : LocalStackTestBase() {
       .uri("/activities")
       .bodyValue(activityCreateRequest)
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf(ROLE_ACTIVITY_ADMIN)))
+      .headers(setAuthorisationAsClient(roles = listOf(ROLE_ACTIVITY_ADMIN)))
       .exchange()
       .expectStatus().is4xxClientError
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -576,7 +576,7 @@ class ActivityIntegrationTest : LocalStackTestBase() {
       .uri("/activities")
       .bodyValue(activityCreateRequest)
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf("ROLE_NOT_ALLOWED")))
+      .headers(setAuthorisationAsClient(roles = listOf("ROLE_NOT_ALLOWED")))
       .exchange()
       .expectStatus().isForbidden
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -1038,7 +1038,7 @@ class ActivityIntegrationTest : LocalStackTestBase() {
   private fun WebTestClient.getSchedulesOfAnActivity(id: Long) = get()
     .uri("/activities/$id/schedules")
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
     .exchange()
     .expectStatus().isOk
     .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -1051,7 +1051,7 @@ class ActivityIntegrationTest : LocalStackTestBase() {
     .uri("/activities")
     .bodyValue(activityCreateRequest)
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB)))
+    .headers(setAuthorisationAsUser(roles = listOf(ROLE_ACTIVITY_HUB)))
     .header(CASELOAD_ID, "MDI")
     .exchange()
     .expectStatus().isCreated
@@ -1067,7 +1067,7 @@ class ActivityIntegrationTest : LocalStackTestBase() {
     .uri("/activities/$prisonCode/activityId/$id")
     .bodyValue(activityUpdateRequest)
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB)))
+    .headers(setAuthorisationAsUser(roles = listOf(ROLE_ACTIVITY_HUB)))
     .header(CASELOAD_ID, prisonCode)
     .exchange()
     .expectStatus().isAccepted

@@ -625,7 +625,7 @@ class ScheduledInstanceServiceTest {
           ),
         ),
       ).thenReturn(listOf(instance1!!, instance2!!))
-      whenever(repository.saveAllAndFlush(listOf(instance1, instance2))).thenReturn(listOf(instance1, instance2))
+      whenever(repository.saveAllAndFlush(anyList())).thenReturn(emptyList<ScheduledInstance>())
       whenever(attendanceReasonRepository.findByCode(AttendanceReasonEnum.CANCELLED)).thenReturn(
         attendanceReason(
           AttendanceReasonEnum.CANCELLED,

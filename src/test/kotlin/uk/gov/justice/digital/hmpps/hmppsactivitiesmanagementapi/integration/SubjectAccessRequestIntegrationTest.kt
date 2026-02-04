@@ -338,7 +338,7 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
   private fun WebTestClient.getSarContent(prisonerNumber: String, fromDate: LocalDate, toDate: LocalDate) = get()
     .uri("/subject-access-request?prn=$prisonerNumber&fromDate=$fromDate&toDate=$toDate")
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(roles = listOf(Role.SUBJECT_ACCESS_REQUEST)))
+    .headers(setAuthorisationAsClient(roles = listOf(Role.SUBJECT_ACCESS_REQUEST)))
     .exchange()
     .expectStatus().isOk
     .expectHeader().contentType(MediaType.APPLICATION_JSON)

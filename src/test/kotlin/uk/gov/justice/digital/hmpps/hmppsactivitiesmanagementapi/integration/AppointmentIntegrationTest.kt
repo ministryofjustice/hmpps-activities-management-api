@@ -31,6 +31,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.A
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUncancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CASELOAD_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
@@ -79,7 +80,7 @@ class AppointmentIntegrationTest : LocalStackTestBase() {
   fun `update appointment by unknown id returns 404 not found`() {
     webTestClient.patch()
       .uri("/appointments/-1")
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
       .bodyValue(AppointmentUpdateRequest())
       .exchange()
       .expectStatus().isNotFound
@@ -1220,7 +1221,7 @@ class AppointmentIntegrationTest : LocalStackTestBase() {
 
   private fun WebTestClient.getAppointmentSeriesById(id: Long) = get()
     .uri("/appointment-series/$id")
-    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
     .exchange()
     .expectStatus().isOk
     .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -1233,7 +1234,8 @@ class AppointmentIntegrationTest : LocalStackTestBase() {
   ) = patch()
     .uri("/appointments/$id")
     .bodyValue(request)
-    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .headers(setAuthorisationAsUser(roles = listOf(ROLE_PRISON)))
+    .header(CASELOAD_ID, "TPR")
     .exchange()
     .expectStatus().isAccepted
     .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -1246,7 +1248,8 @@ class AppointmentIntegrationTest : LocalStackTestBase() {
   ) = put()
     .uri("/appointments/$id/cancel")
     .bodyValue(request)
-    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .headers(setAuthorisationAsUser(roles = listOf(ROLE_PRISON)))
+    .header(CASELOAD_ID, "TPR")
     .exchange()
     .expectStatus().isAccepted
     .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -1259,6 +1262,6 @@ class AppointmentIntegrationTest : LocalStackTestBase() {
   ) = put()
     .uri("/appointments/$id/uncancel")
     .bodyValue(request)
-    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
     .exchange()
 }

@@ -5,12 +5,10 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.assertj.core.api.Assertions.tuple
 import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
-import org.springframework.security.core.context.SecurityContextHolder
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentFrequency
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategory
@@ -29,7 +27,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.CaseloadAc
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.FakeSecurityContext
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.clearCaseloadIdFromRequestHeader
-import java.security.Principal
 import java.util.*
 
 @ExtendWith(FakeSecurityContext::class)
@@ -43,7 +40,6 @@ class AppointmentServiceTest {
   private val updateAppointmentsJob: UpdateAppointmentsJob = mock()
   private val cancelAppointmentsJob: CancelAppointmentsJob = mock()
   private val uncancelAppointmentsJob: UncancelAppointmentsJob = mock()
-  private lateinit var principal: Principal
 
   private val service = AppointmentService(
     appointmentRepository,
@@ -56,11 +52,6 @@ class AppointmentServiceTest {
     cancelAppointmentsJob,
     uncancelAppointmentsJob,
   )
-
-  @BeforeEach
-  fun setUp() {
-    principal = SecurityContextHolder.getContext().authentication
-  }
 
   @AfterEach
   fun tearDown() {

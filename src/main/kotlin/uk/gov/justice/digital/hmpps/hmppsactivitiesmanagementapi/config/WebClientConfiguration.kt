@@ -7,24 +7,15 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.http.HttpHeaders
 import org.springframework.http.client.reactive.ReactorClientHttpConnector
-import org.springframework.http.codec.ClientCodecConfigurer
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientProvider
-import org.springframework.security.oauth2.client.OAuth2AuthorizedClientProviderBuilder
-import org.springframework.security.oauth2.client.endpoint.DefaultClientCredentialsTokenResponseClient
-import org.springframework.security.oauth2.client.endpoint.OAuth2ClientCredentialsGrantRequest
-import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository
-import org.springframework.security.oauth2.client.web.DefaultOAuth2AuthorizedClientManager
-import org.springframework.security.oauth2.client.web.OAuth2AuthorizedClientRepository
-import org.springframework.security.oauth2.client.web.reactive.function.client.ServletOAuth2AuthorizedClientExchangeFilterFunction
-import org.springframework.web.context.annotation.RequestScope
 import org.springframework.web.reactive.function.client.ClientRequest
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction
 import org.springframework.web.reactive.function.client.ExchangeFunction
-import org.springframework.web.reactive.function.client.ExchangeStrategies
 import org.springframework.web.reactive.function.client.WebClient
 import reactor.netty.http.client.HttpClient
+import uk.gov.justice.hmpps.kotlin.auth.AuthAwareAuthenticationToken
 import uk.gov.justice.hmpps.kotlin.auth.authorisedWebClient
 import uk.gov.justice.hmpps.kotlin.auth.healthWebClient
 import uk.gov.justice.hmpps.kotlin.auth.oAuth2AuthorizedClientProvider
@@ -98,35 +89,7 @@ class WebClientConfiguration(
   fun prisonerSearchApiHealthWebClient(builder: WebClient.Builder) = builder.healthWebClient(prisonerSearchApiUrl, healthTimeout)
 
   @Bean
-  fun prisonerSearchApiUserWebClient(): WebClient {
-    val exchangeStrategies = ExchangeStrategies.builder()
-      .codecs { configurer: ClientCodecConfigurer -> configurer.defaultCodecs().maxInMemorySize(-1) }
-      .build()
-
-    return WebClient.builder()
-      .baseUrl(prisonerSearchApiUrl)
-      .timeout(apiTimeout)
-      .filter(addAuthHeaderFilterFunction())
-      .exchangeStrategies(exchangeStrategies)
-      .build().also { log.info("WEB CLIENT CONFIG: creating prisoner search api user web client") }
-  }
-
-  @Bean
-  @RequestScope
-  fun prisonerSearchApiWebClient(
-    clientRegistrationRepository: ClientRegistrationRepository,
-    authorizedClientRepository: OAuth2AuthorizedClientRepository,
-    builder: WebClient.Builder,
-  ): WebClient = getOAuthWebClient(
-    authorizedClientManager(clientRegistrationRepository, authorizedClientRepository),
-    builder,
-    prisonerSearchApiUrl,
-    "prisoner-search-api",
-    shorterTimeout,
-  ).also { log.info("WEB CLIENT CONFIG: creating prisoner search api request scope web client") }
-
-  @Bean
-  fun prisonerSearchApiAppWebClient(authorizedClientManager: OAuth2AuthorizedClientManager, builder: WebClient.Builder) = builder
+  fun prisonerSearchApiWebClient(authorizedClientManager: OAuth2AuthorizedClientManager, builder: WebClient.Builder) = builder
     .authorisedWebClient(authorizedClientManager, "prisoner-search-api", prisonerSearchApiUrl, shorterTimeout)
     .also { log.info("WEB CLIENT CONFIG: creating prisoner search api app web client") }
 
@@ -154,51 +117,9 @@ class WebClientConfiguration(
     .authorisedWebClient(authorizedClientManager, "nomis-mapping-api", nomisMappingApiUrl, shorterTimeout)
     .also { log.info("WEB CLIENT CONFIG: creating NOMIS mapping api web client") }
 
-  private fun getOAuthWebClient(
-    authorizedClientManager: OAuth2AuthorizedClientManager,
-    builder: WebClient.Builder,
-    rootUri: String,
-    clientRegistrationId: String,
-    timeout: Duration,
-  ): WebClient {
-    val oauth2Client = ServletOAuth2AuthorizedClientExchangeFilterFunction(authorizedClientManager)
-    oauth2Client.setDefaultClientRegistrationId(clientRegistrationId)
-    return builder.baseUrl(rootUri)
-      .timeout(timeout)
-      .apply(oauth2Client.oauth2Configuration())
-      .build()
-  }
-
-  // Differs from the 'app scope' auth client manager in that it gets the username from the authentication context
-  // and adds it to the request
-  private fun authorizedClientManager(
-    clientRegistrationRepository: ClientRegistrationRepository,
-    authorizedClientRepository: OAuth2AuthorizedClientRepository,
-  ): OAuth2AuthorizedClientManager {
-    val defaultClientCredentialsTokenResponseClient = DefaultClientCredentialsTokenResponseClient()
-    val authentication = UserContext.getAuthentication()
-
-    defaultClientCredentialsTokenResponseClient.setRequestEntityConverter { grantRequest: OAuth2ClientCredentialsGrantRequest? ->
-      val converter = CustomOAuth2ClientCredentialsGrantRequestEntityConverter()
-      val username = authentication.name
-      converter.enhanceWithUsername(grantRequest, username)
-    }
-
-    val authorizedClientProvider = OAuth2AuthorizedClientProviderBuilder.builder()
-      .clientCredentials { clientCredentialsGrantBuilder: OAuth2AuthorizedClientProviderBuilder.ClientCredentialsGrantBuilder ->
-        clientCredentialsGrantBuilder.accessTokenResponseClient(
-          defaultClientCredentialsTokenResponseClient,
-        )
-      }
-      .build()
-    val authorizedClientManager = DefaultOAuth2AuthorizedClientManager(clientRegistrationRepository, authorizedClientRepository)
-    authorizedClientManager.setAuthorizedClientProvider(authorizedClientProvider)
-    return authorizedClientManager
-  }
-
   private fun addAuthHeaderFilterFunction() = ExchangeFilterFunction { request: ClientRequest, next: ExchangeFunction ->
     val token = when (val authentication = SecurityContextHolder.getContext().authentication) {
-      is AuthAwareAuthenticationToken -> authentication.token.tokenValue
+      is AuthAwareAuthenticationToken -> authentication.jwt.tokenValue
       else -> throw IllegalStateException("Auth token not present")
     }
 

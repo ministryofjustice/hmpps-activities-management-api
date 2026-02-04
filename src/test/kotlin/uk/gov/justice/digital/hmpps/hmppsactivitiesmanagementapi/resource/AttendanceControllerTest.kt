@@ -5,12 +5,13 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest
 import org.springframework.http.MediaType
-import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.MockMvc
@@ -29,18 +30,16 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attenda
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AttendanceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendancesService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
-import java.security.Principal
+import uk.gov.justice.hmpps.test.kotlin.auth.WithMockAuthUser
 import java.time.LocalDate
 import java.time.LocalDateTime
 
 @WebMvcTest(controllers = [AttendanceController::class])
 @ContextConfiguration(classes = [AttendanceController::class])
-class AttendanceControllerTest : ControllerTestBase<AttendanceController>() {
+class AttendanceControllerTest : ControllerTestBase() {
 
   @MockitoBean
   private lateinit var attendancesService: AttendancesService
-
-  override fun controller() = AttendanceController(attendancesService)
 
   @Nested
   inner class SuspendedPrisonerAttendance {
@@ -55,10 +54,10 @@ class AttendanceControllerTest : ControllerTestBase<AttendanceController>() {
       ).thenReturn(emptyList())
     }
 
-    @WithMockUser(username = "ITAG_USER", authorities = ["ROLE_PRISON"])
+    @WithMockAuthUser(username = "ITAG_USER", authorities = ["ROLE_PRISON"])
     @Test
     fun `200 response`() {
-      mockMvcWithSecurity.perform(
+      mockMvc.perform(
         MockMvcRequestBuilders.get("/attendances/MDI/suspended?date=${LocalDate.now()}")
           .header("Content-Type", "application/json"),
       ).andExpect(MockMvcResultMatchers.status().isOk)
@@ -67,9 +66,7 @@ class AttendanceControllerTest : ControllerTestBase<AttendanceController>() {
 
   @Test
   fun `204 response when mark attendance records`() {
-    val mockPrincipal: Principal = mock()
     mockMvc.put("/attendances") {
-      principal = mockPrincipal
       accept = MediaType.APPLICATION_JSON
       contentType = MediaType.APPLICATION_JSON
       content = mapper.writeValueAsBytes(
@@ -82,10 +79,12 @@ class AttendanceControllerTest : ControllerTestBase<AttendanceController>() {
       .andExpect { status { isNoContent() } }
 
     verify(attendancesService).mark(
-      "",
-      listOf(
-        AttendanceUpdateRequest(1, MOORLAND_PRISON_CODE, AttendanceStatus.COMPLETED, "ATTENDED", null, null, null, null, null),
-        AttendanceUpdateRequest(2, MOORLAND_PRISON_CODE, AttendanceStatus.COMPLETED, "SICK", null, null, null, null, null),
+      any(),
+      eq(
+        listOf(
+          AttendanceUpdateRequest(1, MOORLAND_PRISON_CODE, AttendanceStatus.COMPLETED, "ATTENDED", null, null, null, null, null),
+          AttendanceUpdateRequest(2, MOORLAND_PRISON_CODE, AttendanceStatus.COMPLETED, "SICK", null, null, null, null, null),
+        ),
       ),
     )
   }

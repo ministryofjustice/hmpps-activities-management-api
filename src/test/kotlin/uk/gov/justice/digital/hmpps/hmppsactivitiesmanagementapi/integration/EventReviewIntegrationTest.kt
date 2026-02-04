@@ -231,7 +231,7 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
       .build()
   }
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(roles = listOf(role)))
+    .headers(setAuthorisationAsClient(roles = listOf(role)))
     .exchange()
 
   private fun WebTestClient.acknowledge(
@@ -245,5 +245,5 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
   }
     .bodyValue(EventAcknowledgeRequest(eventReviewIds = eventIds))
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(roles = listOf(role)))
+    .headers(setAuthorisationAsClient(roles = listOf(role)))
 }

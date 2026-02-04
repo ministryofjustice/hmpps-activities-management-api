@@ -3,7 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.whenever
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest
 import org.springframework.http.MediaType
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.bean.override.mockito.MockitoBean
@@ -13,16 +13,14 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.appointment.AppointmentLocationController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.toAppointmentLocation
-import java.util.UUID
+import java.util.*
 
 @WebMvcTest(controllers = [AppointmentLocationController::class])
 @ContextConfiguration(classes = [AppointmentLocationController::class])
-class AppointmentLocationControllerTest : ControllerTestBase<AppointmentLocationController>() {
+class AppointmentLocationControllerTest : ControllerTestBase() {
 
   @MockitoBean
   private lateinit var locationService: LocationService
-
-  override fun controller() = AppointmentLocationController(locationService)
 
   @Test
   fun `200 response when get all appointment locations`() {

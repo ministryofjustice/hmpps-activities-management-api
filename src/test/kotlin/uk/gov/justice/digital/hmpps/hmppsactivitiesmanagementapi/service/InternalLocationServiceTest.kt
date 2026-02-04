@@ -16,6 +16,7 @@ import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
+import org.springframework.data.jpa.domain.Specification
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.AdjudicationsHearingAdapter
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.api.LocationsInsidePrisonAPIClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api.NomisDpsLocationMapping
@@ -27,6 +28,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalTim
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toIsoDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentSearch
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityFromDbInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentInstanceEntity
@@ -351,7 +353,7 @@ class InternalLocationServiceTest {
         ),
       ).thenReturn(listOf(education2Activity))
 
-      whenever(appointmentSearchRepository.findAll(any())).thenReturn(listOf(education1Appointment))
+      whenever(appointmentSearchRepository.findAll(any<Specification<AppointmentSearch>>())).thenReturn(listOf(education1Appointment))
 
       whenever(prisonApiClient.getEventLocationsBookedAsync(prisonCode, date, null))
         .thenReturn(
@@ -485,7 +487,7 @@ class InternalLocationServiceTest {
           TimeSlot.PM,
         ),
       ).thenReturn(listOf(inactiveEducation1Activity))
-      whenever(appointmentSearchRepository.findAll(any())).thenReturn(listOf(noUserDescriptionLocationAppointment))
+      whenever(appointmentSearchRepository.findAll(any<Specification<AppointmentSearch>>())).thenReturn(listOf(noUserDescriptionLocationAppointment))
       whenever(prisonApiClient.getEventLocationsBookedAsync(prisonCode, date, TimeSlot.PM)).thenReturn(
         listOf(
           socialVisitsLocationSummary,
@@ -579,7 +581,7 @@ class InternalLocationServiceTest {
           TimeSlot.PM,
         ),
       ).thenReturn(listOf(noLocationActivity))
-      whenever(appointmentSearchRepository.findAll(any())).thenReturn(listOf(noLocationAppointment))
+      whenever(appointmentSearchRepository.findAll(any<Specification<AppointmentSearch>>())).thenReturn(listOf(noLocationAppointment))
       whenever(prisonApiClient.getEventLocationsBookedAsync(prisonCode, date, TimeSlot.AM)).thenReturn(emptyList())
       whenever(adjudicationsHearingAdapter.getAdjudicationsByLocation(any(), any(), anyOrNull(), any())).thenReturn(
         emptyMap(),
@@ -615,7 +617,7 @@ class InternalLocationServiceTest {
           TimeSlot.AM,
         ),
       ).thenReturn(listOf(activityWithNoAttendance))
-      whenever(appointmentSearchRepository.findAll(any())).thenReturn(emptyList())
+      whenever(appointmentSearchRepository.findAll(any<Specification<AppointmentSearch>>())).thenReturn(emptyList())
       whenever(prisonApiClient.getEventLocationsBookedAsync(any(), any(), any())).thenReturn(emptyList())
       whenever(adjudicationsHearingAdapter.getAdjudicationsByLocation(any(), any(), anyOrNull(), any())).thenReturn(
         emptyMap(),

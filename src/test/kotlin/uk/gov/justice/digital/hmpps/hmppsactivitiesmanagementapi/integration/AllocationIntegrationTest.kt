@@ -104,7 +104,7 @@ class AllocationIntegrationTest : LocalStackTestBase() {
     webTestClient.get()
       .uri("/allocations/id/2")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB)))
+      .headers(setAuthorisationAsUser(roles = listOf(ROLE_ACTIVITY_HUB)))
       .header(CASELOAD_ID, "XXX")
       .exchange()
       .expectStatus().isForbidden
@@ -116,7 +116,7 @@ class AllocationIntegrationTest : LocalStackTestBase() {
     webTestClient.get()
       .uri("/allocations/id/2")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(isClientToken = true, roles = listOf(ROLE_ACTIVITY_ADMIN)))
+      .headers(setAuthorisationAsClient(roles = listOf(ROLE_ACTIVITY_ADMIN)))
       .exchange()
       .expectStatus().isOk
   }
@@ -127,7 +127,7 @@ class AllocationIntegrationTest : LocalStackTestBase() {
     webTestClient.get()
       .uri("/allocations/id/2")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(isClientToken = true, roles = listOf(ROLE_ACTIVITY_ADMIN)))
+      .headers(setAuthorisationAsClient(roles = listOf(ROLE_ACTIVITY_ADMIN)))
       .exchange()
       .expectStatus().isOk
   }
@@ -209,7 +209,7 @@ class AllocationIntegrationTest : LocalStackTestBase() {
 
     prisonerSearchApiMockServer.stubSearchByPrisonerNumber("A11111A")
 
-    assertThat(webTestClient.retrieveAdvanceAttendance(1).prisonerNumber).isEqualTo("A11111A")
+    assertThat(webTestClient.retrieveAdvanceAttendance(1)!!.prisonerNumber).isEqualTo("A11111A")
 
     webTestClient.updateAllocation(
       PENTONVILLE_PRISON_CODE,
@@ -226,7 +226,7 @@ class AllocationIntegrationTest : LocalStackTestBase() {
       ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 1),
     )
 
-    assertThat(webTestClient.retrieveAdvanceAttendance(1).prisonerNumber).isEqualTo("A11111A")
+    assertThat(webTestClient.retrieveAdvanceAttendance(1)!!.prisonerNumber).isEqualTo("A11111A")
   }
 
   @Sql("classpath:test_data/seed-activity-with-advance-attendances-2.sql")
@@ -296,7 +296,7 @@ class AllocationIntegrationTest : LocalStackTestBase() {
     )
 
     listOf(1L, 4L).forEach {
-      with(webTestClient.getAllocationBy(it)) {
+      with(webTestClient.getAllocationBy(it)!!) {
         status isEqualTo PrisonerStatus.ACTIVE
         plannedSuspension!!.plannedStartDate isEqualTo 5.daysFromNow()
         plannedSuspension.plannedEndDate isEqualTo null
@@ -324,7 +324,7 @@ class AllocationIntegrationTest : LocalStackTestBase() {
     )
 
     listOf(1L, 2L).forEach {
-      with(webTestClient.getAllocationBy(it)) {
+      with(webTestClient.getAllocationBy(it)!!) {
         status isEqualTo PrisonerStatus.SUSPENDED
         plannedSuspension!!.plannedStartDate isEqualTo TimeSource.today()
         plannedSuspension.plannedEndDate isEqualTo null
@@ -373,7 +373,7 @@ class AllocationIntegrationTest : LocalStackTestBase() {
     )
 
     listOf(1L, 2L).forEach {
-      with(webTestClient.getAllocationBy(it)) {
+      with(webTestClient.getAllocationBy(it)!!) {
         status isEqualTo PrisonerStatus.SUSPENDED
         plannedSuspension!!.plannedStartDate isEqualTo TimeSource.today()
         plannedSuspension.plannedEndDate isEqualTo null
@@ -422,7 +422,7 @@ class AllocationIntegrationTest : LocalStackTestBase() {
     )
 
     listOf(1L, 2L).forEach {
-      with(webTestClient.getAllocationBy(it)) {
+      with(webTestClient.getAllocationBy(it)!!) {
         status isEqualTo PrisonerStatus.SUSPENDED_WITH_PAY
         plannedSuspension!!.plannedStartDate isEqualTo TimeSource.today()
         plannedSuspension.plannedEndDate isEqualTo null
@@ -470,7 +470,7 @@ class AllocationIntegrationTest : LocalStackTestBase() {
     )
 
     listOf(1L, 2L).forEach {
-      with(webTestClient.getAllocationBy(it)) {
+      with(webTestClient.getAllocationBy(it)!!) {
         status isEqualTo PrisonerStatus.ACTIVE
         plannedSuspension isEqualTo null
       }
@@ -517,7 +517,7 @@ class AllocationIntegrationTest : LocalStackTestBase() {
     )
 
     listOf(1L, 2L).forEach {
-      with(webTestClient.getAllocationBy(it)) {
+      with(webTestClient.getAllocationBy(it)!!) {
         status isEqualTo PrisonerStatus.ACTIVE
         plannedSuspension isEqualTo null
       }
@@ -554,13 +554,12 @@ class AllocationIntegrationTest : LocalStackTestBase() {
     prisonCode: String,
     allocationId: Long,
     request: AllocationUpdateRequest,
-    caseloadId: String? = CASELOAD_ID,
   ) = patch()
     .uri("/allocations/$prisonCode/allocationId/$allocationId")
     .bodyValue(request)
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB)))
-    .header(CASELOAD_ID, caseloadId)
+    .headers(setAuthorisationAsUser(roles = listOf(ROLE_ACTIVITY_HUB)))
+    .header(CASELOAD_ID, CASELOAD_ID)
     .exchange()
     .expectStatus().isAccepted
     .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -575,8 +574,8 @@ class AllocationIntegrationTest : LocalStackTestBase() {
     .uri("/allocations/$prisonCode/suspend")
     .bodyValue(request)
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB)))
-    .header(CASELOAD_ID, caseloadId)
+    .headers(setAuthorisationAsUser(roles = listOf(ROLE_ACTIVITY_HUB)))
+    .header(CASELOAD_ID, caseloadId!!)
     .exchange()
     .expectStatus().isAccepted
 
@@ -588,8 +587,8 @@ class AllocationIntegrationTest : LocalStackTestBase() {
     .uri("/allocations/$prisonCode/unsuspend")
     .bodyValue(request)
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB)))
-    .header(CASELOAD_ID, caseloadId)
+    .headers(setAuthorisationAsUser(roles = listOf(ROLE_ACTIVITY_HUB)))
+    .header(CASELOAD_ID, caseloadId!!)
     .exchange()
     .expectStatus().isAccepted
 
@@ -601,14 +600,14 @@ class AllocationIntegrationTest : LocalStackTestBase() {
     .uri("/allocations/$prisonCode/waiting-list-application")
     .bodyValue(application)
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB)))
-    .header(CASELOAD_ID, caseloadId)
+    .headers(setAuthorisationAsUser(roles = listOf(ROLE_ACTIVITY_HUB)))
+    .header(CASELOAD_ID, caseloadId!!)
     .exchange()
 
   private fun WebTestClient.getAllocationBy(allocationId: Long) = get()
     .uri("/allocations/id/$allocationId")
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
     .exchange()
     .expectStatus().isOk
     .expectHeader().contentType(MediaType.APPLICATION_JSON)

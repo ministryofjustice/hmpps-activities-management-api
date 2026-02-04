@@ -14,10 +14,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenote
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNoteType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.api.NonAssociationsApiClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isActiveAtPrison
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.trackEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
@@ -44,7 +42,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.hasNonAsso
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelAllocations
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelSchedule
 import java.time.LocalDate
-import java.util.UUID
+import java.util.*
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation as ModelAllocation
 
 @Service
@@ -52,7 +50,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocatio
 class ActivityScheduleService(
   private val repository: ActivityScheduleRepository,
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
-  private val prisonerSearchAdminApiClient: PrisonerSearchApiApplicationClient,
   private val caseNotesApiClient: CaseNotesApiClient,
   private val prisonPayBandRepository: PrisonPayBandRepository,
   private val waitingListRepository: WaitingListRepository,
@@ -122,7 +119,7 @@ class ActivityScheduleService(
 
     if (request.startDate == today && request.scheduleInstanceId == null) throw IllegalArgumentException("The next session must be provided when allocation start date is today")
 
-    val activePrisoner = getActivePrisoner(request.prisonerNumber!!, adminMode)
+    val activePrisoner = prisonerSearchApiClient.findByPrisonerNumber(request.prisonerNumber!!)
 
     transactionHandler.newSpringTransaction {
       val schedule = repository.findOrThrowNotFound(scheduleId).also {
@@ -202,13 +199,6 @@ class ActivityScheduleService(
   fun getSuitabilityCriteria(scheduleId: Long): ActivitySuitabilityCriteria? {
     val activitySchedule = repository.findOrThrowNotFound(scheduleId)
     return activitySchedule.toModelActivitySuitabilityCriteria()
-  }
-
-  private fun getActivePrisoner(prisonerNumber: String, adminMode: Boolean?): Prisoner? {
-    if (adminMode == true) {
-      return prisonerSearchAdminApiClient.findByPrisonerNumber(prisonerNumber)
-    }
-    return prisonerSearchApiClient.findByPrisonerNumber(prisonerNumber)
   }
 
   @Transactional

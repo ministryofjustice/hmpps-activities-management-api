@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.reset
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest
 import org.springframework.http.MediaType
 import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.context.ContextConfiguration
@@ -19,19 +19,19 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.DeleteMigratedAppointmentsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.appointment.MigrateAppointmentController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.MigrateAppointmentService
+import uk.gov.justice.hmpps.test.kotlin.auth.WithMockAuthUser
 import java.time.LocalDate
 
 @WebMvcTest(controllers = [MigrateAppointmentController::class])
 @ContextConfiguration(classes = [MigrateAppointmentController::class])
-class MigrateAppointmentControllerTest : ControllerTestBase<MigrateAppointmentController>() {
+@WithMockAuthUser(roles = ["NOMIS_APPOINTMENTS"])
+class MigrateAppointmentControllerTest : ControllerTestBase() {
 
   @MockitoBean
   private lateinit var migrateAppointmentService: MigrateAppointmentService
 
   @MockitoBean
   private lateinit var deleteMigratedAppointmentsJob: DeleteMigratedAppointmentsJob
-
-  override fun controller() = MigrateAppointmentController(migrateAppointmentService, deleteMigratedAppointmentsJob)
 
   @BeforeEach
   fun resetMocks() {
@@ -49,7 +49,7 @@ class MigrateAppointmentControllerTest : ControllerTestBase<MigrateAppointmentCo
       @Test
       @WithMockUser(roles = ["NOMIS_APPOINTMENTS"])
       fun `Migrate appointment (ROLE_NOMIS_APPOINTMENTS) - 201`() {
-        mockMvcWithSecurity.post("/migrate-appointment") {
+        mockMvc.post("/migrate-appointment") {
           contentType = MediaType.APPLICATION_JSON
           content = mapper.writeValueAsBytes(migrateAppointment)
         }.andExpect { status { isCreated() } }
@@ -58,7 +58,7 @@ class MigrateAppointmentControllerTest : ControllerTestBase<MigrateAppointmentCo
       @Test
       @WithMockUser(roles = ["NOMIS_ACTIVITIES"])
       fun `Migrate appointment (ROLE_NOMIS_ACTIVITIES) - 403`() {
-        mockMvcWithSecurity.post("/migrate-appointment") {
+        mockMvc.post("/migrate-appointment") {
           contentType = MediaType.APPLICATION_JSON
           content = mapper.writeValueAsBytes(migrateAppointment)
         }.andExpect { status { isForbidden() } }
@@ -67,7 +67,7 @@ class MigrateAppointmentControllerTest : ControllerTestBase<MigrateAppointmentCo
       @Test
       @WithMockUser(roles = ["ACTIVITY_HUB"])
       fun `Migrate appointment (ROLE_ACTIVITY_HUB) - 403`() {
-        mockMvcWithSecurity.post("/migrate-appointment") {
+        mockMvc.post("/migrate-appointment") {
           contentType = MediaType.APPLICATION_JSON
           content = mapper.writeValueAsBytes(migrateAppointment)
         }.andExpect { status { isForbidden() } }
@@ -76,7 +76,7 @@ class MigrateAppointmentControllerTest : ControllerTestBase<MigrateAppointmentCo
       @Test
       @WithMockUser(roles = ["UNKNOWN"])
       fun `Migrate appointment (ROLE_UNKNOWN) - 403`() {
-        mockMvcWithSecurity.post("/migrate-appointment") {
+        mockMvc.post("/migrate-appointment") {
           contentType = MediaType.APPLICATION_JSON
           content = mapper.writeValueAsBytes(migrateAppointment)
         }.andExpect { status { isForbidden() } }
@@ -93,35 +93,35 @@ class MigrateAppointmentControllerTest : ControllerTestBase<MigrateAppointmentCo
       @Test
       @WithMockUser(roles = ["NOMIS_APPOINTMENTS"])
       fun `Delete migrate appointment (ROLE_NOMIS_APPOINTMENTS) - 202`() {
-        mockMvcWithSecurity.delete("/migrate-appointment/MDI?startDate=${LocalDate.now()}")
+        mockMvc.delete("/migrate-appointment/MDI?startDate=${LocalDate.now()}")
           .andExpect { status { isAccepted() } }
       }
 
       @Test
       @WithMockUser(roles = ["MIGRATE_APPOINTMENTS"])
       fun `Migrate appointment summary (ROLE_MIGRATE_APPOINTMENTS) - 202`() {
-        mockMvcWithSecurity.delete("/migrate-appointment/MDI?startDate=${LocalDate.now()}")
+        mockMvc.delete("/migrate-appointment/MDI?startDate=${LocalDate.now()}")
           .andExpect { status { isAccepted() } }
       }
 
       @Test
       @WithMockUser(roles = ["NOMIS_ACTIVITIES"])
       fun `Migrate appointment (ROLE_NOMIS_ACTIVITIES) - 403`() {
-        mockMvcWithSecurity.delete("/migrate-appointment/MDI?startDate=${LocalDate.now()}")
+        mockMvc.delete("/migrate-appointment/MDI?startDate=${LocalDate.now()}")
           .andExpect { status { isForbidden() } }
       }
 
       @Test
       @WithMockUser(roles = ["ACTIVITY_HUB"])
       fun `Migrate appointment (ROLE_ACTIVITY_HUB) - 403`() {
-        mockMvcWithSecurity.delete("/migrate-appointment/MDI?startDate=${LocalDate.now()}")
+        mockMvc.delete("/migrate-appointment/MDI?startDate=${LocalDate.now()}")
           .andExpect { status { isForbidden() } }
       }
 
       @Test
       @WithMockUser(roles = ["UNKNOWN"])
       fun `Migrate appointment (ROLE_UNKNOWN) - 403`() {
-        mockMvcWithSecurity.delete("/migrate-appointment/MDI?startDate=${LocalDate.now()}")
+        mockMvc.delete("/migrate-appointment/MDI?startDate=${LocalDate.now()}")
           .andExpect { status { isForbidden() } }
       }
     }
@@ -200,28 +200,28 @@ class MigrateAppointmentControllerTest : ControllerTestBase<MigrateAppointmentCo
       @Test
       @WithMockUser(roles = ["NOMIS_APPOINTMENTS"])
       fun `Migrate appointment summary (ROLE_NOMIS_APPOINTMENTS) - 202`() {
-        mockMvcWithSecurity.get("/migrate-appointment/MDI/summary?startDate=${LocalDate.now()}&categoryCodes=OIC")
+        mockMvc.get("/migrate-appointment/MDI/summary?startDate=${LocalDate.now()}&categoryCodes=OIC")
           .andExpect { status { isOk() } }
       }
 
       @Test
       @WithMockUser(roles = ["MIGRATE_APPOINTMENTS"])
       fun `Migrate appointment summary (ROLE_MIGRATE_APPOINTMENTS) - 202`() {
-        mockMvcWithSecurity.get("/migrate-appointment/MDI/summary?startDate=${LocalDate.now()}&categoryCodes=OIC")
+        mockMvc.get("/migrate-appointment/MDI/summary?startDate=${LocalDate.now()}&categoryCodes=OIC")
           .andExpect { status { isOk() } }
       }
 
       @Test
       @WithMockUser(roles = ["ACTIVITY_HUB"])
       fun `Migrate appointment (ROLE_ACTIVITY_HUB) - 403`() {
-        mockMvcWithSecurity.get("/migrate-appointment/MDI/summary?startDate=${LocalDate.now()}&categoryCodes=OIC")
+        mockMvc.get("/migrate-appointment/MDI/summary?startDate=${LocalDate.now()}&categoryCodes=OIC")
           .andExpect { status { isForbidden() } }
       }
 
       @Test
       @WithMockUser(roles = ["UNKNOWN"])
       fun `Migrate appointment (ROLE_UNKNOWN) - 403`() {
-        mockMvcWithSecurity.get("/migrate-appointment/MDI/summary?startDate=${LocalDate.now()}&categoryCodes=OIC")
+        mockMvc.get("/migrate-appointment/MDI/summary?startDate=${LocalDate.now()}&categoryCodes=OIC")
           .andExpect { status { isForbidden() } }
       }
     }

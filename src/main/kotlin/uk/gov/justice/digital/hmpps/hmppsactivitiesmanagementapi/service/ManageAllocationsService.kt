@@ -3,7 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isActiveInPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
@@ -14,7 +14,7 @@ class ManageAllocationsService(
   private val allocationRepository: AllocationRepository,
   outboundEventsService: OutboundEventsService,
   monitoringService: MonitoringService,
-  private val prisonerSearchApiApplicationClient: PrisonerSearchApiApplicationClient,
+  private val prisonerSearchApiClient: PrisonerSearchApiClient,
   private val prisonerReceivedHandler: PrisonerReceivedHandler,
 ) : ManageAllocationsBase(monitoringService, outboundEventsService) {
 
@@ -26,7 +26,7 @@ class ManageAllocationsService(
     allocationRepository.findActiveAllocations(PrisonerStatus.AUTO_SUSPENDED)
       .groupBy { it.prisonerNumber }
       .forEach { (prisonerNumber, allocations) ->
-        prisonerSearchApiApplicationClient.findByPrisonerNumber(prisonerNumber)?.also { prisoner ->
+        prisonerSearchApiClient.findByPrisonerNumber(prisonerNumber)?.also { prisoner ->
 
           prisoner.let { prisoner ->
             allocations

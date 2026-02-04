@@ -3,8 +3,8 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Table
-import org.hibernate.envers.DefaultRevisionEntity
 import org.hibernate.envers.RevisionEntity
+import org.hibernate.envers.RevisionMapping
 import java.time.LocalDateTime
 
 @Entity
@@ -15,4 +15,4 @@ open class CustomRevisionEntity(
 
   @Column(insertable = false)
   open var revisionDateTime: LocalDateTime,
-) : DefaultRevisionEntity()
+) : RevisionMapping()

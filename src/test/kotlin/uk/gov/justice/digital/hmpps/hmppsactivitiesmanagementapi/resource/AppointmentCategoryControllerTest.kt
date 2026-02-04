@@ -3,7 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.whenever
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest
 import org.springframework.http.MediaType
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.bean.override.mockito.MockitoBean
@@ -21,19 +21,17 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appointment.AppointmentCategoryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.appointment.AppointmentCategoryController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentCategoryService
-import java.util.Optional
+import java.util.*
 
 @WebMvcTest(controllers = [AppointmentCategoryController::class])
 @ContextConfiguration(classes = [AppointmentCategoryController::class])
-class AppointmentCategoryControllerTest : ControllerTestBase<AppointmentCategoryController>() {
+class AppointmentCategoryControllerTest : ControllerTestBase() {
 
   @MockitoBean
   private lateinit var appointmentCategoryRepository: AppointmentCategoryRepository
 
   @MockitoBean
   private lateinit var appointmentCategoryService: AppointmentCategoryService
-
-  override fun controller() = AppointmentCategoryController(appointmentCategoryService, appointmentCategoryRepository)
 
   @Test
   fun `200 response when get all appointment categories`() {

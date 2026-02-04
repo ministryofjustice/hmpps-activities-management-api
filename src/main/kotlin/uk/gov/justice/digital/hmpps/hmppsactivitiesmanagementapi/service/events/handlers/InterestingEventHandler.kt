@@ -2,7 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events
 
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventReview
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventReviewDescription
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
@@ -26,7 +26,7 @@ class InterestingEventHandler(
   private val rolloutPrisonService: RolloutPrisonService,
   private val allocationRepository: AllocationRepository,
   private val eventReviewRepository: EventReviewRepository,
-  private val prisonerSearchApiAppWebClient: PrisonerSearchApiApplicationClient,
+  private val prisonerSearchApiAppWebClient: PrisonerSearchApiClient,
 ) : EventHandler<InboundEvent> {
   companion object {
     private val log = LoggerFactory.getLogger(this::class.java)

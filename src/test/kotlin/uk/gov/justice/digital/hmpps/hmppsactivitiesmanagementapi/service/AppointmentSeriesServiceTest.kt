@@ -142,7 +142,7 @@ class AppointmentSeriesServiceTest {
   @BeforeEach
   fun setUp() {
     MockitoAnnotations.openMocks(this)
-    principal = SecurityContextHolder.getContext().authentication
+    principal = SecurityContextHolder.getContext().authentication!!
     addCaseloadIdToRequestHeader(prisonCode)
 
     whenever(appointmentCategoryService.getAll())

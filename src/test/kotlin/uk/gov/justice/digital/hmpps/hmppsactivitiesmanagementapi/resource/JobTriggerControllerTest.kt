@@ -8,7 +8,7 @@ import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest
 import org.springframework.http.MediaType
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.bean.override.mockito.MockitoBean
@@ -30,7 +30,7 @@ import java.time.ZoneOffset
 
 @WebMvcTest(controllers = [JobTriggerController::class])
 @ContextConfiguration(classes = [JobTriggerController::class])
-class JobTriggerControllerTest : ControllerTestBase<JobTriggerController>() {
+class JobTriggerControllerTest : ControllerTestBase() {
 
   @MockitoBean
   private lateinit var createScheduledInstancesJob: CreateScheduledInstancesJob
@@ -61,17 +61,6 @@ class JobTriggerControllerTest : ControllerTestBase<JobTriggerController>() {
     whenever(clock.instant()).thenReturn(LocalDateTime.now().toInstant(ZoneOffset.UTC))
     whenever(clock.zone).thenReturn(ZoneId.of("UTC"))
   }
-
-  override fun controller() = JobTriggerController(
-    createScheduledInstancesJob,
-    manageAttendanceRecordsJob,
-    manageAllocationsJob,
-    activityMetricsJob,
-    appointmentsMetricsJob,
-    clock,
-    purposefulActivityReportsJob,
-    fixLocationsJob,
-  )
 
   @Test
   fun `201 response when create activity sessions job triggered`() {

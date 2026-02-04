@@ -294,7 +294,7 @@ class ManageAttendanceRecordsJobSqsIntegrationTest : LocalStackTestBase() {
 
     webTestClient.get()
       .uri("/advance-attendances/1")
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
       .exchange()
       .expectStatus().isNotFound
   }

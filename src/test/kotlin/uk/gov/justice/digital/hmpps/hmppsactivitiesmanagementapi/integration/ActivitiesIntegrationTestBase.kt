@@ -19,7 +19,7 @@ abstract class ActivitiesIntegrationTestBase : IntegrationTestBase() {
   fun WebTestClient.getScheduledInstancesByIds(vararg ids: Long) = post()
     .uri("/scheduled-instances")
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
     .header(CASELOAD_ID, "PVI")
     .bodyValue(ids)
     .exchange()
@@ -31,7 +31,7 @@ abstract class ActivitiesIntegrationTestBase : IntegrationTestBase() {
   fun WebTestClient.getActivities(prisonCode: String, nameSearch: String? = null) = get()
     .uri("/prison/$prisonCode/activities" + (nameSearch?.let { "?nameSearch=$nameSearch" } ?: ""))
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
     .exchange()
     .expectStatus().isOk
     .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -41,7 +41,7 @@ abstract class ActivitiesIntegrationTestBase : IntegrationTestBase() {
   fun WebTestClient.getActivityById(id: Long, caseLoadId: String = "PVI") = get()
     .uri("/activities/$id/filtered")
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
     .header(CASELOAD_ID, caseLoadId)
     .exchange()
     .expectStatus().isOk
@@ -52,7 +52,7 @@ abstract class ActivitiesIntegrationTestBase : IntegrationTestBase() {
   fun WebTestClient.getActivityPayHistory(id: Long) = get()
     .uri("/activities/$id/pay-history")
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
     .exchange()
     .expectStatus().isOk
     .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -63,7 +63,7 @@ abstract class ActivitiesIntegrationTestBase : IntegrationTestBase() {
     .uri("/advance-attendances")
     .bodyValue(request)
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_ADMIN)))
+    .headers(setAuthorisationAsUser(roles = listOf(ROLE_ACTIVITY_ADMIN)))
     .header(CASELOAD_ID, "$caseLoad")
     .exchange()
     .expectStatus().isCreated
@@ -74,7 +74,7 @@ abstract class ActivitiesIntegrationTestBase : IntegrationTestBase() {
   fun WebTestClient.retrieveAdvanceAttendance(id: Long) = get()
     .uri("/advance-attendances/$id")
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_ADMIN)))
+    .headers(setAuthorisationAsUser(roles = listOf(ROLE_ACTIVITY_ADMIN)))
     .header(CASELOAD_ID, "PVI")
     .exchange()
     .expectStatus().isOk
@@ -85,7 +85,7 @@ abstract class ActivitiesIntegrationTestBase : IntegrationTestBase() {
   fun WebTestClient.checkAdvanceAttendanceDoesNotExist(id: Long) = get()
     .uri("/advance-attendances/$id")
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_ADMIN)))
+    .headers(setAuthorisationAsUser(roles = listOf(ROLE_ACTIVITY_ADMIN)))
     .header(CASELOAD_ID, "PVI")
     .exchange()
     .expectStatus().isNotFound
@@ -93,7 +93,7 @@ abstract class ActivitiesIntegrationTestBase : IntegrationTestBase() {
   fun WebTestClient.getAllocation(id: Long, caseLoadId: String = "PVI") = webTestClient.get()
     .uri("/allocations/id/$id")
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_ADMIN)))
+    .headers(setAuthorisationAsUser(roles = listOf(ROLE_ACTIVITY_ADMIN)))
     .header(CASELOAD_ID, caseLoadId)
     .exchange()
     .expectStatus().isOk
@@ -103,7 +103,7 @@ abstract class ActivitiesIntegrationTestBase : IntegrationTestBase() {
 
   fun WebTestClient.getAttendanceById(id: Long) = get()
     .uri("/attendances/$id")
-    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
     .exchange()
     .expectStatus().isOk
     .expectHeader().contentType(MediaType.APPLICATION_JSON)
