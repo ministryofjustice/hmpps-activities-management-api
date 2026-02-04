@@ -55,6 +55,7 @@ jobs:
     uses: ministryofjustice/hmpps-github-actions/.github/workflows/gradle_verify.yml@v2 # WORKFLOW_VERSION
     secrets: inherit
     with:
+      upload-build-artifacts: true
       artifact-name: unit-test-results
       gradle-command: 'BUILD_NUMBER=${{ needs.app_version.outputs.version}} ./gradlew assemble check'
       java-version: '25'
