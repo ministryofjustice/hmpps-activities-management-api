@@ -1,14 +1,14 @@
 version: "3"
 services:
   db:
-    image: postgres:latest
-#    image: arm64v8/postgres:17
+#    image: postgres:latest
+    image: arm64v8/postgres:17
     networks:
       - hmpps
     container_name: activities-db
     restart: always
     ports:
-      - "5432:5432"
+      - "15433:5432"
     environment:
       POSTGRES_DB: activities-management-db
       POSTGRES_USER: activities-management
