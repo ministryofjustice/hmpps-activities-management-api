@@ -8,7 +8,7 @@ services:
     container_name: activities-db
     restart: always
     ports:
-      - "5432:5432"
+      - "15433:5432"
     environment:
       POSTGRES_DB: activities-management-db
       POSTGRES_USER: activities-management
