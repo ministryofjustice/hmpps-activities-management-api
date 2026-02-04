@@ -289,12 +289,22 @@ union *
 |sort by timestamp asc
 ```
 
-### Docker files
+#### Building and running the docker image locally
 
-There are two Docker files. 
-- `Dockerfile` is used by GitHub Actions to build the API Docker image for deployment to the enviroments. 
-- `Dockerfile.local` can be used by developers to build the API Docker image locally.
-
-```shell
-  docker build -f Dockerfile.local .
+The `Dockerfile` relies on the application being built first. Steps to build the docker image:
+1. Build the jar files
+```bash
+./gradlew clean assemble
+```
+2. Copy the jar files to the base directory so that the docker build can find them
+```bash
+cp build/libs/*.jar .
+```
+3. Build the docker image with required arguments
+```bash
+docker build -t activities-api .
+```
+4. Run the docker image
+```bash
+./run-docker-local.sh
 ```
