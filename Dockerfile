@@ -18,4 +18,7 @@ COPY --from=builder --chown=appuser:appgroup /builder/extracted/spring-boot-load
 COPY --from=builder --chown=appuser:appgroup /builder/extracted/snapshot-dependencies/ ./
 COPY --from=builder --chown=appuser:appgroup /builder/extracted/application/ ./
 
+ARG BUILD_NUMBER
+ENV BUILD_NUMBER=${BUILD_NUMBER:-1_0_0}
+
 ENTRYPOINT ["java", "-XX:+AlwaysActAsServerClassMachine", "-javaagent:agent.jar", "-jar", "app.jar"]
