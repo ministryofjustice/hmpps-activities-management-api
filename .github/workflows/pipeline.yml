@@ -55,7 +55,7 @@ jobs:
     uses: ministryofjustice/hmpps-github-actions/.github/workflows/gradle_verify.yml@v2 # WORKFLOW_VERSION
     secrets: inherit
     with:
-      upload-build-artifacts: true
+      upload-build-artifacts: ${{ github.ref == 'refs/heads/main' }}
       artifact-name: unit-test-results
       gradle-command: 'BUILD_NUMBER=${{ needs.app_version.outputs.version}} ./gradlew assemble check'
       java-version: '25'
@@ -74,6 +74,7 @@ jobs:
 
   build:
     name: Build docker image from hmpps-github-actions
+    if: github.ref == 'refs/heads/main'
     uses: ministryofjustice/hmpps-github-actions/.github/workflows/docker_build.yml@v2 # WORKFLOW_VERSION
     needs:
       - gradle_validate
@@ -82,11 +83,12 @@ jobs:
       docker_registry: 'ghcr.io'
       registry_org: 'ministryofjustice'
       additional_docker_tag: ${{ inputs.additional_docker_tag }}
-      push: true
+      push: ${{ inputs.push || true }}
       docker_multiplatform: false
       download_build_artifacts: true
   deploy_dev:
     name: Deploy to the dev environment
+    if: github.ref == 'refs/heads/main'
     needs:
       - build
       - helm_lint
