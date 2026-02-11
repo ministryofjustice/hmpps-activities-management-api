@@ -85,6 +85,9 @@ class PurposefulActivityIntegrationTest : IntegrationTestBase() {
       val csvContent = bufferedReader.use { it.readText() }
 
       assert(csvContent.isNotEmpty()) { "CSV content should not be empty" }
+
+      assert(!csvContent.contains("Unsupported type")) { "There were problems serializing types" }
+
       val csvSanitisedContent = csvContent.replace("\"", "")
 
       // Example of checking specific content

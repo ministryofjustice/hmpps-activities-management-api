@@ -10,12 +10,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Purp
 import java.io.BufferedWriter
 import java.io.File
 import java.io.FileWriter
-import java.text.SimpleDateFormat
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAdjusters
-import java.util.*
 import java.util.stream.Stream
 import kotlin.system.measureTimeMillis
 
@@ -32,6 +32,7 @@ class PurposefulActivityService(
 
   val purposefulActivityActivityTableName = "activities"
   val purposefulActivityAppointmentsTableName = "appointments"
+  val dateTimeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 
   companion object {
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
@@ -143,17 +144,20 @@ class PurposefulActivityService(
 
   private fun formatCsvValue(item: Any?): String = when (item) {
     is String -> escapeCsvString(item)
-    is Date -> "\"${formatDate(item)}\"" // Format and quote dates
+    is LocalDate -> "\"${formatDate(item)}\"" // Format and quote dates
+    is LocalTime -> "\"${formatTime(item)}\"" // Format and quote dates
+    is LocalDateTime -> "\"${formatDateTime(item)}\"" // Format and quote dates
     is Long, is Int, is Double -> item.toString()
     is Boolean -> item.toString() // Handle boolean values (true/false)
     null -> ""
     else -> "\"Unsupported type: ${item::class.simpleName}\""
   }
 
-  private fun formatDate(date: Date): String {
-    val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss") // Customize the date format as needed
-    return dateFormat.format(date)
-  }
+  private fun formatDate(date: LocalDate) = formatDateTime(date.atStartOfDay())
+
+  private fun formatTime(time: LocalTime) = formatDateTime(time.atDate(LocalDate.of(1970, 1, 1)))
+
+  private fun formatDateTime(dateTime: LocalDateTime) = dateTime.format(dateTimeFormatter)
 
   private fun escapeCsvString(value: String): String {
     // Escape double quotes by doubling them

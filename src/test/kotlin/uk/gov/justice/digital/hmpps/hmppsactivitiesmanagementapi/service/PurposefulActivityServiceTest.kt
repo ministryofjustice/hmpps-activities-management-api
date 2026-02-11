@@ -6,17 +6,17 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PurposefulActivityRepository
-import java.text.SimpleDateFormat
-import java.util.*
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 class PurposefulActivityServiceTest {
   private val paRepository: PurposefulActivityRepository = mockk(relaxed = true)
   private val s3Service: S3Service = mockk(relaxed = true)
 
-  private val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+  val dateFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
   private val paService = PurposefulActivityService(paRepository, s3Service)
 
-  private val mockDate = Date(1726819200000)
+  private val mockDate = LocalDateTime.now()
 
   @BeforeEach
   fun setUp() {

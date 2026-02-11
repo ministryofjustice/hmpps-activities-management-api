@@ -46,6 +46,7 @@ object LocalStackContainer {
       )
       withServices(LocalStackContainer.Service.SQS, LocalStackContainer.Service.SNS, LocalStackContainer.Service.S3)
       withEnv("DEFAULT_REGION", "eu-west-2")
+      withLogConsumer(Slf4jLogConsumer(LoggerFactory.getLogger("LocalStackContainer")))
       waitingFor(
         Wait.forLogMessage(".*Ready.*", 1),
       )
