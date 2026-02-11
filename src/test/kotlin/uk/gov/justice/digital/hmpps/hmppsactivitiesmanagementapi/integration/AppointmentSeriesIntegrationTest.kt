@@ -2,6 +2,8 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
+import org.awaitility.kotlin.await
+import org.awaitility.kotlin.untilAsserted
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentMatchers.anyMap
 import org.mockito.ArgumentMatchers.anyString
@@ -322,13 +324,9 @@ class AppointmentSeriesIntegrationTest : LocalStackTestBase() {
       ),
     )
 
-    val dpsLocation = dpsLocation(request.dpsLocationId!!, "TPR", "ONE", "Location One")
+    val dpsLocation = dpsLocation(request.dpsLocationId!!)
 
-    locationsInsidePrisonApiMockServer.stubLocationsForUsageType(
-      prisonCode = "TPR",
-      usageType = UsageType.APPOINTMENT,
-      locations = listOf(dpsLocation),
-    )
+    locationsInsidePrisonApiMockServer.stubLocationFromDpsUuid(request.dpsLocationId, dpsLocation)
 
     nomisMappingApiMockServer.stubMappingsFromDpsIds(
       listOf(
@@ -415,11 +413,9 @@ class AppointmentSeriesIntegrationTest : LocalStackTestBase() {
       ),
     )
 
-    locationsInsidePrisonApiMockServer.stubLocationsForUsageType(
-      prisonCode = "TPR",
-      usageType = UsageType.APPOINTMENT,
-      locations = listOf(dpsLocation(request.dpsLocationId!!, "TPR", "ONE", "Location One")),
-    )
+    val dpsLocation = dpsLocation(request.dpsLocationId!!)
+
+    locationsInsidePrisonApiMockServer.stubLocationFromDpsUuid(request.dpsLocationId, dpsLocation)
 
     nomisMappingApiMockServer.stubMappingsFromDpsIds(
       listOf(
@@ -500,6 +496,12 @@ class AppointmentSeriesIntegrationTest : LocalStackTestBase() {
       ),
     )
 
+    val dpsLocation = dpsLocation(request.dpsLocationId!!)
+
+    locationsInsidePrisonApiMockServer.stubLocationFromDpsUuid(request.dpsLocationId, dpsLocation)
+
+    nomisMappingApiMockServer.stubMappingFromDpsUuid(request.dpsLocationId, 4445)
+
     val appointmentSeries = webTestClient.createAppointmentSeries(request)!!
     val attendeeIds = appointmentSeries.appointments.flatMap { it.attendees.map { attendee -> attendee.id } }
 
@@ -542,6 +544,12 @@ class AppointmentSeriesIntegrationTest : LocalStackTestBase() {
         )
       },
     )
+
+    val dpsLocation = dpsLocation(request.dpsLocationId!!)
+
+    locationsInsidePrisonApiMockServer.stubLocationFromDpsUuid(request.dpsLocationId, dpsLocation)
+
+    nomisMappingApiMockServer.stubMappingFromDpsUuid(request.dpsLocationId, 4445)
 
     val appointmentSeries = webTestClient.createAppointmentSeries(request)!!
     val attendeeIds = appointmentSeries.appointments.flatMap { it.attendees.map { attendee -> attendee.id } }
@@ -587,18 +595,24 @@ class AppointmentSeriesIntegrationTest : LocalStackTestBase() {
       },
     )
 
+    val dpsLocation = dpsLocation(request.dpsLocationId!!)
+
+    locationsInsidePrisonApiMockServer.stubLocationFromDpsUuid(request.dpsLocationId, dpsLocation)
+
+    nomisMappingApiMockServer.stubMappingFromDpsUuid(request.dpsLocationId, 4445)
+
     // Synchronous creation. First appointment and attendees only
     var appointmentSeries = webTestClient.createAppointmentSeries(request)!!
     var attendeeIds = appointmentSeries.appointments.flatMap { it.attendees.map { attendee -> attendee.id } }
     appointmentSeries.appointments hasSize 1
     attendeeIds hasSize 3
 
-    // Wait for remaining appointments to be created
-    Thread.sleep(1000)
-    appointmentSeries = webTestClient.getAppointmentSeriesById(appointmentSeries.id)!!
-    attendeeIds = appointmentSeries.appointments.flatMap { it.attendees.map { attendee -> attendee.id } }
-    appointmentSeries.appointments hasSize 4
-    attendeeIds hasSize 12
+    await untilAsserted {
+      appointmentSeries = webTestClient.getAppointmentSeriesById(appointmentSeries.id)!!
+      attendeeIds = appointmentSeries.appointments.flatMap { it.attendees.map { attendee -> attendee.id } }
+      appointmentSeries.appointments hasSize 4
+      attendeeIds hasSize 12
+    }
 
     val expectedOutboundEvents = attendeeIds.map { ExpectedOutboundEvent(APPOINTMENT_INSTANCE_CREATED, it, "OIC") }.toTypedArray()
 

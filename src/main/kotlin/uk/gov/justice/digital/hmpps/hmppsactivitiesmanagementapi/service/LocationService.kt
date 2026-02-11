@@ -62,15 +62,17 @@ class LocationService(
   fun getLocationDetails(dpsLocationId: UUID): LocationDetails {
     val locationId = nomisMappingAPIClient.getLocationMappingByDpsId(dpsLocationId)!!.nomisLocationId
 
-    return locationsInsidePrisonAPIClient.getLocationById(dpsLocationId).toLocationDetails(locationId)
+    return getDpsLocationDetails(dpsLocationId).toLocationDetails(locationId)
   }
+
+  fun getDpsLocationDetails(dpsLocationId: UUID) = locationsInsidePrisonAPIClient.getLocationById(dpsLocationId)
 
   @Deprecated("At some point we will only have DPS Location UUIDs and not Nomis IDs.")
   fun getLocationDetails(nomisLocationId: Long?, dpsLocationId: UUID?): LocationDetails {
     val dpsLocationUuid = dpsLocationId ?: nomisMappingAPIClient.getLocationMappingByNomisId(nomisLocationId!!)!!.dpsLocationId
     val locationId = nomisLocationId ?: nomisMappingAPIClient.getLocationMappingByDpsId(dpsLocationId!!)!!.nomisLocationId
 
-    return locationsInsidePrisonAPIClient.getLocationById(dpsLocationUuid).toLocationDetails(locationId)
+    return getDpsLocationDetails(dpsLocationUuid).toLocationDetails(locationId)
   }
 
   private fun String.formatLocation(): String = WordUtils.capitalizeFully(this)
@@ -82,7 +84,9 @@ class LocationService(
 
 fun List<DpsLocation>.toIdSet() = this.map { it.id }.toSet()
 
-fun DpsLocation.toLocationDetails(locationId: Long) = LocationDetails(this.prisonId, locationId, this.id, this.code, this.localName ?: this.code, this.pathHierarchy)
+fun DpsLocation.description() = this.localName ?: this.code
+
+fun DpsLocation.toLocationDetails(locationId: Long) = LocationDetails(prisonId, locationId, id, code, description(), pathHierarchy)
 
 fun List<LocationDetails>.toMapByNomisId() = this.associateBy { it.locationId }
 
