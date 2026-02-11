@@ -18,6 +18,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refd
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentCategoryService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.description
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 import java.security.Principal
 import java.time.LocalDate
@@ -130,8 +131,7 @@ class AppointmentSeriesService(
   private fun AppointmentSeriesCreateRequest.locationDescription(): String = when {
     inCell -> "In cell"
     dpsLocationId != null -> {
-      locationService.getLocationDetailsForAppointmentsMapByDpsLocationId(prisonCode!!)[dpsLocationId]?.description
-        ?: throw IllegalArgumentException("Appointment location with DPS Location id '$dpsLocationId' not found in prison '$prisonCode'")
+      locationService.getDpsLocationDetails(dpsLocationId).description()
     }
     else -> {
       locationService.getLocationDetailsForAppointmentsMap(prisonCode!!)[internalLocationId]?.description

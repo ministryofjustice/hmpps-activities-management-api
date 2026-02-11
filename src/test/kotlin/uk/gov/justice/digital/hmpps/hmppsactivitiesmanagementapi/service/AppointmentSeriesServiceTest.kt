@@ -33,6 +33,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocationDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.dpsLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eventOrganiser
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eventTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
@@ -131,12 +132,11 @@ class AppointmentSeriesServiceTest {
     maxStartDateOffsetDays = 2,
   )
 
-  private val appointmentLocationDetails = locationDetails(
-    agencyId = prisonCode,
-    locationId = 1,
-    dpsLocationId = dpsLocationId,
+  private val appointmentLocationDetails = dpsLocation(
+    prisonId = prisonCode,
+    id = dpsLocationId,
     code = "CHAPEL",
-    description = "Chapel",
+    localName = "Chapel",
   )
 
   @BeforeEach
@@ -151,8 +151,8 @@ class AppointmentSeriesServiceTest {
     whenever(locationService.getLocationDetailsForAppointmentsMap(prisonCode))
       .thenReturn(mapOf(internalLocationId to appointmentLocationDetails(internalLocationId, dpsLocationId, prisonCode, "Chapel")))
 
-    whenever(locationService.getLocationDetailsForAppointmentsMapByDpsLocationId(prisonCode))
-      .thenReturn(mapOf(appointmentLocationDetails.dpsLocationId to appointmentLocationDetails))
+    whenever(locationService.getDpsLocationDetails(dpsLocationId))
+      .thenReturn(appointmentLocationDetails)
 
     whenever(nomisMappingAPIClient.getLocationMappingByDpsId(dpsLocationId))
       .thenReturn(NomisDpsLocationMapping(dpsLocationId, 123))
@@ -340,21 +340,6 @@ class AppointmentSeriesServiceTest {
       )
     }
     exception.message isEqualTo "Appointment Category with code 'NOT_FOUND' not found or is not active"
-
-    verifyNoInteractions(appointmentSeriesRepository)
-  }
-
-  @Test
-  fun `createAppointmentSeries DPS location id not found`() {
-    val dpsLocationId = UUID.randomUUID()
-
-    val exception = assertThrows<IllegalArgumentException> {
-      service.createAppointmentSeries(
-        appointmentSeriesCreateRequest(prisonCode = prisonCode, categoryCode = categoryCode, dpsLocationId = dpsLocationId),
-        principal,
-      )
-    }
-    exception.message isEqualTo "Appointment location with DPS Location id '$dpsLocationId' not found in prison 'TPR'"
 
     verifyNoInteractions(appointmentSeriesRepository)
   }

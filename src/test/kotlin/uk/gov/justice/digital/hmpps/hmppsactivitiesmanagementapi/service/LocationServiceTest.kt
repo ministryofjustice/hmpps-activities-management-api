@@ -242,6 +242,12 @@ class LocationServiceTest {
   }
 
   @Test
+  fun `getDpsLocationDetails - returns the location`() {
+    whenever(locationsInsidePrisonAPIClient.getLocationById(dpsLocationUuid)).thenReturn(dpsLocation())
+    assertThat(locationService.getDpsLocationDetails(dpsLocationUuid)).isEqualTo(dpsLocation())
+  }
+
+  @Test
   fun `location to appointment location summary returns a default description for null locations`() {
     assertThat((null as LocationDetails?).toAppointmentLocationSummary(1, dpsLocationUuid, "TPR")).isEqualTo(
       AppointmentLocationSummary(1, dpsLocationUuid, "TPR", "No information available"),
