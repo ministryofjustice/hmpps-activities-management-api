@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.co
 
 import org.slf4j.LoggerFactory
 import org.testcontainers.containers.PostgreSQLContainer
+import org.testcontainers.containers.output.Slf4jLogConsumer
 import org.testcontainers.containers.wait.strategy.Wait
 import java.io.IOException
 import java.net.ServerSocket
@@ -22,7 +23,7 @@ object PostgresContainer {
       withPassword("activities")
       setWaitStrategy(Wait.forListeningPort())
       withReuse(true)
-
+      withLogConsumer(Slf4jLogConsumer(LoggerFactory.getLogger("PostgresContainer")))
       start()
     }
   }
