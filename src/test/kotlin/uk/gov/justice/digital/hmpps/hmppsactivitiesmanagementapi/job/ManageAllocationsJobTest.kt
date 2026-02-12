@@ -76,23 +76,7 @@ class ManageAllocationsJobTest : JobsTestBase() {
   }
 
   @Test
-  fun `deallocate allocations due to end operation triggered without SQS`() {
-    mockJobs(DEALLOCATE_ENDING)
-
-    job.execute(withDeallocateEnding = true)
-
-    verify(manageAllocationsDueToEndService).endAllocationsDueToEnd()
-    verifyNoMoreInteractions(manageAllocationsDueToEndService)
-    verifyNoInteractions(manageAllocationsService)
-    verifyNoInteractions(manageAllocationsDueToExpireService)
-
-    verifyJobsWithRetryCalled(DEALLOCATE_ENDING)
-  }
-
-  @Test
-  fun `deallocate allocations due to end operation triggered with SQS`() {
-    whenever(featureSwitches.isEnabled(Feature.JOBS_SQS_DEALLOCATE_ENDING_ENABLED)).thenReturn(true)
-
+  fun `deallocate allocations due to end operation triggered`() {
     mockJobs(DEALLOCATE_ENDING)
 
     manageAllocationsJobs(featureSwitches).execute(withDeallocateEnding = true)
@@ -163,7 +147,6 @@ class ManageAllocationsJobTest : JobsTestBase() {
   @Test
   fun `activate and deallocate allocations due to end operations triggered`() {
     whenever(featureSwitches.isEnabled(Feature.JOBS_SQS_ACTIVATE_ALLOCATIONS_ENABLED)).thenReturn(true)
-    whenever(featureSwitches.isEnabled(Feature.JOBS_SQS_DEALLOCATE_ENDING_ENABLED)).thenReturn(true)
 
     mockJobs(ALLOCATE, START_SUSPENSIONS, END_SUSPENSIONS, DEALLOCATE_ENDING)
 
@@ -216,7 +199,6 @@ class ManageAllocationsJobTest : JobsTestBase() {
 
   @Test
   fun `deallocate allocations due to end and deallocate allocations due to expire operations triggered`() {
-    whenever(featureSwitches.isEnabled(Feature.JOBS_SQS_DEALLOCATE_ENDING_ENABLED)).thenReturn(true)
     whenever(featureSwitches.isEnabled(Feature.JOBS_SQS_DEALLOCATE_EXPIRING_ENABLED)).thenReturn(true)
 
     mockJobs(DEALLOCATE_ENDING, DEALLOCATE_EXPIRING)
@@ -266,7 +248,6 @@ class ManageAllocationsJobTest : JobsTestBase() {
   @Test
   fun `activate, deallocate allocation due to end, deallocate allocation due to expire and fix auto-suspended operations triggered`() {
     whenever(featureSwitches.isEnabled(Feature.JOBS_SQS_ACTIVATE_ALLOCATIONS_ENABLED)).thenReturn(true)
-    whenever(featureSwitches.isEnabled(Feature.JOBS_SQS_DEALLOCATE_ENDING_ENABLED)).thenReturn(true)
     whenever(featureSwitches.isEnabled(Feature.JOBS_SQS_DEALLOCATE_EXPIRING_ENABLED)).thenReturn(true)
 
     mockJobs(ALLOCATE, START_SUSPENSIONS, END_SUSPENSIONS, FIX_STUCK_AUTO_SUSPENDED, DEALLOCATE_ENDING, DEALLOCATE_EXPIRING)

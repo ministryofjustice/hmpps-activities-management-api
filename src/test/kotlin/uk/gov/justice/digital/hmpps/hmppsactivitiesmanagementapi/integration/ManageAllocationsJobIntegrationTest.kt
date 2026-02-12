@@ -18,7 +18,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.daysAgo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason.ENDED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason.TEMPORARILY_RELEASED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus.ACTIVE
@@ -27,14 +26,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus.SUSPENDED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus.ALLOCATED
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus.DECLINED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus.REMOVED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isNotEqualTo
@@ -55,7 +51,6 @@ import java.time.ZoneOffset
 @TestPropertySource(
   properties = [
     "feature.jobs.sqs.activate.allocations.enabled=false",
-    "feature.jobs.sqs.deallocate.ending.enabled=false",
     "feature.jobs.sqs.deallocate.expiring.enabled=false",
     "feature.jobs.sqs.manage.attendances.enabled=false",
     "feature.jobs.sqs.manage.appointment.attendees.enabled=false",
@@ -78,89 +73,6 @@ class ManageAllocationsJobIntegrationTest : LocalStackTestBase() {
   fun beforeEach() {
     whenever(clock.instant()).thenReturn(LocalDateTime.now().toInstant(ZoneOffset.UTC))
     whenever(clock.zone).thenReturn(ZoneId.of("UTC"))
-  }
-
-  @Sql("classpath:test_data/seed-activity-id-11.sql")
-  @Test
-  fun `deallocate offenders for activity ending yesterday`() {
-    val activeAllocations = with(allocationRepository.findAll().filterNot(Allocation::isEnded)) {
-      size isEqualTo 3
-      onEach { it isStatus ACTIVE }
-    }
-
-    with(waitingListRepository.findAll()) {
-      size isEqualTo 3
-      none { it.isStatus(ALLOCATED, DECLINED, REMOVED) } isBool true
-    }
-
-    webTestClient.retrieveAdvanceAttendance(1)
-
-    waitForJobs({ webTestClient.manageAllocations(withDeallocateEnding = true) })
-
-    validateOutboundEvents(
-      ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 1),
-      ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 2),
-      ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 3),
-    )
-
-    with(allocationRepository.findAllById(activeAllocations.map { it.allocationId })) {
-      size isEqualTo 3
-      onEach { it isDeallocatedWithReason ENDED }
-    }
-
-    with(waitingListRepository.findAll()) {
-      onEach { it isStatus DECLINED }
-      onEach { it.declinedReason isEqualTo "Activity ended" }
-    }
-
-    webTestClient.checkAdvanceAttendanceDoesNotExist(1)
-  }
-
-  @Sql("classpath:test_data/seed-activity-id-12.sql")
-  @Test
-  fun `deallocate offenders for activity with no end date`() {
-    whenever(clock.instant()).thenReturn(LocalDate.now().atTime(22, 0).toInstant(ZoneOffset.UTC))
-
-    with(allocationRepository.findAll()) {
-      size isEqualTo 3
-      onEach { it isStatus ACTIVE }
-    }
-
-    waitForJobs({ webTestClient.manageAllocations(withDeallocateEnding = true) })
-
-    validateOutboundEvents(
-      ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 2),
-    )
-
-    with(allocationRepository.findAll()) {
-      size isEqualTo 3
-      prisoner("A11111A") isStatus ACTIVE
-      prisoner("A22222A") isDeallocatedWithReason ENDED
-      prisoner("A33333A") isStatus ACTIVE
-    }
-  }
-
-  @Sql("classpath:test_data/seed-activity-id-28.sql")
-  @Test
-  fun `do not deallocate offenders for activity if allocated end date is before job window`() {
-    whenever(clock.instant()).thenReturn(LocalDate.now().atTime(22, 0).toInstant(ZoneOffset.UTC))
-    with(allocationRepository.findAll()) {
-      size isEqualTo 3
-      onEach { it isStatus ACTIVE }
-    }
-
-    waitForJobs({ webTestClient.manageAllocations(withDeallocateEnding = true) })
-
-    validateOutboundEvents(
-      ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 2),
-    )
-
-    with(allocationRepository.findAll()) {
-      size isEqualTo 3
-      prisoner("A11111A") isStatus ACTIVE
-      prisoner("A22222A") isDeallocatedWithReason ENDED
-      prisoner("A33333A") isStatus ACTIVE
-    }
   }
 
   @Sql("classpath:test_data/seed-allocations-due-to-expire.sql")
@@ -449,10 +361,6 @@ class ManageAllocationsJobIntegrationTest : LocalStackTestBase() {
     }
   }
 
-  private infix fun WaitingList.isStatus(status: WaitingListStatus) {
-    this.status isEqualTo status
-  }
-
   private infix fun WaitingListStatus.isStatus(status: WaitingListStatus) {
     this isEqualTo status
   }
@@ -472,9 +380,9 @@ class ManageAllocationsJobIntegrationTest : LocalStackTestBase() {
     deallocatedTime isCloseTo TimeSource.now()
   }
 
-  private fun WebTestClient.manageAllocations(withActivate: Boolean = false, withDeallocateEnding: Boolean = false, withDeallocateExpiring: Boolean = false, withFixAutoSuspended: Boolean = false, numJobs: Int = 1) {
+  private fun WebTestClient.manageAllocations(withActivate: Boolean = false, withDeallocateExpiring: Boolean = false, withFixAutoSuspended: Boolean = false) {
     post()
-      .uri("/job/manage-allocations?withActivate=$withActivate&withDeallocateEnding=$withDeallocateEnding&withDeallocateExpiring=$withDeallocateExpiring&withFixAutoSuspended=$withFixAutoSuspended")
+      .uri("/job/manage-allocations?withActivate=$withActivate&withDeallocateExpiring=$withDeallocateExpiring&withFixAutoSuspended=$withFixAutoSuspended")
       .accept(MediaType.TEXT_PLAIN)
       .exchange()
       .expectStatus().isCreated
