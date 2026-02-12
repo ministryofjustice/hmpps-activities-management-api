@@ -67,88 +67,6 @@ class ManageAllocationsDueToEndServiceTest {
   }
 
   @Test
-  fun `deallocate offenders from activity ending yesterday without pending deallocation`() {
-    val prison = rolloutPrison()
-    val schedule = activitySchedule(activityEntity(startDate = twoDaysAgo, endDate = yesterday))
-    val allocation = schedule.allocations().first().also { it.verifyIsActive() }
-
-    whenever(activityScheduleRepository.findAllByActivityPrisonCode(prison.prisonCode)) doReturn listOf(schedule)
-
-    service.endAllocationsDueToEnd()
-
-    allocation.verifyIsEnded()
-
-    verify(activityScheduleRepository).saveAndFlush(schedule)
-  }
-
-  @Test
-  fun `deallocate offenders from activity yesterday declines pending or approved waiting lists`() {
-    val prison = rolloutPrison()
-    val schedule = activitySchedule(activityEntity(startDate = twoDaysAgo, endDate = yesterday))
-
-    whenever(activityScheduleRepository.findAllByActivityPrisonCode(prison.prisonCode)) doReturn listOf(schedule)
-
-    service.endAllocationsDueToEnd()
-
-    verify(waitingListService).declinePendingOrApprovedApplications(
-      schedule.activity.activityId,
-      "Activity ended",
-      "Activities Management Service",
-    )
-  }
-
-  @Test
-  fun `deallocate offenders from activity ending yesterday with pending deallocation`() {
-    val prison = rolloutPrison()
-    val schedule = activitySchedule(activityEntity(startDate = twoDaysAgo, endDate = today))
-    val allocation = schedule.allocations().first().also { it.verifyIsActive() }
-    allocation.deallocateOn(today, DeallocationReason.OTHER, "by test").plannedDeallocation!!.plannedDate = yesterday
-
-    whenever(activityScheduleRepository.findAllByActivityPrisonCode(prison.prisonCode)) doReturn listOf(schedule)
-    whenever(allocationRepository.findAllocationsByActivitySchedule(schedule, true)) doReturn schedule.allocations()
-
-    service.endAllocationsDueToEnd()
-
-    allocation.verifyIsEnded(DeallocationReason.OTHER, "by test")
-
-    verify(activityScheduleRepository).saveAndFlush(schedule)
-  }
-
-  @Test
-  fun `deallocate offenders from activity with no end date and allocation ends yesterday`() {
-    val prison = rolloutPrison()
-    val schedule = activitySchedule(activityEntity(startDate = twoDaysAgo, endDate = null))
-    val allocation = schedule.allocations().first().apply { endDate = yesterday }.also { it.verifyIsActive() }
-
-    whenever(activityScheduleRepository.findAllByActivityPrisonCode(prison.prisonCode)) doReturn listOf(schedule)
-    whenever(allocationRepository.findAllocationsByActivitySchedule(schedule, true)) doReturn schedule.allocations()
-
-    service.endAllocationsDueToEnd()
-
-    allocation.verifyIsEnded()
-
-    verify(activityScheduleRepository).saveAndFlush(schedule)
-    verifyNoInteractions(waitingListService)
-  }
-
-  @Test
-  fun `offenders not deallocated from activity with no end date and allocation does not end yesterday`() {
-    val prison = rolloutPrison()
-    val schedule = activitySchedule(activityEntity(startDate = yesterday, endDate = null))
-    val allocation = schedule.allocations().first().also { it.verifyIsActive() }
-
-    whenever(activityScheduleRepository.findAllByActivityPrisonCode(prison.prisonCode)) doReturn listOf(schedule)
-    whenever(allocationRepository.findAllocationsByActivitySchedule(schedule, true)) doReturn schedule.allocations()
-
-    service.endAllocationsDueToEnd()
-
-    allocation.verifyIsActive()
-
-    verify(activityScheduleRepository, never()).saveAndFlush(any())
-    verifyNoInteractions(waitingListService)
-  }
-
-  @Test
   fun `should send events to queue for each prison`() {
     service.sendAllocationsDueToEndEvents(Job(123, JobType.DEALLOCATE_ENDING))
 
@@ -159,7 +77,7 @@ class ManageAllocationsDueToEndServiceTest {
   }
 
   @Test
-  fun `handleEvent - deallocate offenders from activity ending yesterday without pending deallocation`() {
+  fun `deallocate offenders from activity ending yesterday without pending deallocation`() {
     val prison = rolloutPrison(prisonCode = MOORLAND_PRISON_CODE)
     val schedule = activitySchedule(activityEntity(startDate = twoDaysAgo, endDate = yesterday))
     val allocation = schedule.allocations().first().also { it.verifyIsActive() }
@@ -175,7 +93,7 @@ class ManageAllocationsDueToEndServiceTest {
   }
 
   @Test
-  fun `handleEvent - deallocate offenders from activity yesterday declines pending or approved waiting lists`() {
+  fun `deallocate offenders from activity yesterday declines pending or approved waiting lists`() {
     val prison = rolloutPrison(prisonCode = MOORLAND_PRISON_CODE)
     val schedule = activitySchedule(activityEntity(startDate = twoDaysAgo, endDate = yesterday))
 
@@ -191,7 +109,7 @@ class ManageAllocationsDueToEndServiceTest {
   }
 
   @Test
-  fun `handleEvent - deallocate offenders from activity ending yesterday with pending deallocation`() {
+  fun `deallocate offenders from activity ending yesterday with pending deallocation`() {
     val prison = rolloutPrison(prisonCode = MOORLAND_PRISON_CODE)
     val schedule = activitySchedule(activityEntity(startDate = twoDaysAgo, endDate = today))
     val allocation = schedule.allocations().first().also { it.verifyIsActive() }
@@ -208,7 +126,7 @@ class ManageAllocationsDueToEndServiceTest {
   }
 
   @Test
-  fun `handleEvent - deallocate offenders from activity with no end date and allocation ends yesterday`() {
+  fun `deallocate offenders from activity with no end date and allocation ends yesterday`() {
     val prison = rolloutPrison(prisonCode = MOORLAND_PRISON_CODE)
     val schedule = activitySchedule(activityEntity(startDate = twoDaysAgo, endDate = null))
     val allocation = schedule.allocations().first().apply { endDate = yesterday }.also { it.verifyIsActive() }
@@ -225,7 +143,7 @@ class ManageAllocationsDueToEndServiceTest {
   }
 
   @Test
-  fun `handleEvent - offenders not deallocated from activity with no end date and allocation does not end yesterday`() {
+  fun `offenders not deallocated from activity with no end date and allocation does not end yesterday`() {
     val prison = rolloutPrison(prisonCode = MOORLAND_PRISON_CODE)
     val schedule = activitySchedule(activityEntity(startDate = yesterday, endDate = null))
     val allocation = schedule.allocations().first().also { it.verifyIsActive() }
@@ -242,7 +160,7 @@ class ManageAllocationsDueToEndServiceTest {
   }
 
   @Test
-  fun `handleEvent - throws an exception if prison is not rolled out`() {
+  fun `throws an exception if prison is not rolled out`() {
     assertThrows<IllegalArgumentException> {
       service.handleEvent(123, RISLEY_PRISON_CODE)
     }.message isEqualTo "Supplied prison RSI is not rolled out."

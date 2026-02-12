@@ -167,7 +167,6 @@ feature:
   events.sns.enabled: true
 
   jobs.sqs:
-    deallocate.ending.enabled: true
     deallocate.expiring.enabled: true
     activate.allocations.enabled: true
     manage.attendances.enabled: true

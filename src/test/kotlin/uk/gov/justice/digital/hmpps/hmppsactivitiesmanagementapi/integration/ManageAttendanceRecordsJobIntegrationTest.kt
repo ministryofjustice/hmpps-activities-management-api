@@ -31,7 +31,6 @@ import java.time.temporal.ChronoUnit
 @TestPropertySource(
   properties = [
     "feature.jobs.sqs.activate.allocations.enabled=false",
-    "feature.jobs.sqs.deallocate.ending.enabled=false",
     "feature.jobs.sqs.deallocate.expiring.enabled=false",
     "feature.jobs.sqs.manage.attendances.enabled=false",
     "feature.jobs.sqs.manage.appointment.attendees.enabled=false",

@@ -39,13 +39,6 @@ class ManageAllocationsDueToEndService(
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  /**
-   * Caution to be used when using the current date. Allocations should be ended at the end of the day.
-   */
-  fun endAllocationsDueToEnd() {
-    rolloutPrisonService.getRolloutPrisons().forEach { endAllocationsDueToEndForPrison(it.prisonCode) }
-  }
-
   fun sendAllocationsDueToEndEvents(job: Job) {
     val rolloutPrisons = rolloutPrisonService.getRolloutPrisons()
 
