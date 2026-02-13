@@ -73,6 +73,16 @@ class ManageAllocationsDueToExpireServiceTest {
   }
 
   @Test
+  fun `should send events to queue for each prison`() {
+    service.sendAllocationsDueToExpireEvents(Job(123, JobType.DEALLOCATE_EXPIRING))
+
+    verify(jobService).initialiseCounts(123, rolledOutPrisons.count { it.prisonLive })
+
+    verify(jobsSqsService).sendJobEvent(JobEventMessage(123, JobType.DEALLOCATE_EXPIRING, PrisonCodeJobEvent(PENTONVILLE_PRISON_CODE)))
+    verify(jobsSqsService).sendJobEvent(JobEventMessage(123, JobType.DEALLOCATE_EXPIRING, PrisonCodeJobEvent(MOORLAND_PRISON_CODE)))
+  }
+
+  @Test
   fun `prisoners are deallocated from allocations pending due to expire`() {
     val prison = rolloutPrison()
     val activity = activityEntity(startDate = TimeSource.tomorrow())
@@ -84,7 +94,6 @@ class ManageAllocationsDueToExpireServiceTest {
       on { prisonId } doReturn prison.prisonCode.plus("-other")
     }
 
-    whenever(rolloutPrisonService.getRolloutPrisons()) doReturn listOf(prison)
     whenever(rolloutPrisonService.getByPrisonCode(prison.prisonCode)) doReturn prison
     whenever(allocationRepository.findByPrisonCodePrisonerStatus(prison.prisonCode, listOf(PrisonerStatus.PENDING))) doReturn listOf(
       allocation,
@@ -94,10 +103,11 @@ class ManageAllocationsDueToExpireServiceTest {
     whenever(prisonApiClient.getMovementsForPrisonersFromPrison(prison.prisonCode, setOf(allocation.prisonerNumber))) doReturn
       listOf(movement(prisonerNumber = allocation.prisonerNumber, movementDate = TimeSource.yesterday()))
 
-    service.deallocateAllocationsDueToExpire()
+    service.handleEvent(123, PENTONVILLE_PRISON_CODE)
 
     allocation.verifyIsExpired()
 
+    verify(activityScheduleRepository).saveAndFlush(schedule)
     verify(activityScheduleRepository).saveAndFlush(schedule)
   }
 
@@ -114,13 +124,12 @@ class ManageAllocationsDueToExpireServiceTest {
       on { prisonerNumber } doReturn allocation.prisonerNumber
     }
 
-    whenever(rolloutPrisonService.getRolloutPrisons()) doReturn listOf(prison)
     whenever(rolloutPrisonService.getByPrisonCode(prison.prisonCode)) doReturn prison
     whenever(allocationRepository.findByPrisonCodePrisonerStatus(prison.prisonCode, listOf(PrisonerStatus.PENDING))) doReturn listOf(allocation)
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(listOf(prisoner.prisonerNumber))) doReturn listOf(prisoner)
     whenever(prisonApiClient.getMovementsForPrisonersFromPrison(prison.prisonCode, setOf(allocation.prisonerNumber))) doReturn listOf(movement(prisonerNumber = allocation.prisonerNumber, movementDate = TimeSource.yesterday()))
 
-    service.deallocateAllocationsDueToExpire()
+    service.handleEvent(123, PENTONVILLE_PRISON_CODE)
 
     verify(monitoringService).capture("An error occurred deallocating allocations on activity schedule 1", exception)
   }
@@ -137,7 +146,6 @@ class ManageAllocationsDueToExpireServiceTest {
       on { prisonId } doReturn prison.prisonCode.plus("-other")
     }
 
-    whenever(rolloutPrisonService.getRolloutPrisons()) doReturn listOf(prison)
     whenever(rolloutPrisonService.getByPrisonCode(prison.prisonCode)) doReturn prison
     whenever(allocationRepository.findByPrisonCodePrisonerStatus(prison.prisonCode, listOf(PrisonerStatus.PENDING))) doReturn listOf(
       allocation,
@@ -147,7 +155,7 @@ class ManageAllocationsDueToExpireServiceTest {
     whenever(prisonApiClient.getMovementsForPrisonersFromPrison(prison.prisonCode, setOf(allocation.prisonerNumber))) doReturn
       listOf(movement(prisonerNumber = allocation.prisonerNumber, fromPrisonCode = prison.prisonCode, movementDate = TimeSource.yesterday()))
 
-    service.deallocateAllocationsDueToExpire()
+    service.handleEvent(123, PENTONVILLE_PRISON_CODE)
 
     allocation.verifyIsExpired()
 
@@ -161,7 +169,6 @@ class ManageAllocationsDueToExpireServiceTest {
     val schedule = activity.schedules().first()
     val allocation = schedule.allocations().first().also { it.prisonerStatus isEqualTo PrisonerStatus.PENDING }
 
-    whenever(rolloutPrisonService.getRolloutPrisons()) doReturn listOf(prison)
     whenever(rolloutPrisonService.getByPrisonCode(prison.prisonCode)) doReturn prison
     whenever(allocationRepository.findByPrisonCodePrisonerStatus(prison.prisonCode, listOf(PrisonerStatus.PENDING))) doReturn listOf(
       allocation,
@@ -174,7 +181,7 @@ class ManageAllocationsDueToExpireServiceTest {
         movement(prisonerNumber = allocation.prisonerNumber, fromPrisonCode = prison.prisonCode, movementDate = TimeSource.today()),
       )
 
-    service.deallocateAllocationsDueToExpire()
+    service.handleEvent(123, PENTONVILLE_PRISON_CODE)
 
     verify(waitingListService, never()).removeOpenApplications(any(), any(), any())
 
@@ -185,148 +192,6 @@ class ManageAllocationsDueToExpireServiceTest {
 
   @Test
   fun `prisoners due to expire waiting lists are removed`() {
-    val prison = rolloutPrison()
-    val prisoner: Prisoner = mock {
-      on { inOutStatus } doReturn Prisoner.InOutStatus.OUT
-      on { prisonerNumber } doReturn "A1234AA"
-    }
-
-    whenever(rolloutPrisonService.getRolloutPrisons()) doReturn listOf(prison)
-    whenever(rolloutPrisonService.getByPrisonCode(prison.prisonCode)) doReturn prison
-    whenever(prisonerSearchApiClient.findByPrisonerNumbers(listOf(prisoner.prisonerNumber))) doReturn listOf(prisoner)
-    whenever(waitingListService.fetchOpenApplicationsForPrison(prison.prisonCode)) doReturn listOf(waitingList(prisonerNumber = "A1234AA"))
-    whenever(prisonApiClient.getMovementsForPrisonersFromPrison(prison.prisonCode, setOf("A1234AA"))) doReturn
-      listOf(movement(prisonerNumber = "A1234AA", movementDate = TimeSource.yesterday()))
-
-    service.deallocateAllocationsDueToExpire()
-
-    verify(waitingListService).removeOpenApplications(
-      prison.prisonCode,
-      "A1234AA",
-      ServiceName.SERVICE_NAME.value,
-    )
-  }
-
-  @Test
-  fun `should send events to queue for each prison`() {
-    service.sendAllocationsDueToExpireEvents(Job(123, JobType.DEALLOCATE_EXPIRING))
-
-    verify(jobService).initialiseCounts(123, rolledOutPrisons.count { it.prisonLive })
-
-    verify(jobsSqsService).sendJobEvent(JobEventMessage(123, JobType.DEALLOCATE_EXPIRING, PrisonCodeJobEvent(PENTONVILLE_PRISON_CODE)))
-    verify(jobsSqsService).sendJobEvent(JobEventMessage(123, JobType.DEALLOCATE_EXPIRING, PrisonCodeJobEvent(MOORLAND_PRISON_CODE)))
-  }
-
-  @Test
-  fun `handleEvent - prisoners are deallocated from allocations pending due to expire`() {
-    val prison = rolloutPrison()
-    val activity = activityEntity(startDate = TimeSource.tomorrow())
-    val schedule = activity.schedules().first()
-    val allocation = schedule.allocations().first().also { it.prisonerStatus isEqualTo PrisonerStatus.PENDING }
-    val prisonerInAtOtherPrison: Prisoner = mock {
-      on { inOutStatus } doReturn Prisoner.InOutStatus.IN
-      on { prisonerNumber } doReturn allocation.prisonerNumber
-      on { prisonId } doReturn prison.prisonCode.plus("-other")
-    }
-
-    whenever(rolloutPrisonService.getByPrisonCode(prison.prisonCode)) doReturn prison
-    whenever(allocationRepository.findByPrisonCodePrisonerStatus(prison.prisonCode, listOf(PrisonerStatus.PENDING))) doReturn listOf(
-      allocation,
-    )
-    whenever(prisonerSearchApiClient.findByPrisonerNumbers(listOf(prisonerInAtOtherPrison.prisonerNumber))) doReturn listOf(prisonerInAtOtherPrison)
-
-    whenever(prisonApiClient.getMovementsForPrisonersFromPrison(prison.prisonCode, setOf(allocation.prisonerNumber))) doReturn
-      listOf(movement(prisonerNumber = allocation.prisonerNumber, movementDate = TimeSource.yesterday()))
-
-    service.handleEvent(123, PENTONVILLE_PRISON_CODE)
-
-    allocation.verifyIsExpired()
-
-    verify(activityScheduleRepository).saveAndFlush(schedule)
-    verify(activityScheduleRepository).saveAndFlush(schedule)
-  }
-
-  @Test
-  fun `handleEvent - should capture failures in monitoring service for any exceptions when expiring`() {
-    val exception = RuntimeException("Something went wrong")
-    doThrow(exception).whenever(activityScheduleRepository).saveAndFlush(any())
-    val prison = rolloutPrison()
-    val activity = activityEntity(startDate = TimeSource.tomorrow())
-    val schedule = activity.schedules().first()
-    val allocation = schedule.allocations().first().also { it.prisonerStatus isEqualTo PrisonerStatus.PENDING }
-    val prisoner: Prisoner = mock {
-      on { inOutStatus } doReturn Prisoner.InOutStatus.OUT
-      on { prisonerNumber } doReturn allocation.prisonerNumber
-    }
-
-    whenever(rolloutPrisonService.getByPrisonCode(prison.prisonCode)) doReturn prison
-    whenever(allocationRepository.findByPrisonCodePrisonerStatus(prison.prisonCode, listOf(PrisonerStatus.PENDING))) doReturn listOf(allocation)
-    whenever(prisonerSearchApiClient.findByPrisonerNumbers(listOf(prisoner.prisonerNumber))) doReturn listOf(prisoner)
-    whenever(prisonApiClient.getMovementsForPrisonersFromPrison(prison.prisonCode, setOf(allocation.prisonerNumber))) doReturn listOf(movement(prisonerNumber = allocation.prisonerNumber, movementDate = TimeSource.yesterday()))
-
-    service.handleEvent(123, PENTONVILLE_PRISON_CODE)
-
-    verify(monitoringService).capture("An error occurred deallocating allocations on activity schedule 1", exception)
-  }
-
-  @Test
-  fun `handleEvent - prisoners are deallocated from allocations pending due to expire when at a different prison`() {
-    val prison = rolloutPrison()
-    val activity = activityEntity(startDate = TimeSource.tomorrow())
-    val schedule = activity.schedules().first()
-    val allocation = schedule.allocations().first().also { it.prisonerStatus isEqualTo PrisonerStatus.PENDING }
-    val prisonerInAtOtherPrison: Prisoner = mock {
-      on { inOutStatus } doReturn Prisoner.InOutStatus.IN
-      on { prisonerNumber } doReturn allocation.prisonerNumber
-      on { prisonId } doReturn prison.prisonCode.plus("-other")
-    }
-
-    whenever(rolloutPrisonService.getByPrisonCode(prison.prisonCode)) doReturn prison
-    whenever(allocationRepository.findByPrisonCodePrisonerStatus(prison.prisonCode, listOf(PrisonerStatus.PENDING))) doReturn listOf(
-      allocation,
-    )
-    whenever(prisonerSearchApiClient.findByPrisonerNumbers(listOf(prisonerInAtOtherPrison.prisonerNumber))) doReturn listOf(prisonerInAtOtherPrison)
-
-    whenever(prisonApiClient.getMovementsForPrisonersFromPrison(prison.prisonCode, setOf(allocation.prisonerNumber))) doReturn
-      listOf(movement(prisonerNumber = allocation.prisonerNumber, fromPrisonCode = prison.prisonCode, movementDate = TimeSource.yesterday()))
-
-    service.handleEvent(123, PENTONVILLE_PRISON_CODE)
-
-    allocation.verifyIsExpired()
-
-    verify(activityScheduleRepository).saveAndFlush(schedule)
-  }
-
-  @Test
-  fun `handleEvent - prisoners are are not deallocated from allocations pending as not due to expire`() {
-    val prison = rolloutPrison()
-    val activity = activityEntity(startDate = TimeSource.tomorrow())
-    val schedule = activity.schedules().first()
-    val allocation = schedule.allocations().first().also { it.prisonerStatus isEqualTo PrisonerStatus.PENDING }
-
-    whenever(rolloutPrisonService.getByPrisonCode(prison.prisonCode)) doReturn prison
-    whenever(allocationRepository.findByPrisonCodePrisonerStatus(prison.prisonCode, listOf(PrisonerStatus.PENDING))) doReturn listOf(
-      allocation,
-    )
-
-    // Multiple moves to demonstrate takes the latest move for an offender
-    whenever(prisonApiClient.getMovementsForPrisonersFromPrison(prison.prisonCode, setOf(allocation.prisonerNumber))) doReturn
-      listOf(
-        movement(prisonerNumber = allocation.prisonerNumber, movementDate = TimeSource.yesterday()),
-        movement(prisonerNumber = allocation.prisonerNumber, fromPrisonCode = prison.prisonCode, movementDate = TimeSource.today()),
-      )
-
-    service.handleEvent(123, PENTONVILLE_PRISON_CODE)
-
-    verify(waitingListService, never()).removeOpenApplications(any(), any(), any())
-
-    allocation.prisonerStatus isEqualTo PrisonerStatus.PENDING
-
-    verify(activityScheduleRepository, never()).saveAndFlush(schedule)
-  }
-
-  @Test
-  fun `handleEvent - prisoners due to expire waiting lists are removed`() {
     val prison = rolloutPrison()
     val prisoner: Prisoner = mock {
       on { inOutStatus } doReturn Prisoner.InOutStatus.OUT

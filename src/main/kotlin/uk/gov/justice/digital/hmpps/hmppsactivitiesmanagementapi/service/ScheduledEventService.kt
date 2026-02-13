@@ -259,6 +259,7 @@ class ScheduledEventService(
         dayOfWeek = date.dayOfWeek,
       )
     }
+
     val earliestStartTime = timeRange?.start ?: LocalTime.of(0, 0)
     val latestStartTime = timeRange?.end?.minusMinutes(1) ?: LocalTime.of(23, 59)
     return appointmentInstanceRepository.findByPrisonCodeAndPrisonerNumberAndDateAndTime(

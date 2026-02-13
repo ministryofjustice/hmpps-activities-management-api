@@ -1,8 +1,8 @@
 version: "3"
 services:
   test-db:
-    image: postgres:latest
-#    image: arm64v8/postgres:17
+#    image: postgres:latest
+    image: arm64v8/postgres:17
     container_name: activities-test-db
     networks:
       - hmpps
@@ -14,8 +14,8 @@ services:
       POSTGRES_PASSWORD: activities
 
   test-localstack:
-    image: localstack/localstack:4
-    # image: localstack/localstack:4-arm64
+#    image: localstack/localstack:4
+    image: localstack/localstack:4-arm64
     container_name: activities-test-localstack
     networks:
       - hmpps
