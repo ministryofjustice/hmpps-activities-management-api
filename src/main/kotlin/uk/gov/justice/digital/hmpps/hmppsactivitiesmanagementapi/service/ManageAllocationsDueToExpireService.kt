@@ -45,13 +45,6 @@ class ManageAllocationsDueToExpireService(
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  /**
-   * Caution to be used when using the current date. Allocations should be ended at the end of the day.
-   */
-  fun deallocateAllocationsDueToExpire() {
-    rolloutPrisonService.getRolloutPrisons().forEach { deallocateAllocationsDueToExpireForPrison(it.prisonCode) }
-  }
-
   fun sendAllocationsDueToExpireEvents(job: Job) {
     val rolloutPrisons = rolloutPrisonService.getRolloutPrisons()
 

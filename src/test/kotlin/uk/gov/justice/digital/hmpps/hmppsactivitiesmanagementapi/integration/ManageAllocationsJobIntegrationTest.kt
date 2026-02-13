@@ -4,7 +4,6 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.argumentCaptor
-import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
@@ -12,13 +11,9 @@ import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.MovementType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.daysAgo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason.TEMPORARILY_RELEASED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus.ACTIVE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus.AUTO_SUSPENDED
@@ -26,15 +21,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus.SUSPENDED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus.REMOVED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReasonEnum
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isNotEqualTo
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.movement
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditEvent
@@ -42,7 +32,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Prisone
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.PRISONER_ALLOCATION_AMENDED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.PRISONER_ATTENDANCE_AMENDED
 import java.time.Clock
-import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZoneOffset
@@ -51,7 +40,6 @@ import java.time.ZoneOffset
 @TestPropertySource(
   properties = [
     "feature.jobs.sqs.activate.allocations.enabled=false",
-    "feature.jobs.sqs.deallocate.expiring.enabled=false",
     "feature.jobs.sqs.manage.attendances.enabled=false",
     "feature.jobs.sqs.manage.appointment.attendees.enabled=false",
   ],
@@ -73,80 +61,6 @@ class ManageAllocationsJobIntegrationTest : LocalStackTestBase() {
   fun beforeEach() {
     whenever(clock.instant()).thenReturn(LocalDateTime.now().toInstant(ZoneOffset.UTC))
     whenever(clock.zone).thenReturn(ZoneId.of("UTC"))
-  }
-
-  @Sql("classpath:test_data/seed-allocations-due-to-expire.sql")
-  @Test
-  fun `deallocate offenders allocations due to expire`() {
-    val prisoner = PrisonerSearchPrisonerFixture.instance(
-      prisonerNumber = "A11111A",
-      inOutStatus = Prisoner.InOutStatus.OUT,
-      lastMovementType = MovementType.RELEASE,
-      releaseDate = LocalDate.now().minusDays(42),
-    )
-
-    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(listOf("A11111A"), listOf(prisoner))
-    prisonApiMockServer.stubPrisonerMovements(
-      listOf("A11111A"),
-      listOf(movement("A11111A", fromPrisonCode = PENTONVILLE_PRISON_CODE, movementDate = 21.daysAgo())),
-    )
-
-    with(allocationRepository.findAll()) {
-      this hasSize 3
-      this.filter { it.prisonerNumber == "A11111A" && it.prisonerStatus == AUTO_SUSPENDED } hasSize 1
-      this.filter { it.prisonerNumber == "A11111A" && it.prisonerStatus == PENDING } hasSize 1
-      this.filter { it.prisonerNumber == "B11111B" && it.prisonerStatus == PENDING } hasSize 1
-    }
-
-    assertThat(webTestClient.getScheduledInstancesByIds(1)!!.first().advanceAttendances).extracting("prisonerNumber").containsOnly("A11111A", "B11111B")
-
-    waitForJobs({ webTestClient.manageAllocations(withDeallocateExpiring = true) })
-
-    validateOutboundEvents(
-      ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 1),
-      ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 2),
-    )
-
-    val expiredAllocations = allocationRepository.findAll().filter { it.prisonerNumber != "B11111B" }.also { it hasSize 2 }
-
-    expiredAllocations.forEach { allocation -> allocation isDeallocatedWithReason TEMPORARILY_RELEASED }
-
-    assertThat(webTestClient.getScheduledInstancesByIds(1)!!.first().advanceAttendances).extracting("prisonerNumber").containsOnly("B11111B")
-  }
-
-  @Sql("classpath:test_data/seed-offender-with-waiting-list-application.sql")
-  @Test
-  fun `remove offenders waitlist applications due to expire`() {
-    val prisoner = PrisonerSearchPrisonerFixture.instance(
-      prisonerNumber = "A11111A",
-      inOutStatus = Prisoner.InOutStatus.OUT,
-      lastMovementType = MovementType.RELEASE,
-      releaseDate = LocalDate.now().minusDays(42),
-    )
-
-    with(waitingListRepository.findAll().prisoner("A11111A")) {
-      status isStatus WaitingListStatus.PENDING
-      updatedBy isEqualTo null
-      updatedTime isEqualTo null
-    }
-
-    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(listOf("A11111A"), listOf(prisoner))
-    prisonApiMockServer.stubPrisonerMovements(
-      listOf("A11111A"),
-      listOf(movement("A11111A", fromPrisonCode = PENTONVILLE_PRISON_CODE, movementDate = 21.daysAgo())),
-    )
-
-    waitForJobs({ webTestClient.manageAllocations(withDeallocateExpiring = true) })
-
-    with(waitingListRepository.findAll().prisoner("A11111A")) {
-      status isStatus REMOVED
-      updatedTime isCloseTo LocalDateTime.now()
-      updatedBy isEqualTo "Activities Management Service"
-    }
-
-    verify(hmppsAuditApiClient).createEvent(hmppsAuditEventCaptor.capture())
-
-    hmppsAuditEventCaptor.firstValue.what isEqualTo "PRISONER_REMOVED_FROM_WAITING_LIST"
   }
 
   @Sql("classpath:test_data/seed-allocations-pending.sql")
@@ -373,16 +287,9 @@ class ManageAllocationsJobIntegrationTest : LocalStackTestBase() {
     assertThat(this.prisonerStatus).isEqualTo(status)
   }
 
-  private infix fun Allocation.isDeallocatedWithReason(reason: DeallocationReason) {
-    prisonerStatus isEqualTo PrisonerStatus.ENDED
-    deallocatedBy isEqualTo "Activities Management Service"
-    deallocatedReason isEqualTo reason
-    deallocatedTime isCloseTo TimeSource.now()
-  }
-
-  private fun WebTestClient.manageAllocations(withActivate: Boolean = false, withDeallocateExpiring: Boolean = false, withFixAutoSuspended: Boolean = false) {
+  private fun WebTestClient.manageAllocations(withActivate: Boolean = false, withFixAutoSuspended: Boolean = false) {
     post()
-      .uri("/job/manage-allocations?withActivate=$withActivate&withDeallocateExpiring=$withDeallocateExpiring&withFixAutoSuspended=$withFixAutoSuspended")
+      .uri("/job/manage-allocations?withActivate=$withActivate&withFixAutoSuspended=$withFixAutoSuspended")
       .accept(MediaType.TEXT_PLAIN)
       .exchange()
       .expectStatus().isCreated
