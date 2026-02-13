@@ -40,14 +40,6 @@ class ManageAppointmentAttendeesService(
     private val log = LoggerFactory.getLogger(this::class.java)
   }
 
-  @Transactional
-  fun manageAttendees(daysAfterNow: Long) {
-    // Do not check if prison has been enabled for appointments as it could still have migrated appointments requiring managing
-    rolloutPrisonService.getRolloutPrisons().forEach { prison ->
-      manageAttendees(prison.prisonCode, daysAfterNow)
-    }
-  }
-
   fun sendEvents(job: Job, daysAfterNow: Long) {
     val rolloutPrisons = rolloutPrisonService.getRolloutPrisons()
 
