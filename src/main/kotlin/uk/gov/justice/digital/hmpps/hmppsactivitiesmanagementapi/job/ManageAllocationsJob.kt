@@ -23,7 +23,6 @@ class ManageAllocationsJob(
   private val jobRunner: SafeJobRunner,
   featureSwitches: FeatureSwitches,
 ) {
-  private val sqsEnabledForDeallocateExpiring = featureSwitches.isEnabled(Feature.JOBS_SQS_DEALLOCATE_EXPIRING_ENABLED)
   private val sqsEnabledForActivateAllocations = featureSwitches.isEnabled(Feature.JOBS_SQS_ACTIVATE_ALLOCATIONS_ENABLED)
 
   @Async("asyncExecutor")
@@ -51,13 +50,7 @@ class ManageAllocationsJob(
     }
 
     if (withDeallocateExpiring) {
-      if (sqsEnabledForDeallocateExpiring) {
-        jobRunner.runDistributedJob(JobType.DEALLOCATE_EXPIRING, manageAllocationsDueToExpireService::sendAllocationsDueToExpireEvents)
-      } else {
-        jobRunner.runJobWithRetry(
-          JobDefinition(jobType = JobType.DEALLOCATE_EXPIRING) { manageAllocationsDueToExpireService.deallocateAllocationsDueToExpire() },
-        )
-      }
+      jobRunner.runDistributedJob(JobType.DEALLOCATE_EXPIRING, manageAllocationsDueToExpireService::sendAllocationsDueToExpireEvents)
     }
 
     if (withFixAutoSuspended) {

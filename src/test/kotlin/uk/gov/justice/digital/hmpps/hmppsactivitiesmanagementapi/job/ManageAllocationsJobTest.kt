@@ -94,24 +94,7 @@ class ManageAllocationsJobTest : JobsTestBase() {
   }
 
   @Test
-  fun `deallocate allocations due to expire operation triggered without SQS`() {
-    mockJobs(DEALLOCATE_EXPIRING)
-
-    job.execute(withDeallocateExpiring = true)
-
-    verify(manageAllocationsDueToExpireService).deallocateAllocationsDueToExpire()
-    verifyNoInteractions(manageAllocationsService)
-    verifyNoInteractions(manageNewAllocationsService)
-    verifyNoInteractions(manageAllocationsDueToEndService)
-    verifyNoMoreInteractions(manageAllocationsDueToExpireService)
-
-    verifyJobsWithRetryCalled(DEALLOCATE_EXPIRING)
-  }
-
-  @Test
-  fun `deallocate allocations due to expire operation triggered with SQS`() {
-    whenever(featureSwitches.isEnabled(Feature.JOBS_SQS_DEALLOCATE_EXPIRING_ENABLED)).thenReturn(true)
-
+  fun `deallocate allocations due to expire operation triggered`() {
     mockJobs(DEALLOCATE_EXPIRING)
 
     manageAllocationsJobs(featureSwitches).execute(withDeallocateExpiring = true)
@@ -173,7 +156,6 @@ class ManageAllocationsJobTest : JobsTestBase() {
   @Test
   fun `activate, start suspensions, end suspensions and deallocate allocations due to expire operations triggered`() {
     whenever(featureSwitches.isEnabled(Feature.JOBS_SQS_ACTIVATE_ALLOCATIONS_ENABLED)).thenReturn(true)
-    whenever(featureSwitches.isEnabled(Feature.JOBS_SQS_DEALLOCATE_EXPIRING_ENABLED)).thenReturn(true)
 
     mockJobs(ALLOCATE, START_SUSPENSIONS, END_SUSPENSIONS, DEALLOCATE_EXPIRING)
 
@@ -199,8 +181,6 @@ class ManageAllocationsJobTest : JobsTestBase() {
 
   @Test
   fun `deallocate allocations due to end and deallocate allocations due to expire operations triggered`() {
-    whenever(featureSwitches.isEnabled(Feature.JOBS_SQS_DEALLOCATE_EXPIRING_ENABLED)).thenReturn(true)
-
     mockJobs(DEALLOCATE_ENDING, DEALLOCATE_EXPIRING)
 
     manageAllocationsJobs(featureSwitches).execute(withDeallocateEnding = true, withDeallocateExpiring = true)
@@ -248,7 +228,6 @@ class ManageAllocationsJobTest : JobsTestBase() {
   @Test
   fun `activate, deallocate allocation due to end, deallocate allocation due to expire and fix auto-suspended operations triggered`() {
     whenever(featureSwitches.isEnabled(Feature.JOBS_SQS_ACTIVATE_ALLOCATIONS_ENABLED)).thenReturn(true)
-    whenever(featureSwitches.isEnabled(Feature.JOBS_SQS_DEALLOCATE_EXPIRING_ENABLED)).thenReturn(true)
 
     mockJobs(ALLOCATE, START_SUSPENSIONS, END_SUSPENSIONS, FIX_STUCK_AUTO_SUSPENDED, DEALLOCATE_ENDING, DEALLOCATE_EXPIRING)
 

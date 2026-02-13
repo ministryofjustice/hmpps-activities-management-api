@@ -61,7 +61,7 @@ class WaitingList(
       }
 
       if (status == WaitingListStatus.WITHDRAWN) {
-        require(value == WaitingListStatus.PENDING) {
+        require(value == WaitingListStatus.PENDING || value == WaitingListStatus.REMOVED) {
           "Withdrawn waiting list can only be changed to pending"
         }
       }
