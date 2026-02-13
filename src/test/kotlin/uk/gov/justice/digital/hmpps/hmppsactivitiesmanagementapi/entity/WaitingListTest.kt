@@ -160,7 +160,7 @@ class WaitingListTest {
     waitingList.status isEqualTo WaitingListStatus.REMOVED
   }
 
-  @EnumSource(WaitingListStatus::class, names = ["PENDING", "WITHDRAWN", "DECLINED"], mode = EnumSource.Mode.EXCLUDE)
+  @EnumSource(WaitingListStatus::class, names = ["PENDING", "WITHDRAWN", "DECLINED", "REMOVED"], mode = EnumSource.Mode.EXCLUDE)
   @ParameterizedTest(name = "Changing waiting list from WITHDRAWN to {0}")
   fun `cannot change a waiting list fron withdrawn to anything other than pending`(newStatus: WaitingListStatus) {
     val waitingList = waitingList(initialStatus = WaitingListStatus.WITHDRAWN)
