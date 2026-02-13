@@ -3,7 +3,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
@@ -19,15 +18,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus.AUTO_SUSPENDED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus.PENDING
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus.SUSPENDED
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingList
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isNotEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.PRISONER_ALLOCATION_AMENDED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.PRISONER_ATTENDANCE_AMENDED
@@ -41,7 +37,6 @@ import java.time.ZoneOffset
   properties = [
     "feature.jobs.sqs.activate.allocations.enabled=false",
     "feature.jobs.sqs.manage.attendances.enabled=false",
-    "feature.jobs.sqs.manage.appointment.attendees.enabled=false",
   ],
 )
 class ManageAllocationsJobIntegrationTest : LocalStackTestBase() {
@@ -54,8 +49,6 @@ class ManageAllocationsJobIntegrationTest : LocalStackTestBase() {
 
   @Autowired
   private lateinit var waitingListRepository: WaitingListRepository
-
-  private val hmppsAuditEventCaptor = argumentCaptor<HmppsAuditEvent>()
 
   @BeforeEach
   fun beforeEach() {
@@ -275,13 +268,7 @@ class ManageAllocationsJobIntegrationTest : LocalStackTestBase() {
     }
   }
 
-  private infix fun WaitingListStatus.isStatus(status: WaitingListStatus) {
-    this isEqualTo status
-  }
-
   private fun List<Allocation>.prisoner(number: String) = single { it.prisonerNumber == number }
-
-  private fun List<WaitingList>.prisoner(number: String) = single { it.prisonerNumber == number }
 
   private infix fun Allocation.isStatus(status: PrisonerStatus) {
     assertThat(this.prisonerStatus).isEqualTo(status)

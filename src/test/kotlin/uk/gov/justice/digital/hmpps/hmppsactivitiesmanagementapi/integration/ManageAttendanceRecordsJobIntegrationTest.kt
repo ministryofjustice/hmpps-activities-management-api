@@ -8,7 +8,6 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
-import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
@@ -27,15 +26,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
-@Deprecated("Remove when manage attendances job always uses SQS")
-@TestPropertySource(
-  properties = [
-    "feature.jobs.sqs.activate.allocations.enabled=false",
-    "feature.jobs.sqs.manage.attendances.enabled=false",
-    "feature.jobs.sqs.manage.appointment.attendees.enabled=false",
-  ],
-)
-class ManageAttendanceRecordsJobIntegrationTest : ActivityIntegrationTest() {
+class ManageAttendanceRecordsJobIntegrationTest : LocalStackTestBase() {
 
   @Autowired
   private lateinit var attendanceRepository: AttendanceRepository

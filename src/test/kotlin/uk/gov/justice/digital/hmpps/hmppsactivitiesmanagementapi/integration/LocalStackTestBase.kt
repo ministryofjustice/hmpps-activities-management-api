@@ -69,7 +69,6 @@ import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
     "feature.events.sns.enabled=true",
     "feature.jobs.sqs.activate.allocations.enabled=true",
     "feature.jobs.sqs.manage.attendances.enabled=true",
-    "feature.jobs.sqs.manage.appointment.attendees.enabled=true",
     "feature.offender.merge.enabled=true",
     "jobs.deallocate-allocations-ending.days-start=22",
   ],
