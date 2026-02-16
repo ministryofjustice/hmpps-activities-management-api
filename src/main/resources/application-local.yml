@@ -165,6 +165,3 @@ feature:
         updated: true
         uncancelled: true
   events.sns.enabled: true
-
-  jobs.sqs:
-    activate.allocations.enabled: true
