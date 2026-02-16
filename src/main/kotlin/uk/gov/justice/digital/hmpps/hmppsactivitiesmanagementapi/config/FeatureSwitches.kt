@@ -40,5 +40,4 @@ enum class Feature(val label: String) {
   MIGRATE_SPLIT_REGIME_ENABLED("feature.migrate.split.regime.enabled"),
   OFFENDER_MERGED_ENABLED("feature.offender.merge.enabled"),
   CANCEL_INSTANCE_PRIORITY_CHANGE_ENABLED("feature.cancel.instance.priority.change.enabled"),
-  JOBS_SQS_ACTIVATE_ALLOCATIONS_ENABLED("feature.jobs.sqs.activate.allocations.enabled"),
 }

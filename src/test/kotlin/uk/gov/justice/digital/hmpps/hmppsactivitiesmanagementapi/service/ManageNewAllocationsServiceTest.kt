@@ -70,84 +70,6 @@ class ManageNewAllocationsServiceTest : JobsTestBase() {
   }
 
   @Test
-  fun `pending allocations on or before today are auto-suspended when prisoner is out of prison`() {
-    val prison = rolloutPrison().also {
-      whenever(rolloutPrisonService.getRolloutPrisons()) doReturn listOf(it)
-    }
-
-    val pendingAllocationYesterday: Allocation = allocation().copy(
-      allocationId = 1,
-      prisonerNumber = "1",
-      startDate = TimeSource.yesterday(),
-      prisonerStatus = PrisonerStatus.PENDING,
-    )
-
-    val pendingAllocationToday: Allocation = allocation().copy(
-      allocationId = 2,
-      prisonerNumber = "2",
-      startDate = TimeSource.today(),
-      prisonerStatus = PrisonerStatus.PENDING,
-    )
-
-    whenever(prisonerSearch.findByPrisonerNumbers(listOf("1", "2"))) doReturn listOf(prisoner(pendingAllocationYesterday, "ACTIVE TRN"), prisoner(pendingAllocationToday, "ACTIVE IN", "PVI"))
-
-    whenever(
-      allocationRepository.findByPrisonCodePrisonerStatusStartingOnOrBeforeDate(
-        prison.prisonCode,
-        PrisonerStatus.PENDING,
-        TimeSource.today(),
-      ),
-    ) doReturn listOf(pendingAllocationYesterday, pendingAllocationToday)
-
-    pendingAllocationYesterday.prisonerStatus isEqualTo PrisonerStatus.PENDING
-    pendingAllocationToday.prisonerStatus isEqualTo PrisonerStatus.PENDING
-
-    service.allocations()
-
-    listOf(pendingAllocationYesterday, pendingAllocationToday).forEach { allocation ->
-      allocation.prisonerStatus isEqualTo PrisonerStatus.AUTO_SUSPENDED
-      allocation.suspendedReason isEqualTo "Temporarily released or transferred"
-      allocation.suspendedTime isCloseTo TimeSource.now()
-    }
-
-    verify(allocationRepository).saveAndFlush(pendingAllocationYesterday)
-    verify(allocationRepository).saveAndFlush(pendingAllocationToday)
-    verifyNoInteractions(safeJobRunner)
-  }
-
-  @Test
-  fun `pending allocation not processed when prisoner not found`() {
-    val prison = rolloutPrison().also {
-      whenever(rolloutPrisonService.getRolloutPrisons()) doReturn listOf(it)
-    }
-
-    val pendingAllocation: Allocation = allocation().copy(
-      allocationId = 1,
-      prisonerNumber = "1",
-      startDate = TimeSource.yesterday(),
-      prisonerStatus = PrisonerStatus.PENDING,
-    ).also {
-      whenever(prisonerSearch.findByPrisonerNumber(it.prisonerNumber)) doReturn null
-    }
-
-    whenever(
-      allocationRepository.findByPrisonCodePrisonerStatusStartingOnOrBeforeDate(
-        prison.prisonCode,
-        PrisonerStatus.PENDING,
-        TimeSource.today(),
-      ),
-    ) doReturn listOf(pendingAllocation)
-
-    pendingAllocation.prisonerStatus isEqualTo PrisonerStatus.PENDING
-
-    service.allocations()
-
-    pendingAllocation.prisonerStatus isEqualTo PrisonerStatus.PENDING
-
-    verify(allocationRepository, never()).saveAndFlush(pendingAllocation)
-  }
-
-  @Test
   fun `should send events to queue for each prison`() {
     service.sendAllocationEvents(Job(123, JobType.ALLOCATE))
 
@@ -160,7 +82,7 @@ class ManageNewAllocationsServiceTest : JobsTestBase() {
   }
 
   @Test
-  fun `handleEvent - pending allocations on or before today are auto-suspended when prisoner is out of prison`() {
+  fun `pending allocations on or before today are auto-suspended when prisoner is out of prison`() {
     val prison = rolloutPrison().also {
       whenever(rolloutPrisonService.getRolloutPrisons()) doReturn listOf(it)
     }
@@ -208,7 +130,7 @@ class ManageNewAllocationsServiceTest : JobsTestBase() {
   }
 
   @Test
-  fun `handleEvent - when all prisons are complete then start suspensions job is run`() {
+  fun `when all prisons are complete then start suspensions job is run`() {
     val prison = rolloutPrison().also {
       whenever(rolloutPrisonService.getRolloutPrisons()) doReturn listOf(it)
     }
@@ -249,7 +171,7 @@ class ManageNewAllocationsServiceTest : JobsTestBase() {
   }
 
   @Test
-  fun `handleEvent - pending allocation not processed when prisoner not found`() {
+  fun `pending allocation not processed when prisoner not found`() {
     val prison = rolloutPrison().also {
       whenever(rolloutPrisonService.getRolloutPrisons()) doReturn listOf(it)
     }
@@ -281,7 +203,7 @@ class ManageNewAllocationsServiceTest : JobsTestBase() {
   }
 
   @Test
-  fun `handleEvent - pending allocation is activated`() {
+  fun `pending allocation is activated`() {
     val prison = rolloutPrison().also {
       whenever(rolloutPrisonService.getRolloutPrisons()) doReturn listOf(it)
     }
@@ -323,7 +245,7 @@ class ManageNewAllocationsServiceTest : JobsTestBase() {
   }
 
   @Test
-  fun `handleEvent - throws an exception if prison is not rolled out`() {
+  fun `throws an exception if prison is not rolled out`() {
     assertThatThrownBy {
       service.handleEvent(123, RISLEY_PRISON_CODE)
     }.isInstanceOf(IllegalArgumentException::class.java)

@@ -37,10 +37,6 @@ class ManageNewAllocationsService(
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  fun allocations() {
-    rolloutPrisonService.getRolloutPrisons().forEach { createNewAllocations(it.prisonCode) }
-  }
-
   fun sendAllocationEvents(job: Job) {
     val rolloutPrisons = rolloutPrisonService.getRolloutPrisons()
 

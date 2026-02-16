@@ -7,9 +7,6 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.verifyNoMoreInteractions
-import org.mockito.kotlin.whenever
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.Feature
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.FeatureSwitches
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Job
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType.ALLOCATE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType.DEALLOCATE_ENDING
@@ -31,7 +28,6 @@ class ManageAllocationsJobTest : JobsTestBase() {
   private val manageNewAllocationsService: ManageNewAllocationsService = mock()
   private val suspendAllocationsService: SuspendAllocationsService = mock()
   private val unsuspendAllocationsService: UnsuspendAllocationsService = mock()
-  private val featureSwitches: FeatureSwitches = mock()
   private val newAllocationsCaptor = argumentCaptor<Job>()
   private val allocationsDueToEndCaptor = argumentCaptor<Job>()
   private val allocationsDueToExpireCaptor = argumentCaptor<Job>()
@@ -39,29 +35,10 @@ class ManageAllocationsJobTest : JobsTestBase() {
   private val job = manageAllocationsJobs()
 
   @Test
-  fun `activate, suspend and unsuspend allocations operations triggered without SQS`() {
+  fun `activate, suspend and unsuspend allocations operations triggered with allocate`() {
     mockJobs(ALLOCATE, START_SUSPENSIONS, END_SUSPENSIONS)
 
-    job.execute(withActivate = true)
-
-    verify(manageNewAllocationsService).allocations()
-    verify(suspendAllocationsService).suspendAllocationsDueToBeSuspended()
-    verify(unsuspendAllocationsService).unsuspendAllocationsDueToBeUnsuspended()
-    verifyNoMoreInteractions(manageNewAllocationsService)
-    verifyNoMoreInteractions(manageAllocationsService)
-    verifyNoInteractions(manageAllocationsDueToEndService)
-    verifyNoInteractions(manageAllocationsDueToExpireService)
-
-    verifyJobsWithRetryCalled(ALLOCATE, START_SUSPENSIONS, END_SUSPENSIONS)
-  }
-
-  @Test
-  fun `activate, suspend and unsuspend allocations operations triggered with allocate with SQS`() {
-    whenever(featureSwitches.isEnabled(Feature.JOBS_SQS_ACTIVATE_ALLOCATIONS_ENABLED)).thenReturn(true)
-
-    mockJobs(ALLOCATE, START_SUSPENSIONS, END_SUSPENSIONS)
-
-    manageAllocationsJobs(featureSwitches).execute(withActivate = true)
+    manageAllocationsJobs().execute(withActivate = true)
 
     verify(safeJobRunner).runDistributedJob(ALLOCATE, manageNewAllocationsService::sendAllocationEvents)
     verify(manageNewAllocationsService).sendAllocationEvents(newAllocationsCaptor.capture())
@@ -79,7 +56,7 @@ class ManageAllocationsJobTest : JobsTestBase() {
   fun `deallocate allocations due to end operation triggered`() {
     mockJobs(DEALLOCATE_ENDING)
 
-    manageAllocationsJobs(featureSwitches).execute(withDeallocateEnding = true)
+    manageAllocationsJobs().execute(withDeallocateEnding = true)
 
     verify(safeJobRunner).runDistributedJob(DEALLOCATE_ENDING, manageAllocationsDueToEndService::sendAllocationsDueToEndEvents)
     verify(manageAllocationsDueToEndService).sendAllocationsDueToEndEvents(allocationsDueToEndCaptor.capture())
@@ -97,7 +74,7 @@ class ManageAllocationsJobTest : JobsTestBase() {
   fun `deallocate allocations due to expire operation triggered`() {
     mockJobs(DEALLOCATE_EXPIRING)
 
-    manageAllocationsJobs(featureSwitches).execute(withDeallocateExpiring = true)
+    manageAllocationsJobs().execute(withDeallocateExpiring = true)
 
     verify(safeJobRunner).runDistributedJob(DEALLOCATE_EXPIRING, manageAllocationsDueToExpireService::sendAllocationsDueToExpireEvents)
     verify(manageAllocationsDueToExpireService).sendAllocationsDueToExpireEvents(allocationsDueToExpireCaptor.capture())
@@ -129,11 +106,9 @@ class ManageAllocationsJobTest : JobsTestBase() {
 
   @Test
   fun `activate and deallocate allocations due to end operations triggered`() {
-    whenever(featureSwitches.isEnabled(Feature.JOBS_SQS_ACTIVATE_ALLOCATIONS_ENABLED)).thenReturn(true)
-
     mockJobs(ALLOCATE, START_SUSPENSIONS, END_SUSPENSIONS, DEALLOCATE_ENDING)
 
-    manageAllocationsJobs(featureSwitches).execute(withActivate = true, withDeallocateEnding = true)
+    manageAllocationsJobs().execute(withActivate = true, withDeallocateEnding = true)
 
     verify(safeJobRunner).runDistributedJob(ALLOCATE, manageNewAllocationsService::sendAllocationEvents)
     verify(manageNewAllocationsService).sendAllocationEvents(newAllocationsCaptor.capture())
@@ -155,11 +130,9 @@ class ManageAllocationsJobTest : JobsTestBase() {
 
   @Test
   fun `activate, start suspensions, end suspensions and deallocate allocations due to expire operations triggered`() {
-    whenever(featureSwitches.isEnabled(Feature.JOBS_SQS_ACTIVATE_ALLOCATIONS_ENABLED)).thenReturn(true)
-
     mockJobs(ALLOCATE, START_SUSPENSIONS, END_SUSPENSIONS, DEALLOCATE_EXPIRING)
 
-    manageAllocationsJobs(featureSwitches).execute(withActivate = true, withDeallocateExpiring = true)
+    manageAllocationsJobs().execute(withActivate = true, withDeallocateExpiring = true)
 
     verify(safeJobRunner).runDistributedJob(ALLOCATE, manageNewAllocationsService::sendAllocationEvents)
     verify(manageNewAllocationsService).sendAllocationEvents(newAllocationsCaptor.capture())
@@ -183,7 +156,7 @@ class ManageAllocationsJobTest : JobsTestBase() {
   fun `deallocate allocations due to end and deallocate allocations due to expire operations triggered`() {
     mockJobs(DEALLOCATE_ENDING, DEALLOCATE_EXPIRING)
 
-    manageAllocationsJobs(featureSwitches).execute(withDeallocateEnding = true, withDeallocateExpiring = true)
+    manageAllocationsJobs().execute(withDeallocateEnding = true, withDeallocateExpiring = true)
 
     verify(safeJobRunner).runDistributedJob(DEALLOCATE_ENDING, manageAllocationsDueToEndService::sendAllocationsDueToEndEvents)
     verify(manageAllocationsDueToEndService).sendAllocationsDueToEndEvents(allocationsDueToEndCaptor.capture())
@@ -203,11 +176,9 @@ class ManageAllocationsJobTest : JobsTestBase() {
 
   @Test
   fun `activate and fix auto suspended allocations operations triggered`() {
-    whenever(featureSwitches.isEnabled(Feature.JOBS_SQS_ACTIVATE_ALLOCATIONS_ENABLED)).thenReturn(true)
-
     mockJobs(ALLOCATE, START_SUSPENSIONS, END_SUSPENSIONS, FIX_STUCK_AUTO_SUSPENDED)
 
-    manageAllocationsJobs(featureSwitches).execute(withActivate = true, withFixAutoSuspended = true)
+    manageAllocationsJobs().execute(withActivate = true, withFixAutoSuspended = true)
 
     verify(safeJobRunner).runDistributedJob(ALLOCATE, manageNewAllocationsService::sendAllocationEvents)
     verify(manageNewAllocationsService).sendAllocationEvents(newAllocationsCaptor.capture())
@@ -227,11 +198,9 @@ class ManageAllocationsJobTest : JobsTestBase() {
 
   @Test
   fun `activate, deallocate allocation due to end, deallocate allocation due to expire and fix auto-suspended operations triggered`() {
-    whenever(featureSwitches.isEnabled(Feature.JOBS_SQS_ACTIVATE_ALLOCATIONS_ENABLED)).thenReturn(true)
-
     mockJobs(ALLOCATE, START_SUSPENSIONS, END_SUSPENSIONS, FIX_STUCK_AUTO_SUSPENDED, DEALLOCATE_ENDING, DEALLOCATE_EXPIRING)
 
-    manageAllocationsJobs(featureSwitches).execute(withActivate = true, withDeallocateEnding = true, withDeallocateExpiring = true, withFixAutoSuspended = true)
+    manageAllocationsJobs().execute(withActivate = true, withDeallocateEnding = true, withDeallocateExpiring = true, withFixAutoSuspended = true)
 
     verify(safeJobRunner).runDistributedJob(ALLOCATE, manageNewAllocationsService::sendAllocationEvents)
     verify(manageNewAllocationsService).sendAllocationEvents(newAllocationsCaptor.capture())
@@ -257,14 +226,11 @@ class ManageAllocationsJobTest : JobsTestBase() {
     verifyJobsWithRetryCalled(FIX_STUCK_AUTO_SUSPENDED)
   }
 
-  fun manageAllocationsJobs(featureSwitches: FeatureSwitches = this.featureSwitches) = ManageAllocationsJob(
+  fun manageAllocationsJobs() = ManageAllocationsJob(
     manageAllocationsService,
     manageAllocationsDueToEndService,
     manageAllocationsDueToExpireService,
     manageNewAllocationsService,
-    suspendAllocationsService,
-    unsuspendAllocationsService,
     safeJobRunner,
-    featureSwitches,
   )
 }

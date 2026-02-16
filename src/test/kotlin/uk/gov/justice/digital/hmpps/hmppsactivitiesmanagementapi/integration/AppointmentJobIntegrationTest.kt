@@ -6,7 +6,7 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
-import org.springframework.test.context.TestPropertySource
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.model.NonResidentialUsageDto.UsageType
@@ -14,6 +14,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.MovementType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.daysAgo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.RISLEY_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.containsExactlyInAnyOrder
@@ -25,16 +26,14 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.App
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.APPOINTMENT_INSTANCE_DELETED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.JobIntegrationTestHelper
 import java.time.LocalDate
 import java.util.*
 
-@Deprecated("Remove when manage appointment attendees job always uses SQS")
-@TestPropertySource(
-  properties = [
-    "feature.jobs.sqs.activate.allocations.enabled=false",
-  ],
-)
 class AppointmentJobIntegrationTest : AppointmentsIntegrationTestBase() {
+
+  @Autowired
+  private lateinit var jobHelper: JobIntegrationTestHelper
 
   @MockitoBean
   private lateinit var auditService: AuditService
@@ -105,6 +104,8 @@ class AppointmentJobIntegrationTest : AppointmentsIntegrationTestBase() {
       flatMap { it.attendees } hasSize 3
     }
 
+    jobHelper.verifyJobComplete(JobType.MANAGE_APPOINTMENT_ATTENDEES)
+
     validateNoMessagesSent()
     verifyNoInteractions(auditService)
   }
@@ -137,6 +138,8 @@ class AppointmentJobIntegrationTest : AppointmentsIntegrationTestBase() {
       ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 4, "CHAP"),
     )
 
+    jobHelper.verifyJobComplete(JobType.MANAGE_APPOINTMENT_ATTENDEES)
+
     verify(auditService, times(4)).logEvent(any<AppointmentCancelledOnTransferEvent>())
   }
 
@@ -155,6 +158,8 @@ class AppointmentJobIntegrationTest : AppointmentsIntegrationTestBase() {
     with(webTestClient.getAppointmentSetDetailsById(1)!!.appointments.filterNot { it.isDeleted }) {
       flatMap { it.attendees } hasSize 3
     }
+
+    jobHelper.verifyJobComplete(JobType.MANAGE_APPOINTMENT_ATTENDEES)
 
     validateNoMessagesSent()
     verifyNoInteractions(auditService)
@@ -185,6 +190,8 @@ class AppointmentJobIntegrationTest : AppointmentsIntegrationTestBase() {
       ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 6, "CHAP"),
       ExpectedOutboundEvent(APPOINTMENT_INSTANCE_DELETED, 20, "OIC"),
     )
+
+    jobHelper.verifyJobComplete(JobType.MANAGE_APPOINTMENT_ATTENDEES)
 
     verify(auditService, times(4)).logEvent(any<AppointmentCancelledOnTransferEvent>())
   }

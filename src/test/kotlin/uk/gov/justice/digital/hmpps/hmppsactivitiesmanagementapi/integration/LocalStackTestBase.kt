@@ -67,7 +67,6 @@ import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
     "feature.event.prisoner-offender-search.prisoner.released=true",
     "feature.event.prisoner-offender-search.prisoner.updated=true",
     "feature.events.sns.enabled=true",
-    "feature.jobs.sqs.activate.allocations.enabled=true",
     "feature.offender.merge.enabled=true",
     "jobs.deallocate-allocations-ending.days-start=22",
   ],
