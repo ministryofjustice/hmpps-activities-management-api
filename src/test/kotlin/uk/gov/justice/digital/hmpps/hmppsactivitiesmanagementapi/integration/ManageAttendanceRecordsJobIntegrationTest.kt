@@ -12,11 +12,13 @@ import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.JobRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
@@ -42,6 +44,9 @@ class ManageAttendanceRecordsJobIntegrationTest : LocalStackTestBase() {
 
   @Autowired
   private lateinit var allocationRepository: AllocationRepository
+
+  @Autowired
+  private lateinit var jobRepository: JobRepository
 
   companion object {
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
@@ -316,6 +321,8 @@ class ManageAttendanceRecordsJobIntegrationTest : LocalStackTestBase() {
     }
 
     validateNoMessagesSent()
+
+    assertJobsTimings()
   }
 
   @Sql("classpath:test_data/seed-attendances-yesterdays-waiting.sql")
@@ -337,6 +344,8 @@ class ManageAttendanceRecordsJobIntegrationTest : LocalStackTestBase() {
     validateOutboundEvents(
       ExpectedOutboundEvent(PRISONER_ATTENDANCE_EXPIRED, 1),
     )
+
+    assertJobsTimings()
   }
 
   @Sql("classpath:test_data/seed-attendances-two-days-old-waiting.sql")
@@ -356,6 +365,8 @@ class ManageAttendanceRecordsJobIntegrationTest : LocalStackTestBase() {
     }
 
     validateNoMessagesSent()
+
+    assertJobsTimings()
   }
 
   @Sql("classpath:test_data/seed-attendances-for-today.sql")
@@ -375,6 +386,8 @@ class ManageAttendanceRecordsJobIntegrationTest : LocalStackTestBase() {
     }
 
     validateNoMessagesSent()
+
+    assertJobsTimings()
   }
 
   @Sql("classpath:test_data/seed-activity-with-previous-current-future-deallocation.sql")
@@ -440,5 +453,13 @@ class ManageAttendanceRecordsJobIntegrationTest : LocalStackTestBase() {
       .accept(MediaType.TEXT_PLAIN)
       .exchange()
       .expectStatus().isCreated
+  }
+
+  private fun assertJobsTimings() {
+    val jobs = jobRepository.findAll()
+    val createJob = jobs.first { it.jobType == JobType.ATTENDANCE_CREATE }
+    val expireJob = jobs.first { it.jobType == JobType.ATTENDANCE_EXPIRE }
+
+    assertThat(createJob.endedAt).isBefore(expireJob.startedAt)
   }
 }
