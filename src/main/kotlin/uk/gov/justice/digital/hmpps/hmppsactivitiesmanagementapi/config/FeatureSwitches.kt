@@ -41,5 +41,4 @@ enum class Feature(val label: String) {
   OFFENDER_MERGED_ENABLED("feature.offender.merge.enabled"),
   CANCEL_INSTANCE_PRIORITY_CHANGE_ENABLED("feature.cancel.instance.priority.change.enabled"),
   JOBS_SQS_ACTIVATE_ALLOCATIONS_ENABLED("feature.jobs.sqs.activate.allocations.enabled"),
-  JOBS_SQS_MANAGE_ATTENDANCES_ENABLED("feature.jobs.sqs.manage.attendances.enabled"),
 }

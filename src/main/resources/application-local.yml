@@ -168,4 +168,3 @@ feature:
 
   jobs.sqs:
     activate.allocations.enabled: true
-    manage.attendances.enabled: true

@@ -71,23 +71,6 @@ class ManageNewAttendancesServiceTest : JobsTestBase() {
   private val nextJobCaptor = argumentCaptor<Job>()
 
   @Test
-  fun `should create attendances for all prisons`() {
-    service.createAttendances(today)
-
-    verify(manageAttendancesService).createAttendances(today, PENTONVILLE_PRISON_CODE)
-    verify(manageAttendancesService).createAttendances(today, MOORLAND_PRISON_CODE)
-    verifyNoMoreInteractions(manageAttendancesService)
-  }
-
-  @Test
-  fun `should create attendances for one prison`() {
-    service.createAttendances(today, PENTONVILLE_PRISON_CODE)
-
-    verify(manageAttendancesService).createAttendances(today, PENTONVILLE_PRISON_CODE)
-    verifyNoMoreInteractions(manageAttendancesService)
-  }
-
-  @Test
   fun `should send events to queue for all prisons`() {
     service.sendEvents(Job(123, ATTENDANCE_CREATE), today, null, false)
 
