@@ -36,7 +36,6 @@ import java.time.ZoneOffset
 @TestPropertySource(
   properties = [
     "feature.jobs.sqs.activate.allocations.enabled=false",
-    "feature.jobs.sqs.manage.attendances.enabled=false",
   ],
 )
 class ManageAllocationsJobIntegrationTest : LocalStackTestBase() {

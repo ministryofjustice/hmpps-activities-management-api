@@ -26,10 +26,6 @@ class ManageNewAttendancesService(
     private val log = LoggerFactory.getLogger(this::class.java)
   }
 
-  fun createAttendances(date: LocalDate, mayBePrisonCode: String? = null) {
-    getRolledOutPrisonsForActivities(mayBePrisonCode).forEach { manageAttendancesService.createAttendances(date, it) }
-  }
-
   fun sendEvents(job: Job, date: LocalDate, mayBePrisonCode: String? = null, expireUnmarkedAttendances: Boolean = false) {
     val prisonCodes = getRolledOutPrisonsForActivities(mayBePrisonCode)
 
