@@ -7,7 +7,7 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.model.NonResidentialUsageDto.UsageType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.model.ServiceUsingLocationDto.ServiceType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PublishEventUtilityModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.UpdateCaseNoteUUIDResponse
@@ -63,15 +63,15 @@ class UtilityIntegrationTest : LocalStackTestBase() {
   @Sql("classpath:test_data/seed-activity-id-34.sql")
   @Test
   fun `returns a list of activities with invalid location`() {
-    locationsInsidePrisonApiMockServer.stubLocationsForUsageType(
+    locationsInsidePrisonApiMockServer.stubLocationsForServiceType(
       prisonCode = "LEI",
-      usageType = UsageType.PROGRAMMES_ACTIVITIES,
+      serviceType = ServiceType.PROGRAMMES_AND_ACTIVITIES,
       dpsLocationIds = setOf(UUID.fromString("99999999-9999-9999-9999-999999999999")),
     )
 
-    locationsInsidePrisonApiMockServer.stubLocationsForUsageType(
+    locationsInsidePrisonApiMockServer.stubLocationsForServiceType(
       prisonCode = "RSI",
-      usageType = UsageType.PROGRAMMES_ACTIVITIES,
+      serviceType = ServiceType.PROGRAMMES_AND_ACTIVITIES,
       dpsLocationIds = setOf(UUID.fromString("11111111-1111-1111-1111-111111111111")),
     )
 

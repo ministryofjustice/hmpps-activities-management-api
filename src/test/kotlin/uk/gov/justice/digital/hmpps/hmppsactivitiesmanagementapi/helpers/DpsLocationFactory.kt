@@ -29,4 +29,5 @@ fun dpsLocation(
   key = "MDI-EDUC-ED1-ED1",
   isResidential = false,
   localName = localName,
+  locked = false,
 )

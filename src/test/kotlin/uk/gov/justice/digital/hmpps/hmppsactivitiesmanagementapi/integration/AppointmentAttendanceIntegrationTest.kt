@@ -18,7 +18,6 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.model.NonResidentialUsageDto.UsageType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api.NomisDpsLocationMapping
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventTierType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.RISLEY_PRISON_CODE
@@ -70,9 +69,8 @@ class AppointmentAttendanceIntegrationTest : AppointmentsIntegrationTestBase() {
     val dpsLocation2 = dpsLocation(UUID.fromString("22222222-2222-2222-2222-222222222222"), prisonCode)
     val dpsLocation3 = dpsLocation(UUID.fromString("33333333-3333-3333-3333-333333333333"), prisonCode)
 
-    locationsInsidePrisonApiMockServer.stubLocationsForUsageType(
+    locationsInsidePrisonApiMockServer.stubLocationsForServiceType(
       prisonCode = prisonCode,
-      usageType = UsageType.APPOINTMENT,
       locations = listOf(dpsLocation1, dpsLocation2, dpsLocation3),
     )
 
@@ -175,9 +173,8 @@ class AppointmentAttendanceIntegrationTest : AppointmentsIntegrationTestBase() {
     val dpsLocation2 = dpsLocation(UUID.fromString("22222222-2222-2222-2222-222222222222"), prisonCode, localName = "Chapel")
     val dpsLocation3 = dpsLocation(UUID.fromString("33333333-3333-3333-3333-333333333333"), prisonCode, localName = "Health Care Centre")
 
-    locationsInsidePrisonApiMockServer.stubLocationsForUsageType(
+    locationsInsidePrisonApiMockServer.stubLocationsForServiceType(
       prisonCode = prisonCode,
-      usageType = UsageType.APPOINTMENT,
       locations = listOf(dpsLocation1, dpsLocation2, dpsLocation3),
     )
 
@@ -349,9 +346,8 @@ class AppointmentAttendanceIntegrationTest : AppointmentsIntegrationTestBase() {
     val dpsLocation2 = dpsLocation(UUID.fromString("44444444-4444-4444-4444-444444444444"), prisonCode, localName = "Chapel")
     val dpsLocation3 = dpsLocation(UUID.fromString("77777777-7777-7777-7777-777777777777"), prisonCode, localName = "Health Care Centre")
 
-    locationsInsidePrisonApiMockServer.stubLocationsForUsageType(
+    locationsInsidePrisonApiMockServer.stubLocationsForServiceType(
       prisonCode = "RSI",
-      usageType = UsageType.APPOINTMENT,
       locations = listOf(dpsLocation1, dpsLocation2, dpsLocation3),
     )
 
