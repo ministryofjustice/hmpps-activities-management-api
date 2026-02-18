@@ -16,7 +16,6 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.RetryApiServiceTest.Companion.mockServer
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.model.NonResidentialUsageDto.UsageType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api.NomisDpsLocationMapping
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.dpsLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
@@ -105,9 +104,8 @@ class AppointmentIntegrationTest : LocalStackTestBase() {
 
     val dpsLocation = dpsLocation(request.dpsLocationId!!, "TPR")
 
-    locationsInsidePrisonApiMockServer.stubLocationsForUsageType(
+    locationsInsidePrisonApiMockServer.stubLocationsForServiceType(
       prisonCode = "TPR",
-      usageType = UsageType.APPOINTMENT,
       locations = listOf(dpsLocation),
     )
 
@@ -185,9 +183,8 @@ class AppointmentIntegrationTest : LocalStackTestBase() {
 
     val dpsLocation = dpsLocation(UUID.fromString("11111111-1111-1111-1111-111111111111"), "TPR")
 
-    locationsInsidePrisonApiMockServer.stubLocationsForUsageType(
+    locationsInsidePrisonApiMockServer.stubLocationsForServiceType(
       prisonCode = "TPR",
-      usageType = UsageType.APPOINTMENT,
       locations = listOf(dpsLocation),
     )
 
@@ -699,9 +696,8 @@ class AppointmentIntegrationTest : LocalStackTestBase() {
 
     val dpsLocation = dpsLocation(UUID.fromString("11111111-1111-1111-1111-111111111111"), "TPR")
 
-    locationsInsidePrisonApiMockServer.stubLocationsForUsageType(
+    locationsInsidePrisonApiMockServer.stubLocationsForServiceType(
       prisonCode = "TPR",
-      usageType = UsageType.APPOINTMENT,
       locations = listOf(dpsLocation),
     )
 
@@ -836,9 +832,8 @@ class AppointmentIntegrationTest : LocalStackTestBase() {
 
     val dpsLocation = dpsLocation(request.dpsLocationId!!, "TPR")
 
-    locationsInsidePrisonApiMockServer.stubLocationsForUsageType(
+    locationsInsidePrisonApiMockServer.stubLocationsForServiceType(
       prisonCode = "TPR",
-      usageType = UsageType.APPOINTMENT,
       locations = listOf(dpsLocation),
     )
 
@@ -969,9 +964,8 @@ class AppointmentIntegrationTest : LocalStackTestBase() {
 
     val dpsLocation = dpsLocation(request.dpsLocationId!!, "TPR")
 
-    locationsInsidePrisonApiMockServer.stubLocationsForUsageType(
+    locationsInsidePrisonApiMockServer.stubLocationsForServiceType(
       prisonCode = "TPR",
-      usageType = UsageType.APPOINTMENT,
       locations = listOf(dpsLocation),
     )
 
@@ -1059,9 +1053,8 @@ class AppointmentIntegrationTest : LocalStackTestBase() {
 
     val dpsLocation = dpsLocation(UUID.fromString("11111111-1111-1111-1111-111111111111"), "TPR")
 
-    locationsInsidePrisonApiMockServer.stubLocationsForUsageType(
+    locationsInsidePrisonApiMockServer.stubLocationsForServiceType(
       prisonCode = "TPR",
-      usageType = UsageType.APPOINTMENT,
       locations = listOf(dpsLocation),
     )
 

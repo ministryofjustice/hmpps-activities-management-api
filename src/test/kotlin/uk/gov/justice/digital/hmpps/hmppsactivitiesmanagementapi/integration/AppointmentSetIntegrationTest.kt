@@ -10,7 +10,6 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.model.NonResidentialUsageDto.UsageType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api.NomisDpsLocationMapping
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSetCreateRequest
@@ -64,9 +63,8 @@ class AppointmentSetIntegrationTest : AppointmentsIntegrationTestBase() {
   fun `get appointment set details`() {
     val dpsLocation = dpsLocation(UUID.fromString("44444444-1111-2222-3333-444444444444"), "TPR", localName = "Test Appointment Location")
 
-    locationsInsidePrisonApiMockServer.stubLocationsForUsageType(
+    locationsInsidePrisonApiMockServer.stubLocationsForServiceType(
       prisonCode = "TPR",
-      usageType = UsageType.APPOINTMENT,
       locations = listOf(dpsLocation),
     )
 
@@ -197,9 +195,8 @@ class AppointmentSetIntegrationTest : AppointmentsIntegrationTestBase() {
 
     val dpsLocationId = UUID.fromString("44444444-1111-2222-3333-444444444444")
 
-    locationsInsidePrisonApiMockServer.stubLocationsForUsageType(
+    locationsInsidePrisonApiMockServer.stubLocationsForServiceType(
       prisonCode = "TPR",
-      usageType = UsageType.APPOINTMENT,
       locations = listOf(dpsLocation(dpsLocationId, "TPR", "ONE", "Location One")),
     )
 
@@ -254,9 +251,8 @@ class AppointmentSetIntegrationTest : AppointmentsIntegrationTestBase() {
       ),
     )
 
-    locationsInsidePrisonApiMockServer.stubLocationsForUsageType(
+    locationsInsidePrisonApiMockServer.stubLocationsForServiceType(
       prisonCode = "TPR",
-      usageType = UsageType.APPOINTMENT,
       locations = listOf(dpsLocation(request.dpsLocationId!!, "TPR", "ONE", "Location One")),
     )
 

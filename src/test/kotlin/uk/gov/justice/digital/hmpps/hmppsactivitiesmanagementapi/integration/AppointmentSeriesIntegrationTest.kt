@@ -14,7 +14,6 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.model.NonResidentialUsageDto.UsageType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api.NomisDpsLocationMapping
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesCreateRequest
@@ -186,9 +185,8 @@ class AppointmentSeriesIntegrationTest : LocalStackTestBase() {
   fun `get single appointment series details`() {
     val dpsLocation = dpsLocation(UUID.fromString("44444444-1111-2222-3333-444444444444"), "TPR")
 
-    locationsInsidePrisonApiMockServer.stubLocationsForUsageType(
+    locationsInsidePrisonApiMockServer.stubLocationsForServiceType(
       prisonCode = "TPR",
-      usageType = UsageType.APPOINTMENT,
       locations = listOf(dpsLocation),
     )
 
@@ -263,9 +261,8 @@ class AppointmentSeriesIntegrationTest : LocalStackTestBase() {
 
     val dpsLocation = dpsLocation(UUID.fromString("44444444-1111-2222-3333-444444444444"), request.prisonCode!!, localName = "Test Appointment Location")
 
-    locationsInsidePrisonApiMockServer.stubLocationsForUsageType(
+    locationsInsidePrisonApiMockServer.stubLocationsForServiceType(
       prisonCode = request.prisonCode,
-      usageType = UsageType.APPOINTMENT,
       locations = listOf(dpsLocation),
     )
 

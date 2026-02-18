@@ -4,7 +4,6 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.WebTestClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.model.NonResidentialUsageDto.UsageType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api.NomisDpsLocationMapping
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.dpsLocation
@@ -18,9 +17,8 @@ class AppointmentLocationIntegrationTest : IntegrationTestBase() {
     val dpsLocation1 = dpsLocation(UUID.fromString("11111111-1111-1111-1111-111111111111"), MOORLAND_PRISON_CODE, localName = "Kitchen")
     val dpsLocation2 = dpsLocation(UUID.fromString("22222222-2222-2222-2222-222222222222"), MOORLAND_PRISON_CODE, localName = "Chapel")
 
-    locationsInsidePrisonApiMockServer.stubLocationsForUsageType(
+    locationsInsidePrisonApiMockServer.stubLocationsForServiceType(
       prisonCode = MOORLAND_PRISON_CODE,
-      usageType = UsageType.APPOINTMENT,
       locations = listOf(dpsLocation1, dpsLocation2),
     )
 

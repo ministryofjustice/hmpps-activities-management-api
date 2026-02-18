@@ -12,7 +12,7 @@ import org.junit.jupiter.api.assertThrows
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.WebClientRequestException
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.RetryApiService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.model.NonResidentialUsageDto
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.model.ServiceUsingLocationDto.ServiceType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.dpsLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.LocationsInsidePrisonApiMockServer
 
@@ -64,11 +64,11 @@ class LocationsInsidePrisonAPIClientTest {
   }
 
   @Test
-  fun `should return locations for a usage type`() {
-    val mockLocations = mockServer.stubLocationsForUsageType()
+  fun `should return locations for for service type`() {
+    val mockLocations = mockServer.stubLocationsForServiceType()
 
     runBlocking {
-      val locations = apiClient.getLocationsForUsageType("RSI", NonResidentialUsageDto.UsageType.APPOINTMENT)
+      val locations = apiClient.getLocationsForServiceType("RSI", ServiceType.APPOINTMENT)
       assertThat(locations).isEqualTo(mockLocations)
     }
   }

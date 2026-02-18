@@ -17,7 +17,6 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.model.NonResidentialUsageDto.UsageType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api.NomisDpsLocationMapping
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentType
@@ -51,15 +50,13 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
     val dpsLocation1 = dpsLocation(UUID.fromString("11111111-1111-1111-1111-111111111111"), "RSI")
     val dpsLocation2 = dpsLocation(UUID.fromString("44444444-4444-4444-4444-444444444444"), "MDI")
 
-    locationsInsidePrisonApiMockServer.stubLocationsForUsageType(
+    locationsInsidePrisonApiMockServer.stubLocationsForServiceType(
       prisonCode = "RSI",
-      usageType = UsageType.APPOINTMENT,
       locations = listOf(dpsLocation1),
     )
 
-    locationsInsidePrisonApiMockServer.stubLocationsForUsageType(
+    locationsInsidePrisonApiMockServer.stubLocationsForServiceType(
       prisonCode = "MDI",
-      usageType = UsageType.APPOINTMENT,
       locations = listOf(dpsLocation2),
     )
 

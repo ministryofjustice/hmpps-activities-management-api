@@ -8,7 +8,7 @@ import org.springframework.web.util.UriBuilder
 import reactor.util.context.Context
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.RetryApiService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.model.Location
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.model.NonResidentialUsageDto
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.model.ServiceUsingLocationDto.ServiceType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.typeReference
 import java.util.*
 
@@ -45,13 +45,14 @@ class LocationsInsidePrisonAPIClient(
     .retryWhen(backoffSpec.withRetryContext(Context.of("api", "locations-inside-prison-api", "path", "/locations/prison/{prisonCode}/non-residential")))
     .awaitSingle()
 
-  suspend fun getLocationsForUsageType(prisonCode: String, usageType: NonResidentialUsageDto.UsageType): List<Location> = locationsInsidePrisonApiWebClient.get()
+  suspend fun getLocationsForServiceType(prisonCode: String, serviceType: ServiceType): List<Location> = locationsInsidePrisonApiWebClient.get()
     .uri { uriBuilder: UriBuilder ->
       uriBuilder
-        .path("/locations/prison/{prisonCode}/non-residential-usage-type/{usageType}")
+        .path("/locations/non-residential/prison/{prisonCode}/service/{serviceType}")
         .queryParam("formatLocalName", true)
         .queryParam("filterParents", false)
-        .build(prisonCode, usageType)
+        .queryParam("sortByLocalName", true)
+        .build(prisonCode, serviceType)
     }
     .retrieve()
     .bodyToMono(typeReference<List<Location>>())

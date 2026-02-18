@@ -13,7 +13,7 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.api.LocationsInsidePrisonAPIClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.model.NonResidentialUsageDto.UsageType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.model.ServiceUsingLocationDto.ServiceType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api.NomisDpsLocationMapping
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api.NomisMappingAPIClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
@@ -105,7 +105,7 @@ class LocationServiceTest {
     locationsInsidePrisonAPIClient.stub {
       on {
         runBlocking {
-          locationsInsidePrisonAPIClient.getLocationsForUsageType("TPR", UsageType.APPOINTMENT)
+          locationsInsidePrisonAPIClient.getLocationsForServiceType("TPR", ServiceType.APPOINTMENT)
         }
       } doReturn listOf(dpsLocation1, dpsLocation2)
     }
@@ -141,7 +141,7 @@ class LocationServiceTest {
     locationsInsidePrisonAPIClient.stub {
       on {
         runBlocking {
-          locationsInsidePrisonAPIClient.getLocationsForUsageType("TPR", UsageType.APPOINTMENT)
+          locationsInsidePrisonAPIClient.getLocationsForServiceType("TPR", ServiceType.APPOINTMENT)
         }
       } doReturn listOf(dpsLocation1, dpsLocation2)
     }

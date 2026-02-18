@@ -5,7 +5,7 @@ import org.apache.commons.text.WordUtils
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.api.LocationsInsidePrisonAPIClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.model.NonResidentialUsageDto
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.model.ServiceUsingLocationDto.ServiceType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api.NomisMappingAPIClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
@@ -34,7 +34,7 @@ class LocationService(
   }
 
   fun getDpsLocationsForAppointments(agencyId: String): List<LocationDetails> = runBlocking {
-    val locations = locationsInsidePrisonAPIClient.getLocationsForUsageType(agencyId, NonResidentialUsageDto.UsageType.APPOINTMENT)
+    val locations = locationsInsidePrisonAPIClient.getLocationsForServiceType(agencyId, ServiceType.APPOINTMENT)
 
     val mappings = getLocationMappingsByDpsIds(locations.toIdSet())
 

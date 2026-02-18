@@ -1,10 +1,12 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock
 
 import com.github.tomakehurst.wiremock.client.WireMock
+import com.github.tomakehurst.wiremock.client.WireMock.equalTo
+import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
 import com.github.tomakehurst.wiremock.http.Fault
 import com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.model.Location
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.model.NonResidentialUsageDto.UsageType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.model.ServiceUsingLocationDto.ServiceType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.dpsLocation
 import java.util.*
 
@@ -63,21 +65,25 @@ class LocationsInsidePrisonApiMockServer : MockServer(8093) {
     return responseLocations
   }
 
-  fun stubLocationsForUsageType(
+  fun stubLocationsForServiceType(
     prisonCode: String = "RSI",
-    usageType: UsageType = UsageType.APPOINTMENT,
+    serviceType: ServiceType = ServiceType.APPOINTMENT,
     dpsLocationIds: Set<UUID> = setOf(UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc")),
     locations: List<Location>? = null,
   ): List<Location> {
     val responseLocations = locations ?: defaultLocations(dpsLocationIds)
 
     stubFor(
-      WireMock.get("/locations/prison/$prisonCode/non-residential-usage-type/$usageType?formatLocalName=true&filterParents=false").willReturn(
-        WireMock.aResponse()
-          .withHeader("Content-Type", "application/json")
-          .withBody(mapper.writeValueAsString(responseLocations))
-          .withStatus(200),
-      ),
+      WireMock.get(urlPathEqualTo("/locations/non-residential/prison/$prisonCode/service/$serviceType"))
+        .withQueryParam("formatLocalName", equalTo("true"))
+        .withQueryParam("filterParents", equalTo("false"))
+        .withQueryParam("sortByLocalName", equalTo("true"))
+        .willReturn(
+          WireMock.aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withBody(mapper.writeValueAsString(responseLocations))
+            .withStatus(200),
+        ),
     )
     return responseLocations
   }

@@ -4,7 +4,6 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
 import org.springframework.test.context.jdbc.Sql
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.model.NonResidentialUsageDto.UsageType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api.NomisDpsLocationMapping
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.RISLEY_PRISON_CODE
@@ -58,9 +57,8 @@ class AppointmentDetailsIntegrationTest : AppointmentsIntegrationTestBase() {
   fun `get group appointment with marked attendance details`() {
     val dpsLocation = dpsLocation(UUID.fromString("11111111-1111-1111-1111-111111111111"), RISLEY_PRISON_CODE)
 
-    locationsInsidePrisonApiMockServer.stubLocationsForUsageType(
+    locationsInsidePrisonApiMockServer.stubLocationsForServiceType(
       prisonCode = RISLEY_PRISON_CODE,
-      usageType = UsageType.APPOINTMENT,
       locations = listOf(dpsLocation),
     )
 
@@ -106,9 +104,8 @@ class AppointmentDetailsIntegrationTest : AppointmentsIntegrationTestBase() {
   fun `get single appointment details`() {
     val dpsLocation = dpsLocation(UUID.fromString("11111111-1111-1111-1111-111111111111"), "TPR")
 
-    locationsInsidePrisonApiMockServer.stubLocationsForUsageType(
+    locationsInsidePrisonApiMockServer.stubLocationsForServiceType(
       prisonCode = "TPR",
-      usageType = UsageType.APPOINTMENT,
       locations = listOf(dpsLocation),
     )
 
@@ -177,9 +174,8 @@ class AppointmentDetailsIntegrationTest : AppointmentsIntegrationTestBase() {
   fun `get appointment details from an appointment set`() {
     val dpsLocation = dpsLocation(UUID.fromString("11111111-1111-1111-1111-111111111111"), "TPR")
 
-    locationsInsidePrisonApiMockServer.stubLocationsForUsageType(
+    locationsInsidePrisonApiMockServer.stubLocationsForServiceType(
       prisonCode = "TPR",
-      usageType = UsageType.APPOINTMENT,
       locations = listOf(dpsLocation),
     )
 
@@ -269,9 +265,8 @@ class AppointmentDetailsIntegrationTest : AppointmentsIntegrationTestBase() {
     val dpsLocation1 = dpsLocation(UUID.fromString("11111111-1111-1111-1111-111111111111"), RISLEY_PRISON_CODE, localName = "Education 1")
     val dpsLocation2 = dpsLocation(UUID.fromString("22222222-2222-2222-2222-222222222222"), RISLEY_PRISON_CODE, localName = "Canteen A")
 
-    locationsInsidePrisonApiMockServer.stubLocationsForUsageType(
+    locationsInsidePrisonApiMockServer.stubLocationsForServiceType(
       prisonCode = RISLEY_PRISON_CODE,
-      usageType = UsageType.APPOINTMENT,
       locations = listOf(dpsLocation1, dpsLocation2),
     )
 
