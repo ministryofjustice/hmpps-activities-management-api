@@ -53,7 +53,9 @@ generic-service:
 generic-prometheus-alerts:
   alertSeverity: hmpps-activities-management-prod
   sqsAlertsQueueNames:
+    - "Digital-Prison-Services-prod-activities_domain_events_queue"
+    - "Digital-Prison-Services-prod-activities_domain_events_dl"
     - "activities-and-appointments-prod-hmpps_activities_management_jobs_queue"
     - "activities-and-appointments-prod-hmpps_activities_management_jobs_dlq"
-  sqsAlertsOldestThreshold: 1
+  sqsAlertsOldestThreshold: 10
   sqsAlertsTotalMessagesThreshold: 1

@@ -45,7 +45,9 @@ generic-prometheus-alerts:
   alertSeverity: hmpps-activities-management-preprod
   businessHoursOnly: true
   sqsAlertsQueueNames:
+    - "Digital-Prison-Services-preprod-activities_domain_events_queue"
+    - "Digital-Prison-Services-preprod-activities_domain_events_dl"
     - "activities-and-appointments-preprod-hmpps_activities_management_jobs_queue"
     - "activities-and-appointments-preprod-hmpps_activities_management_jobs_dlq"
-  sqsAlertsOldestThreshold: 1
+  sqsAlertsOldestThreshold: 10
   sqsAlertsTotalMessagesThreshold: 1
