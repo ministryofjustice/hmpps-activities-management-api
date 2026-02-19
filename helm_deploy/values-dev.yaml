@@ -45,9 +45,11 @@ generic-prometheus-alerts:
   alertSeverity: hmpps-activities-management-dev
   businessHoursOnly: true
   sqsAlertsQueueNames:
+    - "Digital-Prison-Services-dev-activities_domain_events_queue"
+    - "Digital-Prison-Services-dev-activities_domain_events_dl"
     - "activities-and-appointments-dev-hmpps_activities_management_jobs_queue"
     - "activities-and-appointments-dev-hmpps_activities_management_jobs_dlq"
-  sqsAlertsOldestThreshold: 1
+  sqsAlertsOldestThreshold: 10
   sqsAlertsTotalMessagesThreshold: 1
 
 # We are overriding the times in development due to core service dependencies being switched off overnight e.g. prisoner search API.
