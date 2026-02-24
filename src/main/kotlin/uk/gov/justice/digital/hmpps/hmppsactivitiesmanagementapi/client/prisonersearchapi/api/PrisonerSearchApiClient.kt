@@ -33,7 +33,7 @@ class PrisonerSearchApiClient(
         .path("/prison/$prisonCode/prisoners")
         .queryParam("size", 2000)
         .queryParam("responseFields", responseFields)
-        .queryParam("sort", "lastName,asc")
+        .queryParam("sort", "lastName,firstName,asc")
         .build()
     }
     .header("Content-Type", "application/json")

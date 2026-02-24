@@ -18,7 +18,7 @@ class PrisonerSearchApiMockServer : MockServer(8111) {
   fun stubGetAllPrisonersInPrison(prisonCode: String) {
     stubFor(
       WireMock.get(urlPathEqualTo("/prison/$prisonCode/prisoners"))
-        .withQueryParam("sort", equalTo("lastName,asc"))
+        .withQueryParam("sort", equalTo("lastName,firstName,asc"))
         .withQueryParam("responseFields", equalTo(responseFields))
         .withQueryParam("size", equalTo("2000"))
         .willReturn(
