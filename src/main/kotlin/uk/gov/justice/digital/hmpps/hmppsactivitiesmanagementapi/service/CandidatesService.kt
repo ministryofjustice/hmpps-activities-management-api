@@ -41,6 +41,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCasel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.determineEarliestReleaseDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.hasNonAssociations
 import java.time.LocalDate
+import kotlin.system.measureTimeMillis
 
 @Service
 @Transactional(readOnly = true)
@@ -117,24 +118,29 @@ class CandidatesService(
       allocationRepository.getCandidateAllocations(prisonCode = prisonCode)
         .groupBy { it.getPrisonerNumber() }
 
-    val prisoners = getPrisonerCandidates(
-      prisonCode = prisonCode,
-      activityScheduleId = scheduleId,
-      waitingList = waitingList,
-      prisonerAllocations = prisonerAllocations,
-      suitableForEmployed = suitableForEmployed,
-      suitableRiskLevels = suitableRiskLevels,
-      suitableIncentiveLevels = suitableIncentiveLevels,
-      noAllocations = noAllocations,
-      search = search,
-    )
+    var prisoners: Sequence<Prisoner>
+
+    val elapsedMs = measureTimeMillis {
+      prisoners = getPrisonerCandidates(
+        prisonCode = prisonCode,
+        activityScheduleId = scheduleId,
+        waitingList = waitingList,
+        prisonerAllocations = prisonerAllocations,
+        suitableForEmployed = suitableForEmployed,
+        suitableRiskLevels = suitableRiskLevels,
+        suitableIncentiveLevels = suitableIncentiveLevels,
+        noAllocations = noAllocations,
+        search = search,
+      )
+    }
+
+    println("Prisoner candidates retrieval took $elapsedMs ms")
 
     val prisonerCount = prisoners.count()
     val start = pageable.offset.toInt()
     val end = (start + pageable.pageSize).coerceAtMost(prisonerCount)
 
     val candidates = prisoners
-      .sortedBy { it.lastName }
       .filterIndexed { index, _ -> index >= start.coerceAtMost(end) && index < end }
       .toList()
 

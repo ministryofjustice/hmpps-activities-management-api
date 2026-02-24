@@ -84,7 +84,7 @@ class ScheduledInstanceService(
     endDate = dateRange.endInclusive,
     cancelled = cancelled,
     timeSlot = slot,
-  ).toModel()
+  ).toModel(includeAllocations = false)
 
   @Transactional(readOnly = true)
   fun getActivityScheduleInstancesForPrisonerByDateRange(
