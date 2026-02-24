@@ -19,7 +19,7 @@ abstract class JobsTestBase {
 
   fun mockJobs(vararg jobTypes: JobType) {
     jobTypes.forEachIndexed { index, type ->
-      whenever(jobRepository.saveAndFlush(argThat { jobType == type })) doReturn Job(
+      whenever(jobRepository.saveAndFlush(argThat<Job> { jobType == type })) doReturn Job(
         jobId = index.toLong(),
         jobType = type,
         startedAt = TimeSource.now(),

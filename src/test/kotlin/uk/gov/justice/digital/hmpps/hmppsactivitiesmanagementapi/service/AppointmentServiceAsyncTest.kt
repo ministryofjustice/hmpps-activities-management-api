@@ -140,7 +140,7 @@ class AppointmentServiceAsyncTest {
     whenever(appointmentCancellationReasonRepository.findById(appointmentDeletedReason.appointmentCancellationReasonId)).thenReturn(
       Optional.of(appointmentDeletedReason),
     )
-    whenever(appointmentSeriesRepository.saveAndFlush(any())).thenAnswer(returnsFirstArg<AppointmentSeries>())
+    whenever(appointmentSeriesRepository.saveAndFlush(any<AppointmentSeries>())).thenAnswer(returnsFirstArg<AppointmentSeries>())
   }
 
   @Test

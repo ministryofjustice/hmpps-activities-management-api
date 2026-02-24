@@ -813,7 +813,7 @@ class ActivityScheduleServiceTest {
     whenever(repository.findById(schedule.activityScheduleId)) doReturn Optional.of(schedule)
     whenever(prisonPayBandRepository.findByPrisonCode(caseLoad)) doReturn prisonPayBandsLowMediumHigh(caseLoad)
     whenever(prisonerSearchApiClient.findByPrisonerNumber("654321")) doReturn activeInPentonvillePrisoner
-    whenever(repository.saveAndFlush(any())) doReturn schedule
+    whenever(repository.saveAndFlush(any<ActivitySchedule>())) doReturn schedule
     whenever(waitingListRepository.findByPrisonCodeAndPrisonerNumberAndActivitySchedule(any(), any(), any())) doReturn emptyList()
 
     val attendance1: Attendance = mock()
@@ -852,7 +852,7 @@ class ActivityScheduleServiceTest {
     whenever(repository.findById(schedule.activityScheduleId)) doReturn Optional.of(schedule)
     whenever(prisonPayBandRepository.findByPrisonCode(caseLoad)) doReturn prisonPayBandsLowMediumHigh(caseLoad)
     whenever(prisonerSearchApiClient.findByPrisonerNumber("654321")) doReturn activeOutPentonvillePrisoner
-    whenever(repository.saveAndFlush(any())) doReturn schedule
+    whenever(repository.saveAndFlush(any<ActivitySchedule>())) doReturn schedule
     whenever(waitingListRepository.findByPrisonCodeAndPrisonerNumberAndActivitySchedule(any(), any(), any())) doReturn emptyList()
 
     service.allocatePrisoner(
@@ -878,7 +878,7 @@ class ActivityScheduleServiceTest {
     whenever(repository.findById(schedule.activityScheduleId)) doReturn Optional.of(schedule)
     whenever(prisonPayBandRepository.findByPrisonCode(caseLoad)) doReturn prisonPayBandsLowMediumHigh(caseLoad)
     whenever(prisonerSearchApiClient.findByPrisonerNumber("654321")) doReturn activeOutPentonvillePrisoner
-    whenever(repository.saveAndFlush(any())) doReturn schedule
+    whenever(repository.saveAndFlush(any<ActivitySchedule>())) doReturn schedule
     whenever(waitingListRepository.findByPrisonCodeAndPrisonerNumberAndActivitySchedule(any(), any(), any())) doReturn emptyList()
 
     service.allocatePrisoner(
@@ -932,7 +932,7 @@ class ActivityScheduleServiceTest {
     whenever(repository.findById(schedule.activityScheduleId)) doReturn Optional.of(schedule)
     whenever(prisonPayBandRepository.findByPrisonCode(caseLoad)) doReturn prisonPayBandsLowMediumHigh(caseLoad)
     whenever(prisonerSearchApiClient.findByPrisonerNumber("123456")) doReturn prisoner
-    whenever(repository.saveAndFlush(any())) doReturn schedule
+    whenever(repository.saveAndFlush(any<ActivitySchedule>())) doReturn schedule
     whenever(
       waitingListRepository.findByPrisonCodeAndPrisonerNumberAndActivitySchedule(
         caseLoad,
@@ -979,7 +979,7 @@ class ActivityScheduleServiceTest {
     whenever(repository.findById(schedule.activityScheduleId)) doReturn Optional.of(schedule)
     whenever(prisonPayBandRepository.findByPrisonCode(caseLoad)) doReturn prisonPayBandsLowMediumHigh(caseLoad)
     whenever(prisonerSearchApiClient.findByPrisonerNumber("123456")) doReturn prisoner
-    whenever(repository.saveAndFlush(any())) doReturn schedule
+    whenever(repository.saveAndFlush(any<ActivitySchedule>())) doReturn schedule
     whenever(
       waitingListRepository.findByPrisonCodeAndPrisonerNumberAndActivitySchedule(
         caseLoad,
@@ -1017,7 +1017,7 @@ class ActivityScheduleServiceTest {
     whenever(repository.findById(schedule.activityScheduleId)) doReturn Optional.of(schedule)
     whenever(prisonPayBandRepository.findByPrisonCode(caseLoad)) doReturn prisonPayBandsLowMediumHigh(caseLoad)
     whenever(prisonerSearchApiClient.findByPrisonerNumber("123456")) doReturn prisoner
-    whenever(repository.saveAndFlush(any())) doReturn schedule
+    whenever(repository.saveAndFlush(any<ActivitySchedule>())) doReturn schedule
     whenever(
       waitingListRepository.findByPrisonCodeAndPrisonerNumberAndActivitySchedule(
         caseLoad,

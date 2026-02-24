@@ -24,7 +24,7 @@ class SafeJobRunnerTest {
 
   @Test
   fun `runs job without error`() {
-    whenever(jobRepository.saveAndFlush(any())) doReturn job
+    whenever(jobRepository.saveAndFlush(any<Job>())) doReturn job
 
     runner.runJob(JobDefinition(JobType.ATTENDANCE_CREATE) {})
 
@@ -37,7 +37,7 @@ class SafeJobRunnerTest {
 
   @Test
   fun `runs job succeeds on retry`() {
-    whenever(jobRepository.saveAndFlush(any())) doReturn job
+    whenever(jobRepository.saveAndFlush(any<Job>())) doReturn job
 
     runner.runJobWithRetry(
       JobDefinition(JobType.ATTENDANCE_CREATE) {},
@@ -52,7 +52,7 @@ class SafeJobRunnerTest {
 
   @Test
   fun `runs job fails on retry`() {
-    whenever(jobRepository.saveAndFlush(any())) doReturn job
+    whenever(jobRepository.saveAndFlush(any<Job>())) doReturn job
 
     runner.runJobWithRetry(
       JobDefinition(JobType.ATTENDANCE_CREATE) {
@@ -69,7 +69,7 @@ class SafeJobRunnerTest {
 
   @Test
   fun `runs job with error`() {
-    whenever(jobRepository.saveAndFlush(any())) doReturn job
+    whenever(jobRepository.saveAndFlush(any<Job>())) doReturn job
 
     runner.runJob(JobDefinition(JobType.ATTENDANCE_CREATE) { throw RuntimeException("it failed") })
 
@@ -86,7 +86,7 @@ class SafeJobRunnerTest {
   fun `runs a distributed job without error`() {
     val job = Job(jobId = 1, JobType.SCHEDULES)
 
-    whenever(jobRepository.saveAndFlush(any())) doReturn job
+    whenever(jobRepository.saveAndFlush(any<Job>())) doReturn job
 
     fun dummy(job: Job) {
       job.completedSubTasks = 1
@@ -106,7 +106,7 @@ class SafeJobRunnerTest {
   fun `runs a distributed job with error`() {
     val job = Job(jobId = 1, JobType.SCHEDULES)
 
-    whenever(jobRepository.saveAndFlush(any())) doReturn job
+    whenever(jobRepository.saveAndFlush(any<Job>())) doReturn job
 
     fun dummy(job: Job): Unit = throw RuntimeException("it failed")
 

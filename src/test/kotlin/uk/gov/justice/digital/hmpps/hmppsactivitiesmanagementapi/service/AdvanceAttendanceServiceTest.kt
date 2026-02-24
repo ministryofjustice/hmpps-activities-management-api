@@ -192,7 +192,7 @@ class AdvanceAttendanceServiceTest {
         recordedBy = "USER2",
       )
 
-      whenever(advanceAttendanceRepository.save(any())).thenReturn(savedAdvanceAttendance)
+      whenever(advanceAttendanceRepository.save(any<AdvanceAttendance>())).thenReturn(savedAdvanceAttendance)
     }
 
     @Test
@@ -419,7 +419,7 @@ class AdvanceAttendanceServiceTest {
 
     @Test
     fun `can update an advance attendance where the activity is paid`() {
-      whenever(advanceAttendanceRepository.save(any())).thenReturn(theOriginalAdvanceAttendance.copy(issuePayment = true))
+      whenever(advanceAttendanceRepository.save(any<AdvanceAttendance>())).thenReturn(theOriginalAdvanceAttendance.copy(issuePayment = true))
 
       val result = service.update(theOriginalAdvanceAttendance.advanceAttendanceId, true, "USER2")
 

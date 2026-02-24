@@ -250,7 +250,7 @@ class ActivityServiceTest {
     whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(prisonPayBandsLowMediumHigh())
     whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
     whenever(prisonApiClient.getStudyArea("ENGLA")).thenReturn(Mono.just(studyArea))
-    whenever(activityRepository.saveAndFlush(any())).thenAnswer { invocation ->
+    whenever(activityRepository.saveAndFlush(any<ActivityEntity>())).thenAnswer { invocation ->
       invocation.getArgument(0, ActivityEntity::class.java)
     }
 
@@ -294,7 +294,7 @@ class ActivityServiceTest {
     whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(prisonPayBandsLowMediumHigh())
     whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
     whenever(prisonApiClient.getStudyArea("ENGLA")).thenReturn(Mono.just(studyArea))
-    whenever(activityRepository.saveAndFlush(any())).thenReturn(activityEntity())
+    whenever(activityRepository.saveAndFlush(any<ActivityEntity>())).thenReturn(activityEntity())
 
     service(daysInAdvance = 14).createActivity(createActivityRequest, "SCH_ACTIVITY")
 
@@ -388,7 +388,7 @@ class ActivityServiceTest {
     whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(prisonPayBandsLowMediumHigh())
     whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
     whenever(prisonApiClient.getStudyArea("ENGLA")).thenReturn(Mono.just(studyArea))
-    whenever(activityRepository.saveAndFlush(any())).thenAnswer { invocation ->
+    whenever(activityRepository.saveAndFlush(any<ActivityEntity>())).thenAnswer { invocation ->
       invocation.getArgument(0, ActivityEntity::class.java)
     }
 
@@ -581,7 +581,7 @@ class ActivityServiceTest {
     whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(prisonPayBandsLowMediumHigh())
     whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
     whenever(prisonApiClient.getStudyArea("ENGLA")).thenReturn(Mono.just(studyArea))
-    whenever(activityRepository.saveAndFlush(any())).thenAnswer { invocation ->
+    whenever(activityRepository.saveAndFlush(any<ActivityEntity>())).thenAnswer { invocation ->
       invocation.getArgument(0, ActivityEntity::class.java)
     }
 
@@ -628,7 +628,7 @@ class ActivityServiceTest {
     whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(prisonPayBandsLowMediumHigh())
     whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
     whenever(prisonApiClient.getStudyArea("ENGLA")).thenReturn(Mono.just(studyArea))
-    whenever(activityRepository.saveAndFlush(any())).thenAnswer { invocation ->
+    whenever(activityRepository.saveAndFlush(any<ActivityEntity>())).thenAnswer { invocation ->
       invocation.getArgument(0, ActivityEntity::class.java)
     }
 
@@ -873,7 +873,7 @@ class ActivityServiceTest {
     val eligibilityRule = EligibilityRuleEntity(eligibilityRuleId = 1, code = "ER1", "Eligibility rule 1")
     whenever(eligibilityRuleRepository.findById(1L)).thenReturn(Optional.of(eligibilityRule))
 
-    whenever(activityRepository.saveAndFlush(any())).thenReturn(activityEntity())
+    whenever(activityRepository.saveAndFlush(any<ActivityEntity>())).thenReturn(activityEntity())
 
     service().createActivity(createInCellActivityRequest, createdBy)
 
@@ -907,7 +907,7 @@ class ActivityServiceTest {
     val eligibilityRule = EligibilityRuleEntity(eligibilityRuleId = 1, code = "ER1", "Eligibility rule 1")
     whenever(eligibilityRuleRepository.findById(1L)).thenReturn(Optional.of(eligibilityRule))
 
-    whenever(activityRepository.saveAndFlush(any())).thenReturn(activityEntity())
+    whenever(activityRepository.saveAndFlush(any<ActivityEntity>())).thenReturn(activityEntity())
 
     service().createActivity(createInCellActivityRequest, createdBy)
 
@@ -955,7 +955,7 @@ class ActivityServiceTest {
         LocalDate.now(),
       ),
     ).thenReturn(savedActivityEntity)
-    whenever(activityRepository.saveAndFlush(any())).thenReturn(savedActivityEntity)
+    whenever(activityRepository.saveAndFlush(any<ActivityEntity>())).thenReturn(savedActivityEntity)
     whenever(prisonPayBandRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh())
     whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
     whenever(prisonApiClient.getStudyArea("ENGLA")).thenReturn(Mono.just(studyArea))
@@ -1136,7 +1136,7 @@ class ActivityServiceTest {
     val afterActivityEntity = activityEntity(noPayBands = true, category = category2, noSchedules = true)
     afterActivityEntity.addSchedule(activitySchedule(afterActivityEntity, activityScheduleId = afterActivityEntity.activityId, noAllocations = true))
 
-    whenever(activityRepository.saveAndFlush(any())).thenReturn(afterActivityEntity)
+    whenever(activityRepository.saveAndFlush(any<ActivityEntity>())).thenReturn(afterActivityEntity)
     whenever(prisonPayBandRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh())
     whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
 
@@ -1203,7 +1203,7 @@ class ActivityServiceTest {
         LocalDate.now(),
       ),
     ).thenReturn(beforeActivityEntity)
-    whenever(activityRepository.saveAndFlush(any())).thenReturn(afterActivityEntity)
+    whenever(activityRepository.saveAndFlush(any<ActivityEntity>())).thenReturn(afterActivityEntity)
 
     service().updateActivity(MOORLAND_PRISON_CODE, 1, updateActivityRequest, "SCH_ACTIVITY")
 
@@ -1230,7 +1230,7 @@ class ActivityServiceTest {
         LocalDate.now(),
       ),
     ).thenReturn(activityEntity)
-    whenever(activityRepository.saveAndFlush(any())).thenReturn(activityEntity)
+    whenever(activityRepository.saveAndFlush(any<ActivityEntity>())).thenReturn(activityEntity)
     whenever(prisonPayBandRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh())
 
     service().updateActivity(MOORLAND_PRISON_CODE, 17, updateActivityRequest, "SCH_ACTIVITY")
@@ -1296,7 +1296,7 @@ class ActivityServiceTest {
         LocalDate.now(),
       ),
     ).thenReturn(activityEntity)
-    whenever(activityRepository.saveAndFlush(any())).thenReturn(activityEntity)
+    whenever(activityRepository.saveAndFlush(any<ActivityEntity>())).thenReturn(activityEntity)
     whenever(prisonPayBandRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh())
 
     service().updateActivity(MOORLAND_PRISON_CODE, 17, updateActivityRequest, "SCH_ACTIVITY")
@@ -1373,7 +1373,7 @@ class ActivityServiceTest {
         LocalDate.now(),
       ),
     ).thenReturn(activityEntity)
-    whenever(activityRepository.saveAndFlush(any())).thenReturn(activityEntity)
+    whenever(activityRepository.saveAndFlush(any<ActivityEntity>())).thenReturn(activityEntity)
     whenever(prisonPayBandRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh())
 
     assertThatThrownBy {
@@ -1394,7 +1394,7 @@ class ActivityServiceTest {
         LocalDate.now(),
       ),
     ).thenReturn(activityEntity)
-    whenever(activityRepository.saveAndFlush(any())).thenReturn(activityEntity)
+    whenever(activityRepository.saveAndFlush(any<ActivityEntity>())).thenReturn(activityEntity)
     whenever(prisonPayBandRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh())
 
     val prisonerNumbers = activityEntity.schedules().first().allocations().map { it.prisonerNumber }
@@ -1426,7 +1426,7 @@ class ActivityServiceTest {
         LocalDate.now(),
       ),
     ).thenReturn(activityEntity)
-    whenever(activityRepository.saveAndFlush(any())).thenReturn(activityEntity)
+    whenever(activityRepository.saveAndFlush(any<ActivityEntity>())).thenReturn(activityEntity)
     whenever(prisonPayBandRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh())
 
     val prisonerNumbers = activityEntity.schedules().first().allocations().map { it.prisonerNumber }
@@ -2761,7 +2761,7 @@ class ActivityServiceTest {
     afterActivityEntity.attendanceRequired = true
     afterActivityEntity.activityTier = eventTier
 
-    whenever(activityRepository.saveAndFlush(any())).thenReturn(afterActivityEntity)
+    whenever(activityRepository.saveAndFlush(any<ActivityEntity>())).thenReturn(afterActivityEntity)
     whenever(prisonPayBandRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh())
     whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
 
@@ -2791,7 +2791,7 @@ class ActivityServiceTest {
     afterActivityEntity.attendanceRequired = true
     afterActivityEntity.activityTier = eventTier()
 
-    whenever(activityRepository.saveAndFlush(any())).thenReturn(afterActivityEntity)
+    whenever(activityRepository.saveAndFlush(any<ActivityEntity>())).thenReturn(afterActivityEntity)
     whenever(prisonPayBandRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh())
     whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
 
@@ -2891,7 +2891,7 @@ class ActivityServiceTest {
     afterActivityEntity.attendanceRequired = false
     afterActivityEntity.activityTier = eventTier
 
-    whenever(activityRepository.saveAndFlush(any())).thenReturn(afterActivityEntity)
+    whenever(activityRepository.saveAndFlush(any<ActivityEntity>())).thenReturn(afterActivityEntity)
     whenever(prisonPayBandRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh())
     whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
 
@@ -2926,7 +2926,7 @@ class ActivityServiceTest {
     afterActivityEntity.attendanceRequired = false
     afterActivityEntity.activityTier = eventTier
 
-    whenever(activityRepository.saveAndFlush(any())).thenReturn(afterActivityEntity)
+    whenever(activityRepository.saveAndFlush(any<ActivityEntity>())).thenReturn(afterActivityEntity)
     whenever(prisonPayBandRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh())
     whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
 
@@ -2980,7 +2980,7 @@ class ActivityServiceTest {
     val afterActivityEntity: ActivityEntity = activityEntity()
     afterActivityEntity.attendanceRequired = false
 
-    whenever(activityRepository.saveAndFlush(any())).thenReturn(afterActivityEntity)
+    whenever(activityRepository.saveAndFlush(any<ActivityEntity>())).thenReturn(afterActivityEntity)
     whenever(prisonPayBandRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh())
     whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
 
@@ -3008,7 +3008,7 @@ class ActivityServiceTest {
 
     val afterActivityEntity: ActivityEntity = activityEntity()
 
-    whenever(activityRepository.saveAndFlush(any())).thenReturn(afterActivityEntity)
+    whenever(activityRepository.saveAndFlush(any<ActivityEntity>())).thenReturn(afterActivityEntity)
     whenever(prisonPayBandRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh())
     whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
     whenever(activityCategoryRepository.findById(8)).thenReturn(Optional.of(notInWorkCategory))
