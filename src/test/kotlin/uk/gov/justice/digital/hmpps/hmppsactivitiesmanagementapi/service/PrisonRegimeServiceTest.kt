@@ -775,7 +775,7 @@ class PrisonRegimeServiceTest {
   @Test
   fun `set a prison regime`() {
     Mockito.doNothing().whenever(prisonRegimeRepository).deleteByPrisonCode(any())
-    whenever(prisonRegimeRepository.save(any())).thenReturn(
+    whenever(prisonRegimeRepository.save(any<PrisonRegime>())).thenReturn(
       PrisonRegime(
         prisonCode = "",
         prisonRegimeDaysOfWeek =

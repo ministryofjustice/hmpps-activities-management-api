@@ -90,7 +90,7 @@ class AppointmentUncancelDomainServiceTest {
     whenever(appointmentCancellationReasonRepository.findById(appointmentDeletedReason.appointmentCancellationReasonId)).thenReturn(
       Optional.of(appointmentDeletedReason),
     )
-    whenever(appointmentSeriesRepository.saveAndFlush(any())).thenAnswer(AdditionalAnswers.returnsFirstArg<AppointmentSeries>())
+    whenever(appointmentSeriesRepository.saveAndFlush(any<AppointmentSeries>())).thenAnswer(AdditionalAnswers.returnsFirstArg<AppointmentSeries>())
   }
 
   @Nested

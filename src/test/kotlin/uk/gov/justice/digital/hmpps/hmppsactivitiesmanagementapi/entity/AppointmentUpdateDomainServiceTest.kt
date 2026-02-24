@@ -96,7 +96,7 @@ class AppointmentUpdateDomainServiceTest {
   @BeforeEach
   fun setUp() {
     whenever(appointmentSeriesRepository.findById(appointmentSeries.appointmentSeriesId)).thenReturn(Optional.of(appointmentSeries))
-    whenever(appointmentSeriesRepository.saveAndFlush(any())).thenAnswer(AdditionalAnswers.returnsFirstArg<AppointmentSeries>())
+    whenever(appointmentSeriesRepository.saveAndFlush(any<AppointmentSeries>())).thenAnswer(AdditionalAnswers.returnsFirstArg<AppointmentSeries>())
     whenever(appointmentAttendeeRemovalReasonRepository.findById(permanentRemovalByUserAppointmentAttendeeRemovalReason.appointmentAttendeeRemovalReasonId)).thenReturn(
       Optional.of(permanentRemovalByUserAppointmentAttendeeRemovalReason),
     )
