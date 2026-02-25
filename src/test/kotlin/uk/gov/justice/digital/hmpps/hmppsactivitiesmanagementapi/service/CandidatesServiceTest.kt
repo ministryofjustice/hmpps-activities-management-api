@@ -13,6 +13,7 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.data.domain.Pageable
 import reactor.core.publisher.Mono
@@ -64,8 +65,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Wait
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.util.Optional
-import java.util.UUID
+import java.util.*
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.nonassociation.OtherPrisonerDetails as OtherPrisonerDetailsDto
 
 class CandidatesServiceTest {
@@ -479,6 +479,7 @@ class CandidatesServiceTest {
       candidates: PagedPrisoner,
       waitingList: List<WaitingList> = emptyList(),
       candidateAllocations: List<Allocation> = emptyList(),
+      searchTerm: String? = null,
     ) {
       addCaseloadIdToRequestHeader("MDI")
 
@@ -486,7 +487,7 @@ class CandidatesServiceTest {
 
       whenever(activityScheduleRepository.findById(1)).thenReturn(Optional.of(schedule))
       whenever(waitingListRepository.findByActivitySchedule(schedule)).thenReturn(waitingList)
-      whenever(prisonerSearchApiClient.getAllPrisonersInPrison(schedule.activity.prisonCode)).thenReturn(Mono.just(candidates))
+      whenever(prisonerSearchApiClient.getAllPrisonersInPrison(schedule.activity.prisonCode, searchTerm)).thenReturn(Mono.just(candidates))
 
       whenever(allocationRepository.findByAllocationIdIn(any())).thenReturn(candidateAllocations)
       whenever(allocationRepository.getCandidateAllocations(any())).thenReturn(
@@ -908,6 +909,28 @@ class CandidatesServiceTest {
       )
 
       candidates.content.single().otherAllocations.single() isEqualTo schedule.allocations().single().toModel()
+    }
+
+    @Test
+    fun `Passes search term to prisoner search api`() {
+      val activity = activityEntity()
+      val allPrisoners = PrisonerSearchPrisonerFixture.pagedResult(prisonerNumbers = listOf("A1234BC"))
+      val waitingList = listOf(waitingList(prisonCode = activity.prisonCode, prisonerNumber = "A1234BC", initialStatus = WaitingListStatus.PENDING))
+
+      candidatesSetup(activity, allPrisoners, waitingList, searchTerm = "bloggs")
+
+      val candidates = service.getActivityCandidates(
+        activity.schedules().first().activityScheduleId,
+        null,
+        null,
+        null,
+        null,
+        "bloggs",
+        pageable,
+      )
+
+      assertThat(candidates.content).isEmpty()
+      verify(prisonerSearchApiClient).getAllPrisonersInPrison("MDI", "bloggs")
     }
   }
 

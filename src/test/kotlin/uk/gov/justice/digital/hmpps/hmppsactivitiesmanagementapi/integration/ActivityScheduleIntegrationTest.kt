@@ -712,6 +712,24 @@ class ActivityScheduleIntegrationTest : LocalStackTestBase() {
 
   @Test
   @Sql(
+    "classpath:test_data/seed-activity-id-1.sql",
+  )
+  fun `should pass search term to prisoner search api`() {
+    prisonerSearchApiMockServer.stubGetAllPrisonersInPrison("PVI", "bloggs")
+    prisonApiMockServer.stubGetEducationLevels()
+
+    val response = webTestClient.getCandidates(1, 20, 5, search = "bloggs")
+      .expectStatus().isOk
+      .expectBody(typeReference<LinkedHashMap<String, Any>>())
+      .returnResult().responseBody!!
+
+    assertThat((response["content"] as List<*>).asListOfType<ActivityCandidate>()).isEmpty()
+    assertThat(response["totalPages"]).isEqualTo(4)
+    assertThat(response["totalElements"]).isEqualTo(20)
+  }
+
+  @Test
+  @Sql(
     "classpath:test_data/seed-activity-id-7.sql",
   )
   fun `allocation followed by a deallocation of the same prisoner`() {
@@ -1129,8 +1147,17 @@ class ActivityScheduleIntegrationTest : LocalStackTestBase() {
     pageSize: Long = 10,
     caseLoadId: String = "PVI",
     noAllocations: Boolean = false,
+    search: String? = null,
   ) = get()
-    .uri("/schedules/$scheduleId/candidates?noAllocations=$noAllocations&size=$pageSize&page=$pageNum")
+    .uri { builder ->
+      builder
+        .path("/schedules/$scheduleId/candidates")
+        .maybeQueryParam("noAllocations", noAllocations)
+        .maybeQueryParam("size", pageSize)
+        .maybeQueryParam("search", search)
+        .maybeQueryParam("page", pageNum)
+        .build()
+    }
     .accept(MediaType.APPLICATION_JSON)
     .headers(setAuthorisationAsUser(roles = listOf(ROLE_ACTIVITY_ADMIN)))
     .header(CASELOAD_ID, caseLoadId)

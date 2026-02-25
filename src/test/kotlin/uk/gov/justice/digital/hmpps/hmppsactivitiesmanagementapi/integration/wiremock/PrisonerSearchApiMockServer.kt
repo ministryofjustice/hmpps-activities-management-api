@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock
 
+import com.github.tomakehurst.wiremock.client.MappingBuilder
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock.equalTo
 import com.github.tomakehurst.wiremock.client.WireMock.equalToJson
@@ -15,12 +16,15 @@ class PrisonerSearchApiMockServer : MockServer(8111) {
     Prisoner::class.primaryConstructor!!.parameters.joinToString(",") { it.name.toString() }
   }
 
-  fun stubGetAllPrisonersInPrison(prisonCode: String) {
+  private fun MappingBuilder.maybeQueryParam(key: String, value: String?): MappingBuilder = apply { if (value != null) withQueryParam(key, equalTo(value)) }
+
+  fun stubGetAllPrisonersInPrison(prisonCode: String, searchTerm: String? = null) {
     stubFor(
       WireMock.get(urlPathEqualTo("/prison/$prisonCode/prisoners"))
         .withQueryParam("sort", equalTo("lastName,firstName,asc"))
         .withQueryParam("responseFields", equalTo(responseFields))
         .withQueryParam("size", equalTo("2000"))
+        .maybeQueryParam("term", searchTerm)
         .willReturn(
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
