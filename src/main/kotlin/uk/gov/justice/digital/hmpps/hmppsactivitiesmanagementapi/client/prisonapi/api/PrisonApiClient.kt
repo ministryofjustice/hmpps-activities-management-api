@@ -12,6 +12,7 @@ import org.springframework.web.util.UriBuilder
 import reactor.core.publisher.Mono
 import reactor.util.context.Context
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.RetryApiService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.maybeQueryParam
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.LocationGroup
@@ -23,7 +24,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.ifNotEmpty
 import java.time.LocalDate
-import java.util.*
 
 typealias PrisonLocations = Map<Long, Location>
 
@@ -219,8 +219,6 @@ class PrisonApiClient(
     .retryWhen(backoffSpec.withRetryContext(Context.of("api", "prison-api", "path", "/api/agencies/{agencyId}/locations/groups")))
 
   suspend fun getEventLocationsForPrison(prisonCode: String): PrisonLocations = getEventLocationsAsync(prisonCode).associateBy(Location::locationId)
-
-  internal fun <T> UriBuilder.maybeQueryParam(name: String, type: T?) = this.queryParamIfPresent(name, Optional.ofNullable(type))
 
   fun getReferenceCode(domain: String, code: String): Mono<ReferenceCode> = prisonApiWebClient.get()
     .uri { uriBuilder: UriBuilder ->

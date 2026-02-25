@@ -7,6 +7,7 @@ import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.util.UriBuilder
 import reactor.util.context.Context
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.RetryApiService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.maybeQueryParam
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.typeReference
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.PagedPrisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
@@ -26,7 +27,7 @@ class PrisonerSearchApiClient(
     Prisoner::class.primaryConstructor!!.parameters.joinToString(",") { it.name.toString() }
   }
 
-  fun getAllPrisonersInPrison(prisonCode: String) = prisonerSearchApiWebClient
+  fun getAllPrisonersInPrison(prisonCode: String, searchTerm: String?) = prisonerSearchApiWebClient
     .get()
     .uri { uriBuilder ->
       uriBuilder
@@ -34,6 +35,7 @@ class PrisonerSearchApiClient(
         .queryParam("size", 2000)
         .queryParam("responseFields", responseFields)
         .queryParam("sort", "lastName,firstName,asc")
+        .maybeQueryParam("term", searchTerm)
         .build()
     }
     .header("Content-Type", "application/json")

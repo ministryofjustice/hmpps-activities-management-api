@@ -185,7 +185,7 @@ class CandidatesService(
     suitableForEmployed: Boolean?,
     noAllocations: Boolean?,
     search: String?,
-  ): Sequence<Prisoner> = prisonerSearchApiClient.getAllPrisonersInPrison(prisonCode).block()!!.content
+  ): Sequence<Prisoner> = prisonerSearchApiClient.getAllPrisonersInPrison(prisonCode, search).block()!!.content
     .asSequence()
     .filter {
       val prisonerAllocation = prisonerAllocations[it.prisonerNumber] ?: emptyList()
@@ -194,7 +194,6 @@ class CandidatesService(
         it.currentIncentive != null &&
         filterByRiskLevel(it, suitableRiskLevels) &&
         filterByIncentiveLevel(it, suitableIncentiveLevels) &&
-        filterBySearchString(it, search) &&
         !prisonerAllocation.any { p -> p.getActivityScheduleId() == activityScheduleId } &&
         (noAllocations != true || prisonerAllocation.isEmpty()) &&
         !waitingList.any { w -> w.prisonerNumber == it.prisonerNumber } &&
@@ -235,17 +234,6 @@ class CandidatesService(
     val employmentAllocations = prisonerAllocations.filter { it.getCode() != ActivityCategoryCode.SAA_NOT_IN_WORK.name }
 
     return employmentAllocations.isNotEmpty() == suitableForEmployed
-  }
-
-  private fun filterBySearchString(
-    prisoner: Prisoner,
-    searchString: String?,
-  ): Boolean {
-    val searchStringLower = searchString?.lowercase()
-
-    return searchStringLower == null ||
-      prisoner.prisonerNumber.lowercase().contains(searchStringLower) ||
-      "${prisoner.firstName} ${prisoner.lastName}".lowercase().contains(searchStringLower)
   }
 
   private fun wraSuitability(
