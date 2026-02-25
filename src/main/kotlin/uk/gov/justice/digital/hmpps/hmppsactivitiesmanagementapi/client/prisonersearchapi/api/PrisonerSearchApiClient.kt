@@ -27,7 +27,7 @@ class PrisonerSearchApiClient(
     Prisoner::class.primaryConstructor!!.parameters.joinToString(",") { it.name.toString() }
   }
 
-  fun getAllPrisonersInPrison(prisonCode: String, searchTerm: String?) = prisonerSearchApiWebClient
+  fun getAllPrisonersInPrison(prisonCode: String, searchTerm: String? = null) = prisonerSearchApiWebClient
     .get()
     .uri { uriBuilder ->
       uriBuilder
