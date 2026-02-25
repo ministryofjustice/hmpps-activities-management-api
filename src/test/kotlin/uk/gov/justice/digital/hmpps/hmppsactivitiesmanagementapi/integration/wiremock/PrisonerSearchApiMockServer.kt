@@ -1,17 +1,26 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock
 
 import com.github.tomakehurst.wiremock.client.WireMock
+import com.github.tomakehurst.wiremock.client.WireMock.equalTo
 import com.github.tomakehurst.wiremock.client.WireMock.equalToJson
+import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
 import com.github.tomakehurst.wiremock.http.Fault
 import com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.PrisonerNumbers
+import kotlin.reflect.full.primaryConstructor
 
 class PrisonerSearchApiMockServer : MockServer(8111) {
+  private val responseFields by lazy {
+    Prisoner::class.primaryConstructor!!.parameters.joinToString(",") { it.name.toString() }
+  }
 
   fun stubGetAllPrisonersInPrison(prisonCode: String) {
     stubFor(
-      WireMock.get(WireMock.urlEqualTo("/prison/$prisonCode/prisoners?size=2000"))
+      WireMock.get(urlPathEqualTo("/prison/$prisonCode/prisoners"))
+        .withQueryParam("sort", equalTo("lastName,firstName,asc"))
+        .withQueryParam("responseFields", equalTo(responseFields))
+        .withQueryParam("size", equalTo("2000"))
         .willReturn(
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
@@ -42,19 +51,6 @@ class PrisonerSearchApiMockServer : MockServer(8111) {
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
             .withBody(mapper.writeValueAsString(prisoners))
-            .withStatus(200),
-        ),
-    )
-  }
-
-  fun stubSearchByPrisonerNumberNotFound(prisonerNumber: String) {
-    stubFor(
-      WireMock.post(WireMock.urlEqualTo("/prisoner-search/prisoner-numbers"))
-        .withRequestBody(equalToJson(mapper.writeValueAsString(PrisonerNumbers(prisonerNumbers = listOf(prisonerNumber))), true, true))
-        .willReturn(
-          WireMock.aResponse()
-            .withHeader("Content-Type", "application/json")
-            .withBody("[]")
             .withStatus(200),
         ),
     )

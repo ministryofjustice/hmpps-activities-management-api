@@ -11,6 +11,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.PagedPrisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.PrisonerNumbers
+import kotlin.reflect.full.primaryConstructor
 
 @Service
 class PrisonerSearchApiClient(
@@ -21,9 +22,20 @@ class PrisonerSearchApiClient(
 ) {
   private val backoffSpec = retryApiService.getBackoffSpec(maxRetryAttempts, backoffMillis)
 
+  private val responseFields by lazy {
+    Prisoner::class.primaryConstructor!!.parameters.joinToString(",") { it.name.toString() }
+  }
+
   fun getAllPrisonersInPrison(prisonCode: String) = prisonerSearchApiWebClient
     .get()
-    .uri("/prison/$prisonCode/prisoners?size=2000")
+    .uri { uriBuilder ->
+      uriBuilder
+        .path("/prison/$prisonCode/prisoners")
+        .queryParam("size", 2000)
+        .queryParam("responseFields", responseFields)
+        .queryParam("sort", "lastName,firstName,asc")
+        .build()
+    }
     .header("Content-Type", "application/json")
     .retrieve()
     .bodyToMono(typeReference<PagedPrisoner>())

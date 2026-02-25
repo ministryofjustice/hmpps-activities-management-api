@@ -9,7 +9,7 @@ import uk.gov.justice.hmpps.kotlin.auth.AuthAwareAuthenticationToken
 
 fun checkCaseloadAccess(prisonCode: String) {
   val httpRequest = if (RequestContextHolder.getRequestAttributes() != null) (RequestContextHolder.getRequestAttributes() as ServletRequestAttributes).request else null
-  val auth = if (SecurityContextHolder.getContext()?.authentication != null) SecurityContextHolder.getContext().authentication as AuthAwareAuthenticationToken else null
+  val auth = if (SecurityContextHolder.getContext().authentication != null) SecurityContextHolder.getContext().authentication as AuthAwareAuthenticationToken else null
   val caseLoadId = httpRequest?.getHeader(CASELOAD_ID)
 
   if (tokenIsNotAClientToken(auth) &&

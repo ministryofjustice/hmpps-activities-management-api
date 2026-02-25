@@ -134,7 +134,6 @@ class CandidatesService(
     val end = (start + pageable.pageSize).coerceAtMost(prisonerCount)
 
     val candidates = prisoners
-      .sortedBy { it.lastName }
       .filterIndexed { index, _ -> index >= start.coerceAtMost(end) && index < end }
       .toList()
 
