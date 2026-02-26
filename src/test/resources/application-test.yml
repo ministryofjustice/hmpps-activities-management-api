@@ -54,6 +54,10 @@ hmpps:
   s3:
     localstackUrl: http://localhost:4566
     region: eu-west-2
+  sar:
+    tests:
+      expected-render-result: 
+        path: /sar/sar-generated-report.html
 
 prison:
   api:

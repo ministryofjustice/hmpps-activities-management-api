@@ -78,3 +78,6 @@ sonar-project.properties
 .DS_Store
 /activities-pa-test.csv
 /appointments-pa-test.csv
+
+# Localstack
+/volume/
