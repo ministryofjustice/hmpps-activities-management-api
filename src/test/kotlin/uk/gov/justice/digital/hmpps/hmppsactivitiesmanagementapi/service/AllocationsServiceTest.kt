@@ -119,7 +119,7 @@ class AllocationsServiceTest {
     val prisonCode = allocation.activitySchedule.activity.prisonCode
 
     whenever(allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)).thenReturn(allocation)
-    whenever(allocationRepository.saveAndFlush(any())).thenReturn(allocation)
+    whenever(allocationRepository.saveAndFlush(any<Allocation>())).thenReturn(allocation)
 
     allocation.startDate = LocalDate.now().plusDays(1)
 
@@ -152,7 +152,7 @@ class AllocationsServiceTest {
     assertThat(allocation.exclusions(ExclusionsFilter.ACTIVE).first().startDate).isEqualTo(TimeSource.today().plusDays(3))
 
     whenever(allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)).thenReturn(allocation)
-    whenever(allocationRepository.saveAndFlush(any())).thenReturn(allocation)
+    whenever(allocationRepository.saveAndFlush(any<Allocation>())).thenReturn(allocation)
 
     val attendance1: Attendance = mock()
     val attendance2: Attendance = mock()
@@ -192,7 +192,7 @@ class AllocationsServiceTest {
     val prisonCode = allocation.activitySchedule.activity.prisonCode
 
     whenever(allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)).thenReturn(allocation)
-    whenever(allocationRepository.saveAndFlush(any())).thenReturn(allocation)
+    whenever(allocationRepository.saveAndFlush(any<Allocation>())).thenReturn(allocation)
 
     val updateAllocationRequest = AllocationUpdateRequest(endDate = TimeSource.tomorrow(), reasonCode = "OTHER")
 
@@ -212,7 +212,7 @@ class AllocationsServiceTest {
     val prisonCode = allocation.activitySchedule.activity.prisonCode
 
     whenever(allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)).thenReturn(allocation)
-    whenever(allocationRepository.saveAndFlush(any())).thenReturn(allocation)
+    whenever(allocationRepository.saveAndFlush(any<Allocation>())).thenReturn(allocation)
 
     val updateAllocationRequest = AllocationUpdateRequest(endDate = TimeSource.tomorrow(), reasonCode = "OTHER")
 
@@ -233,7 +233,7 @@ class AllocationsServiceTest {
     val updateAllocationRequest = AllocationUpdateRequest(payBandId = mediumPayBand.prisonPayBandId)
 
     whenever(allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)).thenReturn(allocation)
-    whenever(allocationRepository.saveAndFlush(any())).thenReturn(allocation)
+    whenever(allocationRepository.saveAndFlush(any<Allocation>())).thenReturn(allocation)
     whenever(prisonPayBandRepository.findById(mediumPayBand.prisonPayBandId)).thenReturn(Optional.of(mediumPayBand))
 
     service.updateAllocation(allocationId, updateAllocationRequest, prisonCode, "user")
@@ -271,7 +271,7 @@ class AllocationsServiceTest {
     val prisonCode = allocation.activitySchedule.activity.prisonCode
 
     whenever(allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)).thenReturn(allocation)
-    whenever(allocationRepository.saveAndFlush(any())).thenReturn(allocation)
+    whenever(allocationRepository.saveAndFlush(any<Allocation>())).thenReturn(allocation)
 
     val updateAllocationRequest = AllocationUpdateRequest(startDate = TimeSource.tomorrow())
 
@@ -452,7 +452,7 @@ class AllocationsServiceTest {
     val prisonCode = allocation.activitySchedule.activity.prisonCode
 
     whenever(allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)).thenReturn(allocation)
-    whenever(allocationRepository.saveAndFlush(any())).thenReturn(allocation)
+    whenever(allocationRepository.saveAndFlush(any<Allocation>())).thenReturn(allocation)
 
     val updateAllocationRequest = AllocationUpdateRequest(endDate = TimeSource.tomorrow(), reasonCode = "HEALTH")
 
@@ -471,7 +471,7 @@ class AllocationsServiceTest {
     val prisonCode = allocation.activitySchedule.activity.prisonCode
 
     whenever(allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)).thenReturn(allocation)
-    whenever(allocationRepository.saveAndFlush(any())).thenReturn(allocation)
+    whenever(allocationRepository.saveAndFlush(any<Allocation>())).thenReturn(allocation)
 
     val updateAllocationRequest = AllocationUpdateRequest(endDate = TimeSource.tomorrow(), reasonCode = "ALPHA")
 
@@ -501,7 +501,7 @@ class AllocationsServiceTest {
     )
 
     whenever(allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)).thenReturn(allocation)
-    whenever(allocationRepository.saveAndFlush(any())).thenReturn(allocation)
+    whenever(allocationRepository.saveAndFlush(any<Allocation>())).thenReturn(allocation)
 
     service.updateAllocation(allocationId, updateAllocationRequest, prisonCode, "user")
 
@@ -537,7 +537,7 @@ class AllocationsServiceTest {
     )
 
     whenever(allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)).thenReturn(allocation)
-    whenever(allocationRepository.saveAndFlush(any())).thenReturn(allocation)
+    whenever(allocationRepository.saveAndFlush(any<Allocation>())).thenReturn(allocation)
 
     service.updateAllocation(allocationId, updateAllocationRequest, prisonCode, "user")
 
@@ -597,7 +597,7 @@ class AllocationsServiceTest {
     val prisonCode = allocation.activitySchedule.activity.prisonCode
 
     whenever(allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)).thenReturn(allocation)
-    whenever(allocationRepository.saveAndFlush(any())).thenReturn(allocation)
+    whenever(allocationRepository.saveAndFlush(any<Allocation>())).thenReturn(allocation)
 
     val updateAllocationRequest = AllocationUpdateRequest(
       exclusions = listOf(

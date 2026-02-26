@@ -7,10 +7,12 @@ import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.util.UriBuilder
 import reactor.util.context.Context
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.RetryApiService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.maybeQueryParam
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.typeReference
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.PagedPrisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.PrisonerNumbers
+import kotlin.reflect.full.primaryConstructor
 
 @Service
 class PrisonerSearchApiClient(
@@ -21,9 +23,21 @@ class PrisonerSearchApiClient(
 ) {
   private val backoffSpec = retryApiService.getBackoffSpec(maxRetryAttempts, backoffMillis)
 
-  fun getAllPrisonersInPrison(prisonCode: String) = prisonerSearchApiWebClient
+  private val responseFields by lazy {
+    Prisoner::class.primaryConstructor!!.parameters.joinToString(",") { it.name.toString() }
+  }
+
+  fun getAllPrisonersInPrison(prisonCode: String, searchTerm: String? = null) = prisonerSearchApiWebClient
     .get()
-    .uri("/prison/$prisonCode/prisoners?size=2000")
+    .uri { uriBuilder ->
+      uriBuilder
+        .path("/prison/$prisonCode/prisoners")
+        .queryParam("size", 2000)
+        .queryParam("responseFields", responseFields)
+        .queryParam("sort", "lastName,firstName,asc")
+        .maybeQueryParam("term", searchTerm)
+        .build()
+    }
     .header("Content-Type", "application/json")
     .retrieve()
     .bodyToMono(typeReference<PagedPrisoner>())

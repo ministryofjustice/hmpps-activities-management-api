@@ -1,7 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.PrisonerDetailSearchCriteria
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.LIVERPOOL_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
@@ -14,10 +13,8 @@ val activeInLiverpoolInmate = InmateDetailFixture.instance(agencyId = LIVERPOOL_
 
 fun InmateDetail.convert(): Prisoner = Prisoner(
   prisonerNumber = this.offenderNo!!,
-  dateOfBirth = this.dateOfBirth!!,
   firstName = this.firstName!!,
   lastName = this.lastName!!,
-  gender = PrisonerDetailSearchCriteria.Gender.M.name,
   status = "",
   bookingId = this.bookingId?.toString(),
   prisonId = this.agencyId,

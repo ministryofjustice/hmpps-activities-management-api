@@ -1019,8 +1019,6 @@ class MigrateActivityServiceTest {
       prisonerNumber = "A124BB",
       firstName = "Bob",
       lastName = "Bobson",
-      dateOfBirth = LocalDate.of(1999, 10, 1),
-      gender = "M",
       status = "ACTIVE IN",
       bookingId = "1",
       prisonId = "MDI",
@@ -1030,8 +1028,6 @@ class MigrateActivityServiceTest {
       prisonerNumber = "A124BB",
       firstName = "Bob",
       lastName = "Bobson",
-      dateOfBirth = LocalDate.of(1999, 10, 1),
-      gender = "M",
       status = "INACTIVE OUT",
       bookingId = "1",
       prisonId = "MDI",
@@ -1062,7 +1058,7 @@ class MigrateActivityServiceTest {
         endDate = null,
       )
 
-      whenever(activityScheduleRepository.saveAndFlush(any())).thenReturn(schedule)
+      whenever(activityScheduleRepository.saveAndFlush(any<ActivitySchedule>())).thenReturn(schedule)
 
       val response = service.migrateAllocation(request)
 
@@ -1102,7 +1098,7 @@ class MigrateActivityServiceTest {
         endDate = null,
       )
 
-      whenever(activityScheduleRepository.saveAndFlush(any())).thenReturn(schedule)
+      whenever(activityScheduleRepository.saveAndFlush(any<ActivitySchedule>())).thenReturn(schedule)
 
       val response = service.migrateAllocation(request)
 
@@ -1137,7 +1133,7 @@ class MigrateActivityServiceTest {
         allocatedBy = MIGRATION_USER,
       )
 
-      whenever(activityScheduleRepository.saveAndFlush(any())).thenReturn(schedule)
+      whenever(activityScheduleRepository.saveAndFlush(any<ActivitySchedule>())).thenReturn(schedule)
 
       val response = service.migrateAllocation(request)
 
@@ -1172,7 +1168,7 @@ class MigrateActivityServiceTest {
         allocatedBy = MIGRATION_USER,
       )
 
-      whenever(activityScheduleRepository.saveAndFlush(any())).thenReturn(schedule)
+      whenever(activityScheduleRepository.saveAndFlush(any<ActivitySchedule>())).thenReturn(schedule)
 
       val response = service.migrateAllocation(request)
 
@@ -1240,7 +1236,7 @@ class MigrateActivityServiceTest {
           },
         )
 
-      whenever(activityScheduleRepository.saveAndFlush(any())).thenReturn(schedule)
+      whenever(activityScheduleRepository.saveAndFlush(any<ActivitySchedule>())).thenReturn(schedule)
 
       val response = service.migrateAllocation(request)
 
@@ -1289,7 +1285,7 @@ class MigrateActivityServiceTest {
           },
         )
 
-      whenever(activityScheduleRepository.saveAndFlush(any())).thenReturn(schedule)
+      whenever(activityScheduleRepository.saveAndFlush(any<ActivitySchedule>())).thenReturn(schedule)
 
       val response = service.migrateAllocation(request)
 
@@ -1338,7 +1334,7 @@ class MigrateActivityServiceTest {
           },
         )
 
-      whenever(activityScheduleRepository.saveAndFlush(any())).thenReturn(schedule)
+      whenever(activityScheduleRepository.saveAndFlush(any<ActivitySchedule>())).thenReturn(schedule)
 
       val response = service.migrateAllocation(request)
 
@@ -1394,7 +1390,7 @@ class MigrateActivityServiceTest {
 
       whenever(activityRepository.findByActivityIdAndPrisonCode(1, "MDI")).thenReturn(activity)
       whenever(activityScheduleRepository.findBy(any(), any())).thenReturn(schedule)
-      whenever(activityScheduleRepository.saveAndFlush(any())).thenReturn(schedule)
+      whenever(activityScheduleRepository.saveAndFlush(any<ActivitySchedule>())).thenReturn(schedule)
 
       service.migrateAllocation(request)
 
@@ -1419,7 +1415,7 @@ class MigrateActivityServiceTest {
 
       whenever(activityRepository.findByActivityIdAndPrisonCode(1, "MDI")).thenReturn(activity)
       whenever(activityScheduleRepository.findBy(any(), any())).thenReturn(schedule)
-      whenever(activityScheduleRepository.saveAndFlush(any())).thenReturn(schedule)
+      whenever(activityScheduleRepository.saveAndFlush(any<ActivitySchedule>())).thenReturn(schedule)
 
       service.migrateAllocation(request)
 
@@ -1444,7 +1440,7 @@ class MigrateActivityServiceTest {
 
       whenever(activityRepository.findByActivityIdAndPrisonCode(1, "MDI")).thenReturn(activity)
       whenever(activityScheduleRepository.findBy(any(), any())).thenReturn(schedule)
-      whenever(activityScheduleRepository.saveAndFlush(any())).thenReturn(schedule)
+      whenever(activityScheduleRepository.saveAndFlush(any<ActivitySchedule>())).thenReturn(schedule)
 
       val exception = assertThrows<ValidationException> {
         service.migrateAllocation(request)
@@ -1473,7 +1469,7 @@ class MigrateActivityServiceTest {
 
       whenever(activityRepository.findByActivityIdAndPrisonCode(1, "MDI")).thenReturn(activity)
       whenever(activityScheduleRepository.findBy(any(), any())).thenReturn(schedule)
-      whenever(activityScheduleRepository.saveAndFlush(any())).thenReturn(schedule)
+      whenever(activityScheduleRepository.saveAndFlush(any<ActivitySchedule>())).thenReturn(schedule)
 
       service.migrateAllocation(request)
 
@@ -1530,7 +1526,7 @@ class MigrateActivityServiceTest {
 
       whenever(activityRepository.findByActivityIdAndPrisonCode(1, "MDI")).thenReturn(activity)
       whenever(activityScheduleRepository.findBy(any(), any())).thenReturn(schedule)
-      whenever(activityScheduleRepository.saveAndFlush(any())).thenReturn(schedule)
+      whenever(activityScheduleRepository.saveAndFlush(any<ActivitySchedule>())).thenReturn(schedule)
 
       service.migrateAllocation(request)
 
@@ -1586,7 +1582,7 @@ class MigrateActivityServiceTest {
 
       whenever(activityRepository.findByActivityIdAndPrisonCode(1, "MDI")).thenReturn(activity)
       whenever(activityScheduleRepository.findBy(any(), any())).thenReturn(schedule)
-      whenever(activityScheduleRepository.saveAndFlush(any())).thenReturn(schedule)
+      whenever(activityScheduleRepository.saveAndFlush(any<ActivitySchedule>())).thenReturn(schedule)
 
       service.migrateAllocation(request)
 
@@ -1634,7 +1630,7 @@ class MigrateActivityServiceTest {
 
       whenever(activityRepository.findByActivityIdAndPrisonCode(1, "MDI")).thenReturn(activity)
       whenever(activityScheduleRepository.findBy(any(), any())).thenReturn(schedule)
-      whenever(activityScheduleRepository.saveAndFlush(any())).thenReturn(schedule)
+      whenever(activityScheduleRepository.saveAndFlush(any<ActivitySchedule>())).thenReturn(schedule)
 
       val exception = assertThrows<IllegalArgumentException> {
         service.migrateAllocation(request)
