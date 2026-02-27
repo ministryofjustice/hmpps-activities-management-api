@@ -47,6 +47,8 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 import java.util.*
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity as ActivityEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity as ModelActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityEligibility as ModelActivityEligibility
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityMinimumEducationLevel as ModelActivityMinimumEducationLevel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityPay as ModelActivityPay
@@ -63,12 +65,25 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.
 
 class TransformFunctionsTest {
   @Test
-  fun `transformation of activity entity to the activity models`() {
+  fun `transformation of activity entity to the activity models when including scheduled instances`() {
     val timestamp = LocalDateTime.of(LocalDate.now(), LocalTime.of(9, 0)).truncatedTo(ChronoUnit.MINUTES)
     val timeSlot = TimeSlot.AM
     val activity = activityEntity(timestamp = timestamp, timeSlot = TimeSlot.AM).apply { attendanceRequired = false }
 
-    with(transform(activity)) {
+    activity.validateModel(transform(activity, true), timeSlot, timestamp, true)
+  }
+
+  @Test
+  fun `transformation of activity entity to the activity models when excluding scheduled instances`() {
+    val timestamp = LocalDateTime.of(LocalDate.now(), LocalTime.of(9, 0)).truncatedTo(ChronoUnit.MINUTES)
+    val timeSlot = TimeSlot.AM
+    val activity = activityEntity(timestamp = timestamp, timeSlot = TimeSlot.AM).apply { attendanceRequired = false }
+
+    activity.validateModel(transform(activity, false), timeSlot, timestamp, false)
+  }
+
+  private fun ActivityEntity.validateModel(activity: ModelActivity, timeSlot: TimeSlot, timestamp: LocalDateTime, includeScheduledInstances: Boolean) {
+    with(activity) {
       assertThat(id).isEqualTo(1)
       assertThat(prisonCode).isEqualTo("MDI")
       assertThat(attendanceRequired).isFalse
@@ -103,43 +118,47 @@ class TransformFunctionsTest {
       assertThat(schedules).containsExactly(
         ModelActivitySchedule(
           id = 1,
-          instances = listOf(
-            ModelScheduledInstance(
-              id = 0,
-              date = timestamp.toLocalDate(),
-              startTime = timestamp.toLocalTime(),
-              endTime = timestamp.toLocalTime().plusHours(1),
-              timeSlot = timeSlot,
-              cancelled = false,
-              attendances = listOf(
-                ModelAttendance(
-                  id = 1,
-                  scheduleInstanceId = 0,
-                  prisonerNumber = "A1234AA",
-                  status = "WAITING",
-                  issuePayment = null,
-                  incentiveLevelWarningIssued = null,
-                  recordedTime = LocalDate.now().atStartOfDay(),
-                  recordedBy = "Joe Bloggs",
-                  editable = true,
-                  payable = true,
-                  attendanceHistory = null,
+          instances = if (!includeScheduledInstances) {
+            emptyList()
+          } else {
+            listOf(
+              ModelScheduledInstance(
+                id = 0,
+                date = timestamp.toLocalDate(),
+                startTime = timestamp.toLocalTime(),
+                endTime = timestamp.toLocalTime().plusHours(1),
+                timeSlot = timeSlot,
+                cancelled = false,
+                attendances = listOf(
+                  ModelAttendance(
+                    id = 1,
+                    scheduleInstanceId = 0,
+                    prisonerNumber = "A1234AA",
+                    status = "WAITING",
+                    issuePayment = null,
+                    incentiveLevelWarningIssued = null,
+                    recordedTime = LocalDate.now().atStartOfDay(),
+                    recordedBy = "Joe Bloggs",
+                    editable = true,
+                    payable = true,
+                    attendanceHistory = null,
+                  ),
+                ),
+                advanceAttendances = listOf(
+                  ModelAdvanceAttendance(
+                    id = 1,
+                    scheduleInstanceId = 0,
+                    prisonerNumber = "A1234AA",
+                    issuePayment = true,
+                    payAmount = null,
+                    recordedTime = LocalDate.now().atStartOfDay(),
+                    recordedBy = "Joe Bloggs",
+                    attendanceHistory = null,
+                  ),
                 ),
               ),
-              advanceAttendances = listOf(
-                ModelAdvanceAttendance(
-                  id = 1,
-                  scheduleInstanceId = 0,
-                  prisonerNumber = "A1234AA",
-                  issuePayment = true,
-                  payAmount = null,
-                  recordedTime = LocalDate.now().atStartOfDay(),
-                  recordedBy = "Joe Bloggs",
-                  attendanceHistory = null,
-                ),
-              ),
-            ),
-          ),
+            )
+          },
           internalLocation = InternalLocation(1, "EDU-ROOM-1", "Education - R1", UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc")),
           allocations = listOf(
             Allocation(
@@ -191,7 +210,7 @@ class TransformFunctionsTest {
           ),
           description = "schedule description",
           capacity = 1,
-          activity = activity.toModelLite(),
+          activity = toModelLite(),
           slots = listOf(
             ActivityScheduleSlot(
               id = 0,

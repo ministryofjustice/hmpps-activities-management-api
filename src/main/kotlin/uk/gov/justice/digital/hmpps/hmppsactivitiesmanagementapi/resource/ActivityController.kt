@@ -95,7 +95,10 @@ class ActivityController(
     @RequestParam(value = "earliestSessionDate", required = false)
     @Parameter(description = "The date of the earliest scheduled instances to include. Defaults to newer than 1 month ago.")
     earliestSessionDate: LocalDate?,
-  ) = activityService.getActivityByIdWithFilters(activityId, earliestSessionDate)
+    @RequestParam(value = "includeScheduledInstances", required = false)
+    @Parameter(description = "Whether scheduled instances should be included in the response. Defaults to true.")
+    includeScheduledInstances: Boolean = true,
+  ) = activityService.getActivityByIdWithFilters(activityId, earliestSessionDate, includeScheduledInstances)
 
   @ResponseStatus(HttpStatus.CREATED)
   @PostMapping

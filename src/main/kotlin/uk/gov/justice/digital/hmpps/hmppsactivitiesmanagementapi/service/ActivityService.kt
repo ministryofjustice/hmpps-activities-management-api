@@ -92,12 +92,12 @@ class ActivityService(
     val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  fun getActivityByIdWithFilters(activityId: Long, earliestSessionDate: LocalDate?): ModelActivity {
+  fun getActivityByIdWithFilters(activityId: Long, earliestSessionDate: LocalDate?, includeScheduledInstances: Boolean = true): ModelActivity {
     // TODO: Caseload check
     val earliestSession = earliestSessionDate ?: LocalDate.now().minusMonths(1)
     val activity = activityRepository.getActivityByIdWithFilters(activityId, earliestSession)
       ?: throw (EntityNotFoundException("Activity $activityId not found"))
-    return transform(activity)
+    return transform(activity, includeScheduledInstances)
   }
 
   fun getActivityPayHistory(activityId: Long): List<ModelActivityPayHistory> {

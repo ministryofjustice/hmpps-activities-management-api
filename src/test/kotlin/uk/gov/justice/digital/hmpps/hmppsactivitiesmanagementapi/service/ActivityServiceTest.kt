@@ -94,6 +94,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.activ
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.CaseloadAccessException
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.clearCaseloadIdFromRequestHeader
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
@@ -3188,5 +3189,33 @@ class ActivityServiceTest {
     verifyNoInteractions(allocationsService)
     verify(activityRepository, never()).saveAll(anyList())
     verifyNoInteractions(outboundEventsService)
+  }
+
+  @Test
+  fun `getActivityByIdWithFilters returns activity with instances`() {
+    val activity = activityEntity()
+    val earliestSessionDate = LocalDate.now().minusDays(10)
+
+    whenever(activityRepository.getActivityByIdWithFilters(activity.activityId, earliestSessionDate)).thenReturn(activity)
+
+    val result = service().getActivityByIdWithFilters(activity.activityId, earliestSessionDate, true)
+
+    assertThat(result).isEqualTo(transform(activity))
+
+    verify(activityRepository).getActivityByIdWithFilters(activity.activityId, earliestSessionDate)
+  }
+
+  @Test
+  fun `getActivityByIdWithFilters returns activity without instances`() {
+    val activity = activityEntity()
+    val earliestSessionDate = LocalDate.now().minusDays(10)
+
+    whenever(activityRepository.getActivityByIdWithFilters(activity.activityId, earliestSessionDate)).thenReturn(activity)
+
+    val result = service().getActivityByIdWithFilters(activity.activityId, earliestSessionDate, false)
+
+    assertThat(result).isEqualTo(transform(activity, false))
+
+    verify(activityRepository).getActivityByIdWithFilters(activity.activityId, earliestSessionDate)
   }
 }
