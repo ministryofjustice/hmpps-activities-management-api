@@ -64,14 +64,14 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Suspensio
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.WaitingListApplication as ModelWaitingListApplication
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory as ModelActivityCategory
 
-fun transform(activity: EntityActivity) = ModelActivity(
+fun transform(activity: EntityActivity, includeScheduledInstances: Boolean = true) = ModelActivity(
   id = activity.activityId,
   prisonCode = activity.prisonCode,
   category = activity.activityCategory.toModelActivityCategory(),
   tier = activity.activityTier.toModelEventTier(),
   organiser = activity.organiser?.toModelEventOrganiser(),
   eligibilityRules = activity.eligibilityRules().toModelEligibilityRules(),
-  schedules = activity.schedules().toModelSchedules(),
+  schedules = activity.schedules().toModelSchedules(includeScheduledInstances),
   pay = activity.activityPay().toModelActivityPayList(),
   attendanceRequired = activity.attendanceRequired,
   inCell = activity.inCell,
@@ -245,11 +245,11 @@ private fun List<EntityActivityEligibility>.toModelEligibilityRules() = map {
 
 fun transform(scheduleEntities: List<EntityActivitySchedule>) = scheduleEntities.toModelSchedules()
 
-fun List<EntityActivitySchedule>.toModelSchedules() = map { it.toModelSchedule() }
+fun List<EntityActivitySchedule>.toModelSchedules(includeScheduledInstances: Boolean = true) = map { it.toModelSchedule(includeScheduledInstances) }
 
-fun EntityActivitySchedule.toModelSchedule() = ModelActivitySchedule(
+fun EntityActivitySchedule.toModelSchedule(includeScheduledInstances: Boolean = true) = ModelActivitySchedule(
   id = this.activityScheduleId,
-  instances = this.instances().toModelScheduledInstances(),
+  instances = if (includeScheduledInstances) this.instances().toModelScheduledInstances() else emptyList(),
   allocations = this.allocations().toModelAllocations(),
   description = this.description,
   suspensions = this.suspensions.toModelSuspensions(),

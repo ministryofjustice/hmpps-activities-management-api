@@ -38,8 +38,13 @@ abstract class ActivitiesIntegrationTestBase : IntegrationTestBase() {
     .expectBodyList(ActivitySummary::class.java)
     .returnResult().responseBody
 
-  fun WebTestClient.getActivityById(id: Long, caseLoadId: String = "PVI") = get()
-    .uri("/activities/$id/filtered")
+  fun WebTestClient.getActivityById(id: Long, caseLoadId: String = "PVI", includeScheduledInstances: Boolean? = true) = get()
+    .uri { builder ->
+      builder
+        .path("/activities/$id/filtered")
+        .maybeQueryParam("includeScheduledInstances", includeScheduledInstances)
+        .build()
+    }
     .accept(MediaType.APPLICATION_JSON)
     .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
     .header(CASELOAD_ID, caseLoadId)
