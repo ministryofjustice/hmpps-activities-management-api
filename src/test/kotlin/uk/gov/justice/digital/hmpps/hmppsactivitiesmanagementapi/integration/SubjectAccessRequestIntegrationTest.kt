@@ -5,7 +5,6 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.containsExactly
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.containsExactlyInAnyOrder
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.SarAllocation
@@ -60,7 +59,7 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
         allocationId = 2,
         prisonCode = PENTONVILLE_PRISON_CODE,
         prisonerStatus = "Active",
-        startDate = TimeSource.today(),
+        startDate = LocalDate.of(2022, 10, 11),
         endDate = null,
         activityId = 1,
         activitySummary = "Maths Level 1",

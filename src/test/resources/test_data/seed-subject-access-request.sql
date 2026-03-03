@@ -26,7 +26,7 @@ insert into allocation(allocation_id, activity_schedule_id, prisoner_number, boo
 values (1, 1, '111111', 10001, 1, '2020-01-02', '2020-12-01', '2020-01-01 09:00:00', 'MRS BLOGS', null, null, null, null, null, null, 'ENDED');
 
 insert into allocation(allocation_id, activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, suspended_time, suspended_by, suspended_reason, prisoner_status)
-values (2, 1, '111111', 10001, 1, current_date, null, '2022-10-10 09:00:00', 'MRS BLOGS', null, null, null, null, null, null, 'ACTIVE');
+values (2, 1, '111111', 10001, 1, '2022-11-27', null, '2022-10-10 09:00:00', 'MRS BLOGS', null, null, null, null, null, null, 'ACTIVE');
 
 insert into allocation(allocation_id, activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, suspended_time, suspended_by, suspended_reason, prisoner_status)
 values (3, 2, '111222', 10001, 1, '2022-10-10', null, '2022-10-10 09:00:00', 'MRS BLOGS', null, null, null, null, null, null, 'SUSPENDED_WITH_PAY');
@@ -41,13 +41,13 @@ insert into appointment_series_schedule (appointment_series_schedule_id, frequen
 VALUES (1, 'DAILY', 3);
 
 insert into appointment_series (appointment_series_id, appointment_type, prison_code, category_code, appointment_tier_id, internal_location_id, in_cell, start_date, start_time, end_time, appointment_series_schedule_id, extra_information, created_time, created_by)
-VALUES (1, 'GROUP', 'PVI', 'EDUC', 1, 123, false, '2022-10-12', '09:00:00', '10:30:00', 1, 'Prayer session', (now()::date - 2)::timestamp, 'TEST.USER');
+VALUES (1, 'GROUP', 'PVI', 'EDUC', 1, 123, false, '2022-10-12', '09:00:00', '10:30:00', 1, 'Prayer session', '2022-10-10 00:00:00', 'TEST.USER');
 
 insert into appointment_series (appointment_series_id, appointment_type, prison_code, category_code, appointment_tier_id, internal_location_id, in_cell, start_date, start_time, end_time, appointment_series_schedule_id, created_time, created_by)
-VALUES (2, 'GROUP', 'PVI', 'EDUC', 1, 123, false, '2022-10-12', '09:00:00', '10:30:00', 1, (now()::date - 2)::timestamp, 'TEST.USER');
+VALUES (2, 'GROUP', 'PVI', 'EDUC', 1, 123, false, '2022-10-12', '09:00:00', '10:30:00', 1, '2022-10-10 00:00:00', 'TEST.USER');
 
 insert into appointment_series (appointment_series_id, appointment_type, prison_code, category_code, appointment_tier_id, internal_location_id, in_cell, start_date, start_time, end_time, appointment_series_schedule_id, created_time, created_by)
-VALUES (3, 'GROUP', 'PVI', 'NOT_KNOWN', 1, 123, false, '2022-10-12', '09:00:00', '10:30:00', 1, (now()::date - 2)::timestamp, 'TEST.USER');
+VALUES (3, 'GROUP', 'PVI', 'NOT_KNOWN', 1, 123, false, '2022-10-12', '09:00:00', '10:30:00', 1, '2022-10-10 00:00:00', 'TEST.USER');
 
 insert into appointment (appointment_id, appointment_series_id, sequence_number, prison_code, category_code, appointment_tier_id, internal_location_id, in_cell, start_date, start_time, end_time, created_time, created_by)
 VALUES  (1, 1, 1, 'PVI', 'EDUC', 1, 123, false, '2022-10-12', '09:30:00', '11:45:00', '2022-10-11 09:00:00', 'TEST.USER'),
