@@ -32,7 +32,7 @@ class SubjectAccessRequestTemplateIntegrationTest :
   override fun setupTestData() {} // Test data set up via sql annotations below:
 
   @Test
-  @Sql("classpath:test_data/seed-subject-access-request.sql")
+  @Sql("classpath:test_data/seed-subject-access-request-template.sql")
   override fun `SAR report should render as expected`() {
     super.`SAR report should render as expected`()
   }
