@@ -59,7 +59,7 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
         allocationId = 2,
         prisonCode = PENTONVILLE_PRISON_CODE,
         prisonerStatus = "Active",
-        startDate = LocalDate.of(2022, 10, 11),
+        startDate = LocalDate.of(2022, 11, 27),
         endDate = null,
         activityId = 1,
         activitySummary = "Maths Level 1",
