@@ -941,6 +941,82 @@ class ActivityIntegrationTest : LocalStackTestBase() {
       assertThat(internalLocation?.id).isEqualTo(2)
       assertThat(internalLocation?.code).isEqualTo("L2")
       assertThat(internalLocation?.description).isEqualTo("Location 2")
+      assertThat(instances).hasSize(1)
+      this
+    }
+
+    with(mathsAfternoon.allocatedPrisoner("A11111A")) {
+      assertThat(prisonPayBand).isEqualTo(testPentonvillePayBandThree)
+      assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 12))
+      assertThat(endDate).isNull()
+      assertThat(allocatedBy).isEqualTo("MR BLOGS")
+      assertThat(allocatedTime).isEqualTo(LocalDateTime.of(2022, 10, 10, 10, 0))
+    }
+
+    with(mathsAfternoon.allocatedPrisoner("A22222A")) {
+      assertThat(prisonPayBand).isEqualTo(testPentonvillePayBandThree)
+      assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 12))
+      assertThat(endDate).isNull()
+      assertThat(allocatedBy).isEqualTo("MRS BLOGS")
+      assertThat(allocatedTime).isEqualTo(LocalDateTime.of(2022, 10, 10, 10, 0))
+    }
+  }
+
+  @Sql(
+    "classpath:test_data/seed-activity-id-1.sql",
+  )
+  @Test
+  fun `get scheduled does not return instances`() {
+    val mathsLevelOneActivity = with(webTestClient.getActivityById(1, includeScheduledInstances = false)) {
+      assertThat(prisonCode).isEqualTo("PVI")
+      assertThat(attendanceRequired).isTrue
+      assertThat(summary).isEqualTo("Maths")
+      assertThat(description).isEqualTo("Maths Level 1")
+      assertThat(category).isEqualTo(educationCategory)
+      assertThat(tier).isEqualTo(EventTier(1, "TIER_1", "Tier 1"))
+      assertThat(pay).isEqualTo(listOf(testActivityPayRateBand1, testActivityPayRateBand2, testActivityPayRateBand3))
+      assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 10))
+      assertThat(endDate).isNull()
+      assertThat(createdBy).isEqualTo("SEED USER")
+      assertThat(createdTime).isEqualTo(LocalDate.of(2022, 9, 21).atStartOfDay())
+      assertThat(schedules).hasSize(2)
+      this
+    }
+
+    val mathsMorning = with(mathsLevelOneActivity.schedule("Maths AM")) {
+      assertThat(capacity).isEqualTo(10)
+      assertThat(this.slots[0].daysOfWeek).isEqualTo(listOf("Mon"))
+      assertThat(allocations).hasSize(3)
+      assertThat(internalLocation?.id).isEqualTo(1)
+      assertThat(internalLocation?.code).isEqualTo("L1")
+      assertThat(internalLocation?.description).isEqualTo("Location 1")
+      this
+    }
+
+    with(mathsMorning.allocatedPrisoner("A11111A")) {
+      assertThat(prisonPayBand).isEqualTo(testPentonvillePayBandOne)
+      assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 10))
+      assertThat(endDate).isNull()
+      assertThat(allocatedBy).isEqualTo("MR BLOGS")
+      assertThat(allocatedTime).isEqualTo(LocalDateTime.of(2022, 10, 10, 9, 0))
+    }
+
+    with(mathsMorning.allocatedPrisoner("A22222A")) {
+      assertThat(prisonPayBand).isEqualTo(testPentonvillePayBandTwo)
+      assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 10))
+      assertThat(endDate).isNull()
+      assertThat(allocatedBy).isEqualTo("MRS BLOGS")
+      assertThat(allocatedTime).isEqualTo(LocalDateTime.of(2022, 10, 10, 9, 0))
+    }
+
+    val mathsAfternoon = with(mathsLevelOneActivity.schedule("Maths PM")) {
+      assertThat(capacity).isEqualTo(10)
+      assertThat(this.slots[0].daysOfWeek).isEqualTo(listOf("Mon"))
+      assertThat(allocations).hasSize(3)
+      assertThat(internalLocation?.id).isEqualTo(2)
+      assertThat(internalLocation?.code).isEqualTo("L2")
+      assertThat(internalLocation?.description).isEqualTo("Location 2")
+      assertThat(instances).isEmpty()
       this
     }
 
