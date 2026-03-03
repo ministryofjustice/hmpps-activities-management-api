@@ -51,6 +51,10 @@ applications:
 hmpps:
   auth:
     url: http://localhost:8090/auth
+  sar:
+    tests:
+      expected-render-result: 
+        path: /sar/sar-generated-report.html
 
 prison:
   api:
@@ -116,10 +120,6 @@ hmpps.sqs:
       arn: arn:aws:sns:eu-west-2:000000000000:${random.uuid}
     domainevents:
       arn: arn:aws:sns:eu-west-2:000000000000:${random.uuid}
-  sar:
-    tests:
-      expected-render-result: 
-        path: /sar/sar-generated-report.html
 
 aws:
   s3:
