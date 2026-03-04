@@ -1,0 +1,144 @@
+<h1 class="title">Manage Activities and Appointments</h1>
+<br>
+{{#.}}
+    <table class="summary-list">
+        <tr>
+            <td>Date from</td>
+            <td>{{ optionalValue (formatDate fromDate) }}</td>
+        </tr>
+        <tr>
+            <td>Date to</td>
+            <td>{{ optionalValue (formatDate toDate) }}</td>
+        </tr>
+    </table>
+
+    <h2>Allocations</h2>
+    {{#allocations}}
+        <br>
+        <h3>Allocation</h3>
+        <table class="data-table">
+            <tr>
+                <td class="data-column-25">Prison Name</td>
+                <td class="data-column-25">Prisoner Status</td>
+                <td class="data-column-50">Activity summary</td>
+            </tr>
+            <tr>
+                <td>{{ getPrisonName prisonCode }}</td>
+                <td>{{ optionalValue prisonerStatus }}</td>
+                <td>{{ optionalValue activitySummary }}</td>
+            </tr>
+        </table>
+        <table class="data-table">
+            <tr>
+                <td class="data-column-25">Start date</td>
+                <td class="data-column-25">End date</td>
+                <td class="data-column-30">Date created</td>
+                <td class="data-column-20">Pay band</td>
+            </tr>
+            <tr>
+                <td>{{ optionalValue (formatDate startDate) }}</td>
+                <td>{{ optionalValue (formatDate endDate) }}</td>
+                <td>{{ optionalValue (formatDate createdDate) }}</td>
+                <td>{{ optionalValue payBand }}</td>
+            </tr>
+        </table>
+    {{/allocations}}
+    {{^allocations}}
+        <p>No data held</p>
+    {{/allocations}}
+
+    <br>
+    <h2>Attendance summary</h2>
+    <table class="data-table">
+        <tr>
+            <td>Attendance reason</td>
+            <td>Attendance count</td>
+        </tr>
+        {{#attendanceSummary}}
+            <tr>
+                <td>{{ optionalValue attendanceReason }}</td>
+                <td>{{ optionalValue count }}</td>
+            </tr>
+        {{/attendanceSummary}}
+    </table>
+    {{^attendanceSummary}}
+        <p>No data held</p>
+    {{/attendanceSummary}}
+
+    <br>
+    <h2>Waiting list applications</h2>
+    {{#waitingListApplications}}
+        <br>
+        <h3>Application - Waiting list ID {{ optionalValue waitingListId }}</h3>
+        <table class="data-table">
+            <tr>
+                <td class="data-column-25">Prison Name</td>
+                <td class="data-column-25">Date created</td>
+                <td class="data-column-30">Application date</td>
+                <td class="data-column-20">Originator</td>
+            </tr>
+            <tr>
+                <td>{{ getPrisonName prisonCode }}</td>
+                <td>{{ optionalValue (formatDate createdDate) }}</td>
+                <td>{{ optionalValue (formatDate applicationDate) }}</td>
+                <td>{{ optionalValue originator }}</td>
+            </tr>
+        </table>
+        <table class="data-table">
+            <tr>
+                <td class="data-column-25">Status</td>
+                <td class="data-column-25">Status date</td>
+                <td class="data-column-30">Activity summary</td>
+                <td class="data-column-20">Comments</td>
+            </tr>
+            <tr>
+                <td>{{ optionalValue status }}</td>
+                <td>{{ optionalValue (formatDate statusDate) }}</td>
+                <td>{{ optionalValue activitySummary }}</td>
+                <td>{{ optionalValue comments }}</td>
+            </tr>
+        </table>
+    {{/waitingListApplications}}
+    {{^waitingListApplications}}
+        <p>No data held</p>
+    {{/waitingListApplications}}
+
+    <br>
+    <h2>Appointments</h2>
+    {{#appointments}}
+        <br>
+        <h3>Appointment</h3>
+        <table class="data-table">
+            <tr>
+                <td class="data-column-25">Prison Name</td>
+                <td class="data-column-25">Date created</td>
+                <td class="data-column-25">Category</td>
+                <td class="data-column-25">Attended</td>
+            </tr>
+
+            <tr>
+                <td>{{ getPrisonName prisonCode }}</td>
+                <td>{{ optionalValue (formatDate createdDate) }}</td>
+                <td>{{ optionalValue category }}</td>
+                <td>{{ optionalValue attended }}</td>
+            </tr>
+        </table>
+        <table class="data-table">
+            <tr>
+                <td class="data-column-25">Start date</td>
+                <td class="data-column-25">Start time</td>
+                <td class="data-column-25">End time</td>
+                <td class="data-column-25">Extra information</td>
+            </tr>
+            <tr>
+                <td>{{ optionalValue (formatDate startDate) }}</td>
+                <td>{{ optionalValue startTime }}</td>
+                <td>{{ optionalValue endTime }}</td>
+                <td>{{ optionalValue extraInformation }}</td>
+            </tr>
+        </table>
+    {{/appointments}}
+    {{^appointments}}
+        <p>No data held</p>
+    {{/appointments}}
+{{/.}}

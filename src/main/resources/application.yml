@@ -169,6 +169,10 @@ applications:
 hmpps:
   sqs:
     queueAdminRole: ACTIVITY_QUEUE_ADMIN
+  sar:
+    template:
+      path: /sar/template_hmpps-activities-management-api.mustache
+      enabled: true
 
 springdoc:
   swagger-ui:
