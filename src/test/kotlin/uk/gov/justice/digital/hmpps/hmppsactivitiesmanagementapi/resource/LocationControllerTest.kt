@@ -3,23 +3,31 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.doThrow
+import org.mockito.kotlin.never
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest
 import org.springframework.http.MediaType
+import org.springframework.security.test.context.support.WithAnonymousUser
+import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
+import org.springframework.test.web.servlet.post
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.LocationGroup
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.internalLocationEventsSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ModelTest.Companion.objectMapper
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.LocationPrefixesRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.whereabouts.LocationPrefixDto
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.whereabouts.LocationPrefixesDto
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.InternalLocationService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationGroupServiceSelector
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService
@@ -142,6 +150,69 @@ class LocationControllerTest : ControllerTestBase() {
 
     assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(result))
     verify(locationService).getLocationPrefixFromGroup(prisonCode, groupName)
+  }
+
+  @Test
+  fun `should return 200 when location prefixes are found`() {
+    val request = LocationPrefixesRequest(listOf("North All", "North Landing 1"))
+    val expectedResponse = listOf(
+      LocationPrefixesDto("North All", "RSI-A-N-.+"),
+      LocationPrefixesDto("North Landing 1", "RSI-A-N-1-.+"),
+    )
+
+    whenever(locationService.getLocationPrefixesFromGroup("RSI", "A-Wing", request))
+      .thenReturn(expectedResponse)
+
+    val response = mockMvc.post("/locations/prison/RSI/location-prefix") {
+      content = objectMapper.writeValueAsString(request)
+      contentType = MediaType.APPLICATION_JSON
+      param("locationKey", "A-Wing")
+    }.andExpect { status { isOk() } }
+      .andReturn().response
+
+    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(expectedResponse))
+    verify(locationService).getLocationPrefixesFromGroup("RSI", "A-Wing", request)
+  }
+
+  @Test
+  fun `should return 400 when the sub-locations list is empty`() {
+    val request = LocationPrefixesRequest(emptyList())
+
+    mockMvc.post("/locations/prison/RSI/location-prefix") {
+      content = objectMapper.writeValueAsString(request)
+      contentType = MediaType.APPLICATION_JSON
+      param("locationKey", "A-Wing")
+    }.andExpect { status { isBadRequest() } }
+
+    verify(locationService, never()).getLocationPrefixesFromGroup(any(), any(), any())
+  }
+
+  @Test
+  @WithAnonymousUser
+  fun `should return 401 when the user is unauthorised`() {
+    val request = LocationPrefixesRequest(listOf("North All"))
+
+    mockMvc.post("/locations/prison/RSI/location-prefix") {
+      content = objectMapper.writeValueAsString(request)
+      contentType = MediaType.APPLICATION_JSON
+      param("locationKey", "A-Wing")
+    }.andExpect { status { isUnauthorized() } }
+
+    verify(locationService, never()).getLocationPrefixesFromGroup(any(), any(), any())
+  }
+
+  @Test
+  @WithMockUser(roles = ["INVALID_ROLE"])
+  fun `should return 403 when the user has an invalid role`() {
+    val request = LocationPrefixesRequest(listOf("North All"))
+
+    mockMvc.post("/locations/prison/RSI/location-prefix") {
+      content = objectMapper.writeValueAsString(request)
+      contentType = MediaType.APPLICATION_JSON
+      param("locationKey", "A-Wing")
+    }.andExpect { status { isForbidden() } }
+
+    verify(locationService, never()).getLocationPrefixesFromGroup(any(), any(), any())
   }
 
   @Test
@@ -305,4 +376,14 @@ class LocationControllerTest : ControllerTestBase() {
     accept = MediaType.APPLICATION_JSON
     contentType = MediaType.APPLICATION_JSON
   }.andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+
+  private fun MockMvc.getLocationPrefixes(
+    prisonCode: String,
+    locationKey: String,
+    request: LocationPrefixesRequest,
+  ) = post("/locations/prison/$prisonCode/location-prefix") {
+    content = objectMapper.writeValueAsString(request)
+    contentType = MediaType.APPLICATION_JSON
+    param("locationKey", locationKey)
+  }
 }
