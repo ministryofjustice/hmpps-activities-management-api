@@ -34,8 +34,8 @@ class SubjectAccessRequestService(private val repository: SarRepository, private
     val to = toDate ?: LocalDate.now()
 
     val allocations = repository.findAllocationsBy(prn, from, to).sortedBy { it.allocationId }
-    val waitingLists = repository.findWaitingListsBy(prn, from, to)
-    val appointments = repository.findAppointmentsBy(prn, from, to)
+    val waitingLists = repository.findWaitingListsBy(prn, from, to).sortedBy { it.waitingListId }
+    val appointments = repository.findAppointmentsBy(prn, from, to).sortedBy { it.appointmentId }
     val allAttendance = repository.findAttendanceBy(prn, from, to)
 
     val appointmentCategories = appointmentCategoryService.getAll()
