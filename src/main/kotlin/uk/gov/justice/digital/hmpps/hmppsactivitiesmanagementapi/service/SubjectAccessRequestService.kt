@@ -33,7 +33,7 @@ class SubjectAccessRequestService(private val repository: SarRepository, private
     val from = fromDate ?: LocalDate.EPOCH
     val to = toDate ?: LocalDate.now()
 
-    val allocations = repository.findAllocationsBy(prn, from, to)
+    val allocations = repository.findAllocationsBy(prn, from, to).sortedBy { it.createdDate }
     val waitingLists = repository.findWaitingListsBy(prn, from, to)
     val appointments = repository.findAppointmentsBy(prn, from, to)
     val allAttendance = repository.findAttendanceBy(prn, from, to)
@@ -52,7 +52,14 @@ class SubjectAccessRequestService(private val repository: SarRepository, private
       log.info("SAR: data found for subject access request for prisoner $prn for dates $from to date $to")
 
       val attendanceSummary: List<SarAttendanceSummary> =
-        allAttendance.groupingBy { it.attendanceReasonDescription }.eachCount().mapNotNull { it.key?.let { it1 -> ModelSarAttendanceSummary(it1, it.value) } }
+        allAttendance
+          .mapNotNull { it.attendanceReasonDescription }
+          .groupingBy { it }
+          .eachCount()
+          .toSortedMap()
+          .map { (reason, count) ->
+            ModelSarAttendanceSummary(reason, count)
+          }
 
       HmppsSubjectAccessRequestContent(
         SubjectAccessRequestData(
