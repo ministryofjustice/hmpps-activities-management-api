@@ -26,6 +26,7 @@ class LocationService(
   private val locationsInsidePrisonAPIClient: LocationsInsidePrisonAPIClient,
 ) {
 
+  @Deprecated("Use the getLocationPrefixesFromGroup() method which returns location prefixes for multiple sub-locations")
   fun getLocationPrefixFromGroup(agencyId: String, group: String): LocationPrefixDto {
     val agencyGroupKey = "${agencyId}_$group"
     val pattern = groupsProperties.getProperty(agencyGroupKey)

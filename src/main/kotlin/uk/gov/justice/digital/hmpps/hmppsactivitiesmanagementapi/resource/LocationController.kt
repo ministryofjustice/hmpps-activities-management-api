@@ -137,6 +137,7 @@ class LocationController(
     @PathVariable("prisonCode") prisonCode: String,
   ): List<LocationGroup>? = locationGroupServiceSelector.getLocationGroups(prisonCode)
 
+  @Deprecated("Use the /prison/{prisonCode}/location-prefixes endpoint below that accepts locationKey as a parameter and a list of sublocations in the request")
   @GetMapping(
     value = ["/prison/{prisonCode}/location-prefix"],
     produces = [MediaType.APPLICATION_JSON_VALUE],
@@ -181,10 +182,10 @@ class LocationController(
     @RequestParam(value = "groupName", required = true) groupName: String,
   ): LocationPrefixDto? = locationService.getLocationPrefixFromGroup(prisonCode, groupName)
 
-  @PostMapping("/prison/{prisonCode}/location-prefix")
+  @PostMapping("/prison/{prisonCode}/location-prefixes")
   @Operation(
-    summary = "Get location prefixes for multiple sub-locations within a location key",
-    description = "Returns location prefixes for a given location key and list of sub-locations",
+    summary = "Get location prefixes for multiple sub-locations using a location key as query parameter",
+    description = "Returns location prefixes for a specified location key and list of sub-locations",
   )
   @ApiResponses(
     value = [

@@ -248,7 +248,7 @@ class LocationIntegrationTest : IntegrationTestBase() {
     webTestClient.post()
       .uri { uriBuilder: UriBuilder ->
         uriBuilder
-          .path("/locations/prison/{prisonCode}/location-prefix")
+          .path("/locations/prison/{prisonCode}/location-prefixes")
           .queryParam("locationKey", "A-Wing").build("RSI")
       }
       .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
@@ -267,7 +267,7 @@ class LocationIntegrationTest : IntegrationTestBase() {
     webTestClient.post()
       .uri { uriBuilder: UriBuilder ->
         uriBuilder
-          .path("/locations/prison/{prisonCode}/location-prefix")
+          .path("/locations/prison/{prisonCode}/location-prefixes")
           .queryParam("locationKey", "A-Wing")
           .build("RSI")
       }
@@ -281,7 +281,7 @@ class LocationIntegrationTest : IntegrationTestBase() {
     webTestClient.post()
       .uri { uriBuilder: UriBuilder ->
         uriBuilder
-          .path("/locations/prison/{prisonCode}/location-prefix")
+          .path("/locations/prison/{prisonCode}/location-prefixes")
           .queryParam("locationKey", "A-Wing")
           .build("RSI")
       }
@@ -488,7 +488,7 @@ class LocationIntegrationTest : IntegrationTestBase() {
   private fun WebTestClient.getLocationPrefixes(prisonCode: String, locationKey: String, request: LocationPrefixesRequest) = post()
     .uri { uriBuilder: UriBuilder ->
       uriBuilder
-        .path("/locations/prison/{prisonCode}/location-prefix")
+        .path("/locations/prison/{prisonCode}/location-prefixes")
         .queryParam("locationKey", locationKey)
         .build(prisonCode)
     }

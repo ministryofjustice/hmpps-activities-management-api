@@ -3,10 +3,8 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.doThrow
-import org.mockito.kotlin.never
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
@@ -163,14 +161,12 @@ class LocationControllerTest : ControllerTestBase() {
     whenever(locationService.getLocationPrefixesFromGroup("RSI", "A-Wing", request))
       .thenReturn(expectedResponse)
 
-    val response = mockMvc.post("/locations/prison/RSI/location-prefix") {
-      content = objectMapper.writeValueAsString(request)
-      contentType = MediaType.APPLICATION_JSON
-      param("locationKey", "A-Wing")
-    }.andExpect { status { isOk() } }
-      .andReturn().response
+    mockMvc.getLocationPrefixes("RSI", "A-Wing", request)
+      .andExpect {
+        status { isOk() }
+        content { json(mapper.writeValueAsString(expectedResponse)) }
+      }
 
-    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(expectedResponse))
     verify(locationService).getLocationPrefixesFromGroup("RSI", "A-Wing", request)
   }
 
@@ -178,13 +174,10 @@ class LocationControllerTest : ControllerTestBase() {
   fun `should return 400 when the sub-locations list is empty`() {
     val request = LocationPrefixesRequest(emptyList())
 
-    mockMvc.post("/locations/prison/RSI/location-prefix") {
-      content = objectMapper.writeValueAsString(request)
-      contentType = MediaType.APPLICATION_JSON
-      param("locationKey", "A-Wing")
-    }.andExpect { status { isBadRequest() } }
+    mockMvc.getLocationPrefixes("RSI", "A-Wing", request)
+      .andExpect { status { isBadRequest() } }
 
-    verify(locationService, never()).getLocationPrefixesFromGroup(any(), any(), any())
+    verifyNoInteractions(locationService)
   }
 
   @Test
@@ -192,13 +185,10 @@ class LocationControllerTest : ControllerTestBase() {
   fun `should return 401 when the user is unauthorised`() {
     val request = LocationPrefixesRequest(listOf("North All"))
 
-    mockMvc.post("/locations/prison/RSI/location-prefix") {
-      content = objectMapper.writeValueAsString(request)
-      contentType = MediaType.APPLICATION_JSON
-      param("locationKey", "A-Wing")
-    }.andExpect { status { isUnauthorized() } }
+    mockMvc.getLocationPrefixes("RSI", "A-Wing", request)
+      .andExpect { status { isUnauthorized() } }
 
-    verify(locationService, never()).getLocationPrefixesFromGroup(any(), any(), any())
+    verifyNoInteractions(locationService)
   }
 
   @Test
@@ -206,13 +196,10 @@ class LocationControllerTest : ControllerTestBase() {
   fun `should return 403 when the user has an invalid role`() {
     val request = LocationPrefixesRequest(listOf("North All"))
 
-    mockMvc.post("/locations/prison/RSI/location-prefix") {
-      content = objectMapper.writeValueAsString(request)
-      contentType = MediaType.APPLICATION_JSON
-      param("locationKey", "A-Wing")
-    }.andExpect { status { isForbidden() } }
+    mockMvc.getLocationPrefixes("RSI", "A-Wing", request)
+      .andExpect { status { isForbidden() } }
 
-    verify(locationService, never()).getLocationPrefixesFromGroup(any(), any(), any())
+    verifyNoInteractions(locationService)
   }
 
   @Test
@@ -381,7 +368,7 @@ class LocationControllerTest : ControllerTestBase() {
     prisonCode: String,
     locationKey: String,
     request: LocationPrefixesRequest,
-  ) = post("/locations/prison/$prisonCode/location-prefix") {
+  ) = post("/locations/prison/$prisonCode/location-prefixes") {
     content = objectMapper.writeValueAsString(request)
     contentType = MediaType.APPLICATION_JSON
     param("locationKey", locationKey)
