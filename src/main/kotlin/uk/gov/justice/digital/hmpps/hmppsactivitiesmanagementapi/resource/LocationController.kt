@@ -137,7 +137,7 @@ class LocationController(
     @PathVariable("prisonCode") prisonCode: String,
   ): List<LocationGroup>? = locationGroupServiceSelector.getLocationGroups(prisonCode)
 
-  @Deprecated("Use the /prison/{prisonCode}/location-prefixes endpoint below that accepts locationKey as a parameter and a list of sublocations in the request")
+  @Deprecated("Use the /prison/{prisonCode}/location-prefixes endpoint below that return location prefixes for a specified locationKey and list of sub-locations")
   @GetMapping(
     value = ["/prison/{prisonCode}/location-prefix"],
     produces = [MediaType.APPLICATION_JSON_VALUE],
