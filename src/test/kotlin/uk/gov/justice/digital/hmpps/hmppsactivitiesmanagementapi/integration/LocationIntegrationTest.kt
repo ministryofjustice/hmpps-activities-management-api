@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.tuple
 import org.junit.jupiter.api.Test
 import org.springframework.http.MediaType
 import org.springframework.test.context.TestPropertySource
@@ -17,7 +18,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.dpsLoca
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.internalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocationEventsSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.LocationPrefixesRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.whereabouts.LocationPrefixDto
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.whereabouts.LocationPrefixesDto
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonApiPrisonerScheduleFixture
 import java.time.LocalDate
@@ -206,6 +209,86 @@ class LocationIntegrationTest : IntegrationTestBase() {
   fun `get location prefix by group default`() {
     assertThat(webTestClient.getLocationPrefix("LDI", "A_B"))
       .isEqualTo(LocationPrefixDto("LDI-A-B-"))
+  }
+
+  @Test
+  fun `should return location prefixes for multiple sub-locations`() {
+    val response = webTestClient.getLocationPrefixes(
+      prisonCode = "RSI",
+      locationKey = "A-Wing",
+      request = LocationPrefixesRequest(listOf("North All", "North Landing 1")),
+    )
+
+    assertThat(response)
+      .extracting(LocationPrefixesDto::subLocation, LocationPrefixesDto::locationPrefix)
+      .containsExactlyInAnyOrder(
+        tuple("North All", "RSI-A-N-.+"),
+        tuple("North Landing 1", "RSI-A-N-1-.+"),
+      )
+  }
+
+  @Test
+  fun `should return fallback prefix when property not found`() {
+    val response = webTestClient.getLocationPrefixes(
+      prisonCode = "ZSI",
+      locationKey = "Z-Wing",
+      request = LocationPrefixesRequest(listOf("North XYZ", "North Landing ABC")),
+    )
+
+    assertThat(response)
+      .extracting(LocationPrefixesDto::subLocation, LocationPrefixesDto::locationPrefix)
+      .containsExactlyInAnyOrder(
+        tuple("North XYZ", "ZSI-Z-Wing-North XYZ-"),
+        tuple("North Landing ABC", "ZSI-Z-Wing-North Landing ABC-"),
+      )
+  }
+
+  @Test
+  fun `should return 400 when the list of sub-locations is empty`() {
+    webTestClient.post()
+      .uri { uriBuilder: UriBuilder ->
+        uriBuilder
+          .path("/locations/prison/{prisonCode}/location-prefixes")
+          .queryParam("locationKey", "A-Wing").build("RSI")
+      }
+      .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
+      .bodyValue(LocationPrefixesRequest(emptyList()))
+      .exchange()
+      .expectStatus().isBadRequest
+      .expectBody(ErrorResponse::class.java)
+      .value {
+        val error = requireNotNull(it)
+        assertThat(error.developerMessage).isEqualTo("At least one sub-location must be provided")
+      }
+  }
+
+  @Test
+  fun `should return 401 when the user is not authorised`() {
+    webTestClient.post()
+      .uri { uriBuilder: UriBuilder ->
+        uriBuilder
+          .path("/locations/prison/{prisonCode}/location-prefixes")
+          .queryParam("locationKey", "A-Wing")
+          .build("RSI")
+      }
+      .bodyValue(LocationPrefixesRequest(listOf("North All", "North Landing 1")))
+      .exchange()
+      .expectStatus().isUnauthorized
+  }
+
+  @Test
+  fun `should return 403 when the user has an invalid role`() {
+    webTestClient.post()
+      .uri { uriBuilder: UriBuilder ->
+        uriBuilder
+          .path("/locations/prison/{prisonCode}/location-prefixes")
+          .queryParam("locationKey", "A-Wing")
+          .build("RSI")
+      }
+      .headers(setAuthorisationAsClient(roles = listOf("TEST_ROLE")))
+      .bodyValue(LocationPrefixesRequest(listOf("North All", "North Landing 1")))
+      .exchange()
+      .expectStatus().isForbidden
   }
 
   @Test
@@ -400,6 +483,20 @@ class LocationIntegrationTest : IntegrationTestBase() {
     .exchange()
     .expectStatus().isOk
     .expectBody(LocationPrefixDto::class.java)
+    .returnResult().responseBody
+
+  private fun WebTestClient.getLocationPrefixes(prisonCode: String, locationKey: String, request: LocationPrefixesRequest) = post()
+    .uri { uriBuilder: UriBuilder ->
+      uriBuilder
+        .path("/locations/prison/{prisonCode}/location-prefixes")
+        .queryParam("locationKey", locationKey)
+        .build(prisonCode)
+    }
+    .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
+    .bodyValue(request)
+    .exchange()
+    .expectStatus().isOk
+    .expectBodyList(LocationPrefixesDto::class.java)
     .returnResult().responseBody
 
   private fun WebTestClient.getInternalLocationEventsSummaries(
