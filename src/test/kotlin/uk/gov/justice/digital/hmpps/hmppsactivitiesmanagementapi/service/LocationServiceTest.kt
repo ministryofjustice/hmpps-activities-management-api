@@ -2,6 +2,8 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.assertj.core.api.Assertions.tuple
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.kotlin.any
@@ -21,6 +23,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocationDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.dpsLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.LocationPrefixesRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.whereabouts.LocationPrefixesDto
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService.LocationDetails
 import java.util.*
 import java.util.function.Predicate
@@ -93,6 +97,54 @@ class LocationServiceTest {
     whenever(groupsProperties.getProperty(anyString())).thenReturn(null)
     val locationPrefixDto = locationService.getLocationPrefixFromGroup("LDI", "A_B")
     assertThat(locationPrefixDto.locationPrefix).isEqualTo("LDI-A-B-")
+  }
+
+  @Test
+  fun `should return location prefixes for multiple sub-locations`() {
+    whenever(groupsProperties.getProperty("RSI_A-Wing_North Landing 1")).thenReturn("RSI-A-N-1-.+")
+    whenever(groupsProperties.getProperty("RSI_A-Wing_North All")).thenReturn("RSI-A-N-.+")
+
+    val request = LocationPrefixesRequest(listOf("North Landing 1", "North All"))
+
+    val result = locationService.getLocationPrefixesFromGroup("RSI", "A-Wing", request)
+
+    assertThat(result)
+      .hasSize(2)
+      .extracting(LocationPrefixesDto::subLocation, LocationPrefixesDto::locationPrefix)
+      .containsExactlyInAnyOrder(
+        tuple("North Landing 1", "RSI-A-N-1-.+"),
+        tuple("North All", "RSI-A-N-.+"),
+      )
+  }
+
+  @Test
+  fun `should return fallback prefix when properties are not found`() {
+    whenever(groupsProperties.getProperty(any())).thenReturn(null)
+
+    val request = LocationPrefixesRequest(listOf("North XYZ", "North Landing ABC"))
+
+    val result = locationService.getLocationPrefixesFromGroup("RSI", "A-Wing", request)
+
+    assertThat(result)
+      .hasSize(2)
+      .extracting(LocationPrefixesDto::subLocation, LocationPrefixesDto::locationPrefix)
+      .containsExactlyInAnyOrder(
+        tuple("North XYZ", "RSI-A-Wing-North XYZ-"),
+        tuple("North Landing ABC", "RSI-A-Wing-North Landing ABC-"),
+      )
+  }
+
+  @Test
+  fun `should throw an exception when the list of sub-locations is empty`() {
+    whenever(groupsProperties.getProperty(any())).thenReturn(null)
+
+    val request = LocationPrefixesRequest(emptyList())
+
+    assertThatThrownBy {
+      locationService.getLocationPrefixesFromGroup("RSI", "A-Wing", request)
+    }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("At least one sub-location must be provided")
   }
 
   @Test

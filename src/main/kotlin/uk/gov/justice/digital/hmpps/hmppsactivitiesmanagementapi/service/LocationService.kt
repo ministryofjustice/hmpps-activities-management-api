@@ -9,7 +9,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api.NomisMappingAPIClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.LocationPrefixesRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.whereabouts.LocationPrefixDto
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.whereabouts.LocationPrefixesDto
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService.LocationDetails
 import java.util.*
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.model.Location as DpsLocation
@@ -24,6 +26,7 @@ class LocationService(
   private val locationsInsidePrisonAPIClient: LocationsInsidePrisonAPIClient,
 ) {
 
+  @Deprecated("Use the getLocationPrefixesFromGroup() method which returns location prefixes for multiple sub-locations")
   fun getLocationPrefixFromGroup(agencyId: String, group: String): LocationPrefixDto {
     val agencyGroupKey = "${agencyId}_$group"
     val pattern = groupsProperties.getProperty(agencyGroupKey)
@@ -31,6 +34,24 @@ class LocationService(
     val locationPrefix = pattern ?: "$agencyId-${group.replace('_', '-')}-"
 
     return LocationPrefixDto(locationPrefix)
+  }
+
+  fun getLocationPrefixesFromGroup(
+    agencyId: String,
+    locationKey: String,
+    request: LocationPrefixesRequest,
+  ): List<LocationPrefixesDto> {
+    require(request.subLocations.isNotEmpty()) { "At least one sub-location must be provided" }
+
+    return request.subLocations.map { subLocation ->
+      val group = "${locationKey}_$subLocation"
+      val agencyGroupKey = "${agencyId}_$group"
+      val pattern = groupsProperties.getProperty(agencyGroupKey)
+
+      val locationPrefix = pattern ?: "$agencyId-${group.replace('_', '-')}-"
+
+      LocationPrefixesDto(subLocation, locationPrefix)
+    }
   }
 
   fun getDpsLocationsForAppointments(agencyId: String): List<LocationDetails> = runBlocking {
