@@ -3,7 +3,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
 
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "10.0.4"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "10.0.5"
   kotlin("plugin.spring") version "2.3.10"
   kotlin("plugin.jpa") version "2.3.10"
   jacoco
@@ -57,7 +57,7 @@ dependencies {
     }
   }
 
-  implementation("aws.sdk.kotlin:s3:1.6.28")
+  implementation("aws.sdk.kotlin:s3:1.6.33")
 
   // Other dependencies
   implementation("org.apache.commons:commons-text:1.15.0")
@@ -77,11 +77,11 @@ dependencies {
   testImplementation("org.testcontainers:localstack:1.21.4")
   testImplementation("io.jsonwebtoken:jjwt-impl:0.13.0")
   testImplementation("io.jsonwebtoken:jjwt-jackson:0.13.0")
-  testImplementation("org.mockito.kotlin:mockito-kotlin:6.1.0") // temp, fix version to prevent dependency clash between sar test support lib and hmpps kotlin plugin
+  testImplementation("org.mockito.kotlin:mockito-kotlin:6.2.3") // temp, fix version to prevent dependency clash between sar test support lib and hmpps kotlin plugin
   testImplementation("org.mockito:mockito-inline:5.2.0")
-  testImplementation("net.javacrumbs.json-unit:json-unit:5.1.0")
-  testImplementation("net.javacrumbs.json-unit:json-unit-assertj:5.1.0")
-  testImplementation("net.javacrumbs.json-unit:json-unit-json-path:5.1.0")
+  testImplementation("net.javacrumbs.json-unit:json-unit:5.1.1")
+  testImplementation("net.javacrumbs.json-unit:json-unit-assertj:5.1.1")
+  testImplementation("net.javacrumbs.json-unit:json-unit-json-path:5.1.1")
   testImplementation("org.springframework.security:spring-security-test")
   testImplementation("org.springframework.boot:spring-boot-starter-test")
   testImplementation("org.awaitility:awaitility-kotlin")
