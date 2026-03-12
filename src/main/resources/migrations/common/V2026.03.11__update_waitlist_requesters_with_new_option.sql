@@ -23,4 +23,3 @@ SELECT wl.waiting_list_id AS waiting_list_id,
        wl.creation_time as created_date
     FROM waiting_list wl
     JOIN activity act ON act.activity_id = wl.activity_id;
-
