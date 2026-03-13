@@ -7,7 +7,6 @@ import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
-import jakarta.validation.Valid
 import kotlinx.coroutines.runBlocking
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.MediaType
@@ -214,12 +213,11 @@ class LocationController(
   @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
   fun getLocationPrefixesForGroup(
     @PathVariable("prisonCode") prisonCode: String,
-    @RequestParam("locationKey", required = true)
+    @RequestParam("locationKey")
     @Parameter(description = "Location key", example = "A-Wing")
     locationKey: String,
-    @Valid
     @RequestBody
-    @Parameter(description = "List of sub-locations", required = true)
+    @Parameter(description = "List of sub-locations")
     request: LocationPrefixesRequest,
   ): List<LocationPrefixesDto> = locationService.getLocationPrefixesFromGroup(prisonCode, locationKey, request)
 
