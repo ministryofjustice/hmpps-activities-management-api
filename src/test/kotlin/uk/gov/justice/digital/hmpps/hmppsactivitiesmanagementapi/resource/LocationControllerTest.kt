@@ -171,13 +171,20 @@ class LocationControllerTest : ControllerTestBase() {
   }
 
   @Test
-  fun `should return 400 when the sub-locations list is empty`() {
+  fun `should return 200 if prefix is found when list of sub-locations is empty`() {
     val request = LocationPrefixesRequest(emptyList())
+    val expectedResponse = listOf(LocationPrefixesDto("", "RSI-A-.+"))
+
+    whenever(locationService.getLocationPrefixesFromGroup("RSI", "A-Wing", request))
+      .thenReturn(expectedResponse)
 
     mockMvc.getLocationPrefixes("RSI", "A-Wing", request)
-      .andExpect { status { isBadRequest() } }
+      .andExpect {
+        status { isOk() }
+        content { json(mapper.writeValueAsString(expectedResponse)) }
+      }
 
-    verifyNoInteractions(locationService)
+    verify(locationService).getLocationPrefixesFromGroup("RSI", "A-Wing", request)
   }
 
   @Test

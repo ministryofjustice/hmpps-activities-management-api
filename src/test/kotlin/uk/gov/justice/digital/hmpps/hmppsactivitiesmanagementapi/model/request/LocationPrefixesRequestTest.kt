@@ -10,20 +10,15 @@ class LocationPrefixesRequestTest {
   private val validator: Validator = Validation.buildDefaultValidatorFactory().validator
 
   @Test
-  fun `should fail validation when list of sub-locations is empty`() {
+  fun `should pass validation when list of sub-locations is empty`() {
     val request = LocationPrefixesRequest(emptyList())
 
-    validator.validate(request)
-      .single()
-      .apply {
-        assertThat(propertyPath.toString()).isEqualTo("subLocations")
-        assertThat(message).isEqualTo("At least one sub-location must be provided")
-      }
+    assertThat(validator.validate(request)).isEmpty()
   }
 
   @Test
   fun `should pass validation when list of sub-locations is not empty`() {
-    val request = LocationPrefixesRequest(listOf("North Landing 1"))
+    val request = LocationPrefixesRequest(listOf("North Landing 1", "North All"))
 
     assertThat(validator.validate(request)).isEmpty()
   }
