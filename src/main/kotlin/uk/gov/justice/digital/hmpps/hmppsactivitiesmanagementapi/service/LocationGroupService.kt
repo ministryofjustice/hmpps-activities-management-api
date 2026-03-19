@@ -5,6 +5,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import java.util.function.Predicate
 
 interface LocationGroupService {
-  fun getLocationGroups(agencyId: String): List<LocationGroup>?
-  fun locationGroupFilter(agencyId: String, groupName: String): Predicate<Location>
+  fun getLocationGroups(prisonCode: String): List<LocationGroup>?
+  fun locationGroupFilter(prisonCode: String, groupName: String): Predicate<Location>
 }

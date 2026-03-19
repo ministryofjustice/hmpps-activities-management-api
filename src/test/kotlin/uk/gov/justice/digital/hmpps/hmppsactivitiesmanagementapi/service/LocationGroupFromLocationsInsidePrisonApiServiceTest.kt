@@ -1,15 +1,19 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.api.LocationsInsidePrisonAPIClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.LocationGroup
 
-class LocationGroupFromPrisonApiServiceTest {
+class LocationGroupFromLocationsInsidePrisonApiServiceTest {
 
-  private val prisonApiClient: PrisonApiClient = mock()
-  private val service = LocationGroupFromPrisonApiService(prisonApiClient)
+  private val locationsInsidePrisonApiClient: LocationsInsidePrisonAPIClient = mock()
+  private val service = LocationGroupFromLocationsInsidePrisonApiService(locationsInsidePrisonApiClient)
 
   private val cellA1: Location =
     aLocation(locationId = -320L, locationType = "CELL", description = "LEI-A-1-001", parentLocationId = -32L)
@@ -25,6 +29,27 @@ class LocationGroupFromPrisonApiServiceTest {
     val filter = service.locationGroupFilter("LEI", "A")
     assertThat(listOf(cellA1, cellA3, cellB1, cellAa1).filter(filter::test))
       .containsExactlyInAnyOrder(cellA1, cellA3)
+  }
+
+  @Test
+  fun `getLocationGroups returns groups from the API client`() {
+    runBlocking {
+      val locationGroup = LocationGroup(name = "Wing A", key = "A", children = emptyList())
+
+      whenever(locationsInsidePrisonApiClient.getLocationGroups("LEI")).thenReturn(listOf(locationGroup))
+
+      val result = service.getLocationGroups("LEI")
+
+      assertThat(result).isNotNull
+      assertThat(result).hasSize(1)
+
+      result!!.first().apply {
+        assertThat(name).isEqualTo("Wing A")
+        assertThat(key).isEqualTo("A")
+        assertThat(children).isEmpty()
+      }
+      verify(locationsInsidePrisonApiClient).getLocationGroups("LEI")
+    }
   }
 
   private fun aLocation(locationId: Long, locationType: String, description: String, parentLocationId: Long): Location = Location(

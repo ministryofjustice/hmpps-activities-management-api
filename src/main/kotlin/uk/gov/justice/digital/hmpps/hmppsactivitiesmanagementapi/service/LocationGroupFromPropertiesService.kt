@@ -23,14 +23,14 @@ class LocationGroupFromPropertiesService(
    * @param agencyId The agency identifier
    * @return A list of LocationGroup, sorted by name, with each item containing its nested LocationGroups, also sorted by name.
    */
-  override fun getLocationGroups(agencyId: String): List<LocationGroup> {
+  override fun getLocationGroups(prisonCode: String): List<LocationGroup> {
     val fullKeys = groupsProperties.stringPropertyNames()
     return fullKeys.asSequence()
-      .filter { it.startsWith(agencyId) }
-      .map { it.substring(agencyId.length + 1) }
+      .filter { it.startsWith(prisonCode) }
+      .map { it.substring(prisonCode.length + 1) }
       .filterNot { it.contains("_") }
       .sorted()
-      .map { LocationGroup(it, it, getAvailableSubGroups(agencyId, it)) }
+      .map { LocationGroup(it, it, getAvailableSubGroups(prisonCode, it)) }
       .toList()
   }
 
@@ -41,20 +41,20 @@ class LocationGroupFromPropertiesService(
    * @param groupName The  name of a group
    * @return Alphabetically sorted List of subgroups matching the criteria
    */
-  private fun getAvailableSubGroups(agencyId: String, groupName: String): List<LocationGroup> {
+  private fun getAvailableSubGroups(prisonCode: String, groupName: String): List<LocationGroup> {
     val fullKeys = groupsProperties.stringPropertyNames()
-    val agencyAndGroupName = "${agencyId}_${groupName}_"
+    val prisonCodeAndGroupName = "${prisonCode}_${groupName}_"
     return fullKeys.asSequence()
-      .filter { it.startsWith(agencyAndGroupName) }
-      .map { it.substring(agencyAndGroupName.length) }
+      .filter { it.startsWith(prisonCodeAndGroupName) }
+      .map { it.substring(prisonCodeAndGroupName.length) }
       .sorted()
       .map { LocationGroup(it, it, emptyList()) }
       .toList()
   }
 
-  override fun locationGroupFilter(agencyId: String, groupName: String): Predicate<Location> {
-    val patterns = groupsProperties.getProperty("${agencyId}_$groupName")
-      ?: throw EntityNotFoundException("Group $groupName does not exist for agencyId $agencyId.")
+  override fun locationGroupFilter(prisonCode: String, groupName: String): Predicate<Location> {
+    val patterns = groupsProperties.getProperty("${prisonCode}_$groupName")
+      ?: throw EntityNotFoundException("Group $groupName does not exist for agencyId $prisonCode.")
     val patternStrings = patterns.split(",")
     return patternStrings.asSequence()
       .map(Pattern::compile)

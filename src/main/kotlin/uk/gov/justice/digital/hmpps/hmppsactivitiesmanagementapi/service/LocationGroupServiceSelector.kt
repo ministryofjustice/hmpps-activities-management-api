@@ -14,17 +14,17 @@ class LocationGroupServiceSelector(
   @Value("\${prison-locations.using-regex-config}") private val prisonsUsingRegexConfig: String,
 ) : LocationGroupService {
 
-  override fun getLocationGroups(agencyId: String): List<LocationGroup>? = if (isUsingRegexConfig(agencyId)) {
-    overrideService.getLocationGroups(agencyId)
+  override fun getLocationGroups(prisonCode: String): List<LocationGroup>? = if (isUsingRegexConfig(prisonCode)) {
+    overrideService.getLocationGroups(prisonCode)
   } else {
-    defaultService.getLocationGroups(agencyId)
+    defaultService.getLocationGroups(prisonCode)
   }
 
-  override fun locationGroupFilter(agencyId: String, groupName: String): Predicate<Location> = if (isUsingRegexConfig(agencyId)) {
-    overrideService.locationGroupFilter(agencyId, groupName)
+  override fun locationGroupFilter(prisonCode: String, groupName: String): Predicate<Location> = if (isUsingRegexConfig(prisonCode)) {
+    overrideService.locationGroupFilter(prisonCode, groupName)
   } else {
-    defaultService.locationGroupFilter(agencyId, groupName)
+    defaultService.locationGroupFilter(prisonCode, groupName)
   }
 
-  private fun isUsingRegexConfig(agencyId: String): Boolean = prisonsUsingRegexConfig.split(",").contains(agencyId)
+  private fun isUsingRegexConfig(prisonCode: String): Boolean = prisonsUsingRegexConfig.split(",").contains(prisonCode)
 }
