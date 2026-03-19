@@ -226,6 +226,20 @@ class LocationIntegrationTest : IntegrationTestBase() {
   }
 
   @Test
+  fun `should return location prefix when list of sub-locations is empty`() {
+    val response = webTestClient.getLocationPrefixes(
+      prisonCode = "RSI",
+      locationKey = "A-Wing",
+      request = LocationPrefixesRequest(emptyList()),
+    )
+
+    response.single().apply {
+      assertThat(subLocation).isEmpty()
+      assertThat(locationPrefix).isEqualTo("RSI-A-.+")
+    }
+  }
+
+  @Test
   fun `should return fallback prefix when property not found`() {
     val response = webTestClient.getLocationPrefixes(
       prisonCode = "ZSI",
@@ -242,22 +256,17 @@ class LocationIntegrationTest : IntegrationTestBase() {
   }
 
   @Test
-  fun `should return 400 when the list of sub-locations is empty`() {
-    webTestClient.post()
-      .uri { uriBuilder: UriBuilder ->
-        uriBuilder
-          .path("/locations/prison/{prisonCode}/location-prefixes")
-          .queryParam("locationKey", "A-Wing").build("RSI")
-      }
-      .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
-      .bodyValue(LocationPrefixesRequest(emptyList()))
-      .exchange()
-      .expectStatus().isBadRequest
-      .expectBody(ErrorResponse::class.java)
-      .value {
-        val error = requireNotNull(it)
-        assertThat(error.developerMessage).isEqualTo("At least one sub-location must be provided")
-      }
+  fun `should return fallback prefix if not found when list of sub-locations is empty`() {
+    val response = webTestClient.getLocationPrefixes(
+      prisonCode = "ZSI",
+      locationKey = "Z-Wing",
+      request = LocationPrefixesRequest(emptyList()),
+    )
+
+    response.single().apply {
+      assertThat(subLocation).isEmpty()
+      assertThat(locationPrefix).isEqualTo("ZSI-Z-Wing-")
+    }
   }
 
   @Test
@@ -495,7 +504,8 @@ class LocationIntegrationTest : IntegrationTestBase() {
     .exchange()
     .expectStatus().isOk
     .expectBodyList(LocationPrefixesDto::class.java)
-    .returnResult().responseBody
+    .returnResult()
+    .responseBody!!
 
   private fun WebTestClient.getInternalLocationEventsSummaries(
     prisonCode: String,

@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
-import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.assertj.core.api.Assertions.tuple
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentMatchers.anyString
@@ -118,6 +117,20 @@ class LocationServiceTest {
   }
 
   @Test
+  fun `should return location prefix when list of sub-locations is empty`() {
+    whenever(groupsProperties.getProperty("RSI_A-Wing")).thenReturn("RSI-A-.+")
+
+    val request = LocationPrefixesRequest(emptyList())
+
+    val result = locationService.getLocationPrefixesFromGroup("RSI", "A-Wing", request)
+
+    result.single().apply {
+      assertThat(subLocation).isEmpty()
+      assertThat(locationPrefix).isEqualTo("RSI-A-.+")
+    }
+  }
+
+  @Test
   fun `should return fallback prefix when properties are not found`() {
     whenever(groupsProperties.getProperty(any())).thenReturn(null)
 
@@ -135,16 +148,17 @@ class LocationServiceTest {
   }
 
   @Test
-  fun `should throw an exception when the list of sub-locations is empty`() {
+  fun `should return fallback prefix when properties are not found and list of sublocations is empty`() {
     whenever(groupsProperties.getProperty(any())).thenReturn(null)
 
     val request = LocationPrefixesRequest(emptyList())
 
-    assertThatThrownBy {
-      locationService.getLocationPrefixesFromGroup("RSI", "A-Wing", request)
+    val result = locationService.getLocationPrefixesFromGroup("ZSI", "Z-Wing", request)
+
+    result.single().apply {
+      assertThat(subLocation).isEmpty()
+      assertThat(locationPrefix).isEqualTo("ZSI-Z-Wing-")
     }
-      .isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("At least one sub-location must be provided")
   }
 
   @Test

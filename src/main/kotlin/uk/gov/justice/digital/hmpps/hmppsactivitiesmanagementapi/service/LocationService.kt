@@ -41,10 +41,13 @@ class LocationService(
     locationKey: String,
     request: LocationPrefixesRequest,
   ): List<LocationPrefixesDto> {
-    require(request.subLocations.isNotEmpty()) { "At least one sub-location must be provided" }
+    val subLocations = request.subLocations.ifEmpty { listOf("") }
 
-    return request.subLocations.map { subLocation ->
-      val group = "${locationKey}_$subLocation"
+    return subLocations.map { subLocation ->
+      val group = listOf(locationKey, subLocation)
+        .filter { it.isNotBlank() }
+        .joinToString("_")
+
       val agencyGroupKey = "${agencyId}_$group"
       val pattern = groupsProperties.getProperty(agencyGroupKey)
 
