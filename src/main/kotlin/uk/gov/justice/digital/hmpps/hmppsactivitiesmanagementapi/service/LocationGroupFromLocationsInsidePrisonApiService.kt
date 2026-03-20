@@ -10,7 +10,7 @@ import java.util.function.Predicate
 @Service("defaultLocationGroupService")
 class LocationGroupFromLocationsInsidePrisonApiService(private val locationsInsidePrisonApiClient: LocationsInsidePrisonAPIClient) : LocationGroupService {
 
-  override fun getLocationGroups(prisonCode: String): List<LocationGroup>? = runBlocking { locationsInsidePrisonApiClient.getLocationGroups(prisonCode) }
+  override fun getLocationGroups(prisonCode: String): List<LocationGroup> = runBlocking { locationsInsidePrisonApiClient.getLocationGroups(prisonCode) }
 
   override fun locationGroupFilter(prisonCode: String, groupName: String): Predicate<Location> {
     val prefixToMatch = "$prisonCode-${groupName.replace('_', '-')}-"

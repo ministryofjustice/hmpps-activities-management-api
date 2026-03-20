@@ -14,7 +14,7 @@ class LocationGroupServiceSelector(
   @Value("\${prison-locations.using-regex-config}") private val prisonsUsingRegexConfig: String,
 ) : LocationGroupService {
 
-  override fun getLocationGroups(prisonCode: String): List<LocationGroup>? = if (isUsingRegexConfig(prisonCode)) {
+  override fun getLocationGroups(prisonCode: String): List<LocationGroup> = if (isUsingRegexConfig(prisonCode)) {
     overrideService.getLocationGroups(prisonCode)
   } else {
     defaultService.getLocationGroups(prisonCode)

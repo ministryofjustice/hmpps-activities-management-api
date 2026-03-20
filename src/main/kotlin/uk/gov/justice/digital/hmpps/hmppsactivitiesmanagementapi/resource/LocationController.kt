@@ -134,7 +134,7 @@ class LocationController(
   @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
   fun getLocationGroups(
     @PathVariable("prisonCode") prisonCode: String,
-  ): List<LocationGroup>? = locationGroupServiceSelector.getLocationGroups(prisonCode)
+  ): List<LocationGroup> = locationGroupServiceSelector.getLocationGroups(prisonCode)
 
   @Deprecated("Use the /prison/{prisonCode}/location-prefixes endpoint below that return location prefixes for a specified locationKey and list of sub-locations")
   @GetMapping(

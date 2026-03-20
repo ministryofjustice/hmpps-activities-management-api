@@ -4,7 +4,7 @@ import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyBlocking
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.api.LocationsInsidePrisonAPIClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
@@ -43,12 +43,12 @@ class LocationGroupFromLocationsInsidePrisonApiServiceTest {
       assertThat(result).isNotNull
       assertThat(result).hasSize(1)
 
-      result!!.first().apply {
+      result.first().apply {
         assertThat(name).isEqualTo("Wing A")
         assertThat(key).isEqualTo("A")
         assertThat(children).isEmpty()
       }
-      verify(locationsInsidePrisonApiClient).getLocationGroups("LEI")
+      verifyBlocking(locationsInsidePrisonApiClient) { getLocationGroups("LEI") }
     }
   }
 

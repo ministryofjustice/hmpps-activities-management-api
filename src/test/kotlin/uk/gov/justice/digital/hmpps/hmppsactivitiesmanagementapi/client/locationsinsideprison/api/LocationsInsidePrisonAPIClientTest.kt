@@ -66,7 +66,7 @@ class LocationsInsidePrisonAPIClientTest {
   }
 
   @Test
-  fun `should return locations for for service type`() {
+  fun `should return locations for service type`() {
     val mockLocations = mockServer.stubLocationsForServiceType()
 
     runBlocking {
@@ -132,7 +132,7 @@ class LocationsInsidePrisonAPIClientTest {
     val prisonCode = "LEI"
     mockServer.stubGetLocationGroupsNotFound(prisonCode)
 
-    val exception = assertThrows<WebClientResponseException> {
+    val exception = assertThrows<WebClientResponseException.NotFound> {
       apiClient.getLocationGroups(prisonCode)
     }
 

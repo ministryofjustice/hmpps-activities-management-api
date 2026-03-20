@@ -18,9 +18,9 @@ class LocationGroupFromPropertiesService(
 ) : LocationGroupService {
 
   /**
-   * Return the set of Location Groups for an agency, including any nested sub-groups.
+   * Return the set of Location Groups for a prisonCode, including any nested sub-groups.
    *
-   * @param agencyId The agency identifier
+   * @param prisonCode The prison identifier
    * @return A list of LocationGroup, sorted by name, with each item containing its nested LocationGroups, also sorted by name.
    */
   override fun getLocationGroups(prisonCode: String): List<LocationGroup> {
@@ -35,10 +35,10 @@ class LocationGroupFromPropertiesService(
   }
 
   /**
-   * Get the available sub-groups (sub-locations) for the named group/agency.
+   * Get the available sub-groups (sub-locations) for the named group/prisonCode.
    *
-   * @param agencyId  The agency identifier
-   * @param groupName The  name of a group
+   * @param prisonCode  The prison identifier
+   * @param groupName The name of a group
    * @return Alphabetically sorted List of subgroups matching the criteria
    */
   private fun getAvailableSubGroups(prisonCode: String, groupName: String): List<LocationGroup> {
@@ -54,7 +54,7 @@ class LocationGroupFromPropertiesService(
 
   override fun locationGroupFilter(prisonCode: String, groupName: String): Predicate<Location> {
     val patterns = groupsProperties.getProperty("${prisonCode}_$groupName")
-      ?: throw EntityNotFoundException("Group $groupName does not exist for agencyId $prisonCode.")
+      ?: throw EntityNotFoundException("Group $groupName does not exist for prisonCode $prisonCode.")
     val patternStrings = patterns.split(",")
     return patternStrings.asSequence()
       .map(Pattern::compile)
