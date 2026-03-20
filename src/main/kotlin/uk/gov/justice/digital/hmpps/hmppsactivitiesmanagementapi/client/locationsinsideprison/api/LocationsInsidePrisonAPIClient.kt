@@ -10,6 +10,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.RetryApi
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.model.ServiceUsingLocationDto.ServiceType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.typeReference
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.LocationGroup
 import java.util.*
 
 @Service
@@ -57,5 +58,16 @@ class LocationsInsidePrisonAPIClient(
     .retrieve()
     .bodyToMono(typeReference<List<Location>>())
     .retryWhen(backoffSpec.withRetryContext(Context.of("api", "locations-inside-prison-api", "path", "/locations/prison/{prisonCode}/non-residential-usage-type/{usageType}")))
+    .awaitSingle()
+
+  suspend fun getLocationGroups(prisonCode: String): List<LocationGroup> = locationsInsidePrisonApiWebClient.get()
+    .uri { uriBuilder: UriBuilder ->
+      uriBuilder
+        .path("/locations/prison/{prisonCode}/groups")
+        .build(prisonCode)
+    }
+    .retrieve()
+    .bodyToMono(typeReference<List<LocationGroup>>())
+    .retryWhen(backoffSpec.withRetryContext(Context.of("api", "locations-inside-prison-api", "path", "/locations/prison/{prisonCode}/groups")))
     .awaitSingle()
 }

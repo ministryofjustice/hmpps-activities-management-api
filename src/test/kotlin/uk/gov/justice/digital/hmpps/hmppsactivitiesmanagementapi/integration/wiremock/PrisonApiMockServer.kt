@@ -297,30 +297,6 @@ class PrisonApiMockServer : MockServer(8999) {
     )
   }
 
-  fun stubGetLocationGroups(agencyId: String, jsonResponseFile: String) {
-    stubFor(
-      WireMock.get(WireMock.urlEqualTo("/api/agencies/$agencyId/locations/groups"))
-        .willReturn(
-          WireMock.aResponse()
-            .withHeader("Content-Type", "application/json")
-            .withBodyFile(jsonResponseFile)
-            .withStatus(200),
-        ),
-    )
-  }
-
-  fun stubGetLocationGroupsNotFound(agencyId: String) {
-    stubFor(
-      WireMock.get(WireMock.urlEqualTo("/api/agencies/$agencyId/locations/groups"))
-        .willReturn(
-          WireMock.aResponse()
-            .withHeader("Content-Type", "application/json")
-            .withBodyFile("prisonapi/location-group-404.json")
-            .withStatus(404),
-        ),
-    )
-  }
-
   fun stubGetLocation(locationId: Long, jsonResponseFile: String, includeInactive: Boolean? = null) {
     stubFor(
       WireMock.get(WireMock.urlEqualTo("/api/locations/$locationId" + (includeInactive?.let { "?includeInactive=$includeInactive" } ?: "")))

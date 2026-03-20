@@ -9,8 +9,10 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.springframework.http.HttpStatus
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.WebClientRequestException
+import org.springframework.web.reactive.function.client.WebClientResponseException
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.RetryApiService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.model.ServiceUsingLocationDto.ServiceType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.dpsLocation
@@ -64,7 +66,7 @@ class LocationsInsidePrisonAPIClientTest {
   }
 
   @Test
-  fun `should return locations for for service type`() {
+  fun `should return locations for service type`() {
     val mockLocations = mockServer.stubLocationsForServiceType()
 
     runBlocking {
@@ -102,5 +104,40 @@ class LocationsInsidePrisonAPIClientTest {
         apiClient.getLocationById(dpsLocation().id)
       }
     }
+  }
+
+  @Test
+  fun `getLocationGroups - success`(): Unit = runBlocking {
+    val prisonCode = "MDI"
+    mockServer.stubGetLocationGroups(prisonCode, "locationsinsideprisonapi/location-groups-1.json")
+    val locationGroups = apiClient.getLocationGroups(prisonCode)
+
+    assertThat(locationGroups).hasSize(1)
+
+    locationGroups.first().apply {
+      assertThat(name).isEqualTo("Group Name")
+      assertThat(key).isEqualTo("Group key")
+      children.first().apply {
+        assertThat(name).isEqualTo("Child Group Name")
+        assertThat(key).isEqualTo("Child Group key")
+        assertThat(children).isEmpty()
+      }
+    }
+
+    assertThat(locationGroups.first().children).hasSize(1)
+  }
+
+  @Test
+  fun `getLocationGroups - not found`(): Unit = runBlocking {
+    val prisonCode = "LEI"
+    mockServer.stubGetLocationGroupsNotFound(prisonCode)
+
+    val exception = assertThrows<WebClientResponseException.NotFound> {
+      apiClient.getLocationGroups(prisonCode)
+    }
+
+    assertThat(exception.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
+    assertThat(exception.message).contains("404 Not Found from GET http://localhost:8093/locations/prison/LEI/groups")
+    assertThat(exception.responseBodyAsString).contains("Location groups not found for prison")
   }
 }

@@ -242,24 +242,6 @@ class PrisonApiClientTest {
   }
 
   @Test
-  fun `getLocationGroups - success`() {
-    val agencyId = "MDI"
-    prisonApiMockServer.stubGetLocationGroups(agencyId, "prisonapi/location-groups-1.json")
-    val locationGroups = prisonApiClient.getLocationGroups(agencyId).block()!!
-    assertThat(locationGroups).hasSize(1)
-    assertThat(locationGroups.first().children.first().name).isEqualTo("Child Group Name")
-  }
-
-  @Test
-  fun `getLocationGroups - not found`() {
-    val agencyId = "LEI"
-    prisonApiMockServer.stubGetLocationGroupsNotFound(agencyId)
-    assertThatThrownBy { prisonApiClient.getLocationGroups(agencyId).block() }
-      .isInstanceOf(WebClientResponseException::class.java)
-      .hasMessage("404 Not Found from GET http://localhost:8999/api/agencies/LEI/locations/groups")
-  }
-
-  @Test
   fun `getStudyArea - success`() {
     prisonApiMockServer.stubGetReferenceCode("STUDY_AREA", "ENGLA", "prisonapi/study-area-code-ENGLA.json")
 

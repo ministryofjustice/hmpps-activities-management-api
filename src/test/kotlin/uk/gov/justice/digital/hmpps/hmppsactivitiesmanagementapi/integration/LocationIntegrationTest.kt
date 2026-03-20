@@ -131,11 +131,11 @@ class LocationIntegrationTest : IntegrationTestBase() {
   }
 
   @Test
-  fun `location groups - success - none in properties so should fetch from prison API`() {
-    val result = this::class.java.getResource("/__files/prisonapi/LEI_location_groups.json")?.readText()
+  fun `location groups - success - none in properties so should fetch from locations inside prison API`() {
+    val result = this::class.java.getResource("/__files/locationsinsideprisonapi/LEI_location_groups.json")?.readText()
     val prisonCode = "LEI"
 
-    prisonApiMockServer.stubGetLocationGroups(prisonCode, "prisonapi/LEI_location_groups.json")
+    locationsInsidePrisonApiMockServer.stubGetLocationGroups(prisonCode, "locationsinsideprisonapi/LEI_location_groups.json")
 
     webTestClient.get()
       .uri { uriBuilder: UriBuilder ->
@@ -155,8 +155,6 @@ class LocationIntegrationTest : IntegrationTestBase() {
     val result = this::class.java.getResource("/__files/prisonapi/location-groups-2.json")?.readText()
     val prisonCode = "MDI"
 
-    prisonApiMockServer.stubGetLocationGroups(prisonCode, "prisonapi/location-groups-1.json")
-
     webTestClient.get()
       .uri { uriBuilder: UriBuilder ->
         uriBuilder
@@ -174,7 +172,7 @@ class LocationIntegrationTest : IntegrationTestBase() {
   fun `get location groups - not found`() {
     val prisonCode = "XXX"
 
-    prisonApiMockServer.stubGetLocationGroupsNotFound(prisonCode)
+    locationsInsidePrisonApiMockServer.stubGetLocationGroupsNotFound(prisonCode)
 
     val errorResponse = webTestClient.get()
       .uri { uriBuilder: UriBuilder ->

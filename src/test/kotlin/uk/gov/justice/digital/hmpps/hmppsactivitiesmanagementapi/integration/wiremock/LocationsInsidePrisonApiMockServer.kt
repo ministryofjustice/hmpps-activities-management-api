@@ -122,4 +122,28 @@ class LocationsInsidePrisonApiMockServer : MockServer(8093) {
 
     return responseLocation
   }
+
+  fun stubGetLocationGroups(prisonCode: String, jsonResponseFile: String) {
+    stubFor(
+      WireMock.get(WireMock.urlEqualTo("/locations/prison/$prisonCode/groups"))
+        .willReturn(
+          WireMock.aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withBodyFile(jsonResponseFile)
+            .withStatus(200),
+        ),
+    )
+  }
+
+  fun stubGetLocationGroupsNotFound(prisonCode: String) {
+    stubFor(
+      WireMock.get(WireMock.urlEqualTo("/locations/prison/$prisonCode/groups"))
+        .willReturn(
+          WireMock.aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withBodyFile("locationsinsideprisonapi/location-group-404.json")
+            .withStatus(404),
+        ),
+    )
+  }
 }
