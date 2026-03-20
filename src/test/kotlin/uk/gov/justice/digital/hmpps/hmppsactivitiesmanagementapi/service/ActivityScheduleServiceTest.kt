@@ -1072,4 +1072,238 @@ class ActivityScheduleServiceTest {
     }.isInstanceOf(EntityNotFoundException::class.java)
       .hasMessage("Activity schedule ID ${schedule.activityScheduleId} not found")
   }
+
+  @Test
+  fun `bulk allocate multiple prisoners to multiple schedules successfully`() {
+    val activity = activityEntity(activityId = 1L, prisonCode = PENTONVILLE_PRISON_CODE, noSchedules = true)
+
+    val schedule1 = activitySchedule(activity, activityScheduleId = 1L, description = "schedule 1", noAllocations = true)
+    val schedule2 = activitySchedule(activity, activityScheduleId = 2L, description = "schedule 2", noAllocations = true)
+
+    activity.addSchedule(schedule1)
+    activity.addSchedule(schedule2)
+
+    val prisoner1 = "A1234AA"
+    val prisoner2 = "B5678BB"
+    val bookingId1 = "10001"
+    val bookingId2 = "20002"
+
+    val requests = listOf(
+      PrisonerAllocationRequest(
+        prisonerNumber = prisoner1,
+        payBandId = 1,
+        startDate = TimeSource.tomorrow(),
+      ),
+      PrisonerAllocationRequest(
+        prisonerNumber = prisoner2,
+        payBandId = 1,
+        startDate = TimeSource.tomorrow(),
+      ),
+    )
+
+    val prisonerSearchResults = listOf(
+      activeInPentonvillePrisoner.copy(prisonerNumber = prisoner1, bookingId = bookingId1),
+      activeInPentonvillePrisoner.copy(prisonerNumber = prisoner2, bookingId = bookingId2),
+    )
+
+    whenever(repository.getActivitySchedulesByIdsWithFilters(listOf(1L, 2L))).thenReturn(listOf(schedule1, schedule2))
+    prisonerSearchApiClient.stub {
+      onBlocking { findByPrisonerNumbersAsync(listOf(prisoner1, prisoner2)) }.doReturn(prisonerSearchResults)
+    }
+    whenever(prisonPayBandRepository.findByPrisonCode(PENTONVILLE_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh(PENTONVILLE_PRISON_CODE))
+    whenever(waitingListRepository.findByPrisonCodeAndPrisonerNumberAndActivitySchedule(any(), any(), any())) doReturn emptyList()
+    manageAttendancesService.stub {
+      onBlocking { createAnyAttendancesForToday(any(), any()) }.doReturn(emptyList())
+    }
+
+    service.allocatePrisonersToMultipleSchedules(
+      listOf(1L, 2L),
+      requests,
+      "by test",
+    )
+
+    verify(auditService, times(4)).logEvent(any())
+
+    verify(repository, times(2)).saveAndFlush(any())
+  }
+
+  @Test
+  fun `bulk allocate should fail when duplicate schedule IDs are provided`() {
+    val prisoner1 = "A1234AA"
+
+    val requests = listOf(
+      PrisonerAllocationRequest(
+        prisonerNumber = prisoner1,
+        payBandId = 1,
+        startDate = TimeSource.tomorrow(),
+      ),
+    )
+
+    assertThatThrownBy {
+      service.allocatePrisonersToMultipleSchedules(
+        listOf(1L, 1L, 2L, 2L),
+        requests,
+        "by test",
+      )
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessageContaining("Duplicate schedule IDs are not allowed")
+  }
+
+  @Test
+  fun `bulk allocate should fail when schedule not found`() {
+    val prisoner1 = "A1234AA"
+
+    val requests = listOf(
+      PrisonerAllocationRequest(
+        prisonerNumber = prisoner1,
+        payBandId = 1,
+        startDate = TimeSource.tomorrow(),
+      ),
+    )
+
+    whenever(repository.getActivitySchedulesByIdsWithFilters(listOf(1L, 999L))).thenReturn(null)
+
+    assertThatThrownBy {
+      service.allocatePrisonersToMultipleSchedules(
+        listOf(1L, 999L),
+        requests,
+        "by test",
+      )
+    }.isInstanceOf(EntityNotFoundException::class.java)
+      .hasMessageContaining("No activity schedules found for IDs")
+  }
+
+  @Test
+  fun `bulk allocate to multiple schedules should fail when prisoner not found in prisoner search`() {
+    val activity = activityEntity(activityId = 1L, prisonCode = PENTONVILLE_PRISON_CODE, noSchedules = true).apply {
+      addSchedule(activitySchedule(this, activityScheduleId = 1L, noAllocations = true))
+    }
+
+    val prisoner1 = "A1234AA"
+
+    val requests = listOf(
+      PrisonerAllocationRequest(
+        prisonerNumber = prisoner1,
+        payBandId = 1,
+        startDate = TimeSource.tomorrow(),
+      ),
+    )
+
+    whenever(repository.getActivitySchedulesByIdsWithFilters(listOf(1L))).thenReturn(activity.schedules())
+    prisonerSearchApiClient.stub {
+      onBlocking { findByPrisonerNumbersAsync(listOf(prisoner1)) }.doReturn(emptyList())
+    }
+    whenever(prisonPayBandRepository.findByPrisonCode(PENTONVILLE_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh(PENTONVILLE_PRISON_CODE))
+
+    assertThatThrownBy {
+      service.allocatePrisonersToMultipleSchedules(
+        listOf(1L),
+        requests,
+        "by test",
+      )
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessageContaining("Unable to allocate prisoner with prisoner number")
+  }
+
+  @Test
+  fun `bulk allocate to multiple schedules should fail when allocation start date is in the past`() {
+    val prisoner1 = "A1234AA"
+
+    val requests = listOf(
+      PrisonerAllocationRequest(
+        prisonerNumber = prisoner1,
+        payBandId = 1,
+        startDate = TimeSource.yesterday(),
+      ),
+    )
+
+    assertThatThrownBy {
+      service.allocatePrisonersToMultipleSchedules(
+        listOf(1L),
+        requests,
+        "by test",
+      )
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessageContaining("Allocation start date must not be in the past")
+  }
+
+  @Test
+  fun `bulk allocate to multiple schedules should fail when no pay band provided for paid activity`() {
+    val activity = activityEntity(activityId = 1L, prisonCode = PENTONVILLE_PRISON_CODE, noSchedules = true).apply {
+      addSchedule(activitySchedule(this, activityScheduleId = 1L, noAllocations = true))
+    }
+
+    val schedule1 = activity.schedules().first()
+    val prisoner1 = "A1234AA"
+    val bookingId1 = "10001"
+
+    val requests = listOf(
+      PrisonerAllocationRequest(
+        prisonerNumber = prisoner1,
+        payBandId = null,
+        startDate = TimeSource.tomorrow(),
+      ),
+    )
+
+    val prisonerSearchResults = listOf(
+      activeInPentonvillePrisoner.copy(prisonerNumber = prisoner1, bookingId = bookingId1),
+    )
+
+    whenever(repository.getActivitySchedulesByIdsWithFilters(listOf(1L))).thenReturn(listOf(schedule1))
+    prisonerSearchApiClient.stub {
+      onBlocking { findByPrisonerNumbersAsync(listOf(prisoner1)) }.doReturn(prisonerSearchResults)
+    }
+    whenever(prisonPayBandRepository.findByPrisonCode(PENTONVILLE_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh(PENTONVILLE_PRISON_CODE))
+
+    assertThatThrownBy {
+      service.allocatePrisonersToMultipleSchedules(
+        listOf(1L),
+        requests,
+        "by test",
+      )
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessageContaining("Allocation must have a pay band")
+  }
+
+  @Test
+  fun `bulk allocate to multiple schedules should fail when prisoner is not active at prison`() {
+    val activity = activityEntity(activityId = 1L, prisonCode = PENTONVILLE_PRISON_CODE, noSchedules = true).apply {
+      addSchedule(activitySchedule(this, activityScheduleId = 1L, noAllocations = true))
+    }
+
+    val schedule1 = activity.schedules().first()
+    val prisoner1 = "A1234AA"
+    val bookingId1 = "10001"
+
+    val requests = listOf(
+      PrisonerAllocationRequest(
+        prisonerNumber = prisoner1,
+        payBandId = 1,
+        startDate = TimeSource.tomorrow(),
+      ),
+    )
+
+    val prisonerSearchResults = listOf(
+      activeInPentonvillePrisoner.copy(
+        prisonerNumber = prisoner1,
+        bookingId = bookingId1,
+        prisonId = "MDI",
+      ),
+    )
+
+    whenever(repository.getActivitySchedulesByIdsWithFilters(listOf(1L))).thenReturn(listOf(schedule1))
+    prisonerSearchApiClient.stub {
+      onBlocking { findByPrisonerNumbersAsync(listOf(prisoner1)) }.doReturn(prisonerSearchResults)
+    }
+    whenever(prisonPayBandRepository.findByPrisonCode(PENTONVILLE_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh(PENTONVILLE_PRISON_CODE))
+
+    assertThatThrownBy {
+      service.allocatePrisonersToMultipleSchedules(
+        listOf(1L),
+        requests,
+        "by test",
+      )
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessageContaining("prisoner is not active at prison")
+  }
 }

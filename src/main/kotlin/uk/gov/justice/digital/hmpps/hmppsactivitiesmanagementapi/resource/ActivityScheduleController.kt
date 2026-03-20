@@ -32,6 +32,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorRes
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.WaitingListApplication
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.BulkAllocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerAllocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerDeallocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCandidate
@@ -231,6 +232,7 @@ class ActivityScheduleController(
     ],
   )
   @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_ADMIN')")
+  @Deprecated(message = "This will be replaced by the bulk allocation endpoint which supports allocating one or more offenders to one or more schedules in a single request.")
   fun allocate(
     principal: Principal,
     @PathVariable("scheduleId") scheduleId: Long,
@@ -243,6 +245,74 @@ class ActivityScheduleController(
     prisonerAllocationRequest: PrisonerAllocationRequest,
   ): ResponseEntity<Any> = scheduleService.allocatePrisoner(scheduleId, prisonerAllocationRequest, principal.name)
     .let { ResponseEntity.noContent().build() }
+
+  //  @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_ADMIN')")
+  @PostMapping(value = ["/allocations/bulk"])
+  @Operation(
+    summary = "Allocate offenders to schedules",
+    description = "Allocates one or more offenders to one or more activity schedules in one operation. Each offender is allocated to all schedules provided.",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "204",
+        description = "The allocations were created and added to the schedules.",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Bad request",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "One or more activity schedules for the provided IDs were not found.",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun allocateMultipleToMultipleSchedules(
+    principal: Principal,
+    @RequestBody
+    @Parameter(
+      description = "Bulk allocation request with schedule IDs and prisoner allocation request details",
+      required = true,
+    )
+    @Valid
+    request: BulkAllocationRequest,
+  ): ResponseEntity<Any> {
+    scheduleService.allocatePrisonersToMultipleSchedules(request.scheduleIds, request.allocationRequests, principal.name)
+    return ResponseEntity.noContent().build()
+  }
 
   @GetMapping(value = ["/{scheduleId}/candidates"])
   @Operation(

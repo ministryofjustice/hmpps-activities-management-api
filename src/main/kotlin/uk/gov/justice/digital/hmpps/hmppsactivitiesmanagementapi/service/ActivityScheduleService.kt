@@ -196,6 +196,136 @@ class ActivityScheduleService(
     }
   }
 
+  @Transactional(propagation = Propagation.NOT_SUPPORTED)
+  fun allocatePrisonersToMultipleSchedules(scheduleIds: List<Long>, requests: List<PrisonerAllocationRequest>, allocatedBy: String) {
+    log.info("Bulk allocating ${requests.size} prisoners to ${scheduleIds.size} schedules")
+
+    val duplicateScheduleIds = scheduleIds.groupingBy { it }.eachCount().filter { it.value > 1 }.keys.toList()
+    require(duplicateScheduleIds.isEmpty()) { "Duplicate schedule IDs are not allowed: $duplicateScheduleIds" }
+
+    val today = LocalDate.now()
+
+    requests.forEach { request ->
+      require(request.startDate!! >= today) { "Allocation start date must not be in the past" }
+      if (request.startDate == today && request.scheduleInstanceId == null) {
+        throw IllegalArgumentException("The next session must be provided when allocation start date is today")
+      }
+    }
+
+    val schedules = repository.getActivitySchedulesByIdsWithFilters(scheduleIds)
+      ?: throw EntityNotFoundException("No activity schedules found for IDs: $scheduleIds")
+
+    if (schedules.isEmpty()) {
+      throw EntityNotFoundException("No activity schedules found for IDs: $scheduleIds")
+    }
+
+    val schedulesById = schedules.associateBy { it.activityScheduleId }
+
+    // validate schedule IDs
+    val missingScheduleIds = scheduleIds.filter { it !in schedulesById }
+    if (missingScheduleIds.isNotEmpty()) {
+      throw EntityNotFoundException("Schedules not found for IDs: $missingScheduleIds")
+    }
+
+    // batch fetch all prisoners
+    val prisonerNumbers = requests.map { it.prisonerNumber!! }.distinct()
+    val prisonersMap = runBlocking {
+      prisonerSearchApiClient.findByPrisonerNumbersAsync(prisonerNumbers)
+        .associateBy { it.prisonerNumber }
+    }
+
+    transactionHandler.newSpringTransaction {
+      val allocationsWithAttendances = mutableListOf<Pair<Allocation, List<Any>>>()
+
+      schedules.forEach { schedule ->
+        requests.forEach { request ->
+          log.info("Allocating prisoner ${request.prisonerNumber} to schedule ${schedule.activityScheduleId}")
+
+          val prisonerNumber = request.prisonerNumber!!.toPrisonerNumber()
+
+          if (schedule.isPaid().not() && request.payBandId != null) {
+            throw IllegalArgumentException("Allocation cannot have a pay band when the activity '${schedule.activity.activityId}' is unpaid")
+          }
+          if (schedule.isPaid() && request.payBandId == null) {
+            throw IllegalArgumentException("Allocation must have a pay band when the activity '${schedule.activity.activityId}' is paid")
+          }
+
+          val payBand = request.payBandId?.let {
+            val prisonPayBands = prisonPayBandRepository.findByPrisonCode(schedule.activity.prisonCode)
+              .associateBy { it.prisonPayBandId }
+              .ifEmpty { throw IllegalArgumentException("No pay bands found for prison '${schedule.activity.prisonCode}") }
+
+            prisonPayBands[request.payBandId]
+              ?: throw IllegalArgumentException("Pay band not found for prison '${schedule.activity.prisonCode}'")
+          }
+
+          val activePrisoner = prisonersMap[request.prisonerNumber]
+            ?: run {
+              log.error("Prisoner not found in prisoner search results. Prisoner number: $prisonerNumber, Schedule ID: ${schedule.activityScheduleId}, PrisonersMap: ${prisonersMap.keys}")
+              throw IllegalArgumentException("Unable to allocate prisoner with prisoner number $prisonerNumber to schedule ${schedule.activityScheduleId}, prisoner not found.")
+            }
+
+          require(activePrisoner.isActiveAtPrison(schedule.activity.prisonCode)) {
+            "Unable to allocate prisoner with prisoner number $prisonerNumber, prisoner is not active at prison ${schedule.activity.prisonCode}."
+          }
+
+          requireNotNull(activePrisoner.bookingId) {
+            "Unable to allocate prisoner with prisoner number $prisonerNumber, prisoner does not have a booking id."
+          }
+
+          schedule.allocatePrisoner(
+            prisonerNumber = prisonerNumber,
+            bookingId = activePrisoner.bookingId.toLong(),
+            payBand = payBand,
+            startDate = request.startDate!!,
+            endDate = request.endDate,
+            exclusions = request.exclusions,
+            allocatedBy = allocatedBy,
+          ).let { allocation ->
+            val maybeWaitingList = waitingListRepository.findByPrisonCodeAndPrisonerNumberAndActivitySchedule(
+              schedule.activity.prisonCode,
+              request.prisonerNumber!!,
+              schedule,
+            )
+              .also { waitingLists ->
+                require(waitingLists.none(WaitingList::isPending)) {
+                  "Prisoner has a PENDING waiting list application. It must be APPROVED before they can be allocated."
+                }
+              }
+              .filter(WaitingList::isApproved)
+              .also { waitingLists ->
+                require(waitingLists.size <= 1) {
+                  "Prisoner has more than one APPROVED waiting list application. A prisoner can only have one approved waiting list application."
+                }
+              }
+              .singleOrNull()?.allocated(allocation)
+
+            // if allocation is for instance(s) later today then need to create attendance records
+            val newAttendances = manageAttendancesService.createAnyAttendancesForToday(request.scheduleInstanceId, allocation)
+
+            auditService.logEvent(allocation.toPrisonerAllocatedEvent(maybeWaitingList?.waitingListId))
+            logAllocationEvent(allocation, maybeWaitingList)
+            log.info("Allocated prisoner $prisonerNumber to activity schedule ${schedule.description}.")
+
+            allocationsWithAttendances.add(allocation to newAttendances)
+          }
+        }
+      }
+
+      schedules.forEach { repository.saveAndFlush(it) }
+
+      allocationsWithAttendances
+    }.also { allocationsWithAttendances ->
+      allocationsWithAttendances.forEach { (allocation, newAttendances) ->
+        outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATED, allocation.allocationId)
+
+        newAttendances.forEach { manageAttendancesService.sendCreatedEvent(it as uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance) }
+      }
+    }
+
+    log.info("Bulk allocation of ${requests.size} prisoners to ${scheduleIds.size} schedules completed")
+  }
+
   fun getSuitabilityCriteria(scheduleId: Long): ActivitySuitabilityCriteria? {
     val activitySchedule = repository.findOrThrowNotFound(scheduleId)
     return activitySchedule.toModelActivitySuitabilityCriteria()

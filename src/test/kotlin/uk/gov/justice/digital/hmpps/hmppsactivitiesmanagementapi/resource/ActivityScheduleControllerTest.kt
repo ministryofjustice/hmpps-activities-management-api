@@ -26,6 +26,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.earliestReleaseDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.waitingList
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.BulkAllocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerAllocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerDeallocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.nonassociation.NonAssociationDetails
@@ -211,12 +212,146 @@ class ActivityScheduleControllerTest : ControllerTestBase() {
     verify(activityScheduleService).deallocatePrisoners(1, request, user.name)
   }
 
+  @Test
+  fun `204 response when bulk allocate multiple prisoners to multiple schedules`() {
+    val requests = listOf(
+      PrisonerAllocationRequest(
+        prisonerNumber = "A1234AA",
+        payBandId = 1,
+        startDate = TimeSource.tomorrow(),
+      ),
+      PrisonerAllocationRequest(
+        prisonerNumber = "B5678BB",
+        payBandId = 1,
+        startDate = TimeSource.tomorrow(),
+      ),
+    )
+
+    val bulkRequest = BulkAllocationRequest(
+      scheduleIds = listOf(1L, 2L),
+      allocationRequests = requests,
+    )
+
+    mockMvc.bulkAllocateMultipleSchedules(bulkRequest)
+      .andExpect { status { isNoContent() } }
+
+    verify(activityScheduleService).allocatePrisonersToMultipleSchedules(listOf(1L, 2L), requests, user.name)
+  }
+
+  @Test
+  fun `400 response when bulk allocate with empty schedule ids`() {
+    val requests = listOf(
+      PrisonerAllocationRequest(
+        prisonerNumber = "A1234AA",
+        payBandId = 1,
+        startDate = TimeSource.tomorrow(),
+      ),
+    )
+
+    val bulkRequest = BulkAllocationRequest(
+      scheduleIds = emptyList(),
+      allocationRequests = requests,
+    )
+
+    mockMvc.bulkAllocateMultipleSchedules(bulkRequest)
+      .andExpect { status { isBadRequest() } }
+      .andReturn().response
+      .also {
+        assertThat(it.contentAsString).contains("Schedule IDs must not be empty")
+      }
+
+    verify(activityScheduleService, never()).allocatePrisonersToMultipleSchedules(any(), any(), any())
+  }
+
+  @Test
+  fun `400 response when bulk allocate with empty allocation requests`() {
+    val bulkRequest = BulkAllocationRequest(
+      scheduleIds = listOf(1L, 2L),
+      allocationRequests = emptyList(),
+    )
+
+    mockMvc.bulkAllocateMultipleSchedules(bulkRequest)
+      .andExpect { status { isBadRequest() } }
+      .andReturn().response
+      .also {
+        assertThat(it.contentAsString).contains("Allocation requests must not be empty")
+      }
+
+    verify(activityScheduleService, never()).allocatePrisonersToMultipleSchedules(any(), any(), any())
+  }
+
+  @Test
+  fun `400 response when bulk allocate and one prisoner not found`() {
+    val requests = listOf(
+      PrisonerAllocationRequest(
+        prisonerNumber = "A1234AA",
+        payBandId = 1,
+        startDate = TimeSource.tomorrow(),
+      ),
+      PrisonerAllocationRequest(
+        prisonerNumber = "RANDOM",
+        payBandId = 1,
+        startDate = TimeSource.tomorrow(),
+      ),
+    )
+
+    val bulkRequest = BulkAllocationRequest(
+      scheduleIds = listOf(1L, 2L),
+      allocationRequests = requests,
+    )
+
+    whenever(activityScheduleService.allocatePrisonersToMultipleSchedules(listOf(1L, 2L), requests, user.name))
+      .thenThrow(IllegalArgumentException("Unable to allocate prisoner with prisoner number NOTFOUND"))
+
+    mockMvc.bulkAllocateMultipleSchedules(bulkRequest)
+      .andExpect { status { isBadRequest() } }
+      .andReturn().response
+      .also {
+        assertThat(it.contentAsString).contains("Unable to allocate prisoner with prisoner number NOTFOUND")
+      }
+
+    verify(activityScheduleService).allocatePrisonersToMultipleSchedules(listOf(1L, 2L), requests, user.name)
+  }
+
+  @Test
+  fun `400 response when bulk allocate with duplicate schedule IDs`() {
+    val requests = listOf(
+      PrisonerAllocationRequest(
+        prisonerNumber = "A1234AA",
+        payBandId = 1,
+        startDate = TimeSource.tomorrow(),
+      ),
+    )
+
+    val bulkRequest = BulkAllocationRequest(
+      scheduleIds = listOf(1L, 1L, 2L, 2L),
+      allocationRequests = requests,
+    )
+
+    whenever(activityScheduleService.allocatePrisonersToMultipleSchedules(listOf(1L, 1L, 2L, 2L), requests, user.name))
+      .thenThrow(IllegalArgumentException("Duplicate schedule IDs are not allowed: [1, 2]"))
+
+    mockMvc.bulkAllocateMultipleSchedules(bulkRequest)
+      .andExpect { status { isBadRequest() } }
+      .andReturn().response
+      .also {
+        assertThat(it.contentAsString).contains("Duplicate schedule IDs are not allowed")
+      }
+
+    verify(activityScheduleService).allocatePrisonersToMultipleSchedules(listOf(1L, 1L, 2L, 2L), requests, user.name)
+  }
+
   private fun MockMvc.allocate(scheduleId: Long, request: PrisonerAllocationRequest) = post("/schedules/$scheduleId/allocations") {
     content = mapper.writeValueAsString(request)
     contentType = MediaType.APPLICATION_JSON
   }
 
   private fun MockMvc.deallocate(scheduleId: Long, request: PrisonerDeallocationRequest) = put("/schedules/$scheduleId/deallocate") {
+    content = mapper.writeValueAsString(request)
+    contentType = MediaType.APPLICATION_JSON
+  }
+
+  private fun MockMvc.bulkAllocateMultipleSchedules(request: BulkAllocationRequest) = post("/schedules/allocations/bulk") {
     content = mapper.writeValueAsString(request)
     contentType = MediaType.APPLICATION_JSON
   }
