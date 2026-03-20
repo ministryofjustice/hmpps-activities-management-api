@@ -246,7 +246,7 @@ class ActivityScheduleController(
   ): ResponseEntity<Any> = scheduleService.allocatePrisoner(scheduleId, prisonerAllocationRequest, principal.name)
     .let { ResponseEntity.noContent().build() }
 
-  //  @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_ADMIN')")
+  @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_ADMIN')")
   @PostMapping(value = ["/allocations/bulk"])
   @Operation(
     summary = "Allocate offenders to schedules",
