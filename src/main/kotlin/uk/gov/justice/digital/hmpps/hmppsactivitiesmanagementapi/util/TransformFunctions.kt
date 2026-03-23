@@ -508,7 +508,7 @@ fun ScheduledInstanceAttendanceSummary.toModel() = (
     attendanceRequired = this.attendanceRequired,
     internalLocation = this.internalLocationId?.let {
       InternalLocation(
-        this.internalLocationId.toInt(),
+        it.toInt(),
         this.internalLocationCode!!,
         this.internalLocationDescription!!,
       )

@@ -21,7 +21,7 @@ data class AppointmentAttendeeSearch(
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   val appointmentAttendeeId: Long = 0,
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne(fetch = FetchType.EAGER)
   @JoinColumn(name = "appointment_id", nullable = false)
   val appointmentSearch: AppointmentSearch,
 

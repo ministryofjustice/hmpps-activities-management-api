@@ -332,7 +332,7 @@ class AllocationIntegrationTest : LocalStackTestBase() {
     }
 
     listOf(1L, 3L).forEach {
-      with(attendanceRepository.getReferenceById(it)) {
+      with(attendanceRepository.findById(it).get()) {
         // These attendances are un-changed because the session started before the suspension
         status(AttendanceStatus.WAITING) isBool true
         attendanceReason isEqualTo null
@@ -341,7 +341,7 @@ class AllocationIntegrationTest : LocalStackTestBase() {
     }
 
     listOf(2L, 4L).forEach {
-      with(attendanceRepository.getReferenceById(it)) {
+      with(attendanceRepository.findById(it).get()) {
         // These attendances are suspended because the session starts after the suspension
         status(AttendanceStatus.COMPLETED) isBool true
         attendanceReason isNotEqualTo null
@@ -381,7 +381,7 @@ class AllocationIntegrationTest : LocalStackTestBase() {
     }
 
     listOf(1L, 3L).forEach {
-      with(attendanceRepository.getReferenceById(it)) {
+      with(attendanceRepository.findById(it).get()) {
         // These attendances are un-changed because the session started before the suspension
         status(AttendanceStatus.WAITING) isBool true
         attendanceReason isEqualTo null
@@ -390,7 +390,7 @@ class AllocationIntegrationTest : LocalStackTestBase() {
     }
 
     listOf(2L, 4L).forEach {
-      with(attendanceRepository.getReferenceById(it)) {
+      with(attendanceRepository.findById(it).get()) {
         // These attendances are suspended because the session starts after the suspension
         status(AttendanceStatus.COMPLETED) isBool true
         attendanceReason isNotEqualTo null
@@ -430,7 +430,7 @@ class AllocationIntegrationTest : LocalStackTestBase() {
     }
 
     listOf(1L, 3L).forEach {
-      with(attendanceRepository.getReferenceById(it)) {
+      with(attendanceRepository.findById(it).get()) {
         // These attendances are un-changed because the session started before the suspension
         status(AttendanceStatus.WAITING) isBool true
         attendanceReason isEqualTo null
@@ -439,7 +439,7 @@ class AllocationIntegrationTest : LocalStackTestBase() {
     }
 
     listOf(2L, 4L).forEach {
-      with(attendanceRepository.getReferenceById(it)) {
+      with(attendanceRepository.findById(it).get()) {
         // These attendances are suspended because the session starts after the suspension
         status(AttendanceStatus.COMPLETED) isBool true
         attendanceReason isNotEqualTo null
@@ -477,7 +477,7 @@ class AllocationIntegrationTest : LocalStackTestBase() {
     }
 
     listOf(1L, 3L).forEach {
-      with(attendanceRepository.getReferenceById(it)) {
+      with(attendanceRepository.findById(it).get()) {
         // These attendances are un-changed because the session started before the suspension ended
         status(AttendanceStatus.COMPLETED) isBool true
         attendanceReason isNotEqualTo null
@@ -487,7 +487,7 @@ class AllocationIntegrationTest : LocalStackTestBase() {
     }
 
     listOf(2L, 4L).forEach {
-      with(attendanceRepository.getReferenceById(it)) {
+      with(attendanceRepository.findById(it).get()) {
         // These attendances are reset because the session starts after the suspension ended
         status(AttendanceStatus.WAITING) isBool true
         attendanceReason isEqualTo null
@@ -524,7 +524,7 @@ class AllocationIntegrationTest : LocalStackTestBase() {
     }
 
     listOf(1L, 3L).forEach {
-      with(attendanceRepository.getReferenceById(it)) {
+      with(attendanceRepository.findById(it).get()) {
         // These attendances are un-changed because the session started before the suspension ended
         status(AttendanceStatus.COMPLETED) isBool true
         attendanceReason isNotEqualTo null
@@ -534,7 +534,7 @@ class AllocationIntegrationTest : LocalStackTestBase() {
     }
 
     listOf(2L, 4L).forEach {
-      with(attendanceRepository.getReferenceById(it)) {
+      with(attendanceRepository.findById(it).get()) {
         // These attendances are reset because the session starts after the suspension ended
         status(AttendanceStatus.WAITING) isBool true
         attendanceReason isEqualTo null
