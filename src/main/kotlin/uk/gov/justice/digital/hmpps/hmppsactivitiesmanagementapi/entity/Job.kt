@@ -23,10 +23,10 @@ data class Job(
 ) {
 
   var endedAt: LocalDateTime? = null
-    private set
+    internal set
 
   var successful: Boolean = false
-    private set
+    internal set
 
   var totalSubTasks: Int? = null
 

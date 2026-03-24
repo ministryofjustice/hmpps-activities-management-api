@@ -740,7 +740,7 @@ class InboundEventsIntegrationTest : LocalStackTestBase() {
     // Fixture necessary for the received event handler
     prisonerSearchApiMockServer.stubSearchByPrisonerNumber(activeInPentonvillePrisoner.copy(prisonerNumber = "A11111A"))
 
-    with(allocationRepository.getReferenceById(1L)) {
+    with(allocationRepository.findById(1L).orElseThrow()) {
       status(PrisonerStatus.AUTO_SUSPENDED) isBool true
     }
     attendanceRepository.findAllById(listOf(1L, 2L)).onEach {
@@ -758,19 +758,19 @@ class InboundEventsIntegrationTest : LocalStackTestBase() {
     this.sendInboundEvent(event)
 
     await untilAsserted {
-      with(allocationRepository.getReferenceById(1L)) {
+      with(allocationRepository.findById(1L).orElseThrow()) {
         status(PrisonerStatus.SUSPENDED) isBool true
       }
 
       // This past attendance record has not been modified
-      with(attendanceRepository.getReferenceById(1L)) {
+      with(attendanceRepository.findById(1L).orElseThrow()) {
         status() isEqualTo AttendanceStatus.COMPLETED
         attendanceReason isNotEqualTo null
         attendanceReason!!.code isEqualTo AttendanceReasonEnum.AUTO_SUSPENDED
       }
 
       // This future attendance record has been modified
-      with(attendanceRepository.getReferenceById(2L)) {
+      with(attendanceRepository.findById(2L).orElseThrow()) {
         status() isEqualTo AttendanceStatus.COMPLETED
         attendanceReason isNotEqualTo null
         attendanceReason!!.code isEqualTo AttendanceReasonEnum.SUSPENDED

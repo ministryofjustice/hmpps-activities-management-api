@@ -96,7 +96,7 @@ data class Allocation(
   @OneToOne(cascade = [CascadeType.ALL], orphanRemoval = true)
   @JoinColumn(name = "planned_deallocation_id", nullable = true)
   var plannedDeallocation: PlannedDeallocation? = null
-    private set
+    internal set
 
   @OneToMany(mappedBy = "allocation", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)
@@ -107,29 +107,29 @@ data class Allocation(
   private val plannedSuspensions: MutableSet<PlannedSuspension> = mutableSetOf()
 
   var deallocatedTime: LocalDateTime? = null
-    private set
+    internal set
 
   var deallocatedBy: String? = null
-    private set
+    internal set
 
   @Enumerated(EnumType.STRING)
   var deallocatedReason: DeallocationReason? = null
-    private set
+    internal set
 
   var deallocationCaseNoteId: Long? = null
-    private set
+    internal set
 
   var deallocationDpsCaseNoteId: UUID? = null
-    private set
+    internal set
 
   var suspendedTime: LocalDateTime? = null
-    private set
+    internal set
 
   var suspendedBy: String? = null
-    private set
+    internal set
 
   var suspendedReason: String? = null
-    private set
+    internal set
 
   fun plannedSuspension() = plannedSuspensions.singleOrNull { it.endDate()?.isAfterDates(LocalDate.now(), it.startDate()) ?: true }
 
