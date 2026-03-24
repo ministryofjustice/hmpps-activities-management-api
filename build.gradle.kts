@@ -11,14 +11,6 @@ plugins {
   id("io.sentry.jvm.gradle") version "6.2.0"
 }
 
-allOpen {
-  annotations(
-    "jakarta.persistence.Entity",
-    "jakarta.persistence.MappedSuperclass",
-    "jakarta.persistence.Embeddable",
-  )
-}
-
 configurations {
   testImplementation { exclude(group = "org.junit.vintage") }
 }

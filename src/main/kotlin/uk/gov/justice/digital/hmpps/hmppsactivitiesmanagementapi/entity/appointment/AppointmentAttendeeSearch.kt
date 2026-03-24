@@ -1,7 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment
 
 import jakarta.persistence.Entity
-import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
@@ -21,7 +20,7 @@ data class AppointmentAttendeeSearch(
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   val appointmentAttendeeId: Long = 0,
 
-  @ManyToOne(fetch = FetchType.EAGER)
+  @ManyToOne
   @JoinColumn(name = "appointment_id", nullable = false)
   val appointmentSearch: AppointmentSearch,
 
