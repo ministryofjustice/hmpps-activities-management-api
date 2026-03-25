@@ -26,14 +26,15 @@ class AppointmentSetTest {
   @Test
   fun `entity to model mapping`() {
     val entity = appointmentSetEntity()
+    val tierEntity = entity.appointmentTier!!
     val expectedModel = AppointmentSetModel(
       id = entity.appointmentSetId,
       prisonCode = entity.prisonCode,
       categoryCode = entity.categoryCode,
       tier = EventTierModel(
-        entity.appointmentTier!!.eventTierId,
-        entity.appointmentTier.code,
-        entity.appointmentTier.description,
+        tierEntity.eventTierId,
+        tierEntity.code,
+        tierEntity.description,
       ),
       organiser = EventOrganiserModel(
         entity.appointmentOrganiser!!.eventOrganiserId,

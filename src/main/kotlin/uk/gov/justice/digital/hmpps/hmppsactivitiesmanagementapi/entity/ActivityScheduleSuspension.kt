@@ -31,7 +31,8 @@ data class ActivityScheduleSuspension(
   }
 
   private fun failIfSlotDateBoundariesAreInvalid() {
-    if (suspendedUntil != null && suspendedUntil.isAfter(suspendedFrom).not()) {
+    val untilDate = suspendedUntil
+    if (untilDate != null && untilDate.isAfter(suspendedFrom).not()) {
       throw IllegalArgumentException("Until date must be after suspend from date")
     }
 
@@ -39,7 +40,7 @@ data class ActivityScheduleSuspension(
       throw IllegalArgumentException("Suspension dates must be the same or between the schedule dates")
     }
 
-    if (suspendedUntil != null && activitySchedule.endDate != null && suspendedUntil.isAfter(activitySchedule.endDate)) {
+    if (untilDate != null && activitySchedule.endDate != null && untilDate.isAfter(activitySchedule.endDate)) {
       throw IllegalArgumentException("Suspension dates must be the same or between the schedule dates")
     }
   }

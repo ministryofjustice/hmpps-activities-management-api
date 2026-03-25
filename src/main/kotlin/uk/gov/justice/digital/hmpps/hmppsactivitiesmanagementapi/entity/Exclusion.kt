@@ -42,7 +42,7 @@ data class Exclusion(
 
 ) {
   var endDate: LocalDate? = null
-    private set
+    internal set
 
   override fun hashCode(): Int = exclusionId.hashCode()
 

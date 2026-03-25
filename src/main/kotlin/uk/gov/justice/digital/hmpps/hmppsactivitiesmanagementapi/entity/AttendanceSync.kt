@@ -70,19 +70,16 @@ data class AttendanceSync(
     issuePayment = issuePayment,
   )
 
-  private fun formatComment(): String? {
-    if (attendanceReasonCode != null) {
-      return when (AttendanceReasonEnum.valueOf(attendanceReasonCode)) {
-        AttendanceReasonEnum.CLASH, AttendanceReasonEnum.NOT_REQUIRED -> attendanceReasonDescription
-        AttendanceReasonEnum.SICK -> attendanceReasonDescription + " - " + (if (this.issuePayment == true) "Paid" else "Unpaid") + (if (this.comment.isNullOrBlank()) "" else " - " + this.comment)
-        AttendanceReasonEnum.OTHER -> "Other - " + (if (this.issuePayment == true) "Paid" else "Unpaid") + (if (this.otherAbsenceReason.isNullOrBlank()) "" else " - " + this.otherAbsenceReason)
-        AttendanceReasonEnum.REFUSED -> (if (this.incentiveLevelWarningIssued == true) "Incentive level warning issued - " else "")
-        AttendanceReasonEnum.REST, AttendanceReasonEnum.SUSPENDED -> this.attendanceReasonDescription + (if (this.issuePayment == true) " - Paid" else " - Unpaid")
-        AttendanceReasonEnum.AUTO_SUSPENDED -> this.attendanceReasonDescription + " from prison" + (if (this.issuePayment == true) " - Paid" else " - Unpaid")
-        AttendanceReasonEnum.CANCELLED -> "Activity cancelled - " + (if (this.issuePayment == true) "Paid - " else "Unpaid - ") + this.attendanceReasonDescription + (if (this.comment.isNullOrBlank()) "" else " - " + this.comment)
-        else -> null
-      }
+  private fun formatComment(): String? = attendanceReasonCode?.let { reasonCode ->
+    when (AttendanceReasonEnum.valueOf(reasonCode)) {
+      AttendanceReasonEnum.CLASH, AttendanceReasonEnum.NOT_REQUIRED -> attendanceReasonDescription
+      AttendanceReasonEnum.SICK -> attendanceReasonDescription + " - " + (if (this.issuePayment == true) "Paid" else "Unpaid") + (if (this.comment.isNullOrBlank()) "" else " - " + this.comment)
+      AttendanceReasonEnum.OTHER -> "Other - " + (if (this.issuePayment == true) "Paid" else "Unpaid") + (if (this.otherAbsenceReason.isNullOrBlank()) "" else " - " + this.otherAbsenceReason)
+      AttendanceReasonEnum.REFUSED -> (if (this.incentiveLevelWarningIssued == true) "Incentive level warning issued - " else "")
+      AttendanceReasonEnum.REST, AttendanceReasonEnum.SUSPENDED -> this.attendanceReasonDescription + (if (this.issuePayment == true) " - Paid" else " - Unpaid")
+      AttendanceReasonEnum.AUTO_SUSPENDED -> this.attendanceReasonDescription + " from prison" + (if (this.issuePayment == true) " - Paid" else " - Unpaid")
+      AttendanceReasonEnum.CANCELLED -> "Activity cancelled - " + (if (this.issuePayment == true) "Paid - " else "Unpaid - ") + this.attendanceReasonDescription + (if (this.comment.isNullOrBlank()) "" else " - " + this.comment)
+      else -> null
     }
-    return null
   }
 }

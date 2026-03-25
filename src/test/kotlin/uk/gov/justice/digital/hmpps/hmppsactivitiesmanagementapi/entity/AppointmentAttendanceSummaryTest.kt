@@ -15,7 +15,8 @@ class AppointmentAttendanceSummaryTest {
     val entity = appointmentAttendanceSummaryEntity()
     val expectedModel = appointmentAttendanceSummaryModel()
     val appointmentCategories = mapOf(entity.categoryCode to appointmentCategory(entity.categoryCode, "Chaplaincy"))
-    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocationDetails(entity.internalLocationId, entity.dpsLocationId!!, entity.prisonCode, description = "Chapel"))
+    val locationId = entity.internalLocationId!!
+    val locationMap = mapOf(locationId to appointmentLocationDetails(locationId, entity.dpsLocationId!!, entity.prisonCode, description = "Chapel"))
     val attendees = appointmentSearchEntity().attendees
     assertThat(entity.toModel(attendees, appointmentCategories, locationMap)).isEqualTo(expectedModel)
   }
@@ -26,10 +27,10 @@ class AppointmentAttendanceSummaryTest {
     val expectedModel = listOf(appointmentAttendanceSummaryModel())
     with(entityList.single()) {
       val appointmentCategories = mapOf(categoryCode to appointmentCategory(categoryCode, "Chaplaincy"))
-
+      val locationId = internalLocationId!!
       val locationMap = mapOf(
-        internalLocationId!! to appointmentLocationDetails(
-          internalLocationId,
+        locationId to appointmentLocationDetails(
+          locationId,
           dpsLocationId!!,
           prisonCode,
           description = "Chapel",
@@ -45,7 +46,8 @@ class AppointmentAttendanceSummaryTest {
   fun `entity to result mapping in cell nullifies internal location`() {
     val entity = appointmentAttendanceSummaryEntity(inCell = true)
     val appointmentCategories = mapOf(entity.categoryCode to appointmentCategory(entity.categoryCode, "Chaplaincy"))
-    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocationDetails(entity.internalLocationId, entity.dpsLocationId!!, entity.prisonCode, description = "Chapel"))
+    val locationId = entity.internalLocationId!!
+    val locationMap = mapOf(locationId to appointmentLocationDetails(locationId, entity.dpsLocationId!!, entity.prisonCode, description = "Chapel"))
     val attendees = appointmentSearchEntity().attendees
     assertThat(entity.toModel(attendees, appointmentCategories, locationMap).internalLocation).isNull()
     assertThat(entity.toModel(attendees, appointmentCategories, locationMap).attendees[0].prisonerNumber).isEqualTo("A1234BC")
