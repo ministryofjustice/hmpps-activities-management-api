@@ -21,6 +21,10 @@ class PropertiesConfigurationTest {
   @Qualifier("whereaboutsGroups")
   private lateinit var properties: Properties
 
+  @Autowired
+  @Qualifier("externalActivitiesEnabledPrisons")
+  private lateinit var prisons: Properties
+
   @Test
   fun checkContext() {
     assertThat(context).isNotNull
@@ -42,6 +46,34 @@ class PropertiesConfigurationTest {
   fun whereaboutsGroups_NoDuplicateValues() {
     val duplicates =
       properties.values.flatMap { (it as String).split(",") }.groupingBy { it }.eachCount().any { it.value > 1 }
+    assertThat(duplicates).isFalse
+  }
+
+  @Test
+  fun prisonsPropertiesWiredInUsingQualifier() {
+    assertThat(prisons)
+      .isNotEmpty
+      .containsKeys("AGI", "KMI", "SUI")
+  }
+
+  @Test
+  fun prisonsProperties_ContainsExpectedPrisonNames() {
+    assertThat(prisons.getProperty("AGI")).isEqualTo("Askham Grange")
+    assertThat(prisons.getProperty("KMI")).isEqualTo("Kirkham")
+    assertThat(prisons.getProperty("SUI")).isEqualTo("Sudbury")
+  }
+
+  @Test
+  fun prisonsProperties_AllEntriesHaveNonBlankCodeAndName() {
+    prisons.entries.forEach { entry ->
+      assertThat(entry.key as String).isNotBlank()
+      assertThat(entry.value as String).isNotBlank()
+    }
+  }
+
+  @Test
+  fun prisonsProperties_NoDuplicateNames() {
+    val duplicates = prisons.values.groupingBy { it }.eachCount().any { it.value > 1 }
     assertThat(duplicates).isFalse
   }
 }
