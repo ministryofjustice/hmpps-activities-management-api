@@ -99,6 +99,7 @@ nomis-mapping:
 migrate:
   activities-live: PVI,RSI,MDI,IWI,FMI
   appointments-live: PVI,RSI,MDI,IWI,FMI
+  external-activities-live: PVI,RSI,MDI
   prisons-live: PVI,RSI,MDI
 
 aws:

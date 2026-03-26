@@ -379,10 +379,11 @@ internal fun deallocation(endDate: LocalDate? = null) = endDate
   ?.let { activitySchedule(activityEntity(endDate = it)).allocations().first() }
   ?: activitySchedule(activityEntity()).allocations().first()
 
-internal fun rolloutPrison(prisonCode: String = PENTONVILLE_PRISON_CODE) = RolloutPrisonPlan(
+internal fun rolloutPrison(prisonCode: String = PENTONVILLE_PRISON_CODE, externalActivitiesRolledOut: Boolean = false) = RolloutPrisonPlan(
   prisonCode = prisonCode,
   activitiesRolledOut = true,
   appointmentsRolledOut = true,
+  externalActivitiesRolledOut = false,
   maxDaysToExpiry = 1,
   prisonLive = true,
 )
