@@ -71,7 +71,7 @@ class ManageAttendancesServiceTest {
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
   private val monitoringService: MonitoringService = mock()
 
-  private val rolloutPrisonService = RolloutPrisonService("MDI", "MDI", "MDI")
+  private val rolloutPrisonService = RolloutPrisonService("MDI", "MDI", "", "MDI")
 
   private val service = ManageAttendancesService(
     attendanceCreationDataRepository,

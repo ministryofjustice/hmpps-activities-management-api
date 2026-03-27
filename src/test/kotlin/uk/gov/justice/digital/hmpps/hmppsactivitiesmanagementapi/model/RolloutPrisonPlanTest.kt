@@ -11,6 +11,7 @@ class RolloutPrisonPlanTest : ModelTest() {
       prisonCode = "MDI",
       activitiesRolledOut = true,
       appointmentsRolledOut = true,
+      externalActivitiesRolledOut = true,
       prisonLive = true,
     )
 
@@ -20,6 +21,22 @@ class RolloutPrisonPlanTest : ModelTest() {
     assertThat(jsonMap["prisonCode"]).isEqualTo("MDI")
     assertThat(jsonMap["activitiesRolledOut"]).isEqualTo(true)
     assertThat(jsonMap["appointmentsRolledOut"]).isEqualTo(true)
+    assertThat(jsonMap["externalActivitiesRolledOut"]).isEqualTo(true)
     assertThat(jsonMap["prisonLive"]).isEqualTo(true)
+  }
+
+  @Test
+  fun `externalActivitiesRolledOut defaults to false when not set`() {
+    val rolloutPrison = RolloutPrisonPlan(
+      prisonCode = "MDI",
+      activitiesRolledOut = true,
+      appointmentsRolledOut = true,
+      prisonLive = true,
+    )
+
+    val json = objectMapper.writeValueAsString(rolloutPrison)
+    val jsonMap = objectMapper.readValue(json, Map::class.java)
+
+    assertThat(jsonMap["externalActivitiesRolledOut"]).isEqualTo(false)
   }
 }

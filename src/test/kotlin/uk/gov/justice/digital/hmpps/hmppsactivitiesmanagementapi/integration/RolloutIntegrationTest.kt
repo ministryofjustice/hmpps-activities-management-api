@@ -14,19 +14,21 @@ import java.time.LocalTime
 class RolloutIntegrationTest : IntegrationTestBase() {
 
   @Test
-  fun `get active rollout prison HMP Moorland - both active activities and appointments and the prison is live`() {
+  fun `get active rollout prison HMP Moorland - active activities, appointments, external activities and the prison is live`() {
     with(webTestClient.getPrisonByCode("MDI")!!) {
       assertThat(activitiesRolledOut).isTrue
       assertThat(appointmentsRolledOut).isTrue
+      assertThat(externalActivitiesRolledOut).isTrue
       assertThat(prisonLive).isTrue
     }
   }
 
   @Test
-  fun `get active rollout prison - both active activities and appointments and the prison not live`() {
+  fun `get active rollout prison - active activities, appointments, external activities and the prison not live`() {
     with(webTestClient.getPrisonByCode("IWI")!!) {
       assertThat(activitiesRolledOut).isTrue
       assertThat(appointmentsRolledOut).isTrue
+      assertThat(externalActivitiesRolledOut).isFalse
       assertThat(prisonLive).isFalse
     }
   }
@@ -42,6 +44,8 @@ class RolloutIntegrationTest : IntegrationTestBase() {
       this.single { it.prisonCode == "MDI" && it.prisonLive }
       this.single { it.prisonCode == "IWI" && !it.prisonLive }
       this.single { it.prisonCode == "FMI" && !it.prisonLive }
+      this.single { it.prisonCode == "FMI" && !it.externalActivitiesRolledOut }
+      this.single { it.prisonCode == "MDI" && it.externalActivitiesRolledOut }
     }
   }
 
@@ -54,6 +58,7 @@ class RolloutIntegrationTest : IntegrationTestBase() {
       this.single { it.prisonCode == "RSI" && it.prisonLive }
       this.single { it.prisonCode == "PVI" && it.prisonLive }
       this.single { it.prisonCode == "MDI" && it.prisonLive }
+      this.single { it.prisonCode == "PVI" && it.externalActivitiesRolledOut }
     }
   }
 
