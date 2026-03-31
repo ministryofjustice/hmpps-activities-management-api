@@ -4,6 +4,8 @@ import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotEmpty
 
+//TODO: finish this
+
 @Schema(description = "Request to allocate one or more prisoners to one or more schedules")
 data class BulkAllocationRequest(
   @NotEmpty(message = "Schedule IDs must not be empty")
@@ -12,7 +14,7 @@ data class BulkAllocationRequest(
     example = "[1, 2, 3]",
     required = true,
   )
-  val scheduleIds: List<Long>,
+  val allocationRequests: List<PrisonerAllocationRequest>,
 
   @NotEmpty(message = "Allocation requests must not be empty")
   @Valid
@@ -20,5 +22,5 @@ data class BulkAllocationRequest(
     description = "List of prisoner allocation requests",
     required = true,
   )
-  val allocationRequests: List<PrisonerAllocationRequest>,
+  val allocations: List<SchedulePrisonerAllocationRequest>,
 )

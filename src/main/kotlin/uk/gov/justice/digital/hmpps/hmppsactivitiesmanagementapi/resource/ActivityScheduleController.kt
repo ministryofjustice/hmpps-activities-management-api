@@ -246,6 +246,75 @@ class ActivityScheduleController(
   ): ResponseEntity<Any> = scheduleService.allocatePrisoner(scheduleId, prisonerAllocationRequest, principal.name)
     .let { ResponseEntity.noContent().build() }
 
+// TODO: Reinstate PreAuthorize once implemented
+
+//  @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_ADMIN')")
+  @PostMapping(value = ["/{scheduleId}/allocations/bulk"])
+  @Operation(
+    summary = "Allocate offenders to schedule",
+    description = "Allocates the supplied offender allocation requests to the activity schedule."
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "204",
+        description = "The allocations were created and added to the schedule.",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Bad request",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "One or more activity schedules for the provided IDs were not found.",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun allocateBulk(
+    principal: Principal,
+    @PathVariable("scheduleId") scheduleId: Long,
+    @RequestBody
+    @Parameter(
+      description = "The prisoner allocation request details",
+      required = true,
+    )
+    @Valid
+    prisonerAllocationRequests: List<PrisonerAllocationRequest>,
+  ): ResponseEntity<Any> = scheduleService.allocatePrisonersToSchedule(scheduleId, prisonerAllocationRequests, principal.name)
+    .let { ResponseEntity.noContent().build() }
+
   @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_ADMIN')")
   @PostMapping(value = ["/allocations/bulk"])
   @Operation(
