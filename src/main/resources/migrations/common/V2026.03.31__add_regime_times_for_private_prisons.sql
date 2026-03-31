@@ -184,4 +184,4 @@ select pr.prison_regime_id, pd.day_of_week
 from prison_days pd
 join prison_regime pr
   on pr.prison_code = pd.prison_code
- and pr.am_start = pd.am_start;
+ and pr.am_start = pd.am_start::time;
