@@ -111,7 +111,7 @@ jobs:
       - name: Run integration tests
         run: |
           # Format the arguments to "./gradlew integrationTest"
-          SPECS_LIST=$(find src/test/**/*IntegrationTest.kt | sed 's/src\/test\/kotlin\///g;s/\//./g;s/\.kt/ /g'| awk -v splitTotal=10 -v splitIndex=1 'NR % splitTotal == splitIndex % splitTotal' | awk '{for (i=1; i<=NF; i++) print "--tests", $i}' | tr '\n' ' ')
+          SPECS_LIST=$(find ./**/integration/** -type f -name "*IntegrationTest.kt" | sed 's/src\/test\/kotlin\///g;s/\//./g;s/\.kt/ /g'| awk -v splitTotal=10 -v splitIndex=1 'NR % splitTotal == splitIndex % splitTotal' | awk '{for (i=1; i<=NF; i++) print "--tests", $i}' | tr '\n' ' ')
           echo "Prepared arguments for Gradle: $SPECS_LIST"
           ./gradlew integrationTest $SPECS_LIST
 
