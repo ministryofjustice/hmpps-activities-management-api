@@ -108,20 +108,14 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@39e147cb9de83bb9910b8ef8bd7fff0ee20fcd6f # v6.0.1
 
-      - name: Determine tests splitting
-        uses: chaosaffe/split-tests@4f1ca766cb93923ca216e02f1aefed20944e313f # v1
+      - name: Split tests
         id: split-tests
-        with:
-          glob: src/test/kotlin/**/integration/**/*Test.kt
-          split-index: ${{ strategy.job-index }}
-          split-total: ${{ strategy.job-total }}
+        run: ./.github/scripts/split-tests ${{ strategy.job-index }} ${{ strategy.job-total }}
 
       - name: Run integration tests
         run: |
           # Format the arguments to "./gradlew integrationTest"
-          SPECS_LIST=$(echo  ${{ steps.split-tests.outputs.test-suite }} | sed 's/src\/test\/kotlin\///g;s/\//./g;s/\.kt/ /g' | awk '{for (i=1; i<=NF; i++) print "--tests",$i}')
-          echo "Prepared arguments for Gradle: $SPECS_LIST"
-          ./gradlew integrationTest $SPECS_LIST
+          ./gradlew integrationTest $(echo ${{ steps.split-tests.outputs.test-suite }})
 
       - name: Upload raw test reports on failure
         if: failure()
