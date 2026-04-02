@@ -9,4 +9,5 @@ export TESTS="$(find src/test/kotlin/uk/gov/justice/digital/hmpps/hmppsactivitie
         awk '{for (i=1; i<=NF; i++) print "--tests", $i}' | \
         tr '\n' ' ')"
 
+echo $TESTS
 echo "test-suite=$TESTS" >> "$GITHUB_OUTPUT"
