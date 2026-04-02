@@ -1,0 +1,12 @@
+#!/bin/sh
+
+SPLIT_INDEX=$1
+SPLIT_TOTAL=$2
+
+export TESTS="$(find src/test/kotlin/uk/gov/justice/digital/hmpps/hmppsactivitiesmanagementapi/integration -name "*Test.kt" | \
+        sed 's/src\/test\/kotlin\///g;s/\//./g;s/\.kt/ /g'| \
+        awk -v splitTotal=${{ strategy.job-total }} -v splitIndex=${{ strategy.job-index }} 'NR % splitTotal == splitIndex % splitTotal' | \
+        awk '{for (i=1; i<=NF; i++) print "--tests", $i}' | \
+        tr '\n' ' ')"
+
+echo "test-suite=$TESTS" >> "$GITHUB_OUTPUT"
