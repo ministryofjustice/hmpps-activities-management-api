@@ -114,7 +114,7 @@ jobs:
           ls
           find src -type f -name "*IntegrationTest.kt"
           find src -type f -name "*IntegrationTest.kt" | sed 's/src\/test\/kotlin\///g;s/\//./g;s/\.kt/ /g'
-          SPECS_LIST=$(find src -type f -name "*IntegrationTest.kt" | sed 's/src\/test\/kotlin\///g;s/\//./g;s/\.kt/ /g'| awk -v splitTotal=10 -v splitIndex=1 'NR % splitTotal == splitIndex % splitTotal' | awk '{for (i=1; i<=NF; i++) print "--tests", $i}' | tr '\n' ' ')
+          SPECS_LIST=$(find src -type f -name "*IntegrationTest.kt" | sed 's/src\/test\/kotlin\///g;s/\//./g;s/\.kt/ /g'| awk -v splitTotal=${{ strategy.job-total }} -v splitIndex=${{ strategy.job-index }} 'NR % splitTotal == splitIndex % splitTotal' | awk '{for (i=1; i<=NF; i++) print "--tests", $i}' | tr '\n' ' ')
           echo "Prepared arguments for Gradle: $SPECS_LIST"
           ./gradlew integrationTest $SPECS_LIST
 
