@@ -207,12 +207,13 @@ class AppointmentSeriesServiceTest {
   fun `getAppointmentSeriesDetailsById returns mapped appointment series details for known appointment id`() {
     addCaseloadIdToRequestHeader("TPR")
     val entity = appointmentSeriesEntity()
+    val locationId = entity.internalLocationId!!
     val appointmentEntity = entity.appointments().first()
     whenever(appointmentSeriesRepository.findById(entity.appointmentSeriesId)).thenReturn(Optional.of(entity))
     whenever(appointmentCategoryService.getAll())
       .thenReturn(mapOf(entity.categoryCode to appointmentCategory(entity.categoryCode)))
     whenever(locationService.getLocationDetailsForAppointmentsMap(entity.prisonCode))
-      .thenReturn(mapOf(entity.internalLocationId!! to appointmentLocationDetails(entity.internalLocationId, dpsLocationId, "TPR")))
+      .thenReturn(mapOf(locationId to appointmentLocationDetails(locationId, dpsLocationId, "TPR")))
     assertThat(service.getAppointmentSeriesDetailsById(1)).isEqualTo(
       AppointmentSeriesDetails(
         entity.appointmentSeriesId,
@@ -223,7 +224,7 @@ class AppointmentSeriesServiceTest {
         entity.appointmentTier!!.toModelEventTier(),
         entity.appointmentOrganiser!!.toModelEventOrganiser(),
         "Appointment description",
-        AppointmentLocationSummary(entity.internalLocationId, entity.dpsLocationId, "TPR", "Test Appointment Location"),
+        AppointmentLocationSummary(locationId, entity.dpsLocationId, "TPR", "Test Appointment Location"),
         entity.inCell,
         entity.startDate,
         entity.startTime,

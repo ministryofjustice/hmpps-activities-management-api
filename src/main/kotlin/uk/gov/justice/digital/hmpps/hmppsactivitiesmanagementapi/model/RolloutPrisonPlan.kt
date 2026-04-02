@@ -16,6 +16,9 @@ data class RolloutPrisonPlan(
   @Schema(description = "Flag to indicate if appointments are enabled", example = "true")
   var appointmentsRolledOut: Boolean,
 
+  @Schema(description = "Flag to indicate if external activities are enabled", example = "true")
+  var externalActivitiesRolledOut: Boolean = false,
+
   @Schema(description = "max days to expire events based on prisoner movement, default is 21")
   val maxDaysToExpiry: Int = 21,
 

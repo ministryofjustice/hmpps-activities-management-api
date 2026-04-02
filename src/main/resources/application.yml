@@ -182,6 +182,7 @@ migrate:
   activities-live: ${ACTIVITIES_LIVE:***}
   appointments-live: ${APPOINTMENTS_LIVE:***}
   prisons-live: ${PRISONS_LIVE:***}
+  external-activities-live: ${EXTERNAL_ACTIVITIES_LIVE:***}
 
 prison-locations:
   using-regex-config: ${PRISONS_WITH_REGEX_LOCATION_CONFIGS:***}
@@ -192,3 +193,5 @@ aws:
       region: eu-west-2
       bucket: ${AWS_S3_AP_BUCKET}
       project: ${AWS_S3_AP_PROJECT}
+
+springdoc.swagger-ui.version: 5.32.1

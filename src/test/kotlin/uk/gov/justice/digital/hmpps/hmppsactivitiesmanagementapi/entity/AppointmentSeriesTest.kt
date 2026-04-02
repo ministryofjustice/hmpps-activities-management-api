@@ -361,7 +361,8 @@ class AppointmentSeriesTest {
   fun `entity to details mapping`() {
     val entity = appointmentSeriesEntity()
     val appointmentCategories = mapOf(entity.categoryCode to appointmentCategory(entity.categoryCode))
-    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocationDetails(entity.internalLocationId, entity.dpsLocationId!!, "TPR"))
+    val locationId = entity.internalLocationId!!
+    val locationMap = mapOf(locationId to appointmentLocationDetails(locationId, entity.dpsLocationId!!, "TPR"))
     assertThat(entity.toDetails(appointmentCategories, locationMap)).isEqualTo(
       appointmentSeriesDetails(
         customName = "Appointment description",
@@ -375,7 +376,8 @@ class AppointmentSeriesTest {
   @Test
   fun `entity to details mapping reference code not found`() {
     val entity = appointmentSeriesEntity()
-    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocationDetails(entity.internalLocationId, entity.dpsLocationId!!, "TPR"))
+    val locationId = entity.internalLocationId!!
+    val locationMap = mapOf(locationId to appointmentLocationDetails(locationId, entity.dpsLocationId!!, "TPR"))
     with(entity.toDetails(emptyMap(), locationMap)) {
       assertThat(category.code).isEqualTo(entity.categoryCode)
       assertThat(category.description).isEqualTo(entity.categoryCode)
@@ -399,7 +401,8 @@ class AppointmentSeriesTest {
   fun `entity to details mapping in cell nullifies internal location`() {
     val entity = appointmentSeriesEntity(internalLocationId = 123, inCell = true)
     val appointmentCategories = mapOf(entity.categoryCode to appointmentCategory(entity.categoryCode))
-    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocationDetails(entity.internalLocationId, entity.dpsLocationId!!, "TPR"))
+    val locationId = entity.internalLocationId!!
+    val locationMap = mapOf(locationId to appointmentLocationDetails(locationId, entity.dpsLocationId!!, "TPR"))
     with(entity.toDetails(appointmentCategories, locationMap)) {
       assertThat(internalLocation).isNull()
       assertThat(inCell).isTrue
@@ -410,7 +413,8 @@ class AppointmentSeriesTest {
   fun `entity to details mapping updated by null`() {
     val entity = appointmentSeriesEntity(updatedBy = null)
     val appointmentCategories = mapOf(entity.categoryCode to appointmentCategory(entity.categoryCode))
-    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocationDetails(entity.internalLocationId, entity.dpsLocationId!!, "TPR"))
+    val locationId = entity.internalLocationId!!
+    val locationMap = mapOf(locationId to appointmentLocationDetails(locationId, entity.dpsLocationId!!, "TPR"))
     with(entity.toDetails(appointmentCategories, locationMap)) {
       assertThat(updatedBy).isNull()
     }
@@ -420,7 +424,8 @@ class AppointmentSeriesTest {
   fun `entity to details mapping schedule to repeat`() {
     val entity = appointmentSeriesEntity(updatedBy = null, frequency = AppointmentFrequency.FORTNIGHTLY, numberOfAppointments = 2)
     val appointmentCategories = mapOf(entity.categoryCode to appointmentCategory(entity.categoryCode))
-    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocationDetails(entity.internalLocationId, entity.dpsLocationId!!, "TPR"))
+    val locationId = entity.internalLocationId!!
+    val locationMap = mapOf(locationId to appointmentLocationDetails(locationId, entity.dpsLocationId!!, "TPR"))
     with(entity.toDetails(appointmentCategories, locationMap)) {
       assertThat(schedule).isEqualTo(AppointmentSeriesSchedule(AppointmentRepeatPeriodModel.FORTNIGHTLY, 2))
     }
@@ -430,7 +435,8 @@ class AppointmentSeriesTest {
   fun `entity to details mapping includes custom name in name`() {
     val entity = appointmentSeriesEntity(customName = "appointment name")
     val appointmentCategories = mapOf(entity.categoryCode to appointmentCategory(entity.categoryCode))
-    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocationDetails(entity.internalLocationId, entity.dpsLocationId!!, "TPR"))
+    val locationId = entity.internalLocationId!!
+    val locationMap = mapOf(locationId to appointmentLocationDetails(locationId, entity.dpsLocationId!!, "TPR"))
     with(entity.toDetails(appointmentCategories, locationMap)) {
       assertThat(appointmentName).isEqualTo("appointment name (Test Category)")
     }
@@ -440,7 +446,8 @@ class AppointmentSeriesTest {
   fun `entity to details mapping does not include custom name in name`() {
     val entity = appointmentSeriesEntity(customName = null)
     val appointmentCategories = mapOf(entity.categoryCode to appointmentCategory(entity.categoryCode))
-    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocationDetails(entity.internalLocationId, entity.dpsLocationId!!, "TPR"))
+    val locationId = entity.internalLocationId!!
+    val locationMap = mapOf(locationId to appointmentLocationDetails(locationId, entity.dpsLocationId!!, "TPR"))
     with(entity.toDetails(appointmentCategories, locationMap)) {
       assertThat(appointmentName).isEqualTo("Test Category")
     }

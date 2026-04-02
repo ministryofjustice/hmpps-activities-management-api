@@ -11,6 +11,7 @@ data class PrisonPlan(
   val code: String,
   val activities: Boolean,
   val appointments: Boolean,
+  val externalActivities: Boolean,
   val prisonLive: Boolean,
 )
 
@@ -18,18 +19,21 @@ data class PrisonPlan(
 class RolloutPrisonService(
   @Value("\${migrate.activities-live}") private val activitiesLive: String,
   @Value("\${migrate.appointments-live}") private val appointmentsLive: String,
+  @Value("\${migrate.external-activities-live}") private val externalActivitiesLive: String,
   @Value("\${migrate.prisons-live}") private val prisonsLive: String,
 ) {
 
   private fun getPrison(code: String): PrisonPlan {
     val activities = activitiesLive.split(",").contains(code)
     val appointments = appointmentsLive.split(",").contains(code)
+    val externalActivities = externalActivitiesLive.split(",").contains(code)
     val prisonLive = prisonsLive.split(",").contains(code)
 
     return PrisonPlan(
       code = code,
       activities = activities,
       appointments = appointments,
+      externalActivities = externalActivities,
       prisonLive = prisonLive,
     )
   }
@@ -41,6 +45,7 @@ class RolloutPrisonService(
       prisonCode = code,
       activitiesRolledOut = prisonPlan.activities,
       appointmentsRolledOut = prisonPlan.appointments,
+      externalActivitiesRolledOut = prisonPlan.externalActivities,
       prisonLive = prisonPlan.prisonLive,
     )
   }

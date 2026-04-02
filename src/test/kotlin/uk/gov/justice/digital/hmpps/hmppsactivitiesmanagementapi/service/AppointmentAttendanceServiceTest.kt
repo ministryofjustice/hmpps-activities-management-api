@@ -111,7 +111,8 @@ class AppointmentAttendanceServiceTest {
         entity.categoryCode to appointmentCategory(entity.categoryCode, "Chaplaincy"),
         "TEST_CAT" to appointmentCategory("TEST_CAT", "appointment"),
       )
-      val locationMap = mapOf(entity.internalLocationId!! to appointmentLocationDetails(entity.internalLocationId, entity.dpsLocationId!!, entity.prisonCode, description = "Chapel"))
+      val locationId = entity.internalLocationId!!
+      val locationMap = mapOf(locationId to appointmentLocationDetails(locationId, entity.dpsLocationId!!, entity.prisonCode, description = "Chapel"))
 
       whenever(appointmentAttendanceSummaryRepository.findByPrisonCodeAndStartDate(MOORLAND_PRISON_CODE, date)).thenReturn(listOf(entity))
       whenever(appointmentCategoryService.getAll()).thenReturn(appointmentCategories)

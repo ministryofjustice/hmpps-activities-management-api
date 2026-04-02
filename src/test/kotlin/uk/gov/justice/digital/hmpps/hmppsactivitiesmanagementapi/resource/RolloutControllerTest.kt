@@ -28,7 +28,7 @@ class RolloutControllerTest : ControllerTestBase() {
 
   @Test
   fun `200 response when get prison by code found`() {
-    val rolloutPrison = rolloutPrison()
+    val rolloutPrison = rolloutPrison(externalActivitiesRolledOut = true)
 
     whenever(prisonService.getByPrisonCode("PVI")).thenReturn(rolloutPrison)
 
@@ -63,12 +63,14 @@ class RolloutControllerTest : ControllerTestBase() {
         prisonCode = "LPI",
         activitiesRolledOut = true,
         appointmentsRolledOut = true,
+        externalActivitiesRolledOut = true,
         prisonLive = true,
       ),
       RolloutPrisonPlan(
         prisonCode = "MDI",
         activitiesRolledOut = true,
         appointmentsRolledOut = true,
+        externalActivitiesRolledOut = false,
         prisonLive = false,
       ),
     )
@@ -88,6 +90,7 @@ class RolloutControllerTest : ControllerTestBase() {
       prisonCode = "LPI",
       activitiesRolledOut = true,
       appointmentsRolledOut = true,
+      externalActivitiesRolledOut = false,
       prisonLive = true,
     )
     whenever(prisonService.getRolloutPrisons(prisonsLive = true)).thenReturn(listOf(rolloutPrison))
