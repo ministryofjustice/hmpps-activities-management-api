@@ -112,9 +112,9 @@ jobs:
         run: |
           # Format the arguments to "./gradlew integrationTest"
           ls
-          find src -type f -name "*IntegrationTest.kt"
-          find src -type f -name "*IntegrationTest.kt" | sed 's/src\/test\/kotlin\///g;s/\//./g;s/\.kt/ /g'
-          SPECS_LIST=$(find src -type f -name "*IntegrationTest.kt" | sed 's/src\/test\/kotlin\///g;s/\//./g;s/\.kt/ /g'| awk -v splitTotal=${{ strategy.job-total }} -v splitIndex=${{ strategy.job-index }} 'NR % splitTotal == splitIndex % splitTotal' | awk '{for (i=1; i<=NF; i++) print "--tests", $i}' | tr '\n' ' ')
+          find src/test/kotlin/uk/gov/justice/digital/hmpps/hmppsactivitiesmanagementapi/integration -name "*Test.kt
+          find src/test/kotlin/uk/gov/justice/digital/hmpps/hmppsactivitiesmanagementapi/integration -name "*Test.kt | sed 's/src\/test\/kotlin\///g;s/\//./g;s/\.kt/ /g'
+          SPECS_LIST=$(find src/test/kotlin/uk/gov/justice/digital/hmpps/hmppsactivitiesmanagementapi/integration -name "*Test.kt | sed 's/src\/test\/kotlin\///g;s/\//./g;s/\.kt/ /g'| awk -v splitTotal=${{ strategy.job-total }} -v splitIndex=${{ strategy.job-index }} 'NR % splitTotal == splitIndex % splitTotal' | awk '{for (i=1; i<=NF; i++) print "--tests", $i}' | tr '\n' ' ')
           echo "Prepared arguments for Gradle: $SPECS_LIST"
           ./gradlew integrationTest $SPECS_LIST
 
