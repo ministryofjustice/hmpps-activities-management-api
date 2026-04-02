@@ -110,7 +110,7 @@ jobs:
 
       - name: Split Tests
         id: split-tests
-        run: ./github/scripts/split-tests ${{ strategy.job-index }} ${{ strategy.job-total }}
+        run: ./.github/scripts/split-tests ${{ strategy.job-index }} ${{ strategy.job-total }}
 
       - name: Run integration tests
         run: |
