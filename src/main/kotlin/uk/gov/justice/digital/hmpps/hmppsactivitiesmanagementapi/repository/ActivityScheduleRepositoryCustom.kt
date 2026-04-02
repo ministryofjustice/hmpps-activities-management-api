@@ -16,12 +16,6 @@ interface ActivityScheduleRepositoryCustom {
     earliestSessionDate: LocalDate? = null,
     allocationsActiveOnDate: LocalDate? = null,
   ): ActivitySchedule?
-
-  fun getActivitySchedulesByIdsWithFilters(
-    activityScheduleId: List<Long>,
-    earliestSessionDate: LocalDate? = null,
-    allocationsActiveOnDate: LocalDate? = null,
-  ): List<ActivitySchedule>?
 }
 
 class ActivityScheduleRepositoryCustomImpl : ActivityScheduleRepositoryCustom {
@@ -57,34 +51,6 @@ class ActivityScheduleRepositoryCustomImpl : ActivityScheduleRepositoryCustom {
 
     return runCatching {
       query.singleResult
-    }.onFailure { log.error("ActivitySchedule by ID with filters ${it.message}") }
-      .getOrNull()
-  }
-
-  @Override
-  override fun getActivitySchedulesByIdsWithFilters(
-    activityScheduleIds: List<Long>,
-    earliestSessionDate: LocalDate?,
-    allocationsActiveOnDate: LocalDate?,
-  ): List<ActivitySchedule>? {
-    val session = entityManager.unwrap(Session::class.java)
-
-    val hql = "SELECT s from ActivitySchedule s where s.activityScheduleId IN (:activityScheduleIds)"
-    val query: TypedQuery<ActivitySchedule> = entityManager.createQuery(hql, ActivitySchedule::class.java)
-    query.setParameter("activityScheduleIds", activityScheduleIds)
-
-    if (earliestSessionDate != null) {
-      val sessionDateFilter = session.enableFilter(SESSION_DATE_FILTER)
-      sessionDateFilter.setParameter("earliestSessionDate", earliestSessionDate)
-    }
-
-    if (allocationsActiveOnDate != null) {
-      val allocationsDateFilter = session.enableFilter(ALLOCATION_DATE_FILTER)
-      allocationsDateFilter.setParameter("allocationsActiveOnDate", allocationsActiveOnDate)
-    }
-
-    return runCatching {
-      query.resultList
     }.onFailure { log.error("ActivitySchedule by ID with filters ${it.message}") }
       .getOrNull()
   }
