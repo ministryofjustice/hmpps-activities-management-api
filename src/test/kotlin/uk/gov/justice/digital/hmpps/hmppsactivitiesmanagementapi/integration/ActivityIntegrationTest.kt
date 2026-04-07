@@ -1337,7 +1337,7 @@ class ActivityIntegrationTest : LocalStackTestBase() {
 
   @Test
   @Sql("classpath:test_data/seed-activity-update-slot.sql")
-  fun `updateActivity only futures slot and instances - is successful`() {
+  fun `updateActivity only future slots and instances - is successful`() {
     with(webTestClient.getActivityById(1).schedules.first()) {
       assertThat(slots).hasSize(1)
       assertThat(slots.first().daysOfWeek).containsExactly("Mon")
