@@ -1,6 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
-import net.javacrumbs.jsonunit.assertj.assertThatJson
+import net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -60,8 +60,15 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Prisone
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.ACTIVITY_SCHEDULE_CREATED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.ACTIVITY_SCHEDULE_UPDATED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.PRISONER_ALLOCATION_AMENDED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.PRISONER_ATTENDANCE_CREATED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.BankHolidayService
-import java.time.DayOfWeek
+import java.time.DayOfWeek.FRIDAY
+import java.time.DayOfWeek.MONDAY
+import java.time.DayOfWeek.SATURDAY
+import java.time.DayOfWeek.SUNDAY
+import java.time.DayOfWeek.THURSDAY
+import java.time.DayOfWeek.TUESDAY
+import java.time.DayOfWeek.WEDNESDAY
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -1330,7 +1337,7 @@ class ActivityIntegrationTest : LocalStackTestBase() {
 
   @Test
   @Sql("classpath:test_data/seed-activity-update-slot.sql")
-  fun `updateActivity slot and instances - is successful`() {
+  fun `updateActivity only futures slot and instances - is successful`() {
     with(webTestClient.getActivityById(1).schedules.first()) {
       assertThat(slots).hasSize(1)
       assertThat(slots.first().daysOfWeek).containsExactly("Mon")
@@ -1376,6 +1383,130 @@ class ActivityIntegrationTest : LocalStackTestBase() {
   }
 
   @Test
+  @Sql("classpath:test_data/seed-activity-update-slot-for-today.sql")
+  fun `updateActivity slots and instances from today - is successful`() {
+    with(webTestClient.getActivityById(1).schedules.first()) {
+      assertThat(slots).hasSize(2)
+      assertThat(slots.first { it.timeSlot == TimeSlot.AM }.daysOfWeek).containsExactly("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+      assertThat(slots.first { it.timeSlot == TimeSlot.PM }.daysOfWeek).containsExactly("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+      assertThat(instances).hasSize(1)
+    }
+
+    val dayOfWeek = LocalDate.now().dayOfWeek
+
+    val newSlots = ActivityUpdateRequest(
+      slots = listOf(
+        Slot(
+          weekNumber = 1,
+          timeSlot = TimeSlot.AM,
+          monday = true,
+          tuesday = true,
+          wednesday = true,
+          thursday = true,
+          friday = true,
+          saturday = true,
+          sunday = true,
+        ),
+        Slot(
+          weekNumber = 1,
+          timeSlot = TimeSlot.PM,
+          monday = dayOfWeek == MONDAY,
+          tuesday = dayOfWeek == TUESDAY,
+          wednesday = dayOfWeek == WEDNESDAY,
+          thursday = dayOfWeek == THURSDAY,
+          friday = dayOfWeek == FRIDAY,
+          saturday = dayOfWeek == SATURDAY,
+          sunday = dayOfWeek == SUNDAY,
+        ),
+        Slot(
+          weekNumber = 1,
+          timeSlot = TimeSlot.ED,
+          monday = dayOfWeek == MONDAY,
+          tuesday = dayOfWeek == TUESDAY,
+          wednesday = dayOfWeek == WEDNESDAY,
+          thursday = dayOfWeek == THURSDAY,
+          friday = dayOfWeek == FRIDAY,
+          saturday = dayOfWeek == SATURDAY,
+          sunday = dayOfWeek == SUNDAY,
+        ),
+      ),
+      firstTimeSlotForToday = TimeSlot.PM,
+    )
+
+    webTestClient.updateActivity(MOORLAND_PRISON_CODE, 1, newSlots)
+
+    with(webTestClient.getActivityById(1, MOORLAND_PRISON_CODE).schedules.first()) {
+      assertThat(slots).hasSize(3)
+      val amSlot = slots.first { it.timeSlot == TimeSlot.AM }
+      val pmSlot = slots.first { it.timeSlot == TimeSlot.PM }
+      val edSlot = slots.first { it.timeSlot == TimeSlot.ED }
+      with(amSlot) {
+        assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
+        assertThat(endTime).isEqualTo(LocalTime.of(12, 0))
+        assertThat(mondayFlag).isTrue()
+        assertThat(tuesdayFlag).isTrue()
+        assertThat(wednesdayFlag).isTrue()
+        assertThat(thursdayFlag).isTrue()
+        assertThat(fridayFlag).isTrue()
+        assertThat(saturdayFlag).isTrue()
+        assertThat(sundayFlag).isTrue()
+      }
+      with(pmSlot) {
+        assertThat(startTime).isEqualTo(LocalTime.of(13, 0))
+        assertThat(endTime).isEqualTo(LocalTime.of(16, 30))
+        assertThat(mondayFlag).isEqualTo(dayOfWeek == MONDAY)
+        assertThat(tuesdayFlag).isEqualTo(dayOfWeek == TUESDAY)
+        assertThat(wednesdayFlag).isEqualTo(dayOfWeek == WEDNESDAY)
+        assertThat(thursdayFlag).isEqualTo(dayOfWeek == THURSDAY)
+        assertThat(fridayFlag).isEqualTo(dayOfWeek == FRIDAY)
+        assertThat(saturdayFlag).isEqualTo(dayOfWeek == SATURDAY)
+        assertThat(sundayFlag).isEqualTo(dayOfWeek == SUNDAY)
+      }
+      with(edSlot) {
+        assertThat(startTime).isEqualTo(LocalTime.of(18, 0))
+        assertThat(endTime).isEqualTo(LocalTime.of(20, 0))
+        assertThat(mondayFlag).isEqualTo(dayOfWeek == MONDAY)
+        assertThat(tuesdayFlag).isEqualTo(dayOfWeek == TUESDAY)
+        assertThat(wednesdayFlag).isEqualTo(dayOfWeek == WEDNESDAY)
+        assertThat(thursdayFlag).isEqualTo(dayOfWeek == THURSDAY)
+        assertThat(fridayFlag).isEqualTo(dayOfWeek == FRIDAY)
+        assertThat(saturdayFlag).isEqualTo(dayOfWeek == SATURDAY)
+        assertThat(sundayFlag).isEqualTo(dayOfWeek == SUNDAY)
+      }
+
+      // 4 instances:
+      // - today's existing ED
+      // - today's new PM
+      // - new PM for a week from today
+      // - new ED for a week from today
+      assertThat(instances).hasSize(4)
+
+      // Existing COMPLETED attendances for ED
+      with(instances.first { it.date == LocalDate.now() && it.timeSlot == TimeSlot.ED }) {
+        assertThat(attendances.map { att -> att.prisonerNumber }).containsOnly("A11111A", "A22222A")
+        assertThat(attendances.all { att -> att.status == "COMPLETED" }).isTrue()
+      }
+      // New WAITING attendances for PM
+      with(instances.first { it.date == LocalDate.now() && it.timeSlot == TimeSlot.PM }) {
+        assertThat(attendances.map { att -> att.prisonerNumber }).containsOnly("A11111A", "A22222A")
+        assertThat(attendances.all { att -> att.status == "WAITING" }).isTrue()
+      }
+
+      // No instances for other dates
+      val otherInstances = instances.first { it.date != LocalDate.now() }
+      assertThat(otherInstances.attendances).isEmpty()
+    }
+
+    validateOutboundEvents(
+      ExpectedOutboundEvent(ACTIVITY_SCHEDULE_UPDATED, 1),
+      // There are already attendances for both prisoners on existing ED session,
+      // so these two aew ones are for the new PM instance
+      ExpectedOutboundEvent(PRISONER_ATTENDANCE_CREATED, 3),
+      ExpectedOutboundEvent(PRISONER_ATTENDANCE_CREATED, 4),
+    )
+  }
+
+  @Test
   @Sql("classpath:test_data/seed-activity-with-active-exclusions.sql")
   fun `updateActivity slots with exclusions - is successful`() {
     val mondayTuesdaySlot = ActivityUpdateRequest(
@@ -1397,7 +1528,6 @@ class ActivityIntegrationTest : LocalStackTestBase() {
 
     with(webTestClient.updateActivity(MOORLAND_PRISON_CODE, 1, mondayTuesdaySlot).schedules.first()) {
       assertThat(scheduleWeeks).isEqualTo(1)
-      assertThat(slots).hasSize(2)
       assertThat(slots[0].daysOfWeek).containsExactly("Mon", "Tue")
       assertThat(slots[1].daysOfWeek).containsExactly("Mon", "Tue")
     }
@@ -1491,13 +1621,13 @@ class ActivityIntegrationTest : LocalStackTestBase() {
             Slot(
               weekNumber = 1,
               timeSlot = TimeSlot.AM,
-              monday = startDate.dayOfWeek == DayOfWeek.MONDAY,
-              tuesday = startDate.dayOfWeek == DayOfWeek.TUESDAY,
-              wednesday = startDate.dayOfWeek == DayOfWeek.WEDNESDAY,
-              thursday = startDate.dayOfWeek == DayOfWeek.THURSDAY,
-              friday = startDate.dayOfWeek == DayOfWeek.FRIDAY,
-              saturday = startDate.dayOfWeek == DayOfWeek.SATURDAY,
-              sunday = startDate.dayOfWeek == DayOfWeek.SUNDAY,
+              monday = startDate.dayOfWeek == MONDAY,
+              tuesday = startDate.dayOfWeek == TUESDAY,
+              wednesday = startDate.dayOfWeek == WEDNESDAY,
+              thursday = startDate.dayOfWeek == THURSDAY,
+              friday = startDate.dayOfWeek == FRIDAY,
+              saturday = startDate.dayOfWeek == SATURDAY,
+              sunday = startDate.dayOfWeek == SUNDAY,
             ),
           ),
           runsOnBankHoliday = true,
@@ -1545,13 +1675,13 @@ class ActivityIntegrationTest : LocalStackTestBase() {
             Slot(
               weekNumber = 1,
               timeSlot = TimeSlot.AM,
-              monday = startDate.dayOfWeek == DayOfWeek.MONDAY,
-              tuesday = startDate.dayOfWeek == DayOfWeek.TUESDAY,
-              wednesday = startDate.dayOfWeek == DayOfWeek.WEDNESDAY,
-              thursday = startDate.dayOfWeek == DayOfWeek.THURSDAY,
-              friday = startDate.dayOfWeek == DayOfWeek.FRIDAY,
-              saturday = startDate.dayOfWeek == DayOfWeek.SATURDAY,
-              sunday = startDate.dayOfWeek == DayOfWeek.SUNDAY,
+              monday = startDate.dayOfWeek == MONDAY,
+              tuesday = startDate.dayOfWeek == TUESDAY,
+              wednesday = startDate.dayOfWeek == WEDNESDAY,
+              thursday = startDate.dayOfWeek == THURSDAY,
+              friday = startDate.dayOfWeek == FRIDAY,
+              saturday = startDate.dayOfWeek == SATURDAY,
+              sunday = startDate.dayOfWeek == SUNDAY,
             ),
           ),
           runsOnBankHoliday = false,
@@ -1592,25 +1722,25 @@ class ActivityIntegrationTest : LocalStackTestBase() {
     val weekOneSlot = Slot(
       weekNumber = 1,
       timeSlot = TimeSlot.AM,
-      monday = startDate.dayOfWeek == DayOfWeek.MONDAY,
-      tuesday = startDate.dayOfWeek == DayOfWeek.TUESDAY,
-      wednesday = startDate.dayOfWeek == DayOfWeek.WEDNESDAY,
-      thursday = startDate.dayOfWeek == DayOfWeek.THURSDAY,
-      friday = startDate.dayOfWeek == DayOfWeek.FRIDAY,
-      saturday = startDate.dayOfWeek == DayOfWeek.SATURDAY,
-      sunday = startDate.dayOfWeek == DayOfWeek.SUNDAY,
+      monday = startDate.dayOfWeek == MONDAY,
+      tuesday = startDate.dayOfWeek == TUESDAY,
+      wednesday = startDate.dayOfWeek == WEDNESDAY,
+      thursday = startDate.dayOfWeek == THURSDAY,
+      friday = startDate.dayOfWeek == FRIDAY,
+      saturday = startDate.dayOfWeek == SATURDAY,
+      sunday = startDate.dayOfWeek == SUNDAY,
     )
 
     val weekTwoSlot = Slot(
       weekNumber = 2,
       timeSlot = TimeSlot.AM,
-      monday = startDate.plusDays(1).dayOfWeek == DayOfWeek.MONDAY,
-      tuesday = startDate.plusDays(1).dayOfWeek == DayOfWeek.TUESDAY,
-      wednesday = startDate.plusDays(1).dayOfWeek == DayOfWeek.WEDNESDAY,
-      thursday = startDate.plusDays(1).dayOfWeek == DayOfWeek.THURSDAY,
-      friday = startDate.plusDays(1).dayOfWeek == DayOfWeek.FRIDAY,
-      saturday = startDate.plusDays(1).dayOfWeek == DayOfWeek.SATURDAY,
-      sunday = startDate.plusDays(1).dayOfWeek == DayOfWeek.SUNDAY,
+      monday = startDate.plusDays(1).dayOfWeek == MONDAY,
+      tuesday = startDate.plusDays(1).dayOfWeek == TUESDAY,
+      wednesday = startDate.plusDays(1).dayOfWeek == WEDNESDAY,
+      thursday = startDate.plusDays(1).dayOfWeek == THURSDAY,
+      friday = startDate.plusDays(1).dayOfWeek == FRIDAY,
+      saturday = startDate.plusDays(1).dayOfWeek == SATURDAY,
+      sunday = startDate.plusDays(1).dayOfWeek == SUNDAY,
     )
 
     val createActivityRequest: ActivityCreateRequest =
@@ -1714,13 +1844,13 @@ class ActivityIntegrationTest : LocalStackTestBase() {
     val pmSlot = Slot(
       weekNumber = 1,
       timeSlot = TimeSlot.PM,
-      monday = startDate.dayOfWeek == DayOfWeek.MONDAY,
-      tuesday = startDate.dayOfWeek == DayOfWeek.TUESDAY,
-      wednesday = startDate.dayOfWeek == DayOfWeek.WEDNESDAY,
-      thursday = startDate.dayOfWeek == DayOfWeek.THURSDAY,
-      friday = startDate.dayOfWeek == DayOfWeek.FRIDAY,
-      saturday = startDate.dayOfWeek == DayOfWeek.SATURDAY,
-      sunday = startDate.dayOfWeek == DayOfWeek.SUNDAY,
+      monday = startDate.dayOfWeek == MONDAY,
+      tuesday = startDate.dayOfWeek == TUESDAY,
+      wednesday = startDate.dayOfWeek == WEDNESDAY,
+      thursday = startDate.dayOfWeek == THURSDAY,
+      friday = startDate.dayOfWeek == FRIDAY,
+      saturday = startDate.dayOfWeek == SATURDAY,
+      sunday = startDate.dayOfWeek == SUNDAY,
       customStartTime = LocalTime.of(9, 45),
       customEndTime = LocalTime.of(11, 45),
     )
@@ -1739,13 +1869,13 @@ class ActivityIntegrationTest : LocalStackTestBase() {
     val amSlot = Slot(
       weekNumber = 1,
       timeSlot = TimeSlot.AM,
-      monday = startDate.dayOfWeek == DayOfWeek.MONDAY,
-      tuesday = startDate.dayOfWeek == DayOfWeek.TUESDAY,
-      wednesday = startDate.dayOfWeek == DayOfWeek.WEDNESDAY,
-      thursday = startDate.dayOfWeek == DayOfWeek.THURSDAY,
-      friday = startDate.dayOfWeek == DayOfWeek.FRIDAY,
-      saturday = startDate.dayOfWeek == DayOfWeek.SATURDAY,
-      sunday = startDate.dayOfWeek == DayOfWeek.SUNDAY,
+      monday = startDate.dayOfWeek == MONDAY,
+      tuesday = startDate.dayOfWeek == TUESDAY,
+      wednesday = startDate.dayOfWeek == WEDNESDAY,
+      thursday = startDate.dayOfWeek == THURSDAY,
+      friday = startDate.dayOfWeek == FRIDAY,
+      saturday = startDate.dayOfWeek == SATURDAY,
+      sunday = startDate.dayOfWeek == SUNDAY,
       customStartTime = LocalTime.of(9, 45),
       customEndTime = LocalTime.of(11, 45),
     )

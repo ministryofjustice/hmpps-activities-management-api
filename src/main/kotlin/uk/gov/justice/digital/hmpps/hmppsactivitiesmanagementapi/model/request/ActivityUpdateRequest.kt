@@ -9,6 +9,7 @@ import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.Positive
 import jakarta.validation.constraints.Size
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import java.time.LocalDate
 import java.util.*
@@ -104,6 +105,9 @@ data class ActivityUpdateRequest(
 
   @Schema(description = "Flag to indicate if the activity is a paid activity or not. If true then pay rates are required, if false then no pay rates should be provided. Cannot be updated if already allocated.", example = "true")
   val paid: Boolean? = null,
+
+  @Schema(description = "First time slot for today. May create scheduled instances for today starting at specified time slot and if set.", example = "ED")
+  var firstTimeSlotForToday: TimeSlot? = null,
 ) {
   @AssertTrue(message = "Unpaid activity cannot have pay rates associated with it")
   private fun isUnpaid() = pay.isNullOrEmpty() || (paid == null || paid == true)
