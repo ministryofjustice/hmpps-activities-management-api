@@ -204,7 +204,6 @@ class ManageAttendancesService(
     }
   }
 
-
   fun deleteAnyAttendancesForToday(scheduleInstanceId: Long?, allocation: Allocation): List<Attendance> {
     if (scheduleInstanceId == null) {
       return emptyList()
