@@ -15,8 +15,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.containsAny
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.SlotTimes
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventTierType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonPayBand
@@ -86,6 +88,7 @@ class ActivityService(
   private val outboundEventsService: OutboundEventsService,
   private val locationService: LocationService,
   private val allocationsService: AllocationsService,
+  private val manageAttendancesService: ManageAttendancesService,
   @Value("\${online.create-scheduled-instances.days-in-advance}") private val daysInAdvance: Long = 14L,
 ) {
   companion object {
@@ -323,23 +326,31 @@ class ActivityService(
   /*
    * Note: we add instances even if the activity hasn't started for unlock list purposes.
    */
-  private fun ActivitySchedule.addInstances(daysToSchedule: List<LocalDate>? = null) {
-    val possibleDaysToSchedule = daysToSchedule ?: LocalDate.now().plusDays(1).let { tomorrow ->
-      tomorrow.datesUntil(tomorrow.plusDays(daysInAdvance)).toList()
+  private fun ActivitySchedule.addInstances(daysToSchedule: List<LocalDate>? = null, firstTimeSlotForToday: TimeSlot? = null): List<ScheduledInstance> {
+    val today = LocalDate.now()
+    val startDate = firstTimeSlotForToday?.let { today } ?: today.plusDays(1)
+
+    val possibleDaysToSchedule = daysToSchedule ?: startDate.let { day ->
+      day.datesUntil(day.plusDays(daysInAdvance)).toList()
     }
 
-    possibleDaysToSchedule.filter(::isActiveOn).forEach { activeDay ->
-      val scheduleWeekNumber = this.getWeekNumber(activeDay)
+    fun canAddInstanceOn(day: LocalDate, slot: ActivityScheduleSlot) = day.dayOfWeek in slot.getDaysOfWeek() &&
+      hasNoInstancesOnDate(day, slot) &&
+      (runsOnBankHoliday || !bankHolidayService.isEnglishBankHoliday(day)) &&
+      (firstTimeSlotForToday == null || slot.timeSlot >= firstTimeSlotForToday)
 
-      this.slots(weekNumber = scheduleWeekNumber).forEach { slot ->
-        if (activeDay.dayOfWeek in slot.getDaysOfWeek() &&
-          this.hasNoInstancesOnDate(activeDay, slot) &&
-          (runsOnBankHoliday || !bankHolidayService.isEnglishBankHoliday(activeDay))
-        ) {
-          this.addInstance(sessionDate = activeDay, slot = slot)
-        }
+    return possibleDaysToSchedule
+      .filter(::isActiveOn)
+      .map { activeDay ->
+        val scheduleWeekNumber = this.getWeekNumber(activeDay)
+
+        slots(weekNumber = scheduleWeekNumber)
+          .filter { slot -> canAddInstanceOn(activeDay, slot) }
+          .map { slot ->
+            addInstance(sessionDate = activeDay, slot = slot)
+          }
       }
-    }
+      .flatMap { it }
   }
 
   private fun getLocationForSchedule(activity: Activity, dpsLocationId: UUID): LocationDetails = locationService.getLocationDetails(dpsLocationId).apply {
@@ -361,9 +372,10 @@ class ActivityService(
     adminMode: Boolean? = false,
   ): ModelActivity {
     if (adminMode == false) checkCaseloadAccess(prisonCode)
+    val today = LocalDate.now()
 
     transactionHandler.newSpringTransaction {
-      val activity = activityRepository.findByActivityIdAndPrisonCodeWithFilters(activityId, prisonCode, LocalDate.now())
+      val activity = activityRepository.findByActivityIdAndPrisonCodeWithFilters(activityId, prisonCode, today)
         ?: throw EntityNotFoundException("Activity $activityId not found.")
       val updatedAllocationIds = mutableSetOf<Long>()
 
@@ -392,12 +404,21 @@ class ActivityService(
         throw IllegalArgumentException("Activity '$activityId' cannot be paid as attendance is not required.")
       }
 
-      recordChanges(activity, updatedBy, LocalDateTime.now())
+      recordChanges(activity, updatedBy, LocalDateTime.now(), request.firstTimeSlotForToday)
 
       activityRepository.saveAndFlush(activity)
 
-      updatedAllocationIds to transform(activity)
-    }.let { (updatedAllocationIds, activity) ->
+      val newAttendances = if (request.firstTimeSlotForToday != null) {
+        manageAttendancesService.findAttendancesToCreate(today, prisonCode)
+          .also { newAttendances ->
+            manageAttendancesService.saveAttendances(newAttendances, activity.schedules().first().description)
+          }
+      } else {
+        emptyList()
+      }
+
+      Triple(updatedAllocationIds, transform(activity), newAttendances)
+    }.let { (updatedAllocationIds, activity, newAttendances) ->
       publishUpdateTelemetryEvent(activity)
 
       activity.schedules.forEach {
@@ -408,17 +429,20 @@ class ActivityService(
         outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, it)
       }
 
+      newAttendances.forEach { manageAttendancesService.sendCreatedEvent(it) }
+
       return activity
     }
   }
 
-  private fun recordChanges(activity: Activity, updatedBy: String, updatedTime: LocalDateTime) {
+  private fun recordChanges(activity: Activity, updatedBy: String, updatedTime: LocalDateTime, firstTimeSlotForToday: TimeSlot? = null): List<ScheduledInstance> {
     activity.updatedTime = updatedTime
     activity.updatedBy = updatedBy
 
-    activity.schedules().forEach {
-      it.updateInstances()
+    return activity.schedules().flatMap {
+      val updatedInstances = it.updateInstances(firstTimeSlotForToday)
       it.markAsUpdated(updatedTime, updatedBy)
+      updatedInstances
     }
   }
 
@@ -589,10 +613,10 @@ class ActivityService(
     }
   }
 
-  private fun ActivitySchedule.updateInstances() {
+  private fun ActivitySchedule.updateInstances(firstTimeSlotForToday: TimeSlot?): List<ScheduledInstance> {
     this.removeRedundantInstances()
     activityRepository.flush()
-    this.addInstances()
+    return this.addInstances(firstTimeSlotForToday = firstTimeSlotForToday)
   }
 
   private fun ActivitySchedule.removeRedundantInstances() {

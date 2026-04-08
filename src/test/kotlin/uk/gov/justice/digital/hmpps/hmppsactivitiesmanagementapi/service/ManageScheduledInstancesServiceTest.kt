@@ -54,6 +54,7 @@ class ManageScheduledInstancesServiceTest {
   private val locationService: LocationService = mock()
   private val jobsSqsService: JobsSqsService = mock()
   private val jobService: JobService = mock()
+  private val manageAttendancesService: ManageAttendancesService = mock()
 
   private val activityServiceTest: ActivityService = ActivityService(
     activityRepository = activityRepository,
@@ -75,6 +76,7 @@ class ManageScheduledInstancesServiceTest {
     outboundEventsService = mock(),
     allocationsService = mock(),
     locationService = locationService,
+    manageAttendancesService = manageAttendancesService,
   )
 
   private val transactionHandler = CreateInstanceTransactionHandler(activityScheduleRepository, activityServiceTest, Clock.systemDefaultZone())
