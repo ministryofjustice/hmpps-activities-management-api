@@ -290,7 +290,7 @@ class ActivityScheduleController(
       ),
       ApiResponse(
         responseCode = "404",
-        description = "One or more activity schedules for the provided IDs were not found.",
+        description = "The activity schedule for this ID was not found.",
         content = [
           Content(
             mediaType = "application/json",

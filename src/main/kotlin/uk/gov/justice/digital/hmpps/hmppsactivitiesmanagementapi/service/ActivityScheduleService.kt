@@ -131,7 +131,7 @@ class ActivityScheduleService(
       val payBand = request.payBandId?.let {
         val prisonPayBands = prisonPayBandRepository.findByPrisonCode(schedule.activity.prisonCode)
           .associateBy { it.prisonPayBandId }
-          .ifEmpty { throw IllegalArgumentException("No pay bands found for prison '${schedule.activity.prisonCode}") }
+          .ifEmpty { throw IllegalArgumentException("No pay bands found for prison '${schedule.activity.prisonCode}'") }
 
         prisonPayBands[request.payBandId]
           ?: throw IllegalArgumentException("Pay band not found for prison '${schedule.activity.prisonCode}'")
@@ -210,8 +210,6 @@ class ActivityScheduleService(
       }
     }
 
-    val schedule = repository.findOrThrowNotFound(scheduleId)
-
     // batch fetch all prisoners
     val prisonerNumbers = requests.map { it.prisonerNumber!! }.distinct()
     val prisonersMap = runBlocking {
@@ -220,6 +218,12 @@ class ActivityScheduleService(
     }
 
     transactionHandler.newSpringTransaction {
+      val schedule = repository.findOrThrowNotFound(scheduleId)
+
+      // batch fetch pay bands once to avoid N+1 queries
+      val prisonPayBands = prisonPayBandRepository.findByPrisonCode(schedule.activity.prisonCode)
+        .associateBy { it.prisonPayBandId }
+
       // Store allocations with their attendances and waiting list info for audit logging after saveAndFlush
       val allocationsWithAttendances = mutableListOf<Triple<Allocation, List<Attendance>, WaitingList?>>()
 
@@ -236,10 +240,9 @@ class ActivityScheduleService(
         }
 
         val payBand = request.payBandId?.let {
-          val prisonPayBands = prisonPayBandRepository.findByPrisonCode(schedule.activity.prisonCode)
-            .associateBy { it.prisonPayBandId }
-            .ifEmpty { throw IllegalArgumentException("No pay bands found for prison '${schedule.activity.prisonCode}") }
-
+          if (prisonPayBands.isEmpty()) {
+            throw IllegalArgumentException("No pay bands found for prison '${schedule.activity.prisonCode}'")
+          }
           prisonPayBands[request.payBandId]
             ?: throw IllegalArgumentException("Pay band not found for prison '${schedule.activity.prisonCode}'")
         }
@@ -287,7 +290,7 @@ class ActivityScheduleService(
             .singleOrNull()
 
           // if allocations are for instance(s) later today then need to create attendance records
-          val newAttendances = manageAttendancesService.createAnyBulkAttendancesForToday(request.scheduleInstanceId, allocation)
+          val newAttendances = manageAttendancesService.createAnyAttendancesForToday(request.scheduleInstanceId, allocation)
           allocationsWithAttendances.add(Triple(allocation, newAttendances, maybeWaitingList))
         }
       }

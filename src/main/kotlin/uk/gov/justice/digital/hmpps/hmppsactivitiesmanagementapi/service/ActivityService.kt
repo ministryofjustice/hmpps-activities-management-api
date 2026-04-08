@@ -149,7 +149,7 @@ class ActivityService(
       val eligibilityRules = request.eligibilityRuleIds.map { eligibilityRuleRepository.findOrThrowIllegalArgument(it) }
       val prisonPayBands = prisonPayBandRepository.findByPrisonCode(request.prisonCode)
         .associateBy { it.prisonPayBandId }
-        .ifEmpty { throw IllegalArgumentException("No pay bands found for prison '${request.prisonCode}") }
+        .ifEmpty { throw IllegalArgumentException("No pay bands found for prison '${request.prisonCode}'") }
       failDuplicateActivity(request.prisonCode, request.summary!!)
       checkEducationLevels(request.minimumEducationLevel)
 
@@ -730,7 +730,7 @@ class ActivityService(
     request.pay?.let { pay ->
       val prisonPayBands = prisonPayBandRepository.findByPrisonCode(activity.prisonCode)
         .associateBy { it.prisonPayBandId }
-        .ifEmpty { throw IllegalArgumentException("No pay bands found for prison '${activity.prisonCode}") }
+        .ifEmpty { throw IllegalArgumentException("No pay bands found for prison '${activity.prisonCode}'") }
 
       return replacePayBandAllocationBeforePayRemoval(activity.prisonCode, pay, activity, prisonPayBands).also {
         activity.removePay()
@@ -761,7 +761,7 @@ class ActivityService(
     request.payChange?.let { pay ->
       val prisonPayBands = prisonPayBandRepository.findByPrisonCode(activity.prisonCode)
         .associateBy { it.prisonPayBandId }
-        .ifEmpty { throw IllegalArgumentException("No pay bands found for prison '${activity.prisonCode}") }
+        .ifEmpty { throw IllegalArgumentException("No pay bands found for prison '${activity.prisonCode}'") }
 
       pay.forEach {
         activity.addPayHistory(

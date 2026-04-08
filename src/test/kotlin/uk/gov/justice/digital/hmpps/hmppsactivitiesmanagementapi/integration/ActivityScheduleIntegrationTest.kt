@@ -1172,13 +1172,14 @@ class ActivityScheduleIntegrationTest : LocalStackTestBase() {
       assertThat(it.who).isEqualTo("test-client")
     }
 
-    val auditEvents = auditRepository.findAll()
+    val auditEvents = auditRepository.findAll().sortedBy { it.prisonerNumber }
+    val sortedRequestsByPrisonerNumber = requests.sortedBy { it.prisonerNumber }
     assertThat(auditEvents).hasSize(2)
     auditEvents.forEachIndexed { index, auditEvent ->
       assertThat(auditEvent.activityId).isEqualTo(1)
       assertThat(auditEvent.username).isEqualTo("test-client")
       assertThat(auditEvent.auditType).isEqualTo(AuditType.PRISONER)
-      assertThat(auditEvent.prisonerNumber).isEqualTo(requests[index].prisonerNumber)
+      assertThat(auditEvent.prisonerNumber).isEqualTo(sortedRequestsByPrisonerNumber[index].prisonerNumber)
       assertThat(auditEvent.detailType).isEqualTo(AuditEventType.PRISONER_ALLOCATED)
       assertThat(auditEvent.prisonCode).isEqualTo("PVI")
     }

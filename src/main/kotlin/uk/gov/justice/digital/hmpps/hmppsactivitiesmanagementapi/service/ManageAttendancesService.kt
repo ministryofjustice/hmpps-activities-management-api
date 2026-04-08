@@ -196,31 +196,6 @@ class ManageAttendancesService(
     }
   }
 
-  fun createAnyBulkAttendancesForToday(scheduleInstanceId: Long?, allocation: Allocation): List<Attendance> {
-    if (scheduleInstanceId == null) {
-      return emptyList()
-    }
-
-    val nextAvailableInstance = scheduledInstanceRepository.findOrThrowNotFound(scheduleInstanceId)
-
-    require(nextAvailableInstance.activitySchedule.activityScheduleId == allocation.activitySchedule.activityScheduleId) {
-      "Allocation does not belong to same activity schedule as selected instance"
-    }
-
-    val scheduledInstances = scheduledInstanceRepository.findByActivityScheduleAndSessionDateEqualsAndStartTimeGreaterThanEqual(
-      activitySchedule = allocation.activitySchedule,
-      sessionDate = LocalDate.now(clock),
-      startTime = nextAvailableInstance.startTime,
-    )
-
-    // Create any attendances for today using ID-based comparison for bulk allocation
-    return scheduledInstances.filter {
-      allocation.canAttendOn(date = it.sessionDate, timeSlot = it.timeSlot)
-    }.mapNotNull {
-      val prisonerDetails: Prisoner? = prisonerSearchApiClient.findByPrisonerNumber(allocation.prisonerNumber)
-      createAttendance(it, allocation, prisonerDetails?.currentIncentive?.level?.code)
-    }
-  }
 
   fun deleteAnyAttendancesForToday(scheduleInstanceId: Long?, allocation: Allocation): List<Attendance> {
     if (scheduleInstanceId == null) {
