@@ -232,7 +232,7 @@ class ActivityScheduleController(
     ],
   )
   @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_ADMIN')")
-  @Deprecated(message = "This will be replaced by the bulk allocation endpoint which supports allocating one or more offenders to one or more schedules in a single request.")
+  @Deprecated(message = "This will be replaced by the bulk allocation endpoint which supports allocating one or more offenders to a schedule.")
   fun allocate(
     principal: Principal,
     @PathVariable("scheduleId") scheduleId: Long,

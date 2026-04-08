@@ -6,7 +6,7 @@ import jakarta.validation.constraints.NotEmpty
 
 data class BulkPrisonerAllocationRequest(
   @Schema(description = "List of prisoner allocation requests")
-  @field:NotEmpty(message = "Allocation requests must not be empty")
+  @field:NotEmpty(message = "Allocations must not be empty")
   @field:Valid
   val allocations: List<PrisonerAllocationRequest>,
 )

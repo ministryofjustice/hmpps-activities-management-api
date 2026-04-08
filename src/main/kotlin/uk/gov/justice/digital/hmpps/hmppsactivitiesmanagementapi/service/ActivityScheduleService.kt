@@ -267,6 +267,7 @@ class ActivityScheduleService(
           exclusions = request.exclusions,
           allocatedBy = allocatedBy,
         ).let { allocation ->
+          // Find waiting list but don't associate allocation yet (allocation hasn't been saved to database and is still transient)
           val maybeWaitingList = waitingListRepository.findByPrisonCodeAndPrisonerNumberAndActivitySchedule(
             schedule.activity.prisonCode,
             request.prisonerNumber,
@@ -283,10 +284,10 @@ class ActivityScheduleService(
                 "Prisoner has more than one APPROVED waiting list application. A prisoner can only have one approved waiting list application."
               }
             }
-            .singleOrNull()?.allocated(allocation)
+            .singleOrNull()
 
-          // if allocation is for instance(s) later today then need to create attendance records
-          val newAttendances = manageAttendancesService.createAnyAttendancesForToday(request.scheduleInstanceId, allocation)
+          // if allocations are for instance(s) later today then need to create attendance records
+          val newAttendances = manageAttendancesService.createAnyBulkAttendancesForToday(request.scheduleInstanceId, allocation)
           allocationsWithAttendances.add(Triple(allocation, newAttendances, maybeWaitingList))
         }
       }
@@ -301,6 +302,9 @@ class ActivityScheduleService(
         val savedAttendances = manageAttendancesService.saveAttendances(attendances, schedule.description)
 
         val allocationWithId = allocationsWithIds[allocation.prisonerNumber] ?: allocation
+
+        // Now the allocation is saved, associate it with the waiting list
+        maybeWaitingList?.allocated(allocationWithId)
 
         auditService.logEvent(allocationWithId.toPrisonerAllocatedEvent(maybeWaitingList?.waitingListId))
         logAllocationEvent(allocationWithId, maybeWaitingList)

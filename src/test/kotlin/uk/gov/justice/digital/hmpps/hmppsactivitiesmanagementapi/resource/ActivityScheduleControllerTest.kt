@@ -239,7 +239,7 @@ class ActivityScheduleControllerTest : ControllerTestBase() {
       .andExpect { status { isBadRequest() } }
       .andReturn().response
       .also {
-        assertThat(it.contentAsString).contains("Allocation requests must not be empty")
+        assertThat(it.contentAsString).contains("Allocations must not be empty")
       }
 
     verify(activityScheduleService, never()).allocatePrisonersToSchedule(any(), any(), any())
