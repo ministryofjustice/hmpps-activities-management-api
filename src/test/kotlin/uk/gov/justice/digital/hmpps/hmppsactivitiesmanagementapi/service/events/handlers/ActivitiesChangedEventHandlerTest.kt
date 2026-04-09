@@ -3,15 +3,18 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.MovementType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
@@ -191,5 +194,121 @@ class ActivitiesChangedEventHandlerTest {
 
     verifyNoInteractions(prisonerSearchApiClient)
     verifyNoInteractions(prisonerAllocationHandler)
+  }
+
+  @Nested
+  inner class ExternalActivitiesTests {
+
+    private val rolloutPrisonServiceWithExternalActivities = RolloutPrisonService("MDI", "MDI", "MDI", "MDI")
+
+    private val handler = ActivitiesChangedEventHandler(
+      rolloutPrisonServiceWithExternalActivities,
+      allocationRepository,
+      prisonerSearchApiClient,
+      prisonerAllocationHandler,
+      TransactionHandler(),
+      waitingListService,
+      outboundEventsService,
+      attendanceSuspensionDomainService,
+    )
+
+    @Test
+    fun `exception is thrown on suspend action when prisoner is not found`() {
+      whenever(prisonerSearchApiClient.findByPrisonerNumber(any())) doReturn null
+
+      assertThatThrownBy {
+        handler.handle(activitiesChangedEvent("123456", Action.SUSPEND, MOORLAND_PRISON_CODE))
+      }.isInstanceOf(NullPointerException::class.java)
+        .hasMessage("Prisoner search lookup failed for prisoner 123456 at prison MDI when checking for temporary absence on suspend action")
+
+      verify(allocationRepository, never()).findByPrisonCodePrisonerNumberPrisonerStatus(any(), any(), any(), any(), any())
+      verify(attendanceSuspensionDomainService, never()).autoSuspendFutureAttendancesForAllocation(any(), any())
+    }
+
+    @Test
+    fun `allocations and attendances are not auto-suspended for Work ROTL (temporary absence) on suspend action when external activities are enabled`() {
+      val allocation = allocation().copy(allocationId = 1, prisonerNumber = "123456")
+
+      whenever(
+        allocationRepository.findByPrisonCodePrisonerNumberPrisonerStatus(
+          MOORLAND_PRISON_CODE,
+          "123456",
+          PrisonerStatus.ACTIVE,
+          PrisonerStatus.PENDING,
+          PrisonerStatus.SUSPENDED,
+        ),
+      ) doReturn listOf(allocation)
+
+      val prisoner = mock<Prisoner>().also {
+        whenever(it.status) doReturn "ACTIVE OUT"
+        whenever(it.lastMovementTypeCode) doReturn MovementType.TEMPORARY_ABSENCE.nomisShortCode
+      }
+      whenever(prisonerSearchApiClient.findByPrisonerNumber("123456")) doReturn prisoner
+
+      val result = handler.handle(activitiesChangedEvent("123456", Action.SUSPEND, MOORLAND_PRISON_CODE))
+
+      result.isSuccess() isBool true
+      allocation.prisonerStatus isEqualTo PrisonerStatus.ACTIVE
+      verify(attendanceSuspensionDomainService, never()).autoSuspendFutureAttendancesForAllocation(any(), any())
+    }
+
+    @Test
+    fun `allocations and attendances are auto-suspended for non Work ROTL movements on suspend action when external activities are enabled`() {
+      val allocation = allocation().copy(allocationId = 1, prisonerNumber = "123456")
+
+      whenever(
+        allocationRepository.findByPrisonCodePrisonerNumberPrisonerStatus(
+          MOORLAND_PRISON_CODE,
+          "123456",
+          PrisonerStatus.ACTIVE,
+          PrisonerStatus.PENDING,
+          PrisonerStatus.SUSPENDED,
+        ),
+      ) doReturn listOf(allocation)
+
+      val prisoner = mock<Prisoner>().also {
+        whenever(it.status) doReturn "ACTIVE OUT"
+        whenever(it.lastMovementTypeCode) doReturn MovementType.TRANSFER.nomisShortCode
+      }
+      whenever(prisonerSearchApiClient.findByPrisonerNumber("123456")) doReturn prisoner
+
+      handler.handle(activitiesChangedEvent("123456", Action.SUSPEND, MOORLAND_PRISON_CODE))
+
+      allocation.prisonerStatus isEqualTo PrisonerStatus.AUTO_SUSPENDED
+      verify(attendanceSuspensionDomainService).autoSuspendFutureAttendancesForAllocation(any(), eq(allocation))
+    }
+
+    @Test
+    fun `allocations and attendances are auto-suspended for Work ROTL (temporary absence) on suspend action when external activities are not enabled`() {
+      val rolloutPrisonServiceWithoutExternalActivities = RolloutPrisonService("MDI", "MDI", "", "MDI")
+      val handlerWithoutExternalActivities = ActivitiesChangedEventHandler(
+        rolloutPrisonServiceWithoutExternalActivities,
+        allocationRepository,
+        prisonerSearchApiClient,
+        prisonerAllocationHandler,
+        TransactionHandler(),
+        waitingListService,
+        outboundEventsService,
+        attendanceSuspensionDomainService,
+      )
+
+      val allocation = allocation().copy(allocationId = 1, prisonerNumber = "123456")
+
+      whenever(
+        allocationRepository.findByPrisonCodePrisonerNumberPrisonerStatus(
+          MOORLAND_PRISON_CODE,
+          "123456",
+          PrisonerStatus.ACTIVE,
+          PrisonerStatus.PENDING,
+          PrisonerStatus.SUSPENDED,
+        ),
+      ) doReturn listOf(allocation)
+
+      handlerWithoutExternalActivities.handle(activitiesChangedEvent("123456", Action.SUSPEND, MOORLAND_PRISON_CODE))
+
+      verify(prisonerSearchApiClient, never()).findByPrisonerNumber(any())
+      allocation.prisonerStatus isEqualTo PrisonerStatus.AUTO_SUSPENDED
+      verify(attendanceSuspensionDomainService).autoSuspendFutureAttendancesForAllocation(any(), eq(allocation))
+    }
   }
 }

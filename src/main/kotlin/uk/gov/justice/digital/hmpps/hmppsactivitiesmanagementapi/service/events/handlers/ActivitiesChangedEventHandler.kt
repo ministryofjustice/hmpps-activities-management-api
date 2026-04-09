@@ -4,6 +4,8 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.MovementType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isActiveOut
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isAtDifferentLocationTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isInactiveOut
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.lastMovementType
@@ -72,7 +74,14 @@ class ActivitiesChangedEventHandler(
     PrisonerStatus.allExcuding(PrisonerStatus.ENDED).toList(),
   )
 
-  private fun suspendPrisonerAllocationsAndAttendances(event: ActivitiesChangedEvent) = LocalDateTime.now().let { now ->
+  private fun suspendPrisonerAllocationsAndAttendances(event: ActivitiesChangedEvent) {
+    if (isExternalTemporaryAbsence(event)) {
+      log.info("Skipping auto-suspension of allocations and attendances for Work ROTL prisoner ${event.prisonerNumber()} at prison ${event.prisonCode()}.")
+      return
+    }
+
+    val now = LocalDateTime.now()
+
     transactionHandler.newSpringTransaction {
       allocationRepository.findByPrisonCodePrisonerNumberPrisonerStatus(
         event.prisonCode(),
@@ -83,7 +92,7 @@ class ActivitiesChangedEventHandler(
       )
         .excludingFuturePendingAllocations()
         .autoSuspendPrisonersAllocations(now, event)
-        .map { it to attendanceSuspensionDomainService.autoSuspendFutureAttendancesForAllocation(now, it) }
+        .map { allocation -> allocation to attendanceSuspensionDomainService.autoSuspendFutureAttendancesForAllocation(now, allocation) }
     }.let { suspendedAllocations ->
       suspendedAllocations.forEach {
         outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, it.first.allocationId)
@@ -119,5 +128,12 @@ class ActivitiesChangedEventHandler(
     }
 
     return this
+  }
+
+  private fun isExternalTemporaryAbsence(event: ActivitiesChangedEvent): Boolean {
+    if (!rolloutPrisonService.isExternalActivitiesRolledOutAt(event.prisonCode())) return false
+    val prisoner = prisonerSearchApiClient.findByPrisonerNumber(event.prisonerNumber())
+      .throwNullPointerIfNotFound { "Prisoner search lookup failed for prisoner ${event.prisonerNumber()} at prison ${event.prisonCode()} when checking for temporary absence on suspend action" }
+    return prisoner.isActiveOut() && prisoner.lastMovementType() == MovementType.TEMPORARY_ABSENCE
   }
 }

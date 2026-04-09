@@ -6,6 +6,7 @@ import org.awaitility.Awaitility.await
 import org.awaitility.kotlin.await
 import org.awaitility.kotlin.untilAsserted
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.times
@@ -14,6 +15,8 @@ import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.context.jdbc.Sql
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.MovementType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
@@ -37,6 +40,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appointment.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.InmateDetailFixture
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.activeInLiverpoolInmate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.activeInMoorlandInmate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.activeInMoorlandPrisoner
@@ -504,7 +508,7 @@ class InboundEventsIntegrationTest : LocalStackTestBase() {
   @Test
   @Sql("classpath:test_data/seed-activity-changed-event.sql")
   fun `two allocations and two future attendance are auto-suspended on receipt of activities changed event for prisoner`() {
-    stubPrisonerForInterestingEvent(activeInPentonvilleInmate.copy(offenderNo = "A11111A"))
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(activeInPentonvillePrisoner.copy(prisonerNumber = "A11111A"))
 
     assertThatAllocationsAreActiveFor("A11111A")
 
@@ -1037,6 +1041,93 @@ class InboundEventsIntegrationTest : LocalStackTestBase() {
       )
       appointmentAttendeeRepository.findAll()
         .map { it.prisonerNumber to it.bookingId } containsExactlyInAnyOrder listOf(newPrisonerNumberAndNewBooking)
+    }
+  }
+
+  @Nested
+  inner class ExternalActivitiesTests {
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-changed-event.sql")
+    fun `allocations and attendances are not auto-suspended for Work ROTL (Temporary absence - ACTIVE OUT) when external activities are enabled`() {
+      val prisonerOnTemporaryAbsence = PrisonerSearchPrisonerFixture.instance(
+        prisonerNumber = "A11111A",
+        prisonId = PENTONVILLE_PRISON_CODE,
+        status = "ACTIVE OUT",
+        inOutStatus = Prisoner.InOutStatus.OUT,
+        lastMovementType = MovementType.TEMPORARY_ABSENCE,
+      )
+      prisonerSearchApiMockServer.stubSearchByPrisonerNumber(prisonerOnTemporaryAbsence)
+
+      allocationRepository.findByPrisonCodeAndPrisonerNumber(PENTONVILLE_PRISON_CODE, "A11111A").onEach {
+        assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.ACTIVE)
+      }
+
+      sendInboundEvent(activitiesChangedEvent(prisonerNumber = "A11111A", prisonId = PENTONVILLE_PRISON_CODE, action = Action.SUSPEND))
+
+      Thread.sleep(500)
+
+      allocationRepository.findByPrisonCodeAndPrisonerNumber(PENTONVILLE_PRISON_CODE, "A11111A").onEach {
+        assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.ACTIVE)
+      }
+      attendanceRepository.findAllById(listOf(1L, 2L, 3L)).onEach {
+        assertThat(it.status()).isEqualTo(AttendanceStatus.WAITING)
+        assertThat(it.attendanceReason).isNull()
+        assertThat(it.issuePayment).isNull()
+        assertThat(it.recordedTime).isNull()
+        assertThat(it.recordedBy).isNull()
+      }
+
+      validateNoMessagesSent()
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-changed-event.sql")
+    fun `allocations and future attendances are auto-suspended for non Work ROTL (Transferred - ACTIVE OUT) when external activities are enabled`() {
+      val transferredPrisoner = PrisonerSearchPrisonerFixture.instance(
+        prisonerNumber = "A11111A",
+        prisonId = PENTONVILLE_PRISON_CODE,
+        status = "ACTIVE OUT",
+        inOutStatus = Prisoner.InOutStatus.OUT,
+        lastMovementType = MovementType.TRANSFER,
+      )
+      prisonerSearchApiMockServer.stubSearchByPrisonerNumber(transferredPrisoner)
+
+      sendInboundEvent(activitiesChangedEvent(prisonerNumber = "A11111A", prisonId = PENTONVILLE_PRISON_CODE, action = Action.SUSPEND))
+
+      await untilAsserted {
+        allocationRepository.findByPrisonCodeAndPrisonerNumber(PENTONVILLE_PRISON_CODE, "A11111A").onEach {
+          assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.AUTO_SUSPENDED)
+          assertThat(it.suspendedReason).isEqualTo("Temporarily released or transferred")
+          assertThat(it.suspendedTime).isCloseTo(LocalDateTime.now(), within(10, ChronoUnit.SECONDS))
+          assertThat(it.suspendedBy).isEqualTo("Activities Management Service")
+        }
+
+        // Attendance one should be untouched
+        with(attendanceRepository.findById(1L).orElseThrow()) {
+          assertThat(status()).isEqualTo(AttendanceStatus.WAITING)
+          assertThat(attendanceReason).isNull()
+          assertThat(issuePayment).isNull()
+          assertThat(recordedTime).isNull()
+          assertThat(recordedBy).isNull()
+        }
+
+        // Attendance two and three should be suspended
+        attendanceRepository.findAllById(listOf(2L, 3L)).onEach {
+          assertThat((it.status())).isEqualTo(AttendanceStatus.COMPLETED)
+          assertThat(it.attendanceReason?.code).isEqualTo(AttendanceReasonEnum.AUTO_SUSPENDED)
+          assertThat(it.issuePayment).isFalse()
+          assertThat(it.recordedTime).isCloseTo(LocalDateTime.now(), within(10, ChronoUnit.SECONDS))
+          assertThat(it.recordedBy).isEqualTo("Activities Management Service")
+        }
+
+        validateOutboundEvents(
+          ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 1),
+          ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 2),
+          ExpectedOutboundEvent(PRISONER_ATTENDANCE_AMENDED, 2),
+          ExpectedOutboundEvent(PRISONER_ATTENDANCE_AMENDED, 3),
+        )
+      }
     }
   }
 }
