@@ -57,6 +57,10 @@ class ManageAttendancesService(
   }
 
   fun createAttendances(date: LocalDate, prisonCode: String) {
+    findAttendancesToCreate(date, prisonCode).also { saveAttendances(date, prisonCode, it) }
+  }
+
+  fun findAttendancesToCreate(date: LocalDate, prisonCode: String): List<Attendance> {
     require(date <= LocalDate.now(clock)) {
       "Cannot create attendance for prison '$prisonCode', date is in the future '$date'"
     }
@@ -67,7 +71,6 @@ class ManageAttendancesService(
 
     log.info("Creating attendance records for prison '$prisonCode' on date '$date'")
 
-    var counter = 0
     val prisonerIncentiveLevelCodeMap = mutableMapOf<String, String?>()
 
     // find possible attendance records to create
@@ -132,17 +135,22 @@ class ManageAttendancesService(
       }
     }
 
-    attendancesList.ifNotEmpty {
+    return attendancesList
+  }
+
+  fun saveAttendances(date: LocalDate, prisonCode: String, attendances: List<Attendance>) {
+    var counter = 0
+
+    attendances.ifNotEmpty {
       runCatching {
-        // Save the attendances for this session within a new sub-transaction
         transactionHandler.newSpringTransaction {
-          saveAttendances(attendancesList, "prison '$prisonCode'")
+          saveAttendances(attendances, "prison '$prisonCode'")
         }.onEach { savedAttendance ->
           // Send a sync event for each committed attendance row
           sendCreatedEvent(savedAttendance)
         }
       }
-        .onSuccess { counter += attendancesList.size }
+        .onSuccess { counter += attendances.size }
         .onFailure {
           monitoringService.capture("Error occurred saving attendance records for prison code '$prisonCode'", it)
           log.error(

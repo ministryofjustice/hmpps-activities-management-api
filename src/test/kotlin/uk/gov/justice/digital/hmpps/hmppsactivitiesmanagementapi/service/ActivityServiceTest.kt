@@ -30,6 +30,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.ActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonRegime
@@ -126,6 +127,7 @@ class ActivityServiceTest {
   private val telemetryClient: TelemetryClient = mock()
   private val locationService: LocationService = mock()
   private val allocationsService: AllocationsService = mock()
+  private val manageAttendancesService: ManageAttendancesService = mock()
 
   private val educationLevel = ReferenceCode(
     domain = "EDU_LEVEL",
@@ -181,6 +183,7 @@ class ActivityServiceTest {
     outboundEventsService,
     locationService,
     allocationsService,
+    manageAttendancesService,
     daysInAdvance,
   )
 
@@ -967,6 +970,7 @@ class ActivityServiceTest {
     verify(eventTierRepository).findByCode("TIER_2")
     verify(eventOrganiserRepository).findByCode("PRISON_STAFF")
     verify(activityRepository).saveAndFlush(activityCaptor.capture())
+    verifyNoInteractions(manageAttendancesService)
 
     with(activityCaptor.firstValue) {
       with(activityCategory) {
@@ -1028,6 +1032,7 @@ class ActivityServiceTest {
       .hasMessage("Change the activity name. There is already an activity called 'IT level 2'")
 
     verify(activityRepository, never()).saveAndFlush(any())
+    verifyNoInteractions(manageAttendancesService)
   }
 
   @Test
@@ -1049,6 +1054,8 @@ class ActivityServiceTest {
     assertThatThrownBy { service().updateActivity(MOORLAND_PRISON_CODE, 1, updateActivityRequest, updatedBy) }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Activity Category 1 not found")
+
+    verifyNoInteractions(manageAttendancesService)
   }
 
   @Test
@@ -1073,6 +1080,8 @@ class ActivityServiceTest {
     assertThatThrownBy { service().updateActivity(MOORLAND_PRISON_CODE, 1, updateActivityRequest, updatedBy) }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Event tier \"TIER_2\" not found")
+
+    verifyNoInteractions(manageAttendancesService)
   }
 
   @Test
@@ -1097,6 +1106,8 @@ class ActivityServiceTest {
     assertThatThrownBy { service().updateActivity(MOORLAND_PRISON_CODE, 1, updateActivityRequest, updatedBy) }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Event organiser \"PRISON_STAFF\" not found")
+
+    verifyNoInteractions(manageAttendancesService)
   }
 
   @Test
@@ -1145,6 +1156,7 @@ class ActivityServiceTest {
 
     verify(activityCategoryRepository).findById(2)
     verify(activityRepository).saveAndFlush(activityCaptor.capture())
+    verifyNoInteractions(manageAttendancesService)
 
     with(activityCaptor.firstValue.activityCategory) {
       assertThat(activityCategoryId).isEqualTo(2)
@@ -1209,6 +1221,7 @@ class ActivityServiceTest {
     service().updateActivity(MOORLAND_PRISON_CODE, 1, updateActivityRequest, "SCH_ACTIVITY")
 
     verify(activityRepository).saveAndFlush(activityCaptor.capture())
+    verifyNoInteractions(manageAttendancesService)
 
     with(activityCaptor.firstValue) {
       endDate isEqualTo newEndDate
@@ -1237,6 +1250,7 @@ class ActivityServiceTest {
     service().updateActivity(MOORLAND_PRISON_CODE, 17, updateActivityRequest, "SCH_ACTIVITY")
 
     verify(activityRepository).saveAndFlush(activityCaptor.capture())
+    verifyNoInteractions(manageAttendancesService)
 
     with(activityCaptor.firstValue) {
       assertThat(activityPay()).hasSize(1)
@@ -1303,6 +1317,7 @@ class ActivityServiceTest {
     service().updateActivity(MOORLAND_PRISON_CODE, 17, updateActivityRequest, "SCH_ACTIVITY")
 
     verify(activityRepository).saveAndFlush(activityCaptor.capture())
+    verifyNoInteractions(manageAttendancesService)
 
     with(activityCaptor.firstValue) {
       assertThat(activityPay()).hasSize(2)
@@ -1381,6 +1396,8 @@ class ActivityServiceTest {
       service().updateActivity(MOORLAND_PRISON_CODE, 17, updateActivityRequest, "TEST")
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("The pay band, incentive level and start date combination must be unique for each pay rate")
+
+    verifyNoInteractions(manageAttendancesService)
   }
 
   @Test
@@ -1405,6 +1422,7 @@ class ActivityServiceTest {
     service().updateActivity(MOORLAND_PRISON_CODE, 17, updateActivityRequest, "SCH_ACTIVITY")
 
     verify(activityRepository).saveAndFlush(activityCaptor.capture())
+    verifyNoInteractions(manageAttendancesService)
 
     with(activityCaptor.firstValue) {
       assertThat(activityPay()).hasSize(1)
@@ -1437,6 +1455,7 @@ class ActivityServiceTest {
     service().updateActivity(MOORLAND_PRISON_CODE, 17, updateActivityRequest, "SCH_ACTIVITY")
 
     verify(activityRepository).saveAndFlush(activityCaptor.capture())
+    verifyNoInteractions(manageAttendancesService)
 
     with(activityCaptor.firstValue) {
       assertThat(activityPay()).hasSize(2)
@@ -1463,6 +1482,8 @@ class ActivityServiceTest {
       service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(startDate = TimeSource.today()), "TEST")
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Activity start date cannot be changed. Start date must be in the future.")
+
+    verifyNoInteractions(manageAttendancesService)
   }
 
   @Test
@@ -1486,6 +1507,8 @@ class ActivityServiceTest {
       )
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Activity start date cannot be changed. Start date cannot be after the end date.")
+
+    verifyNoInteractions(manageAttendancesService)
   }
 
   @Test
@@ -1504,6 +1527,8 @@ class ActivityServiceTest {
       service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(startDate = TimeSource.tomorrow()), "TEST")
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Activity start date cannot be changed. Activity already started.")
+
+    verifyNoInteractions(manageAttendancesService)
   }
 
   @Test
@@ -1522,6 +1547,8 @@ class ActivityServiceTest {
       service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(startDate = TimeSource.tomorrow()), "TEST")
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Activity start date cannot be changed. Activity already started.")
+
+    verifyNoInteractions(manageAttendancesService)
   }
 
   @Test
@@ -1545,6 +1572,8 @@ class ActivityServiceTest {
       )
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("removeEndDate flag cannot be true when an endDate is also supplied.")
+
+    verifyNoInteractions(manageAttendancesService)
   }
 
   @Test
@@ -1581,6 +1610,8 @@ class ActivityServiceTest {
     service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(removeEndDate = true), "TEST")
 
     verify(activityRepository).saveAndFlush(activityCaptor.capture())
+    verifyNoInteractions(manageAttendancesService)
+
     with(activityCaptor.firstValue) {
       assertThat(endDate).isNull()
       schedules().forEach { s ->
@@ -1613,6 +1644,8 @@ class ActivityServiceTest {
     service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(endDate = TimeSource.tomorrow()), "TEST")
 
     verify(activityRepository).saveAndFlush(activityCaptor.capture())
+    verifyNoInteractions(manageAttendancesService)
+
     with(activityCaptor.firstValue) {
       // assert end date set and future instances ahead of the new end date are removed
       assertThat(endDate).isEqualTo(TimeSource.tomorrow())
@@ -1644,6 +1677,8 @@ class ActivityServiceTest {
     service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(endDate = newEndDate), "TEST")
 
     verify(activityRepository).saveAndFlush(activityCaptor.capture())
+    verifyNoInteractions(manageAttendancesService)
+
     with(activityCaptor.firstValue) {
       assertThat(endDate).isEqualTo(TimeSource.tomorrow().plusDays(5))
       schedules().forEach { s ->
@@ -1683,6 +1718,8 @@ class ActivityServiceTest {
     )
 
     verify(activityRepository).saveAndFlush(activityCaptor.capture())
+    verifyNoInteractions(manageAttendancesService)
+
     with(activityCaptor.firstValue) {
       // assert end date set and future instances ahead of the new end date are removed
       assertThat(endDate).isEqualTo(TimeSource.tomorrow().plusDays(1))
@@ -1713,6 +1750,8 @@ class ActivityServiceTest {
       service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(endDate = TimeSource.tomorrow()), "TEST")
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Activity cannot be updated because it is now archived.")
+
+    verifyNoInteractions(manageAttendancesService)
   }
 
   @Test
@@ -1722,6 +1761,8 @@ class ActivityServiceTest {
     assertThatThrownBy {
       service().updateActivity(PENTONVILLE_PRISON_CODE, 1, ActivityUpdateRequest(endDate = TimeSource.tomorrow()), "TEST")
     }.isInstanceOf(CaseloadAccessException::class.java)
+
+    verifyNoInteractions(manageAttendancesService)
   }
 
   @Test
@@ -1766,6 +1807,8 @@ class ActivityServiceTest {
 
     schedule.slots() hasSize 1
     schedule.instances() hasSize 1
+
+    verifyNoInteractions(manageAttendancesService)
   }
 
   @Test
@@ -1828,6 +1871,8 @@ class ActivityServiceTest {
     schedule.instances() hasSize 1
     assertThat(schedule.slots()).contains(slot1)
     assertThat(schedule.instances()).contains(instance1)
+
+    verifyNoInteractions(manageAttendancesService)
   }
 
   @Test
@@ -1901,6 +1946,8 @@ class ActivityServiceTest {
     schedule.instances() hasSize 2
     assertThat(schedule.instances()).doesNotContain(instance1)
     assertThat(schedule.instances()).contains(instance2)
+
+    verifyNoInteractions(manageAttendancesService)
   }
 
   @Test
@@ -1969,6 +2016,8 @@ class ActivityServiceTest {
     schedule.instances() hasSize 1
     assertThat(schedule.instances()).doesNotContain(instance1)
     assertThat(schedule.instances() containsExactly listOf(expectedScheduledInstance))
+
+    verifyNoInteractions(manageAttendancesService)
   }
 
   @Test
@@ -2009,6 +2058,8 @@ class ActivityServiceTest {
     schedule.instances() hasSize 2
     schedule.instances()[0].sessionDate isEqualTo bankHoliday
     schedule.instances()[1].sessionDate isEqualTo dayAfterBankHoliday
+
+    verifyNoInteractions(manageAttendancesService)
   }
 
   @Test
@@ -2057,6 +2108,8 @@ class ActivityServiceTest {
 
     schedule.instances() hasSize 1
     schedule.instances().first().sessionDate isEqualTo dayAfterBankHoliday
+
+    verifyNoInteractions(manageAttendancesService)
   }
 
   @Test
@@ -2279,6 +2332,64 @@ class ActivityServiceTest {
     )
 
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 0L)
+    verifyNoInteractions(manageAttendancesService)
+  }
+
+  @Test
+  fun `updateActivity with new slots for today - success`() {
+    val today = LocalDate.now()
+
+    val activity = activityEntity(noSchedules = true).also {
+      whenever(
+        activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+          it.activityId,
+          it.prisonCode,
+          today,
+        ),
+      ) doReturn (it)
+    }
+
+    val schedule = activity.addSchedule(activitySchedule(activity, noInstances = true, noSlots = true))
+
+    schedule.slots() hasSize 0
+    schedule.instances() hasSize 0
+
+    val newAttendance1 = mock<Attendance>()
+    val newAttendance2 = mock<Attendance>()
+    val newAttendances = listOf(newAttendance1, newAttendance2)
+
+    whenever(manageAttendancesService.findAttendancesToCreate(today, activity.prisonCode)).thenReturn(newAttendances)
+
+    service().updateActivity(
+      activity.prisonCode,
+      activity.activityId,
+      ActivityUpdateRequest(
+        slots = listOf(
+          Slot(
+            weekNumber = 1,
+            timeSlot = TimeSlot.PM,
+            monday = today.dayOfWeek == DayOfWeek.MONDAY,
+            tuesday = today.dayOfWeek == DayOfWeek.TUESDAY,
+            wednesday = today.dayOfWeek == DayOfWeek.WEDNESDAY,
+            thursday = today.dayOfWeek == DayOfWeek.THURSDAY,
+            friday = today.dayOfWeek == DayOfWeek.FRIDAY,
+            saturday = today.dayOfWeek == DayOfWeek.SATURDAY,
+            sunday = today.dayOfWeek == DayOfWeek.SUNDAY,
+          ),
+        ),
+        firstTimeSlotForToday = TimeSlot.AM,
+      ),
+      "TEST",
+    )
+
+    schedule.slots() hasSize 1
+    schedule.instances() hasSize 1
+
+    verify(manageAttendancesService).findAttendancesToCreate(today, activity.prisonCode)
+    verify(manageAttendancesService).saveAttendances(newAttendances, activity.schedules().first().description)
+    verify(manageAttendancesService).sendCreatedEvent(newAttendance1)
+    verify(manageAttendancesService).sendCreatedEvent(newAttendance2)
+    verifyNoMoreInteractions(manageAttendancesService)
   }
 
   @Test
@@ -2359,6 +2470,7 @@ class ActivityServiceTest {
     )
 
     verify(outboundEventsService, never()).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 0L)
+    verifyNoInteractions(manageAttendancesService)
   }
 
   @Nested
@@ -2395,6 +2507,7 @@ class ActivityServiceTest {
       service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(offWing = true), "TEST")
 
       verify(activityRepository).saveAndFlush(activityCaptor.capture())
+      verifyNoInteractions(manageAttendancesService)
 
       with(activityCaptor.firstValue) {
         assertThat(offWing).isTrue
@@ -2406,6 +2519,7 @@ class ActivityServiceTest {
       service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(onWing = true), "TEST")
 
       verify(activityRepository).saveAndFlush(activityCaptor.capture())
+      verifyNoInteractions(manageAttendancesService)
 
       with(activityCaptor.firstValue) {
         assertThat(onWing).isTrue
@@ -2417,6 +2531,7 @@ class ActivityServiceTest {
       service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(inCell = true), "TEST")
 
       verify(activityRepository).saveAndFlush(activityCaptor.capture())
+      verifyNoInteractions(manageAttendancesService)
 
       with(activityCaptor.firstValue) {
         assertThat(inCell).isTrue
@@ -2460,6 +2575,8 @@ class ActivityServiceTest {
       ).thenReturn(activity)
 
       service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(dpsLocationId = location.dpsLocationId), "TEST")
+
+      verifyNoInteractions(manageAttendancesService)
     }
 
     @Test
@@ -2477,6 +2594,8 @@ class ActivityServiceTest {
       ).thenReturn(activity)
 
       service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(dpsLocationId = location.dpsLocationId), "TEST")
+
+      verifyNoInteractions(manageAttendancesService)
     }
 
     @Test
@@ -2494,6 +2613,8 @@ class ActivityServiceTest {
       ).thenReturn(activity)
 
       service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(dpsLocationId = location.dpsLocationId), "TEST")
+
+      verifyNoInteractions(manageAttendancesService)
     }
   }
 
@@ -2514,6 +2635,8 @@ class ActivityServiceTest {
     }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Activity location must be one of offWing, onWing, inCell or a DPS location UUID")
+
+    verifyNoInteractions(manageAttendancesService)
   }
 
   @Test
@@ -2574,7 +2697,9 @@ class ActivityServiceTest {
       ACTIVITY_ID_PROPERTY_KEY to "1",
       INTERNAL_LOCATION_DESCRIPTION_PROPERTY_KEY to "Education - R1",
     )
+
     verify(telemetryClient).trackEvent(TelemetryEvent.ACTIVITY_EDITED.value, metricsPropertiesMap, activityMetricsMap())
+    verifyNoInteractions(manageAttendancesService)
   }
 
   @Test
@@ -2609,6 +2734,7 @@ class ActivityServiceTest {
       .hasMessage("Cannot add activity organiser unless activity is Tier 2.")
 
     verify(activityRepository, times(0)).saveAndFlush(any())
+    verifyNoInteractions(manageAttendancesService)
   }
 
   @Test
@@ -2636,6 +2762,7 @@ class ActivityServiceTest {
     service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(tierCode = "TIER_1"), "TEST")
 
     verify(activityRepository).saveAndFlush(activityCaptor.capture())
+    verifyNoInteractions(manageAttendancesService)
 
     with(activityCaptor.firstValue) {
       assertThat(this.organiser).isNull()
@@ -2699,6 +2826,8 @@ class ActivityServiceTest {
     activity.paid isBool false
     activity.activityPay() hasSize 0
     activity.activityPayHistory() hasSize 0
+
+    verifyNoInteractions(manageAttendancesService)
   }
 
   @Test
@@ -2721,6 +2850,8 @@ class ActivityServiceTest {
     service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(paid = true, pay = listOf(ActivityPayCreateRequest(incentiveNomisCode = "123", incentiveLevel = "level", payBandId = 1))), "SCH_ACTIVITY")
 
     activity.paid isBool true
+
+    verifyNoInteractions(manageAttendancesService)
   }
 
   @Test
@@ -2741,6 +2872,8 @@ class ActivityServiceTest {
       service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(paid = true), "SCH_ACTIVITY")
     }.isInstanceOf(IllegalStateException::class.java)
       .hasMessage("Activity '1' must have at least one pay rate.")
+
+    verifyNoInteractions(manageAttendancesService)
   }
 
   @Test
@@ -2769,6 +2902,7 @@ class ActivityServiceTest {
     service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(attendanceRequired = true), "SCH_ACTIVITY")
 
     verify(activityRepository).saveAndFlush(activityCaptor.capture())
+    verifyNoInteractions(manageAttendancesService)
 
     with(activityCaptor.firstValue) {
       assertThat(attendanceRequired).isTrue()
@@ -2799,6 +2933,7 @@ class ActivityServiceTest {
     service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(attendanceRequired = true), "SCH_ACTIVITY")
 
     verify(activityRepository).saveAndFlush(activityCaptor.capture())
+    verifyNoInteractions(manageAttendancesService)
 
     with(activityCaptor.firstValue) {
       assertThat(attendanceRequired).isTrue()
@@ -2828,6 +2963,8 @@ class ActivityServiceTest {
       service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(attendanceRequired = false), "TEST")
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Attendance cannot be from YES to NO for a 'Tier 1' activity.")
+
+    verifyNoInteractions(manageAttendancesService)
   }
 
   @Test
@@ -2846,6 +2983,8 @@ class ActivityServiceTest {
       service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(slots = emptyList()), "TEST")
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Must have at least 1 active slot across the schedule")
+
+    verifyNoInteractions(manageAttendancesService)
   }
 
   @Test
@@ -2869,6 +3008,8 @@ class ActivityServiceTest {
       service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(attendanceRequired = false), "TEST")
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Attendance cannot be from YES to NO for a 'Tier 2' activity.")
+
+    verifyNoInteractions(manageAttendancesService)
   }
 
   @Test
@@ -2899,6 +3040,7 @@ class ActivityServiceTest {
     service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(attendanceRequired = false), "SCH_ACTIVITY")
 
     verify(activityRepository).saveAndFlush(activityCaptor.capture())
+    verifyNoInteractions(manageAttendancesService)
 
     with(activityCaptor.firstValue) {
       assertThat(attendanceRequired).isFalse()
@@ -2934,6 +3076,7 @@ class ActivityServiceTest {
     service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(attendanceRequired = false), "SCH_ACTIVITY")
 
     verify(activityRepository).saveAndFlush(activityCaptor.capture())
+    verifyNoInteractions(manageAttendancesService)
 
     with(activityCaptor.firstValue) {
       assertThat(attendanceRequired).isFalse()
@@ -2962,6 +3105,8 @@ class ActivityServiceTest {
       service().updateActivity(MOORLAND_PRISON_CODE, 1, activityUpdateRequest, "TEST")
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Activity '1' cannot be paid as attendance is not required.")
+
+    verifyNoInteractions(manageAttendancesService)
   }
 
   @Test
@@ -2988,6 +3133,7 @@ class ActivityServiceTest {
     service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(paid = true, pay = listOf(ActivityPayCreateRequest(incentiveNomisCode = "123", incentiveLevel = "level", payBandId = 1)), attendanceRequired = true), "TEST")
 
     verify(activityRepository).saveAndFlush(activityCaptor.capture())
+    verifyNoInteractions(manageAttendancesService)
 
     with(activityCaptor.firstValue) {
       assertThat(attendanceRequired).isTrue()
@@ -3018,6 +3164,7 @@ class ActivityServiceTest {
     service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(tierCode = "FOUNDATION", categoryId = 8), "TEST")
 
     verify(activityRepository).saveAndFlush(activityCaptor.capture())
+    verifyNoInteractions(manageAttendancesService)
 
     with(activityCaptor.firstValue) {
       assertThat(attendanceRequired).isTrue()
@@ -3045,6 +3192,8 @@ class ActivityServiceTest {
       service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(tierCode = "TIER_1"), "TEST")
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Activity category NOT IN WORK for activity '1' must be a Foundation Tier.")
+
+    verifyNoInteractions(manageAttendancesService)
   }
 
   @Test
@@ -3067,6 +3216,8 @@ class ActivityServiceTest {
       service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(tierCode = "TIER_2"), "TEST")
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Activity category NOT IN WORK for activity '1' must be a Foundation Tier.")
+
+    verifyNoInteractions(manageAttendancesService)
   }
 
   @Test
