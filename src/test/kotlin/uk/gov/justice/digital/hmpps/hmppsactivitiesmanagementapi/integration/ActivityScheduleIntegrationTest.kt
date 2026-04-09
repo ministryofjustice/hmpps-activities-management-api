@@ -6,6 +6,7 @@ import org.assertj.core.api.Assertions.tuple
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
@@ -29,6 +30,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.WaitingLi
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditEventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AdvanceAttendanceCreateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.BulkPrisonerAllocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerAllocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerDeallocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCandidate
@@ -1114,6 +1116,227 @@ class ActivityScheduleIntegrationTest : LocalStackTestBase() {
     webTestClient.getScheduleBy(scheduleId = 1, earliestSessionDate = 6.daysAgo())!!.instances hasSize 7
     webTestClient.getScheduleBy(scheduleId = 1, earliestSessionDate = 7.daysAgo())!!.instances hasSize 7
   }
+
+  @Sql("classpath:test_data/seed-activity-paid-no-allocations.sql")
+  @Test
+  fun `204 (no content) response when successfully bulk allocate multiple prisoners to a schedule`() {
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
+      listOf("G4793VF", "G9353UC"),
+      listOf(
+        PrisonerSearchPrisonerFixture.instance(
+          prisonId = "PVI",
+          prisonerNumber = "G4793VF",
+          bookingId = 1,
+          status = "ACTIVE IN",
+        ),
+        PrisonerSearchPrisonerFixture.instance(
+          prisonId = "PVI",
+          prisonerNumber = "G9353UC",
+          bookingId = 2,
+          status = "ACTIVE IN",
+        ),
+      ),
+    )
+
+    val requests = listOf(
+      PrisonerAllocationRequest(
+        prisonerNumber = "G4793VF",
+        payBandId = 1,
+        startDate = TimeSource.tomorrow(),
+      ),
+      PrisonerAllocationRequest(
+        prisonerNumber = "G9353UC",
+        payBandId = 1,
+        startDate = TimeSource.tomorrow(),
+      ),
+    )
+
+    webTestClient.bulkAllocatePrisoners(1, requests)
+      .expectStatus().isNoContent
+
+    val allocations = with(activityScheduleRepository.findById(1).orElseThrow()) {
+      allocationRepository.findByActivitySchedule(this)
+    }
+
+    assertThat(allocations).hasSize(2)
+    assertThat(allocations.map { it.prisonerNumber }).containsExactlyInAnyOrder("G4793VF", "G9353UC")
+    allocations.forEach { assertThat(it.allocatedBy).isEqualTo("test-client") }
+
+    validateOutboundEvents(
+      ExpectedOutboundEvent(PRISONER_ALLOCATED, allocations[0].allocationId),
+      ExpectedOutboundEvent(PRISONER_ALLOCATED, allocations[1].allocationId),
+    )
+
+    verify(hmppsAuditApiClient, times(2)).createEvent(hmppsAuditEventCaptor.capture())
+    hmppsAuditEventCaptor.allValues.forEach {
+      assertThat(it.what).isEqualTo("PRISONER_ALLOCATED")
+      assertThat(it.who).isEqualTo("test-client")
+    }
+
+    val auditEvents = auditRepository.findAll().sortedBy { it.prisonerNumber }
+    val sortedRequestsByPrisonerNumber = requests.sortedBy { it.prisonerNumber }
+    assertThat(auditEvents).hasSize(2)
+    auditEvents.forEachIndexed { index, auditEvent ->
+      assertThat(auditEvent.activityId).isEqualTo(1)
+      assertThat(auditEvent.username).isEqualTo("test-client")
+      assertThat(auditEvent.auditType).isEqualTo(AuditType.PRISONER)
+      assertThat(auditEvent.prisonerNumber).isEqualTo(sortedRequestsByPrisonerNumber[index].prisonerNumber)
+      assertThat(auditEvent.detailType).isEqualTo(AuditEventType.PRISONER_ALLOCATED)
+      assertThat(auditEvent.prisonCode).isEqualTo("PVI")
+    }
+    assertThat(auditEvents.map { it.prisonerNumber }.distinct()).hasSize(2)
+  }
+
+  @Sql("classpath:test_data/seed-activity-paid-no-allocations.sql")
+  @Test
+  fun `400 (bad request) response when bulk allocate with empty allocation requests`() {
+    val error = webTestClient.bulkAllocatePrisoners(1, emptyList())
+      .expectStatus().isBadRequest
+      .expectBody(ErrorResponse::class.java)
+      .returnResult().responseBody
+
+    assertThat(error?.status).isEqualTo(400)
+  }
+
+  @Sql("classpath:test_data/seed-activity-paid-no-allocations.sql")
+  @Test
+  fun `400 (bad request) response when bulk allocate and prisoner not found`() {
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
+      listOf("G4793VF", "NOTFOUND"),
+      listOf(
+        PrisonerSearchPrisonerFixture.instance(
+          prisonId = "PVI",
+          prisonerNumber = "G4793VF",
+          bookingId = 1,
+          status = "ACTIVE IN",
+        ),
+      ),
+    )
+
+    val requests = listOf(
+      PrisonerAllocationRequest(
+        prisonerNumber = "G4793VF",
+        payBandId = 1,
+        startDate = TimeSource.tomorrow(),
+      ),
+      PrisonerAllocationRequest(
+        prisonerNumber = "NOTFOUND",
+        payBandId = 1,
+        startDate = TimeSource.tomorrow(),
+      ),
+    )
+
+    val error = webTestClient.bulkAllocatePrisoners(1, requests)
+      .expectStatus().isBadRequest
+      .expectBody(ErrorResponse::class.java)
+      .returnResult().responseBody
+
+    assertThat(error?.status).isEqualTo(400)
+    assertThat(allocationRepository.findByActivitySchedule(activityScheduleRepository.findById(1).orElseThrow())).isEmpty()
+  }
+
+  @Test
+  @Sql("classpath:test_data/seed-activity-id-7.sql")
+  fun `204 (no content) response when successfully bulk allocate multiple prisoners to an activity schedule that starts today and emits events`() {
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
+      listOf("G4793VF", "G9353UC"),
+      listOf(
+        PrisonerSearchPrisonerFixture.instance(
+          prisonId = MOORLAND_PRISON_CODE,
+          prisonerNumber = "G4793VF",
+          bookingId = 1,
+          status = "ACTIVE IN",
+        ),
+        PrisonerSearchPrisonerFixture.instance(
+          prisonId = MOORLAND_PRISON_CODE,
+          prisonerNumber = "G9353UC",
+          bookingId = 2,
+          status = "ACTIVE IN",
+        ),
+      ),
+    )
+
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(
+      PrisonerSearchPrisonerFixture.instance(
+        prisonId = MOORLAND_PRISON_CODE,
+        prisonerNumber = "G4793VF",
+        bookingId = 1,
+        status = "ACTIVE IN",
+      ),
+    )
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(
+      PrisonerSearchPrisonerFixture.instance(
+        prisonId = MOORLAND_PRISON_CODE,
+        prisonerNumber = "G9353UC",
+        bookingId = 2,
+        status = "ACTIVE IN",
+      ),
+    )
+
+    with(activityScheduleRepository.findById(1).orElseThrow()) {
+      assertThat(allocationRepository.findByActivitySchedule(this)).isEmpty()
+    }
+
+    val bulkRequests = listOf(
+      PrisonerAllocationRequest(
+        prisonerNumber = "G4793VF",
+        payBandId = 11,
+        startDate = TimeSource.today(),
+        scheduleInstanceId = 2L,
+      ),
+      PrisonerAllocationRequest(
+        prisonerNumber = "G9353UC",
+        payBandId = 11,
+        startDate = TimeSource.today(),
+        scheduleInstanceId = 2L,
+      ),
+    )
+
+    webTestClient.bulkAllocatePrisoners(1, bulkRequests)
+      .expectStatus().isNoContent
+
+    val allocations = with(activityScheduleRepository.findById(1).orElseThrow()) {
+      allocationRepository.findByActivitySchedule(this).sortedBy { it.prisonerNumber }
+    }
+
+    assertThat(allocations).hasSize(2)
+    assertThat(allocations.map { it.prisonerNumber }).containsExactlyInAnyOrder("G4793VF", "G9353UC")
+    allocations.forEach { assertThat(it.allocatedBy).isEqualTo("test-client") }
+
+    val newAttendances = attendanceRepository.findAll().filter { it.scheduledInstance.sessionDate == TimeSource.today() }
+      .sortedBy { it.prisonerNumber }
+    assertThat(newAttendances).hasSize(2)
+
+    validateOutboundEvents(
+      ExpectedOutboundEvent(PRISONER_ALLOCATED, allocations[0].allocationId),
+      ExpectedOutboundEvent(PRISONER_ALLOCATED, allocations[1].allocationId),
+      ExpectedOutboundEvent(PRISONER_ATTENDANCE_CREATED, newAttendances[0].attendanceId),
+      ExpectedOutboundEvent(PRISONER_ATTENDANCE_CREATED, newAttendances[1].attendanceId),
+    )
+
+    verify(hmppsAuditApiClient, times(2)).createEvent(hmppsAuditEventCaptor.capture())
+    hmppsAuditEventCaptor.allValues.forEach {
+      assertThat(it.what).isEqualTo("PRISONER_ALLOCATED")
+      assertThat(it.who).isEqualTo("test-client")
+    }
+
+    val auditEvents = auditRepository.findAll()
+    assertThat(auditEvents).hasSize(2)
+    auditEvents.forEach { auditEvent ->
+      assertThat(auditEvent.activityId).isEqualTo(1)
+      assertThat(auditEvent.username).isEqualTo("test-client")
+      assertThat(auditEvent.auditType).isEqualTo(AuditType.PRISONER)
+      assertThat(auditEvent.detailType).isEqualTo(AuditEventType.PRISONER_ALLOCATED)
+      assertThat(auditEvent.prisonCode).isEqualTo("MDI")
+    }
+  }
+
+  private fun WebTestClient.bulkAllocatePrisoners(scheduleId: Long, requests: List<PrisonerAllocationRequest>) = post()
+    .uri("/schedules/$scheduleId/allocations/bulk")
+    .bodyValue(BulkPrisonerAllocationRequest(allocations = requests))
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisationAsUser(roles = listOf(ROLE_ACTIVITY_HUB)))
+    .exchange()
 
   private fun WebTestClient.allocatePrisoner(scheduleId: Long, request: PrisonerAllocationRequest) = post()
     .uri("/schedules/$scheduleId/allocations")

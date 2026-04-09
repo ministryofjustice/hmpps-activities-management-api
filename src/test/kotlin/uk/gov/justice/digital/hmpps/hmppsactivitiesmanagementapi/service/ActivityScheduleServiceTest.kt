@@ -1072,4 +1072,392 @@ class ActivityScheduleServiceTest {
     }.isInstanceOf(EntityNotFoundException::class.java)
       .hasMessage("Activity schedule ID ${schedule.activityScheduleId} not found")
   }
+
+  @Test
+  fun `bulk allocate multiple prisoners to a schedule successfully`() {
+    val activity = activityEntity(activityId = 1L, prisonCode = PENTONVILLE_PRISON_CODE, noSchedules = true)
+
+    val schedule = activitySchedule(activity, activityScheduleId = 1L, description = "schedule 1", noAllocations = true)
+
+    activity.addSchedule(schedule)
+
+    val prisoner1 = "A1234AA"
+    val prisoner2 = "B5678BB"
+    val bookingId1 = "10001"
+    val bookingId2 = "20002"
+
+    val requests = listOf(
+      PrisonerAllocationRequest(
+        prisonerNumber = prisoner1,
+        payBandId = 1,
+        startDate = TimeSource.tomorrow(),
+      ),
+      PrisonerAllocationRequest(
+        prisonerNumber = prisoner2,
+        payBandId = 1,
+        startDate = TimeSource.tomorrow(),
+      ),
+    )
+
+    val prisonerSearchResults = listOf(
+      activeInPentonvillePrisoner.copy(prisonerNumber = prisoner1, bookingId = bookingId1),
+      activeInPentonvillePrisoner.copy(prisonerNumber = prisoner2, bookingId = bookingId2),
+    )
+
+    whenever(repository.findById(1L)).thenReturn(Optional.of(schedule))
+    prisonerSearchApiClient.stub {
+      on { findByPrisonerNumbersAsync(listOf(prisoner1, prisoner2)) }.doReturn(prisonerSearchResults)
+    }
+    whenever(prisonPayBandRepository.findByPrisonCode(PENTONVILLE_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh(PENTONVILLE_PRISON_CODE))
+    whenever(waitingListRepository.findByPrisonCodeAndPrisonerNumberAndActivitySchedule(any(), any(), any())) doReturn emptyList()
+    manageAttendancesService.stub {
+      on { createAnyAttendancesForToday(any(), any()) }.doReturn(emptyList())
+    }
+
+    service.allocatePrisonersToSchedule(
+      1L,
+      requests,
+      "by test",
+    )
+
+    verify(auditService, times(2)).logEvent(any())
+
+    verify(repository).saveAndFlush(any())
+  }
+
+  @Test
+  fun `bulk allocate to schedule should fail when allocation start date is in the past`() {
+    val prisoner1 = "A1234AA"
+
+    val requests = listOf(
+      PrisonerAllocationRequest(
+        prisonerNumber = prisoner1,
+        payBandId = 1,
+        startDate = TimeSource.yesterday(),
+      ),
+    )
+
+    assertThatThrownBy {
+      service.allocatePrisonersToSchedule(
+        1L,
+        requests,
+        "by test",
+      )
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessageContaining("Allocation start date must not be in the past")
+
+    verify(repository, never()).saveAndFlush(any())
+  }
+
+  @Test
+  fun `bulk allocate to schedule should fail when prisoner not found in prisoner search`() {
+    val activity = activityEntity(activityId = 1L, prisonCode = PENTONVILLE_PRISON_CODE, noSchedules = true).apply {
+      addSchedule(activitySchedule(this, activityScheduleId = 1L, noAllocations = true))
+    }
+
+    val schedule = activity.schedules().first()
+    val prisoner1 = "A1234AA"
+
+    val requests = listOf(
+      PrisonerAllocationRequest(
+        prisonerNumber = prisoner1,
+        payBandId = 1,
+        startDate = TimeSource.tomorrow(),
+      ),
+    )
+
+    whenever(repository.findById(1L)).thenReturn(Optional.of(schedule))
+    prisonerSearchApiClient.stub {
+      on { findByPrisonerNumbersAsync(listOf(prisoner1)) }.doReturn(emptyList())
+    }
+    whenever(prisonPayBandRepository.findByPrisonCode(PENTONVILLE_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh(PENTONVILLE_PRISON_CODE))
+
+    assertThatThrownBy {
+      service.allocatePrisonersToSchedule(
+        1L,
+        requests,
+        "by test",
+      )
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessageContaining("Unable to allocate prisoner with prisoner number")
+
+    verify(repository, never()).saveAndFlush(any())
+  }
+
+  @Test
+  fun `bulk allocate to schedule should fail when prisoner is not active at prison`() {
+    val activity = activityEntity(activityId = 1L, prisonCode = PENTONVILLE_PRISON_CODE, noSchedules = true).apply {
+      addSchedule(activitySchedule(this, activityScheduleId = 1L, noAllocations = true))
+    }
+
+    val schedule = activity.schedules().first()
+    val prisoner1 = "A1234AA"
+    val bookingId1 = "10001"
+
+    val requests = listOf(
+      PrisonerAllocationRequest(
+        prisonerNumber = prisoner1,
+        payBandId = 1,
+        startDate = TimeSource.tomorrow(),
+      ),
+    )
+
+    val prisonerSearchResults = listOf(
+      activeInPentonvillePrisoner.copy(
+        prisonerNumber = prisoner1,
+        bookingId = bookingId1,
+        prisonId = "MDI",
+      ),
+    )
+
+    whenever(repository.findById(1L)).thenReturn(Optional.of(schedule))
+    prisonerSearchApiClient.stub {
+      on { findByPrisonerNumbersAsync(listOf(prisoner1)) }.doReturn(prisonerSearchResults)
+    }
+    whenever(prisonPayBandRepository.findByPrisonCode(PENTONVILLE_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh(PENTONVILLE_PRISON_CODE))
+
+    assertThatThrownBy {
+      service.allocatePrisonersToSchedule(
+        1L,
+        requests,
+        "by test",
+      )
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessageContaining("prisoner is not active at prison")
+
+    verify(repository, never()).saveAndFlush(any())
+  }
+
+  @Test
+  fun `bulk allocate throws exception for start date before activity start date`() {
+    val schedule = activitySchedule(activityEntity(prisonCode = PENTONVILLE_PRISON_CODE))
+    schedule.activity.startDate = LocalDate.now().plusDays(2)
+
+    val prisoner1 = "B5678BB"
+    val bookingId1 = "20002"
+
+    val prisonerSearchResults = listOf(
+      activeInPentonvillePrisoner.copy(prisonerNumber = prisoner1, bookingId = bookingId1),
+    )
+
+    whenever(repository.findById(schedule.activityScheduleId)) doReturn Optional.of(schedule)
+    whenever(prisonPayBandRepository.findByPrisonCode(caseLoad)) doReturn prisonPayBandsLowMediumHigh(caseLoad)
+    prisonerSearchApiClient.stub {
+      on { findByPrisonerNumbersAsync(listOf(prisoner1)) }.doReturn(prisonerSearchResults)
+    }
+
+    assertThatThrownBy {
+      service.allocatePrisonersToSchedule(
+        schedule.activityScheduleId,
+        listOf(
+          PrisonerAllocationRequest(
+            prisoner1,
+            1,
+            TimeSource.tomorrow(),
+          ),
+        ),
+        "by test",
+      )
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Allocation start date cannot be before activity start date")
+
+    verify(repository, never()).saveAndFlush(any())
+  }
+
+  @Test
+  fun `bulk allocate throws exception for end date after activity end date`() {
+    val schedule = activitySchedule(activityEntity(prisonCode = PENTONVILLE_PRISON_CODE))
+    schedule.activity.endDate = TimeSource.tomorrow()
+
+    val prisoner1 = "B5678BB"
+    val bookingId1 = "20002"
+
+    val prisonerSearchResults = listOf(
+      activeInPentonvillePrisoner.copy(prisonerNumber = prisoner1, bookingId = bookingId1),
+    )
+
+    whenever(repository.findById(schedule.activityScheduleId)) doReturn Optional.of(schedule)
+    whenever(prisonPayBandRepository.findByPrisonCode(caseLoad)) doReturn prisonPayBandsLowMediumHigh(caseLoad)
+    prisonerSearchApiClient.stub {
+      on { findByPrisonerNumbersAsync(listOf(prisoner1)) }.doReturn(prisonerSearchResults)
+    }
+
+    assertThatThrownBy {
+      service.allocatePrisonersToSchedule(
+        schedule.activityScheduleId,
+        listOf(
+          PrisonerAllocationRequest(
+            prisoner1,
+            1,
+            TimeSource.tomorrow(),
+            TimeSource.tomorrow().plusDays(1),
+          ),
+        ),
+        "by test",
+      )
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Allocation end date cannot be after activity end date")
+
+    verify(repository, never()).saveAndFlush(any())
+  }
+
+  @Test
+  fun `bulk allocate throws exception for end date before activity start date`() {
+    val schedule = activitySchedule(activityEntity(prisonCode = PENTONVILLE_PRISON_CODE))
+
+    val prisoner1 = "B5678BB"
+    val bookingId1 = "20002"
+
+    val prisonerSearchResults = listOf(
+      activeInPentonvillePrisoner.copy(prisonerNumber = prisoner1, bookingId = bookingId1),
+    )
+
+    whenever(repository.findById(schedule.activityScheduleId)) doReturn Optional.of(schedule)
+    whenever(prisonPayBandRepository.findByPrisonCode(caseLoad)) doReturn prisonPayBandsLowMediumHigh(caseLoad)
+    prisonerSearchApiClient.stub {
+      on { findByPrisonerNumbersAsync(listOf(prisoner1)) }.doReturn(prisonerSearchResults)
+    }
+
+    assertThatThrownBy {
+      service.allocatePrisonersToSchedule(
+        schedule.activityScheduleId,
+        listOf(
+          PrisonerAllocationRequest(
+            prisoner1,
+            1,
+            TimeSource.tomorrow(),
+            TimeSource.today(),
+          ),
+        ),
+        "by test",
+      )
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Allocation end date cannot be before allocation start date")
+
+    verify(repository, never()).saveAndFlush(any())
+  }
+
+  @Test
+  fun `bulk allocate throws exception when schedule instance id is not provided but allocation starts today`() {
+    val schedule = activitySchedule(activityEntity(prisonCode = PENTONVILLE_PRISON_CODE))
+
+    assertThatThrownBy {
+      service.allocatePrisonersToSchedule(
+        schedule.activityScheduleId,
+        listOf(
+          PrisonerAllocationRequest(
+            "A1234AA",
+            1,
+            TimeSource.today(),
+          ),
+        ),
+        "by test",
+      )
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("The next session must be provided when allocation start date is today")
+
+    verify(repository, never()).saveAndFlush(any())
+  }
+
+  @Test
+  fun `bulk allocate throws exception without pay band for paid activity`() {
+    val schedule = activitySchedule(activityEntity(paid = true, prisonCode = PENTONVILLE_PRISON_CODE))
+
+    val prisoner1 = "A1234AA"
+    val bookingId1 = "10001"
+
+    val prisonerSearchResults = listOf(
+      activeInPentonvillePrisoner.copy(prisonerNumber = prisoner1, bookingId = bookingId1),
+    )
+
+    whenever(repository.findById(schedule.activityScheduleId)) doReturn Optional.of(schedule)
+    prisonerSearchApiClient.stub {
+      on { findByPrisonerNumbersAsync(listOf(prisoner1)) }.doReturn(prisonerSearchResults)
+    }
+
+    assertThatThrownBy {
+      service.allocatePrisonersToSchedule(
+        schedule.activityScheduleId,
+        listOf(
+          PrisonerAllocationRequest(
+            prisonerNumber = prisoner1,
+            payBandId = null,
+            TimeSource.tomorrow(),
+          ),
+        ),
+        "by test",
+      )
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Allocation must have a pay band when the activity '1' is paid")
+
+    verify(repository, never()).saveAndFlush(any())
+  }
+
+  @Test
+  fun `bulk allocate throws exception with pay band for unpaid activity`() {
+    val schedule = activitySchedule(activityEntity(paid = false, noPayBands = true, prisonCode = PENTONVILLE_PRISON_CODE), noAllocations = true)
+
+    val prisoner1 = "A1234AA"
+    val bookingId1 = "10001"
+
+    val prisonerSearchResults = listOf(
+      activeInPentonvillePrisoner.copy(prisonerNumber = prisoner1, bookingId = bookingId1),
+    )
+
+    whenever(repository.findById(schedule.activityScheduleId)) doReturn Optional.of(schedule)
+    prisonerSearchApiClient.stub {
+      on { findByPrisonerNumbersAsync(listOf(prisoner1)) }.doReturn(prisonerSearchResults)
+    }
+
+    assertThatThrownBy {
+      service.allocatePrisonersToSchedule(
+        schedule.activityScheduleId,
+        listOf(
+          PrisonerAllocationRequest(
+            prisonerNumber = prisoner1,
+            payBandId = 1,
+            TimeSource.tomorrow(),
+          ),
+        ),
+        "by test",
+      )
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Allocation cannot have a pay band when the activity '1' is unpaid")
+
+    verify(repository, never()).saveAndFlush(any())
+  }
+
+  @Test
+  fun `bulk allocate fails if prisoner does not have a booking id`() {
+    val schedule = activitySchedule(activity = pentonvilleActivity, noAllocations = true)
+
+    val prisoner1 = "A1234AA"
+
+    val prisonerSearchResults = listOf(
+      activeInPentonvillePrisoner.copy(prisonerNumber = prisoner1, bookingId = null),
+    )
+
+    whenever(repository.findById(schedule.activityScheduleId)) doReturn Optional.of(schedule)
+    whenever(prisonPayBandRepository.findByPrisonCode(caseLoad)) doReturn prisonPayBandsLowMediumHigh(caseLoad)
+    prisonerSearchApiClient.stub {
+      on { findByPrisonerNumbersAsync(listOf(prisoner1)) }.doReturn(prisonerSearchResults)
+    }
+
+    assertThatThrownBy {
+      service.allocatePrisonersToSchedule(
+        schedule.activityScheduleId,
+        listOf(
+          PrisonerAllocationRequest(
+            prisoner1,
+            1,
+            TimeSource.tomorrow(),
+          ),
+        ),
+        "by test",
+      )
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessageContaining("prisoner does not have a booking id")
+
+    verify(repository, never()).saveAndFlush(any())
+  }
 }
