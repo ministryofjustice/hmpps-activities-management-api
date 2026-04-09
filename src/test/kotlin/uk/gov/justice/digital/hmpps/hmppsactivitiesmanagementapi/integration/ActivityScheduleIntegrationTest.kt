@@ -6,6 +6,7 @@ import org.assertj.core.api.Assertions.tuple
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
@@ -1166,7 +1167,7 @@ class ActivityScheduleIntegrationTest : LocalStackTestBase() {
       ExpectedOutboundEvent(PRISONER_ALLOCATED, allocations[1].allocationId),
     )
 
-    verify(hmppsAuditApiClient, org.mockito.kotlin.times(2)).createEvent(hmppsAuditEventCaptor.capture())
+    verify(hmppsAuditApiClient, times(2)).createEvent(hmppsAuditEventCaptor.capture())
     hmppsAuditEventCaptor.allValues.forEach {
       assertThat(it.what).isEqualTo("PRISONER_ALLOCATED")
       assertThat(it.who).isEqualTo("test-client")
@@ -1313,7 +1314,7 @@ class ActivityScheduleIntegrationTest : LocalStackTestBase() {
       ExpectedOutboundEvent(PRISONER_ATTENDANCE_CREATED, newAttendances[1].attendanceId),
     )
 
-    verify(hmppsAuditApiClient, org.mockito.kotlin.times(2)).createEvent(hmppsAuditEventCaptor.capture())
+    verify(hmppsAuditApiClient, times(2)).createEvent(hmppsAuditEventCaptor.capture())
     hmppsAuditEventCaptor.allValues.forEach {
       assertThat(it.what).isEqualTo("PRISONER_ALLOCATED")
       assertThat(it.who).isEqualTo("test-client")
