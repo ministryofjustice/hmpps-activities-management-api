@@ -297,23 +297,16 @@ class ActivityScheduleService(
 
       repository.saveAndFlush(schedule)
 
-      // Fetch allocations from database to get newly generated IDs after flush
-      val allocationsWithIds = repository.findOrThrowNotFound(scheduleId).allocations()
-        .associateBy { it.prisonerNumber }
-
       allocationsWithAttendances.map { (allocation, attendances, maybeWaitingList) ->
         val savedAttendances = manageAttendancesService.saveAttendances(attendances, schedule.description)
 
-        val allocationWithId = allocationsWithIds[allocation.prisonerNumber] ?: allocation
+        maybeWaitingList?.allocated(allocation)?.also { waitingListRepository.save(it) }
 
-        // Now the allocation is saved, associate it with the waiting list
-        maybeWaitingList?.allocated(allocationWithId)
+        auditService.logEvent(allocation.toPrisonerAllocatedEvent(maybeWaitingList?.waitingListId))
+        logAllocationEvent(allocation, maybeWaitingList)
+        log.info("Allocated prisoner ${allocation.prisonerNumber} to activity schedule ${schedule.description}.")
 
-        auditService.logEvent(allocationWithId.toPrisonerAllocatedEvent(maybeWaitingList?.waitingListId))
-        logAllocationEvent(allocationWithId, maybeWaitingList)
-        log.info("Allocated prisoner ${allocationWithId.prisonerNumber} to activity schedule ${schedule.description}.")
-
-        allocationWithId.allocationId to savedAttendances
+        allocation.allocationId to savedAttendances
       }
     }.also { allocationIdAndAttendancesPairs ->
       allocationIdAndAttendancesPairs.forEach { (allocationId, newAttendances) ->
