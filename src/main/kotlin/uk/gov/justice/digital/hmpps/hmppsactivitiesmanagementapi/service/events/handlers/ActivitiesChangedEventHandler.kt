@@ -5,7 +5,6 @@ import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.MovementType
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isActiveOut
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isAtDifferentLocationTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isInactiveOut
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.lastMovementType
@@ -75,11 +74,7 @@ class ActivitiesChangedEventHandler(
   )
 
   private fun suspendPrisonerAllocationsAndAttendances(event: ActivitiesChangedEvent) {
-    if (isExternalTemporaryAbsence(event)) {
-      log.info("Skipping auto-suspension of allocations and attendances for Work ROTL prisoner ${event.prisonerNumber()} at prison ${event.prisonCode()}.")
-      return
-    }
-
+    val isOnTemporaryAbsence = isExternalActivitiesEnabledAndPrisonerOnTemporaryAbsence(event)
     val now = LocalDateTime.now()
 
     transactionHandler.newSpringTransaction {
@@ -91,19 +86,42 @@ class ActivitiesChangedEventHandler(
         PrisonerStatus.SUSPENDED,
       )
         .excludingFuturePendingAllocations()
+        .excludingExternalAllocationsOnTemporaryAbsence(isOnTemporaryAbsence, event)
         .autoSuspendPrisonersAllocations(now, event)
-        .map { allocation -> allocation to attendanceSuspensionDomainService.autoSuspendFutureAttendancesForAllocation(now, allocation) }
-    }.let { suspendedAllocations ->
-      suspendedAllocations.forEach {
-        outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, it.first.allocationId)
-        it.second.forEach { attendance ->
-          outboundEventsService.send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, attendance.attendanceId)
+        .map { allocation ->
+          allocation to attendanceSuspensionDomainService.autoSuspendFutureAttendancesForAllocation(now, allocation)
         }
-      }.also { log.info("Sending allocation amended events.") }
-    }
+    }.forEach { (allocation, attendances) ->
+      outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocation.allocationId)
+      attendances.forEach { attendance ->
+        outboundEventsService.send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, attendance.attendanceId)
+      }
+    }.also { log.info("Sending allocation amended events.") }
   }
 
   private fun List<Allocation>.excludingFuturePendingAllocations() = filterNot { it.prisonerStatus == PrisonerStatus.PENDING && it.startDate.isAfter(LocalDate.now()) }
+
+  /** If a prisoner is on temporary absence, external activity allocations (outsideWork = true) and attendances
+   * are excluded from auto-suspension. Internal allocations and attendances are still auto-suspended as normal.
+   */
+  private fun List<Allocation>.excludingExternalAllocationsOnTemporaryAbsence(
+    isOnTemporaryAbsence: Boolean,
+    event: ActivitiesChangedEvent,
+  ): List<Allocation> {
+    if (!isOnTemporaryAbsence) return this
+
+    val (externalAllocations, internalAllocations) = partition { it.activitySchedule.activity.outsideWork }
+
+    if (externalAllocations.isNotEmpty()) {
+      log.info(
+        "Skipping auto-suspension of ${externalAllocations.size} external activity allocation(s) " +
+          "and their attendances for prisoner ${event.prisonerNumber()} as they are on temporary absence " +
+          "at prison ${event.prisonCode()}.",
+      )
+    }
+
+    return internalAllocations
+  }
 
   private fun List<Allocation>.autoSuspendPrisonersAllocations(suspendedAt: LocalDateTime, event: ActivitiesChangedEvent) = onEach { it.autoSuspend(suspendedAt, "Temporarily released or transferred") }
     .also { log.info("Auto suspended ${it.size} allocations for prisoner ${event.prisonerNumber()} at prison ${event.prisonCode()}.") }
@@ -130,10 +148,10 @@ class ActivitiesChangedEventHandler(
     return this
   }
 
-  private fun isExternalTemporaryAbsence(event: ActivitiesChangedEvent): Boolean {
+  private fun isExternalActivitiesEnabledAndPrisonerOnTemporaryAbsence(event: ActivitiesChangedEvent): Boolean {
     if (!rolloutPrisonService.isExternalActivitiesRolledOutAt(event.prisonCode())) return false
-    val prisoner = prisonerSearchApiClient.findByPrisonerNumber(event.prisonerNumber())
+    return prisonerSearchApiClient.findByPrisonerNumber(event.prisonerNumber())
       .throwNullPointerIfNotFound { "Prisoner search lookup failed for prisoner ${event.prisonerNumber()} at prison ${event.prisonCode()} when checking for temporary absence on suspend action" }
-    return prisoner.isActiveOut() && prisoner.lastMovementType() == MovementType.TEMPORARY_ABSENCE
+      .lastMovementType() == MovementType.TEMPORARY_ABSENCE
   }
 }

@@ -1045,82 +1045,142 @@ class InboundEventsIntegrationTest : LocalStackTestBase() {
   }
 
   @Nested
-  inner class ExternalActivitiesTests {
+  inner class TemporaryAbsenceExternalActivitiesTests {
 
     @Test
-    @Sql("classpath:test_data/seed-activity-changed-event.sql")
-    fun `allocations and attendances are not auto-suspended for Work ROTL (Temporary absence - ACTIVE OUT) when external activities are enabled`() {
+    @Sql("classpath:test_data/seed-activity-changed-event-for-external-activities.sql")
+    fun `internal allocation and attendance are auto-suspended and external allocations and attendances are untouched for Work ROTL (Temporary absence)`() {
       val prisonerOnTemporaryAbsence = PrisonerSearchPrisonerFixture.instance(
         prisonerNumber = "A11111A",
-        prisonId = PENTONVILLE_PRISON_CODE,
         status = "ACTIVE OUT",
         inOutStatus = Prisoner.InOutStatus.OUT,
         lastMovementType = MovementType.TEMPORARY_ABSENCE,
       )
       prisonerSearchApiMockServer.stubSearchByPrisonerNumber(prisonerOnTemporaryAbsence)
 
-      allocationRepository.findByPrisonCodeAndPrisonerNumber(PENTONVILLE_PRISON_CODE, "A11111A").onEach {
-        assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.ACTIVE)
+      // Both allocations are ACTIVE when returned by the repository
+      allocationRepository.findByPrisonCodeAndPrisonerNumber(PENTONVILLE_PRISON_CODE, "A11111A").also {
+        assertThat(it).hasSize(2)
+        it.forEach { allocation -> allocation.prisonerStatus isEqualTo PrisonerStatus.ACTIVE }
       }
 
-      sendInboundEvent(activitiesChangedEvent(prisonerNumber = "A11111A", prisonId = PENTONVILLE_PRISON_CODE, action = Action.SUSPEND))
-
-      Thread.sleep(500)
-
-      allocationRepository.findByPrisonCodeAndPrisonerNumber(PENTONVILLE_PRISON_CODE, "A11111A").onEach {
-        assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.ACTIVE)
+      // All attendances are in WAITING state
+      attendanceRepository.findAllById(listOf(1L, 2L, 3L)).also {
+        assertThat(it).hasSize(3)
+        it.forEach { attendance -> attendance.status() isEqualTo AttendanceStatus.WAITING }
       }
-      attendanceRepository.findAllById(listOf(1L, 2L, 3L)).onEach {
-        assertThat(it.status()).isEqualTo(AttendanceStatus.WAITING)
-        assertThat(it.attendanceReason).isNull()
-        assertThat(it.issuePayment).isNull()
-        assertThat(it.recordedTime).isNull()
-        assertThat(it.recordedBy).isNull()
-      }
-
-      validateNoMessagesSent()
-    }
-
-    @Test
-    @Sql("classpath:test_data/seed-activity-changed-event.sql")
-    fun `allocations and future attendances are auto-suspended for non Work ROTL (Transferred - ACTIVE OUT) when external activities are enabled`() {
-      val transferredPrisoner = PrisonerSearchPrisonerFixture.instance(
-        prisonerNumber = "A11111A",
-        prisonId = PENTONVILLE_PRISON_CODE,
-        status = "ACTIVE OUT",
-        inOutStatus = Prisoner.InOutStatus.OUT,
-        lastMovementType = MovementType.TRANSFER,
-      )
-      prisonerSearchApiMockServer.stubSearchByPrisonerNumber(transferredPrisoner)
 
       sendInboundEvent(activitiesChangedEvent(prisonerNumber = "A11111A", prisonId = PENTONVILLE_PRISON_CODE, action = Action.SUSPEND))
 
       await untilAsserted {
-        allocationRepository.findByPrisonCodeAndPrisonerNumber(PENTONVILLE_PRISON_CODE, "A11111A").onEach {
-          assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.AUTO_SUSPENDED)
-          assertThat(it.suspendedReason).isEqualTo("Temporarily released or transferred")
-          assertThat(it.suspendedTime).isCloseTo(LocalDateTime.now(), within(10, ChronoUnit.SECONDS))
-          assertThat(it.suspendedBy).isEqualTo("Activities Management Service")
+        val allocations = allocationRepository.findByPrisonCodeAndPrisonerNumber(PENTONVILLE_PRISON_CODE, "A11111A")
+
+        // Internal allocation (allocation_id = 1, outside_work = false) must be auto-suspended
+        with(allocations.single { it.allocationId == 1L }) {
+          prisonerStatus isEqualTo PrisonerStatus.AUTO_SUSPENDED
+          suspendedReason isEqualTo "Temporarily released or transferred"
+          assertThat(suspendedTime).isCloseTo(LocalDateTime.now(), within(10, ChronoUnit.SECONDS))
+          suspendedBy isEqualTo "Activities Management Service"
         }
 
-        // Attendance one should be untouched
+        // External allocation (allocation_id = 2, outside_work = true) must not be auto-suspended
+        with(allocations.single { it.allocationId == 2L }) {
+          prisonerStatus isEqualTo PrisonerStatus.ACTIVE
+          assertThat(suspendedReason).isNull()
+          assertThat(suspendedTime).isNull()
+        }
+
+        // Past attendance (attendance_id = 1) must be untouched regardless
         with(attendanceRepository.findById(1L).orElseThrow()) {
-          assertThat(status()).isEqualTo(AttendanceStatus.WAITING)
+          status() isEqualTo AttendanceStatus.WAITING
           assertThat(attendanceReason).isNull()
           assertThat(issuePayment).isNull()
           assertThat(recordedTime).isNull()
           assertThat(recordedBy).isNull()
         }
 
-        // Attendance two and three should be suspended
-        attendanceRepository.findAllById(listOf(2L, 3L)).onEach {
-          assertThat((it.status())).isEqualTo(AttendanceStatus.COMPLETED)
-          assertThat(it.attendanceReason?.code).isEqualTo(AttendanceReasonEnum.AUTO_SUSPENDED)
-          assertThat(it.issuePayment).isFalse()
-          assertThat(it.recordedTime).isCloseTo(LocalDateTime.now(), within(10, ChronoUnit.SECONDS))
-          assertThat(it.recordedBy).isEqualTo("Activities Management Service")
+        // Future attendance for internal activity (attendance_id = 2) must be auto-suspended
+        with(attendanceRepository.findById(2L).orElseThrow()) {
+          status() isEqualTo AttendanceStatus.COMPLETED
+          attendanceReason?.code isEqualTo AttendanceReasonEnum.AUTO_SUSPENDED
+          assertThat(issuePayment).isFalse()
+          assertThat(recordedTime).isCloseTo(LocalDateTime.now(), within(10, ChronoUnit.SECONDS))
+          recordedBy isEqualTo "Activities Management Service"
         }
 
+        // Future attendance for external activity (attendance_id = 3) must be untouched and remain WAITING
+        with(attendanceRepository.findById(3L).orElseThrow()) {
+          status() isEqualTo AttendanceStatus.WAITING
+          assertThat(attendanceReason).isNull()
+          assertThat(issuePayment).isNull()
+          assertThat(recordedTime).isNull()
+          assertThat(recordedBy).isNull()
+        }
+
+        validateOutboundEvents(
+          ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 1),
+          ExpectedOutboundEvent(PRISONER_ATTENDANCE_AMENDED, 2),
+        )
+      }
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-changed-event-for-external-activities.sql")
+    fun `allocations and future attendances are auto-suspended for non Work ROTL (Transferred) when external activities are enabled`() {
+      val transferredPrisoner = PrisonerSearchPrisonerFixture.instance(
+        prisonerNumber = "A11111A",
+        status = "ACTIVE OUT",
+        inOutStatus = Prisoner.InOutStatus.OUT,
+        lastMovementType = MovementType.TRANSFER,
+      )
+      prisonerSearchApiMockServer.stubSearchByPrisonerNumber(transferredPrisoner)
+
+      // Both allocations are ACTIVE when returned by the repository
+      allocationRepository.findByPrisonCodeAndPrisonerNumber(PENTONVILLE_PRISON_CODE, "A11111A").also {
+        assertThat(it).hasSize(2)
+        it.forEach { allocation -> allocation.prisonerStatus isEqualTo PrisonerStatus.ACTIVE }
+      }
+
+      // All attendances are in WAITING state
+      attendanceRepository.findAllById(listOf(1L, 2L, 3L)).also {
+        assertThat(it).hasSize(3)
+        it.forEach { attendance -> attendance.status() isEqualTo AttendanceStatus.WAITING }
+      }
+
+      sendInboundEvent(activitiesChangedEvent(prisonerNumber = "A11111A", prisonId = PENTONVILLE_PRISON_CODE, action = Action.SUSPEND))
+
+      await untilAsserted {
+        // Both internal and external allocations (allocation_id = 1,2) must be auto-suspended
+        allocationRepository.findByPrisonCodeAndPrisonerNumber(PENTONVILLE_PRISON_CODE, "A11111A")
+          .also { assertThat(it).hasSize(2) }
+          .forEach { allocation ->
+            allocation.prisonerStatus isEqualTo PrisonerStatus.AUTO_SUSPENDED
+            allocation.suspendedReason isEqualTo "Temporarily released or transferred"
+            assertThat(allocation.suspendedTime).isCloseTo(LocalDateTime.now(), within(10, ChronoUnit.SECONDS))
+            allocation.suspendedBy isEqualTo "Activities Management Service"
+          }
+
+        // Past attendance (attendance_id = 1) should be untouched
+        with(attendanceRepository.findById(1L).orElseThrow()) {
+          status() isEqualTo AttendanceStatus.WAITING
+          assertThat(attendanceReason).isNull()
+          assertThat(issuePayment).isNull()
+          assertThat(recordedTime).isNull()
+          assertThat(recordedBy).isNull()
+        }
+
+        // Future attendances for both internal (attendance_id = 2) and external (attendance_id = 3) activities must be auto-suspended
+        attendanceRepository.findAllById(listOf(2L, 3L))
+          .also { assertThat(it).hasSize(2) }
+          .forEach { attendance ->
+            attendance.status() isEqualTo AttendanceStatus.COMPLETED
+            attendance.attendanceReason?.code isEqualTo AttendanceReasonEnum.AUTO_SUSPENDED
+            assertThat(attendance.issuePayment).isFalse()
+            assertThat(attendance.recordedTime).isCloseTo(LocalDateTime.now(), within(10, ChronoUnit.SECONDS))
+            attendance.recordedBy isEqualTo "Activities Management Service"
+          }
+
+        // All 4 outbounds events will be fired: 2 allocations + 2 attendances (attendance_id = 2, 3)
         validateOutboundEvents(
           ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 1),
           ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 2),

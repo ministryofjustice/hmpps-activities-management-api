@@ -226,8 +226,10 @@ class ActivitiesChangedEventHandlerTest {
     }
 
     @Test
-    fun `allocations and attendances are not auto-suspended for Work ROTL (temporary absence) on suspend action when external activities are enabled`() {
-      val allocation = allocation().copy(allocationId = 1, prisonerNumber = "123456")
+    fun `external allocation and its attendances are not auto-suspended for a prisoner on Work ROTL (temporary absence) when external activities are enabled`() {
+      val externalAllocation = allocation().copy(allocationId = 1, prisonerNumber = "123456").also {
+        it.activitySchedule.activity.outsideWork = true
+      }
 
       whenever(
         allocationRepository.findByPrisonCodePrisonerNumberPrisonerStatus(
@@ -237,10 +239,9 @@ class ActivitiesChangedEventHandlerTest {
           PrisonerStatus.PENDING,
           PrisonerStatus.SUSPENDED,
         ),
-      ) doReturn listOf(allocation)
+      ) doReturn listOf(externalAllocation)
 
       val prisoner = mock<Prisoner>().also {
-        whenever(it.status) doReturn "ACTIVE OUT"
         whenever(it.lastMovementTypeCode) doReturn MovementType.TEMPORARY_ABSENCE.nomisShortCode
       }
       whenever(prisonerSearchApiClient.findByPrisonerNumber("123456")) doReturn prisoner
@@ -248,13 +249,13 @@ class ActivitiesChangedEventHandlerTest {
       val result = handler.handle(activitiesChangedEvent("123456", Action.SUSPEND, MOORLAND_PRISON_CODE))
 
       result.isSuccess() isBool true
-      allocation.prisonerStatus isEqualTo PrisonerStatus.ACTIVE
+      externalAllocation.prisonerStatus isEqualTo PrisonerStatus.ACTIVE
       verify(attendanceSuspensionDomainService, never()).autoSuspendFutureAttendancesForAllocation(any(), any())
     }
 
     @Test
-    fun `allocations and attendances are auto-suspended for non Work ROTL movements on suspend action when external activities are enabled`() {
-      val allocation = allocation().copy(allocationId = 1, prisonerNumber = "123456")
+    fun `internal allocation and its attendances are auto-suspended for a prisoner on Work ROTL (temporary absence) when external activities are enabled`() {
+      val internalAllocation = allocation().copy(allocationId = 1, prisonerNumber = "123456")
 
       whenever(
         allocationRepository.findByPrisonCodePrisonerNumberPrisonerStatus(
@@ -264,22 +265,88 @@ class ActivitiesChangedEventHandlerTest {
           PrisonerStatus.PENDING,
           PrisonerStatus.SUSPENDED,
         ),
-      ) doReturn listOf(allocation)
+      ) doReturn listOf(internalAllocation)
 
       val prisoner = mock<Prisoner>().also {
-        whenever(it.status) doReturn "ACTIVE OUT"
+        whenever(it.lastMovementTypeCode) doReturn MovementType.TEMPORARY_ABSENCE.nomisShortCode
+      }
+      whenever(prisonerSearchApiClient.findByPrisonerNumber("123456")) doReturn prisoner
+
+      handler.handle(activitiesChangedEvent("123456", Action.SUSPEND, MOORLAND_PRISON_CODE))
+
+      internalAllocation.prisonerStatus isEqualTo PrisonerStatus.AUTO_SUSPENDED
+      verify(attendanceSuspensionDomainService).autoSuspendFutureAttendancesForAllocation(any(), eq(internalAllocation))
+    }
+
+    @Test
+    fun `only internal allocations and its attendances are auto-suspended when a prisoner has both internal and external allocations on Work ROTL (temporary absence) when external activities are enabled`() {
+      val internalAllocation = allocation().copy(allocationId = 1, prisonerNumber = "123456")
+
+      val externalAllocation = allocation().copy(allocationId = 2, prisonerNumber = "123456").also {
+        it.activitySchedule.activity.outsideWork = true
+      }
+
+      whenever(
+        allocationRepository.findByPrisonCodePrisonerNumberPrisonerStatus(
+          MOORLAND_PRISON_CODE,
+          "123456",
+          PrisonerStatus.ACTIVE,
+          PrisonerStatus.PENDING,
+          PrisonerStatus.SUSPENDED,
+        ),
+      ) doReturn listOf(internalAllocation, externalAllocation)
+
+      val prisoner = mock<Prisoner>().also {
+        whenever(it.lastMovementTypeCode) doReturn MovementType.TEMPORARY_ABSENCE.nomisShortCode
+      }
+      whenever(prisonerSearchApiClient.findByPrisonerNumber("123456")) doReturn prisoner
+
+      handler.handle(activitiesChangedEvent("123456", Action.SUSPEND, MOORLAND_PRISON_CODE))
+
+      // Internal allocations must be auto-suspended
+      internalAllocation.prisonerStatus isEqualTo PrisonerStatus.AUTO_SUSPENDED
+      verify(attendanceSuspensionDomainService).autoSuspendFutureAttendancesForAllocation(any(), eq(internalAllocation))
+
+      // External allocations must not be auto-suspended
+      externalAllocation.prisonerStatus isEqualTo PrisonerStatus.ACTIVE
+      verify(attendanceSuspensionDomainService, never()).autoSuspendFutureAttendancesForAllocation(any(), eq(externalAllocation))
+    }
+
+    @Test
+    fun `all allocations and attendances are auto-suspended for non Work ROTL movements when external activities are enabled`() {
+      val internalAllocation = allocation().copy(allocationId = 1, prisonerNumber = "123456")
+
+      val externalAllocation = allocation().copy(allocationId = 2, prisonerNumber = "123456").also {
+        it.activitySchedule.activity.outsideWork = true
+      }
+
+      whenever(
+        allocationRepository.findByPrisonCodePrisonerNumberPrisonerStatus(
+          MOORLAND_PRISON_CODE,
+          "123456",
+          PrisonerStatus.ACTIVE,
+          PrisonerStatus.PENDING,
+          PrisonerStatus.SUSPENDED,
+        ),
+      ) doReturn listOf(internalAllocation, externalAllocation)
+
+      val prisoner = mock<Prisoner>().also {
         whenever(it.lastMovementTypeCode) doReturn MovementType.TRANSFER.nomisShortCode
       }
       whenever(prisonerSearchApiClient.findByPrisonerNumber("123456")) doReturn prisoner
 
       handler.handle(activitiesChangedEvent("123456", Action.SUSPEND, MOORLAND_PRISON_CODE))
 
-      allocation.prisonerStatus isEqualTo PrisonerStatus.AUTO_SUSPENDED
-      verify(attendanceSuspensionDomainService).autoSuspendFutureAttendancesForAllocation(any(), eq(allocation))
+      // Both internal and external allocations must be auto-suspended for non-Work ROTL movements
+      internalAllocation.prisonerStatus isEqualTo PrisonerStatus.AUTO_SUSPENDED
+      verify(attendanceSuspensionDomainService).autoSuspendFutureAttendancesForAllocation(any(), eq(internalAllocation))
+
+      externalAllocation.prisonerStatus isEqualTo PrisonerStatus.AUTO_SUSPENDED
+      verify(attendanceSuspensionDomainService).autoSuspendFutureAttendancesForAllocation(any(), eq(externalAllocation))
     }
 
     @Test
-    fun `allocations and attendances are auto-suspended for Work ROTL (temporary absence) on suspend action when external activities are not enabled`() {
+    fun `all allocations and attendances are auto-suspended for Work ROTL (temporary absence) when external activities are not enabled`() {
       val rolloutPrisonServiceWithoutExternalActivities = RolloutPrisonService("MDI", "MDI", "", "MDI")
       val handlerWithoutExternalActivities = ActivitiesChangedEventHandler(
         rolloutPrisonServiceWithoutExternalActivities,
@@ -292,7 +359,11 @@ class ActivitiesChangedEventHandlerTest {
         attendanceSuspensionDomainService,
       )
 
-      val allocation = allocation().copy(allocationId = 1, prisonerNumber = "123456")
+      val internalAllocation = allocation().copy(allocationId = 1, prisonerNumber = "123456")
+
+      val externalAllocation = allocation().copy(allocationId = 2, prisonerNumber = "123456").also {
+        it.activitySchedule.activity.outsideWork = true
+      }
 
       whenever(
         allocationRepository.findByPrisonCodePrisonerNumberPrisonerStatus(
@@ -302,13 +373,19 @@ class ActivitiesChangedEventHandlerTest {
           PrisonerStatus.PENDING,
           PrisonerStatus.SUSPENDED,
         ),
-      ) doReturn listOf(allocation)
+      ) doReturn listOf(internalAllocation, externalAllocation)
 
       handlerWithoutExternalActivities.handle(activitiesChangedEvent("123456", Action.SUSPEND, MOORLAND_PRISON_CODE))
 
+      // Prisoner Search API must not be called when external activities are not enabled
       verify(prisonerSearchApiClient, never()).findByPrisonerNumber(any())
-      allocation.prisonerStatus isEqualTo PrisonerStatus.AUTO_SUSPENDED
-      verify(attendanceSuspensionDomainService).autoSuspendFutureAttendancesForAllocation(any(), eq(allocation))
+
+      // Both external and internal allocations must be auto-suspended
+      internalAllocation.prisonerStatus isEqualTo PrisonerStatus.AUTO_SUSPENDED
+      verify(attendanceSuspensionDomainService).autoSuspendFutureAttendancesForAllocation(any(), eq(internalAllocation))
+
+      externalAllocation.prisonerStatus isEqualTo PrisonerStatus.AUTO_SUSPENDED
+      verify(attendanceSuspensionDomainService).autoSuspendFutureAttendancesForAllocation(any(), eq(externalAllocation))
     }
   }
 }
