@@ -193,5 +193,3 @@ aws:
       region: eu-west-2
       bucket: ${AWS_S3_AP_BUCKET}
       project: ${AWS_S3_AP_PROJECT}
-
-springdoc.swagger-ui.version: 5.32.1
