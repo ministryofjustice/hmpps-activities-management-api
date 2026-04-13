@@ -56,6 +56,8 @@ class RolloutPrisonService(
 
   fun isActivitiesRolledOutAt(prisonCode: String): Boolean = getPrison(code = prisonCode).activities
 
+  fun isExternalActivitiesRolledOutAt(prisonCode: String): Boolean = getPrison(code = prisonCode).externalActivities
+
   fun getRolloutPrisons(prisonsLive: Boolean = false): List<RolloutPrisonPlan> = if (prisonsLive) {
     this.prisonsLive.split(",").map { getByPrisonCode(it) }
   } else {
