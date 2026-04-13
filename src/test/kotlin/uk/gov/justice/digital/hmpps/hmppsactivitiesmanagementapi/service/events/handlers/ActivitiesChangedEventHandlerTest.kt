@@ -214,6 +214,20 @@ class ActivitiesChangedEventHandlerTest {
 
     @Test
     fun `exception is thrown on suspend action when prisoner is not found`() {
+      val externalAllocation = allocation().copy(allocationId = 1, prisonerNumber = "123456").also {
+        it.activitySchedule.activity.outsideWork = true
+      }
+
+      whenever(
+        allocationRepository.findByPrisonCodePrisonerNumberPrisonerStatus(
+          MOORLAND_PRISON_CODE,
+          "123456",
+          PrisonerStatus.ACTIVE,
+          PrisonerStatus.PENDING,
+          PrisonerStatus.SUSPENDED,
+        ),
+      ) doReturn listOf(externalAllocation)
+
       whenever(prisonerSearchApiClient.findByPrisonerNumber(any())) doReturn null
 
       assertThatThrownBy {
@@ -221,7 +235,6 @@ class ActivitiesChangedEventHandlerTest {
       }.isInstanceOf(NullPointerException::class.java)
         .hasMessage("Prisoner search lookup failed for prisoner 123456 at prison MDI when checking for temporary absence on suspend action")
 
-      verify(allocationRepository, never()).findByPrisonCodePrisonerNumberPrisonerStatus(any(), any(), any(), any(), any())
       verify(attendanceSuspensionDomainService, never()).autoSuspendFutureAttendancesForAllocation(any(), any())
     }
 
