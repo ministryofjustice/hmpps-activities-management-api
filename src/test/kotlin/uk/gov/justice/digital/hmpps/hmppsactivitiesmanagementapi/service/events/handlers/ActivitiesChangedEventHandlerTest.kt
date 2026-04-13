@@ -10,6 +10,7 @@ import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
@@ -33,6 +34,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.activitiesChangedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
+import kotlin.collections.copy
 
 class ActivitiesChangedEventHandlerTest {
 
@@ -399,6 +401,44 @@ class ActivitiesChangedEventHandlerTest {
 
       externalAllocation.prisonerStatus isEqualTo PrisonerStatus.AUTO_SUSPENDED
       verify(attendanceSuspensionDomainService).autoSuspendFutureAttendancesForAllocation(any(), eq(externalAllocation))
+    }
+
+    @Test
+    fun `prisoner search API is called exactly once even when there are multiple external activities allocations`() {
+      val externalAllocation1 = allocation().copy(allocationId = 1, prisonerNumber = "123456").also {
+        it.activitySchedule.activity.outsideWork = true
+      }
+      val externalAllocation2 = allocation().copy(allocationId = 2, prisonerNumber = "123456").also {
+        it.activitySchedule.activity.outsideWork = true
+      }
+      val externalAllocation3 = allocation().copy(allocationId = 3, prisonerNumber = "123456").also {
+        it.activitySchedule.activity.outsideWork = true
+      }
+
+      whenever(
+        allocationRepository.findByPrisonCodePrisonerNumberPrisonerStatus(
+          MOORLAND_PRISON_CODE,
+          "123456",
+          PrisonerStatus.ACTIVE,
+          PrisonerStatus.PENDING,
+          PrisonerStatus.SUSPENDED,
+        ),
+      ) doReturn listOf(externalAllocation1, externalAllocation2, externalAllocation3)
+
+      val prisoner = mock<Prisoner>().also {
+        whenever(it.lastMovementTypeCode) doReturn MovementType.TEMPORARY_ABSENCE.nomisShortCode
+      }
+
+      whenever(prisonerSearchApiClient.findByPrisonerNumber("123456")) doReturn prisoner
+
+      handler.handle(activitiesChangedEvent("123456", Action.SUSPEND, MOORLAND_PRISON_CODE))
+
+      verify(prisonerSearchApiClient, times(1)).findByPrisonerNumber("123456")
+
+      listOf(externalAllocation1, externalAllocation2, externalAllocation3).forEach {
+        it.prisonerStatus isEqualTo PrisonerStatus.ACTIVE
+        verify(attendanceSuspensionDomainService, never()).autoSuspendFutureAttendancesForAllocation(any(), eq(it))
+      }
     }
   }
 }
