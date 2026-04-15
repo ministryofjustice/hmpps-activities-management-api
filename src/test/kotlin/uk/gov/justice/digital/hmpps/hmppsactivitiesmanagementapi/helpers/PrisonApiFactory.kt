@@ -122,7 +122,6 @@ fun movement(
   directionCode = "OUT",
   movementDate = movementDate,
   movementTime = movementTime.toIsoTime(),
-  movementReason = "Abscond",
 )
 
 fun visit(prisonerNumber: String = "G4793VF", locationId: Long = -1, dateTime: LocalDateTime) = PrisonerSchedule(
