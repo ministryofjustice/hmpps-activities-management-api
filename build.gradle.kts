@@ -49,7 +49,7 @@ dependencies {
     }
   }
 
-  implementation("aws.sdk.kotlin:s3:1.6.56")
+  implementation("aws.sdk.kotlin:s3:1.6.57")
 
   // Other dependencies
   implementation("org.apache.commons:commons-text:1.15.0")
@@ -79,7 +79,7 @@ dependencies {
   testImplementation("org.awaitility:awaitility-kotlin")
   testImplementation("org.skyscreamer:jsonassert")
   testImplementation("io.mockk:mockk:1.14.9")
-  testImplementation("io.swagger.parser.v3:swagger-parser:2.1.39") {
+  testImplementation("io.swagger.parser.v3:swagger-parser:2.1.40") {
     exclude(group = "io.swagger.core.v3")
   }
 }
