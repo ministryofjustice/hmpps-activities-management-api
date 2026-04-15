@@ -11,6 +11,8 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
 import org.mockito.ArgumentMatchers.anyList
 import org.mockito.MockitoAnnotations.openMocks
 import org.mockito.kotlin.any
@@ -935,6 +937,164 @@ class ActivityServiceTest {
 
     assertThatThrownBy {
       service().createActivity(createInCellActivityRequest, "SCH_ACTIVITY")
+    }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Activity location must be one of offWing, onWing, inCell or a DPS location UUID")
+
+    verifyNoMoreInteractions(activityRepository)
+  }
+
+  @Test
+  fun `create activity - success when external activity with outside work is true and no location`() {
+    val createExternalActivityRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-6.json")
+      .copy(
+        startDate = TimeSource.tomorrow(),
+        inCell = false,
+        onWing = false,
+        offWing = false,
+        outsideWork = true,
+        dpsLocationId = null,
+      )
+
+    whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.of(activityCategory()))
+    whenever(eventTierRepository.findByCode("TIER_1")).thenReturn(eventTier())
+    whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(prisonPayBandsLowMediumHigh())
+    whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
+    whenever(prisonApiClient.getStudyArea("ENGLA")).thenReturn(Mono.just(studyArea))
+
+    val eligibilityRule = EligibilityRuleEntity(eligibilityRuleId = 1, code = "ER1", "Eligibility rule 1")
+    whenever(eligibilityRuleRepository.findById(1L)).thenReturn(Optional.of(eligibilityRule))
+
+    val savedActivity = activityEntity(outsideWork = true)
+    whenever(activityRepository.saveAndFlush(any<ActivityEntity>())).thenReturn(savedActivity)
+
+    service().createActivity(createExternalActivityRequest, "SCH_ACTIVITY")
+
+    verify(activityRepository).saveAndFlush(activityCaptor.capture())
+
+    with(activityCaptor.firstValue) {
+      assertThat(outsideWork).isTrue
+      assertThat(inCell).isFalse
+      assertThat(onWing).isFalse
+      assertThat(offWing).isFalse
+
+      with(schedules()[0]) {
+        assertThat(internalLocationId).isNull()
+        assertThat(internalLocationCode).isNull()
+        assertThat(internalLocationDescription).isNull()
+      }
+    }
+
+    val metricsPropertiesMap = mapOf(
+      PRISON_CODE_PROPERTY_KEY to savedActivity.prisonCode,
+      ACTIVITY_NAME_PROPERTY_KEY to savedActivity.summary,
+      ACTIVITY_ID_PROPERTY_KEY to savedActivity.activityId.toString(),
+      INTERNAL_LOCATION_DESCRIPTION_PROPERTY_KEY to "Outside Work",
+      EVENT_TIER_PROPERTY_KEY to savedActivity.activityTier.description,
+      EVENT_ORGANISER_PROPERTY_KEY to savedActivity.organiser!!.description,
+    )
+
+    verify(telemetryClient).trackEvent(TelemetryEvent.ACTIVITY_CREATED.value, metricsPropertiesMap, activityMetricsMap())
+    verify(outboundEventsService).send(OutboundEvent.ACTIVITY_SCHEDULE_CREATED, 1)
+  }
+
+  @CsvSource(
+    "true,  false, false",
+    "false, true,  false",
+    "false, false, true",
+    "true,  true,  false",
+    "true,  false, true",
+    "false, true,  true",
+    "true,  true,  true",
+  )
+  @ParameterizedTest(name = "createActivity - outsideWork=true overrides inCell={0}, onWing={1}, offWing={2} and does not throw")
+  fun `createActivity - outsideWork as true bypasses location flag validation regardless of inCell, onWing and offWing and does not throw exception`(
+    inCell: Boolean,
+    onWing: Boolean,
+    offWing: Boolean,
+  ) {
+    val request = mapper.read<ActivityCreateRequest>("activity/activity-create-request-6.json")
+      .copy(
+        startDate = TimeSource.tomorrow(),
+        outsideWork = true,
+        inCell = inCell,
+        onWing = onWing,
+        offWing = offWing,
+        dpsLocationId = null,
+      )
+
+    whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.of(activityCategory()))
+    whenever(eventTierRepository.findByCode("TIER_1")).thenReturn(eventTier())
+    whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(prisonPayBandsLowMediumHigh())
+    whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
+    whenever(prisonApiClient.getStudyArea("ENGLA")).thenReturn(Mono.just(studyArea))
+    val eligibilityRule = EligibilityRuleEntity(eligibilityRuleId = 1, code = "ER1", "Eligibility rule 1")
+
+    whenever(eligibilityRuleRepository.findById(1L)).thenReturn(Optional.of(eligibilityRule))
+    whenever(activityRepository.saveAndFlush(any<ActivityEntity>())).thenReturn(activityEntity(outsideWork = true))
+
+    service().createActivity(request, "SCH_ACTIVITY")
+
+    verify(activityRepository).saveAndFlush(activityCaptor.capture())
+
+    with(activityCaptor.firstValue) {
+      assertThat(outsideWork).isTrue
+    }
+  }
+
+  @Test
+  fun `createActivity - outsideWork as true takes precedence over a supplied dpsLocationId and schedule location is null`() {
+    val dpsLocationId = UUID.randomUUID()
+    val request = mapper.read<ActivityCreateRequest>("activity/activity-create-request-6.json")
+      .copy(
+        startDate = TimeSource.tomorrow(),
+        outsideWork = true,
+        inCell = false,
+        onWing = false,
+        offWing = false,
+        dpsLocationId = dpsLocationId,
+      )
+
+    whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.of(activityCategory()))
+    whenever(eventTierRepository.findByCode("TIER_1")).thenReturn(eventTier())
+    whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(prisonPayBandsLowMediumHigh())
+    whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
+    whenever(prisonApiClient.getStudyArea("ENGLA")).thenReturn(Mono.just(studyArea))
+
+    val eligibilityRule = EligibilityRuleEntity(eligibilityRuleId = 1, code = "ER1", "Eligibility rule 1")
+    whenever(eligibilityRuleRepository.findById(1L)).thenReturn(Optional.of(eligibilityRule))
+
+    whenever(activityRepository.saveAndFlush(any<ActivityEntity>())).thenReturn(activityEntity(outsideWork = true))
+
+    service().createActivity(request, "SCH_ACTIVITY")
+
+    verify(activityRepository).saveAndFlush(activityCaptor.capture())
+    with(activityCaptor.firstValue) {
+      assertThat(outsideWork).isTrue
+      with(schedules()[0]) {
+        assertThat(internalLocationId).isNull()
+        assertThat(internalLocationCode).isNull()
+        assertThat(internalLocationDescription).isNull()
+      }
+    }
+
+    verifyNoInteractions(locationService)
+  }
+
+  @Test
+  fun `createActivity - fails when outsideWork is false and no location`() {
+    val createActivityRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-6.json")
+      .copy(
+        startDate = TimeSource.tomorrow(),
+        inCell = false,
+        onWing = false,
+        offWing = false,
+        outsideWork = false,
+        dpsLocationId = null,
+      )
+
+    assertThatThrownBy {
+      service().createActivity(createActivityRequest, "SCH_ACTIVITY")
     }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Activity location must be one of offWing, onWing, inCell or a DPS location UUID")
