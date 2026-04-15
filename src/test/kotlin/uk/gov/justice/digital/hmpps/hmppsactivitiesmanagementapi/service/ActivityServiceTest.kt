@@ -943,6 +943,80 @@ class ActivityServiceTest {
   }
 
   @Test
+  fun `create activity - success when external activity with outside work is true and no location`() {
+    val createExternalActivityRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-6.json")
+      .copy(
+        startDate = TimeSource.tomorrow(),
+        inCell = false,
+        onWing = false,
+        offWing = false,
+        outsideWork = true,
+      )
+
+    whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.of(activityCategory()))
+    whenever(eventTierRepository.findByCode("TIER_1")).thenReturn(eventTier())
+    whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(prisonPayBandsLowMediumHigh())
+    whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
+    whenever(prisonApiClient.getStudyArea("ENGLA")).thenReturn(Mono.just(studyArea))
+
+    val eligibilityRule = EligibilityRuleEntity(eligibilityRuleId = 1, code = "ER1", "Eligibility rule 1")
+    whenever(eligibilityRuleRepository.findById(1L)).thenReturn(Optional.of(eligibilityRule))
+
+    val savedActivity = activityEntity(outsideWork = true)
+    whenever(activityRepository.saveAndFlush(any<ActivityEntity>())).thenReturn(savedActivity)
+
+    service().createActivity(createExternalActivityRequest, "SCH_ACTIVITY")
+
+    verify(activityRepository).saveAndFlush(activityCaptor.capture())
+
+    with(activityCaptor.firstValue) {
+      assertThat(outsideWork).isTrue
+      assertThat(inCell).isFalse
+      assertThat(onWing).isFalse
+      assertThat(offWing).isFalse
+
+      with(schedules()[0]) {
+        assertThat(internalLocationId).isNull()
+        assertThat(internalLocationCode).isNull()
+        assertThat(internalLocationDescription).isNull()
+      }
+    }
+
+    val metricsPropertiesMap = mapOf(
+      PRISON_CODE_PROPERTY_KEY to savedActivity.prisonCode,
+      ACTIVITY_NAME_PROPERTY_KEY to savedActivity.summary,
+      ACTIVITY_ID_PROPERTY_KEY to savedActivity.activityId.toString(),
+      INTERNAL_LOCATION_DESCRIPTION_PROPERTY_KEY to "Outside Work",
+      EVENT_TIER_PROPERTY_KEY to savedActivity.activityTier.description,
+      EVENT_ORGANISER_PROPERTY_KEY to savedActivity.organiser!!.description,
+    )
+
+    verify(telemetryClient).trackEvent(TelemetryEvent.ACTIVITY_CREATED.value, metricsPropertiesMap, activityMetricsMap())
+    verify(outboundEventsService).send(OutboundEvent.ACTIVITY_SCHEDULE_CREATED, 1)
+  }
+
+  @Test
+  fun `createActivity - fails when outsideWork is false and no location`() {
+    val createActivityRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-6.json")
+      .copy(
+        startDate = TimeSource.tomorrow(),
+        inCell = false,
+        onWing = false,
+        offWing = false,
+        outsideWork = false,
+        dpsLocationId = null,
+      )
+
+    assertThatThrownBy {
+      service().createActivity(createActivityRequest, "SCH_ACTIVITY")
+    }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Activity location must be one of offWing, onWing, inCell or a DPS location UUID")
+
+    verifyNoMoreInteractions(activityRepository)
+  }
+
+  @Test
   fun `updateActivity - success`() {
     val updateActivityRequest: ActivityUpdateRequest = mapper.read<ActivityUpdateRequest>("activity/activity-update-request-1.json").copy(offWing = true)
 

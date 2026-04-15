@@ -138,7 +138,8 @@ class ActivityService(
     checkCaseloadAccess(request.prisonCode!!)
 
     require(request.startDate!! > LocalDate.now()) { "Activity start date must be in the future" }
-    require((request.dpsLocationId != null) xor request.offWing xor request.onWing xor request.inCell) { "Activity location must be one of offWing, onWing, inCell or a DPS location UUID" }
+    require(request.outsideWork || ((request.dpsLocationId != null) xor request.offWing xor request.onWing xor request.inCell)) { "Activity location must be one of offWing, onWing, inCell or a DPS location UUID" }
+
     if (request.paid.not() && request.pay.isNotEmpty()) throw IllegalArgumentException("Unpaid activity cannot have pay rates associated with it")
     if (request.paid && request.pay.isEmpty()) throw IllegalArgumentException("Paid activity must have at least one pay rate associated with it")
 
@@ -171,6 +172,7 @@ class ActivityService(
         createdTime = LocalDateTime.now(),
         createdBy = createdBy,
         isPaid = request.paid,
+        outsideWork = request.outsideWork,
       ).apply {
         this.organiser = organiser
         endDate = request.endDate
@@ -214,7 +216,7 @@ class ActivityService(
       }
 
       activity.let {
-        val scheduleLocation = if (request.inCell || request.onWing || request.offWing) null else getLocationForSchedule(it, request.dpsLocationId!!)
+        val scheduleLocation = if (request.outsideWork || request.inCell || request.onWing || request.offWing) null else getLocationForSchedule(it, request.dpsLocationId!!)
         val usesPrisonRegimeTime = request.slots?.all { s -> s.customStartTime == null && s.customEndTime == null } == true
         activity.addSchedule(
           description = request.description!!,
@@ -250,6 +252,8 @@ class ActivityService(
         "Off Wing"
       } else if (this.onWing) {
         "On Wing"
+      } else if (this.outsideWork) {
+        "Outside Work"
       } else {
         this.schedules[0].internalLocation!!.description
       }

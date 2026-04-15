@@ -83,6 +83,7 @@ internal fun activityEntity(
   inCell: Boolean = false,
   onWing: Boolean = false,
   offWing: Boolean = false,
+  outsideWork: Boolean = false,
   riskLevel: String = "high",
   paid: Boolean = true,
   attendanceRequired: Boolean = true,
@@ -100,6 +101,7 @@ internal fun activityEntity(
   inCell = inCell,
   onWing = onWing,
   offWing = offWing,
+  outsideWork = outsideWork,
   isPaid = paid,
   attendanceRequired = attendanceRequired,
 ).apply {

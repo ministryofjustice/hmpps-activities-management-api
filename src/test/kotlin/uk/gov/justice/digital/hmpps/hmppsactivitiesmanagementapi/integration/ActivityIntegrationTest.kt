@@ -416,6 +416,74 @@ class ActivityIntegrationTest : LocalStackTestBase() {
   }
 
   @Test
+  fun `createActivity - external activity with outsideWork as true and no location is successful`() {
+    val newActivityRequest = activityCreateRequest(
+      prisonCode = MOORLAND_PRISON_CODE,
+      educationLevel = prisonApiMockServer.stubGetReferenceCode("EDU_LEVEL", "1", "prisonapi/education-level-code-1.json"),
+      studyArea = prisonApiMockServer.stubGetReferenceCode("STUDY_AREA", "ENGLA", "prisonapi/study-area-code-ENGLA.json"),
+    ).copy(
+      inCell = false,
+      onWing = false,
+      offWing = false,
+      outsideWork = true,
+      dpsLocationId = null,
+    )
+
+    val activity = webTestClient.createActivity(newActivityRequest)
+
+    with(activity!!) {
+      assertThat(id).isNotNull
+      assertThat(outsideWork).isTrue
+      assertThat(inCell).isFalse
+      assertThat(onWing).isFalse
+      assertThat(offWing).isFalse
+      assertThat(schedules[0].internalLocation).isNull()
+    }
+
+    with(activityRepository.findById(activity.id).get()) {
+      assertThat(outsideWork).isTrue
+      assertThat(inCell).isFalse
+      assertThat(onWing).isFalse
+      assertThat(offWing).isFalse
+    }
+
+    validateOutboundEvents(
+      ExpectedOutboundEvent(ACTIVITY_SCHEDULE_CREATED, 1),
+    )
+  }
+
+  @Test
+  fun `createActivity - fails with 400 when outsideWork is false and no location is provided`() {
+    val newActivityRequest = activityCreateRequest(
+      prisonCode = MOORLAND_PRISON_CODE,
+    ).copy(
+      inCell = false,
+      onWing = false,
+      offWing = false,
+      outsideWork = false,
+      dpsLocationId = null,
+    )
+
+    val error = webTestClient.post()
+      .uri("/activities")
+      .bodyValue(newActivityRequest)
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisationAsClient(roles = listOf(ROLE_ACTIVITY_ADMIN)))
+      .header(CASELOAD_ID, "MDI")
+      .exchange()
+      .expectStatus().is4xxClientError
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(ErrorResponse::class.java)
+      .returnResult().responseBody
+
+    with(error!!) {
+      assertThat(status).isEqualTo(400)
+      assertThat(userMessage).isEqualTo("Exception: Activity location must be one of offWing, onWing, inCell or a DPS location UUID")
+      assertThat(developerMessage).isEqualTo("Activity location must be one of offWing, onWing, inCell or a DPS location UUID")
+    }
+  }
+
+  @Test
   fun `createActivity - create multi-week schedule activity`() {
     prisonApiMockServer.stubGetReferenceCode(
       "EDU_LEVEL",
