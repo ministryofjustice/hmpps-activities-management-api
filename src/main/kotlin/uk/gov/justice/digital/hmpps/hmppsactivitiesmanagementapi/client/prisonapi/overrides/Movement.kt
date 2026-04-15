@@ -30,8 +30,6 @@ data class Movement(
 
   @get:JsonProperty("movementTime", required = true) val movementTime: String,
 
-  @get:JsonProperty("movementReason", required = true) val movementReason: String,
-
   @get:JsonProperty("fromCity") val fromCity: String? = null,
 
   @get:JsonProperty("toCity") val toCity: String? = null,
