@@ -178,7 +178,10 @@ class ActivityScheduleService(
           .singleOrNull()?.allocated(allocation)
 
         // if allocation is for instance(s) later today then need to create attendance records
-        val newAttendances = manageAttendancesService.createAnyAttendancesForToday(request.scheduleInstanceId, allocation)
+        val newAttendances = manageAttendancesService.createAnyAttendancesForToday(
+          allocation = allocation,
+          scheduleInstanceId = request.scheduleInstanceId,
+        )
 
         repository.saveAndFlush(schedule)
 
@@ -290,7 +293,10 @@ class ActivityScheduleService(
             .singleOrNull()
 
           // if allocations are for instance(s) later today then need to create attendance records
-          val newAttendances = manageAttendancesService.createAnyAttendancesForToday(request.scheduleInstanceId, allocation)
+          val newAttendances = manageAttendancesService.createAnyAttendancesForToday(
+            allocation = allocation,
+            scheduleInstanceId = request.scheduleInstanceId,
+          )
           allocationsWithAttendances.add(Triple(allocation, newAttendances, maybeWaitingList))
         }
       }

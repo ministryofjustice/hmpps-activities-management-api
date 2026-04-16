@@ -1170,5 +1170,41 @@ class AllocationTest {
       assertThat(instance1.advanceAttendances).hasSize(1)
       assertThat(instance2.advanceAttendances).hasSize(1)
     }
+
+    @Test
+    fun `endExclusionsYesterday should fail if any exclusions do not belong to the allocation`() {
+      val allocation1 = allocation(startDate = LocalDate.now(), withExclusions = true)
+      val allocation2 = allocation(startDate = LocalDate.now(), withExclusions = true)
+
+      assertThatThrownBy { allocation1.endExclusionsYesterday(allocation2.exclusions(ExclusionsFilter.PRESENT)) }
+        .isInstanceOf(IllegalArgumentException::class.java)
+        .hasMessage("Cannot end the given exclusions because some of them do not belong to the allocation with id 0")
+    }
+
+    @Test
+    fun `endExclusionsYesterday - should fail if any exclusion starts today`() {
+      val allocation = allocation(startDate = LocalDate.now(), withExclusions = true)
+
+      assertThatThrownBy { allocation.endExclusionsYesterday(allocation.exclusions(ExclusionsFilter.PRESENT)) }
+        .isInstanceOf(IllegalArgumentException::class.java)
+        .hasMessage("Can only end exclusions for yesterday if exclusions started in the past")
+    }
+
+    @Test
+    fun `endExclusionsYesterday - should fail if any exclusion starts in the future`() {
+      val allocation = allocation(startDate = LocalDate.now().plusDays(1), withExclusions = true)
+
+      assertThatThrownBy { allocation.endExclusionsYesterday(allocation.exclusions(ExclusionsFilter.FUTURE)) }
+        .isInstanceOf(IllegalArgumentException::class.java)
+        .hasMessage("Can only end exclusions for yesterday if exclusions started in the past")
+    }
+
+    @Test
+    fun `endExclusionsYesterday - will set exclusion end dates to yesterday if starts date are in the past`() {
+      val allocation = allocation(startDate = LocalDate.now().minusDays(1), withExclusions = true)
+      assertThat(allocation.exclusions(ExclusionsFilter.PRESENT)).hasSize(1)
+      allocation.endExclusionsYesterday(allocation.exclusions(ExclusionsFilter.PRESENT))
+      assertThat(allocation.exclusions(ExclusionsFilter.PRESENT)).isEmpty()
+    }
   }
 }

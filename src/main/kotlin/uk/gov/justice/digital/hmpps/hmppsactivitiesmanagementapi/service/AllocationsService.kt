@@ -71,7 +71,12 @@ class AllocationsService(
 
       allocationRepository.saveAndFlush(allocation)
 
-      val newAttendances = manageAttendancesService.createAnyAttendancesForToday(request.scheduleInstanceId, allocation)
+      val newAttendances = manageAttendancesService.createAnyAttendancesForToday(
+        allocation = allocation,
+
+        scheduleInstanceId = request.scheduleInstanceId,
+        firstTimeSlot = request.firstTimeSlotForToday,
+      )
 
       val savedAttendances = manageAttendancesService.saveAttendances(newAttendances, allocation.activitySchedule.description)
 
@@ -99,32 +104,57 @@ class AllocationsService(
   }
 
   private fun applyExclusionsUpdate(request: AllocationUpdateRequest, allocation: Allocation) {
-    request.exclusions?.apply {
+    val todayScheduledInstance = request.firstTimeSlotForToday?.let { timeSlot ->
+      allocation.activitySchedule.instances().first { it.sessionDate == LocalDate.now() && it.timeSlot == timeSlot }
+    }
+
+    val today = LocalDate.now()
+
+    request.exclusions?.let { exclusions ->
       /*
-       End any exclusions tha have started and not ended.
+       End any exclusions that have started and not ended.
 
        Although Nomis does not have the concept of exclusion date ranges the old exclusions are needed for historical
        reasons such as unlock and attendance lists (SAA-1379)
        */
+      val newExclusionSlots = exclusions.map { it.weekNumber to it.timeSlot }.toSet()
+
+      // Remove exclusions staring in the future that are not in the request
+      allocation.removeExclusions(
+        allocation.exclusions(ExclusionsFilter.FUTURE)
+          .filter { (it.weekNumber to it.timeSlot) !in newExclusionSlots }
+          .toSet(),
+      )
+
+      // When the update request includes a scheduled instance for today, then end as yesterday or remove
+      if (todayScheduledInstance != null) {
+        val (toRemove, toEnd) = allocation.exclusions(ExclusionsFilter.PRESENT)
+          .filter { it.timeSlot >= todayScheduledInstance.timeSlot }
+          .partition { it.startDate == today }
+
+        allocation.removeExclusions(toRemove.toSet())
+        allocation.endExclusionsYesterday(toEnd.toSet())
+      }
+
+      // End any remaining exclusions that are current
       allocation.endExclusions(allocation.exclusions(ExclusionsFilter.PRESENT))
 
-      val newExclusions = this.map { ex -> ex.weekNumber to ex.timeSlot }
-      val exclusionsToRemove = allocation.exclusions(ExclusionsFilter.FUTURE).mapNotNull {
-        val oldExclusion = it.weekNumber to it.timeSlot
-        it.takeIf { oldExclusion !in newExclusions }
-      }.toSet()
-      allocation.removeExclusions(exclusionsToRemove)
-    }
+      exclusions.forEach { exclusion ->
+        require(!allocation.activitySchedule.noMatchingSlots(exclusion)) {
+          "Updating allocation with id ${allocation.allocationId}: No ${exclusion.timeSlot} slots in week number ${exclusion.weekNumber}"
+        }
 
-    request.exclusions?.onEach { exclusion ->
+        val startDate = todayScheduledInstance
+          ?.takeIf { it.timeSlot <= exclusion.timeSlot && exclusion.daysOfWeek.contains(today.dayOfWeek) }
+          ?.let { today }
+          ?: today.plusDays(1)
 
-      if (allocation.activitySchedule.noMatchingSlots(exclusion)) throw IllegalArgumentException("Updating allocation with id ${allocation.allocationId}: No ${exclusion.timeSlot} slots in week number ${exclusion.weekNumber}")
-
-      // exclusion updates always apply tomorrow, if the allocation date is in the past (as per the UI content)
-      allocation.updateExclusion(
-        exclusionSlot = exclusion,
-        startDate = maxOf(allocation.startDate, LocalDate.now().plusDays(1)),
-      )
+        // exclusion updates always apply tomorrow if the allocation date is in the past (as per the UI content)
+        allocation.updateExclusion(
+          exclusionSlot = exclusion,
+          startDate = maxOf(allocation.startDate, startDate),
+        )
+      }
     }
   }
 
