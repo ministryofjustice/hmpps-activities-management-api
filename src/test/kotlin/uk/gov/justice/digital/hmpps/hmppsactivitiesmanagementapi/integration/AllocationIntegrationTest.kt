@@ -281,9 +281,9 @@ class AllocationIntegrationTest : LocalStackTestBase() {
     )
   }
 
-  @Sql("classpath:test_data/seed-allocation-with-exclusions-1.sql")
+  @Sql("classpath:test_data/allocation-with-exclusions-one-week.sql")
   @Test
-  fun `update allocation exclusions for today session with new attendances created`() {
+  fun `update allocation exclusions for today session with new attendances created for one week schedule`() {
     prisonerSearchApiMockServer.stubSearchByPrisonerNumber("A1234BC")
 
     with(webTestClient.getAllocationBy(1)!!) {
@@ -361,6 +361,78 @@ class AllocationIntegrationTest : LocalStackTestBase() {
         with(attendances.first()) {
           prisonerNumber isEqualTo "A1234BC"
         }
+      }
+    }
+
+    validateOutboundEvents(
+      ExpectedOutboundEvent(PRISONER_ALLOCATION_AMENDED, 1),
+      // AM and PM exclusions are kept so ED attendances is created
+      ExpectedOutboundEvent(PRISONER_ATTENDANCE_CREATED, 1),
+    )
+  }
+
+  @Sql("classpath:test_data/allocation-with-exclusions-two-week.sql")
+  @Test
+  fun `update allocation exclusions for today session with new attendances created for two week schedule`() {
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber("A1234BC")
+
+    with(webTestClient.getAllocationBy(1)!!) {
+      exclusions hasSize 4
+    }
+
+    val today = LocalDate.now()
+    val dayOfWeek = today.dayOfWeek
+
+    webTestClient.updateAllocation(
+      PENTONVILLE_PRISON_CODE,
+      1,
+      AllocationUpdateRequest(
+        firstTimeSlotForToday = TimeSlot.PM,
+        exclusions = listOf(
+          Slot(
+            weekNumber = 1,
+            timeSlot = TimeSlot.PM,
+            monday = dayOfWeek == DayOfWeek.MONDAY,
+            tuesday = dayOfWeek == DayOfWeek.TUESDAY,
+            wednesday = dayOfWeek == DayOfWeek.WEDNESDAY,
+            thursday = dayOfWeek == DayOfWeek.THURSDAY,
+            friday = dayOfWeek == DayOfWeek.FRIDAY,
+            saturday = dayOfWeek == DayOfWeek.SATURDAY,
+            sunday = dayOfWeek == DayOfWeek.SUNDAY,
+          ),
+        ),
+      ),
+    )
+
+    with(webTestClient.getAllocationBy(1)!!.exclusions) {
+      this hasSize 1
+      with(this.first()) {
+        weekNumber isEqualTo 1
+        timeSlot isEqualTo TimeSlot.PM
+        daysOfWeek isEqualTo setOf(dayOfWeek)
+      }
+    }
+
+    with(webTestClient.getScheduledInstancesByIds(1, 2, 3, 4)!!) {
+      this hasSize 4
+      // No attendances for existing but removed week 1 AM exclusion
+      with(first { it.timeSlot == TimeSlot.AM }) {
+        attendances hasSize 0
+      }
+      // No attendances for existing and retained week 1 PM exclusion
+      with(first { it.timeSlot == TimeSlot.PM }) {
+        attendances hasSize 0
+      }
+      // New attendance for existing but removed week 1 ED exclusion
+      with(first { it.date == today && it.timeSlot == TimeSlot.ED }) {
+        attendances hasSize 1
+        with(attendances.first()) {
+          prisonerNumber isEqualTo "A1234BC"
+        }
+      }
+      // No attendances for existing but removed week 2 ED exclusion
+      with(first { it.date == today.plusDays(7) && it.timeSlot == TimeSlot.ED }) {
+        attendances hasSize 0
       }
     }
 
