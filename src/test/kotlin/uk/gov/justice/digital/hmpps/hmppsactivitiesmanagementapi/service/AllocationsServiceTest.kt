@@ -21,6 +21,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Exclusion
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ExclusionsFilter
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
@@ -45,7 +46,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelPri
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
-import java.util.Optional
+import java.util.*
 
 class AllocationsServiceTest {
   private val allocationRepository: AllocationRepository = mock()
@@ -135,7 +136,7 @@ class AllocationsServiceTest {
     assertThat(savedAllocation.prisonerStatus).isEqualTo(PrisonerStatus.PENDING)
 
     inOrder(manageAttendancesService) {
-      verify(manageAttendancesService).createAnyAttendancesForToday(eq(null), any())
+      verify(manageAttendancesService).createAnyAttendancesForToday(any(), eq(null), eq(null))
       verify(manageAttendancesService).saveAttendances(eq(emptyList()), any())
       verifyNoMoreInteractions()
     }
@@ -157,7 +158,13 @@ class AllocationsServiceTest {
     val attendance1: Attendance = mock()
     val attendance2: Attendance = mock()
     val newAttendances: List<Attendance> = listOf(attendance1, attendance2)
-    whenever(manageAttendancesService.createAnyAttendancesForToday(ArgumentMatchers.eq(123L), any())) doReturn newAttendances
+    whenever(
+      manageAttendancesService.createAnyAttendancesForToday(
+        any(),
+        ArgumentMatchers.eq(123L),
+        eq(null),
+      ),
+    ) doReturn newAttendances
     whenever(manageAttendancesService.saveAttendances(eq(newAttendances), any())) doReturn newAttendances
 
     allocation.startDate = LocalDate.now().plusDays(1)
@@ -176,7 +183,11 @@ class AllocationsServiceTest {
     assertThat(allocation.exclusions(ExclusionsFilter.ACTIVE).first().startDate).isEqualTo(TimeSource.today())
 
     inOrder(manageAttendancesService) {
-      verify(manageAttendancesService).createAnyAttendancesForToday(eq(123L), allocationCaptor.capture())
+      verify(manageAttendancesService).createAnyAttendancesForToday(
+        allocationCaptor.capture(),
+        eq(123L),
+        eq(null),
+      )
       assertThat(allocationCaptor.firstValue.startDate).isEqualTo(TimeSource.today())
       verify(manageAttendancesService).saveAttendances(eq(newAttendances), eq("schedule description"))
       verify(manageAttendancesService).sendCreatedEvent(eq(attendance1))
@@ -646,5 +657,103 @@ class AllocationsServiceTest {
       .hasMessage("Updating allocation with id 0: No AM slots in week number 3")
 
     verifyNoInteractions(outboundEventsService)
+  }
+
+  @Test
+  fun `updateAllocation - remove exclusions starting today where old exclusion starts today`() {
+    val today = LocalDate.now()
+    val yesterday = today.minusDays(1)
+    val todayDaysOfWeek = setOf(today.dayOfWeek)
+
+    val allocation = activitySchedule(activityEntity(startDate = today), daysOfWeek = todayDaysOfWeek)
+      // Activity runs today for AM, PM and ED
+      .also {
+        it.addSlot(1, LocalTime.of(12, 0) to LocalTime.of(13, 0), setOf(today.dayOfWeek), TimeSlot.PM).also { slot -> it.addInstance(today, slot) }
+        it.addSlot(1, LocalTime.of(19, 0) to LocalTime.of(20, 0), setOf(today.dayOfWeek), TimeSlot.ED).also { slot -> it.addInstance(today, slot) }
+        it.addSlot(1, LocalTime.of(12, 0) to LocalTime.of(13, 0), setOf(yesterday.dayOfWeek), TimeSlot.PM).also { slot -> it.addInstance(yesterday, slot) }
+      }
+      .let {
+        val allocation = it.allocations().first()
+        // Prisoner is excluded from today's AM and PM
+        allocation.apply {
+          addExclusion(
+            Exclusion.valueOf(
+              allocation = this,
+              weekNumber = 1,
+              daysOfWeek = setOf(today.dayOfWeek),
+              startDate = today,
+              timeSlot = TimeSlot.AM,
+            ),
+          )
+          addExclusion(
+            Exclusion.valueOf(
+              allocation = this,
+              weekNumber = 1,
+              daysOfWeek = setOf(today.dayOfWeek),
+              startDate = today,
+              timeSlot = TimeSlot.PM,
+            ),
+          )
+        }
+        allocation
+      }
+
+    val allocationId = allocation.allocationId
+    val prisonCode = allocation.activitySchedule.activity.prisonCode
+
+    val updateAllocationRequest = AllocationUpdateRequest(
+      firstTimeSlotForToday = TimeSlot.PM,
+      exclusions = listOf(
+        // Prisoner is now excluded from today AM and ED
+        Slot(
+          weekNumber = 1,
+          timeSlot = TimeSlot.AM,
+          monday = today.dayOfWeek == DayOfWeek.MONDAY,
+          tuesday = today.dayOfWeek == DayOfWeek.TUESDAY,
+          wednesday = today.dayOfWeek == DayOfWeek.WEDNESDAY,
+          thursday = today.dayOfWeek == DayOfWeek.THURSDAY,
+          friday = today.dayOfWeek == DayOfWeek.FRIDAY,
+          saturday = today.dayOfWeek == DayOfWeek.SATURDAY,
+          sunday = today.dayOfWeek == DayOfWeek.SUNDAY,
+        ),
+        Slot(
+          weekNumber = 1,
+          timeSlot = TimeSlot.ED,
+          monday = today.dayOfWeek == DayOfWeek.MONDAY,
+          tuesday = today.dayOfWeek == DayOfWeek.TUESDAY,
+          wednesday = today.dayOfWeek == DayOfWeek.WEDNESDAY,
+          thursday = today.dayOfWeek == DayOfWeek.THURSDAY,
+          friday = today.dayOfWeek == DayOfWeek.FRIDAY,
+          saturday = today.dayOfWeek == DayOfWeek.SATURDAY,
+          sunday = today.dayOfWeek == DayOfWeek.SUNDAY,
+        ),
+      ),
+    )
+
+    whenever(allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)).thenReturn(allocation)
+    whenever(allocationRepository.saveAndFlush(any<Allocation>())).thenReturn(allocation)
+
+    val newAttendances: List<Attendance> = emptyList()
+    whenever(
+      manageAttendancesService.createAnyAttendancesForToday(
+        any(),
+        eq(null),
+        eq(TimeSlot.AM),
+      ),
+    ) doReturn newAttendances
+
+    service.updateAllocation(allocationId, updateAllocationRequest, prisonCode, "user")
+
+    verify(allocationRepository).saveAndFlush(allocationCaptor.capture())
+
+    val exclusions = allocationCaptor.firstValue.exclusions(ExclusionsFilter.ACTIVE)
+
+    exclusions hasSize 2
+    exclusions.first().getDaysOfWeek() isEqualTo setOf(today.dayOfWeek)
+    exclusions.all { it.startDate == LocalDate.now() }
+    assertThat(exclusions).extracting("timeSlot").containsExactlyInAnyOrder(TimeSlot.AM, TimeSlot.ED)
+
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocationId)
+    verify(manageAttendancesService).saveAttendances(newAttendances, allocation.activitySchedule.description)
   }
 }

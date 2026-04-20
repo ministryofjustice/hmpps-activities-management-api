@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.FutureOrPresent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import java.time.LocalDate
 
@@ -39,6 +40,10 @@ data class AllocationUpdateRequest(
   )
   val exclusions: List<Slot>? = null,
 
+  @Deprecated(message = "Superseded by todayTimeSlot")
   @Schema(description = "The scheduled instance id required when allocation starts today")
   val scheduleInstanceId: Long? = null,
+
+  @Schema(description = "The scheduled instances time slot for any allocations or exclusions changes that should apply today")
+  var firstTimeSlotForToday: TimeSlot? = null,
 )
