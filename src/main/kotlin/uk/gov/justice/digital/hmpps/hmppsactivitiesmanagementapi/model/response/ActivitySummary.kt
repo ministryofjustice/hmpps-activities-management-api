@@ -30,6 +30,9 @@ data class ActivitySummary(
   @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
   val createdTime: LocalDateTime,
 
+  @Schema(description = "Determines whether the activity takes place outside of the prison", example = "true")
+  val outsideWork: Boolean,
+
   @Schema(description = "Whether the activity is live or archived", example = "LIVE")
   val activityState: ActivityState,
 )

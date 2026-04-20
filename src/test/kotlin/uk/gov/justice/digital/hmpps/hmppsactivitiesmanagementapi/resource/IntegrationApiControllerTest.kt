@@ -558,6 +558,7 @@ class IntegrationApiControllerTest : ControllerTestBase() {
           allocated = 10,
           waitlisted = 3,
           createdTime = LocalDateTime.now(),
+          outsideWork = false,
           activityState = ActivityState.LIVE,
         ),
       )
