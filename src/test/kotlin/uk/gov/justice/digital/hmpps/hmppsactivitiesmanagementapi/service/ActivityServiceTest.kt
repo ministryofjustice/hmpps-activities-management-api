@@ -760,6 +760,17 @@ class ActivityServiceTest {
   }
 
   @Test
+  fun `getActivitiesInPrison maps outsideWork field correctly`() {
+    whenever(activitySummaryRepository.findAllByPrisonCode("MDI"))
+      .thenReturn(listOf(activitySummary(outsideWork = true)))
+
+    val result = service().getActivitiesInPrison("MDI", true)
+
+    assertThat(result.single().outsideWork).isTrue()
+    verify(activitySummaryRepository).findAllByPrisonCode("MDI")
+  }
+
+  @Test
   fun `getSchedulesForActivity returns list of schedules`() {
     val activity = activityEntity()
 

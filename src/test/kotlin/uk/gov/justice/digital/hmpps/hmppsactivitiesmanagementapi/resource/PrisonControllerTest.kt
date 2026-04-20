@@ -57,6 +57,7 @@ class PrisonControllerTest : ControllerTestBase() {
         allocated = 10,
         waitlisted = 3,
         createdTime = LocalDateTime.now(),
+        outsideWork = false,
         activityState = ActivityState.LIVE,
       ),
     )
@@ -71,6 +72,39 @@ class PrisonControllerTest : ControllerTestBase() {
 
     assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(expectedModel))
 
+    verify(activityService).getActivitiesInPrison(MOORLAND_PRISON_CODE, true)
+  }
+
+  @Test
+  fun `200 response when get activities includes outsideWork flag as true`() {
+    val expectedModel = listOf(
+      ActivitySummary(
+        id = 1,
+        activityName = "External Work",
+        category = ActivityCategory(
+          id = 1L,
+          code = "LEISURE_SOCIAL",
+          name = "Leisure and social",
+          description = "Such as association, library time and social clubs, like music or art",
+        ),
+        capacity = 10,
+        allocated = 5,
+        waitlisted = 0,
+        createdTime = LocalDateTime.now(),
+        outsideWork = true,
+        activityState = ActivityState.LIVE,
+      ),
+    )
+
+    whenever(activityService.getActivitiesInPrison(MOORLAND_PRISON_CODE, true)).thenReturn(
+      expectedModel,
+    )
+
+    val response = mockMvc.getActivities(MOORLAND_PRISON_CODE)
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andExpect { status { isOk() } }.andReturn().response
+
+    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(expectedModel))
     verify(activityService).getActivitiesInPrison(MOORLAND_PRISON_CODE, true)
   }
 
