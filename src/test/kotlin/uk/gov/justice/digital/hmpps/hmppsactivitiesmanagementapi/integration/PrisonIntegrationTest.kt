@@ -26,6 +26,7 @@ class PrisonIntegrationTest : ActivitiesIntegrationTestBase() {
         allocated = 5,
         waitlisted = 1,
         createdTime = LocalDateTime.of(2022, 9, 21, 0, 0, 0),
+        outsideWork = false,
         activityState = ActivityState.LIVE,
       )
   }
@@ -46,6 +47,7 @@ class PrisonIntegrationTest : ActivitiesIntegrationTestBase() {
         allocated = 4,
         waitlisted = 0,
         createdTime = LocalDateTime.of(2022, 9, 21, 0, 0, 0),
+        outsideWork = false,
         activityState = ActivityState.LIVE,
       )
   }

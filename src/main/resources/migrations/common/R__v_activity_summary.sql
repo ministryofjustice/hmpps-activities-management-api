@@ -13,10 +13,11 @@ select a.activity_id                                           id,
                'ARCHIVED'
            ELSE
                'LIVE'
-           END AS                                              activity_state
+           END AS                                              activity_state,
+       a.outside_work
 from activity a
          join activity_schedule s on a.activity_id = s.activity_id
          left join allocation alloc on s.activity_schedule_id = alloc.activity_schedule_id and alloc.prisoner_status != 'ENDED'
          left join waiting_list w on w.activity_id = a.activity_id and (w.status::text = 'PENDING'::text or w.status::text = 'APPROVED'::text)
-group by a.activity_id, a.description, a.prison_code
+group by a.activity_id, a.description, a.prison_code, a.outside_work
 order by activity_name, a.activity_id;

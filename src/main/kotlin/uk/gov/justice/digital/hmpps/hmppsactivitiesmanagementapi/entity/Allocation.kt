@@ -176,6 +176,12 @@ data class Allocation(
     exclusionsToEnd.forEach { it.endNow() }
   }
 
+  fun endExclusionsYesterday(exclusionsToEnd: Set<Exclusion>) = run {
+    require(exclusionsToEnd.all { it.allocation == this }) { "Cannot end the given exclusions because some of them do not belong to the allocation with id $allocationId" }
+    require(exclusionsToEnd.all { it.startDate < LocalDate.now() }) { "Can only end exclusions for yesterday if exclusions started in the past" }
+    exclusionsToEnd.forEach { it.endYesterday() }
+  }
+
   fun prisonCode() = activitySchedule.activity.prisonCode
 
   private fun activitySummary() = activitySchedule.activity.summary

@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.between
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.ifNotEmpty
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
@@ -178,22 +179,26 @@ class ManageAttendancesService(
     return attendanceRepository.saveAllAndFlush(attendances)
   }
 
-  fun createAnyAttendancesForToday(scheduleInstanceId: Long?, allocation: Allocation): List<Attendance> {
-    if (scheduleInstanceId == null) {
+  fun createAnyAttendancesForToday(allocation: Allocation, scheduleInstanceId: Long? = null, firstTimeSlot: TimeSlot? = null): List<Attendance> {
+    if (scheduleInstanceId == null && firstTimeSlot == null) {
       return emptyList()
     }
 
-    val nextAvailableInstance = scheduledInstanceRepository.findOrThrowNotFound(scheduleInstanceId)
+    val scheduledInstances = if (firstTimeSlot != null) {
+      allocation.activitySchedule.instances().filter { it.sessionDate == LocalDate.now(clock) && it.timeSlot >= firstTimeSlot }
+    } else {
+      val nextAvailableInstance = scheduledInstanceRepository.findOrThrowNotFound(scheduleInstanceId!!)
 
-    require(nextAvailableInstance.activitySchedule == allocation.activitySchedule) {
-      "Allocation does not belong to same activity schedule as selected instance"
+      require(nextAvailableInstance.activitySchedule == allocation.activitySchedule) {
+        "Allocation does not belong to same activity schedule as selected instance"
+      }
+
+      scheduledInstanceRepository.findByActivityScheduleAndSessionDateEqualsAndStartTimeGreaterThanEqual(
+        activitySchedule = allocation.activitySchedule,
+        sessionDate = LocalDate.now(clock),
+        startTime = nextAvailableInstance.startTime,
+      )
     }
-
-    val scheduledInstances = scheduledInstanceRepository.findByActivityScheduleAndSessionDateEqualsAndStartTimeGreaterThanEqual(
-      activitySchedule = allocation.activitySchedule,
-      sessionDate = LocalDate.now(clock),
-      startTime = nextAvailableInstance.startTime,
-    )
 
     // Create any attendances for today
     return scheduledInstances.filter {

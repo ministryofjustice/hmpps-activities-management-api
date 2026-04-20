@@ -1118,8 +1118,8 @@ class ManageAttendancesServiceTest {
     }
 
     @Test
-    fun `should do nothing if no schedule instance id was provided`() {
-      assertThat(service.createAnyAttendancesForToday(null, allocation)).isEmpty()
+    fun `should do nothing if scheduleInstanceId and firstTimeSlot are null`() {
+      assertThat(service.createAnyAttendancesForToday(allocation, null, null)).isEmpty()
     }
 
     @Test
@@ -1127,13 +1127,23 @@ class ManageAttendancesServiceTest {
       whenever(scheduledInstanceRepository.findById(123)).thenReturn(Optional.of(instance.copy(123)))
 
       assertThatThrownBy {
-        service.createAnyAttendancesForToday(123, allocation)
+        service.createAnyAttendancesForToday(allocation, 123)
       }.isInstanceOf(IllegalArgumentException::class.java)
         .hasMessage("Allocation does not belong to same activity schedule as selected instance")
     }
 
     @Test
-    fun `should create an attendance record`() {
+    fun `should create an attendance record when firstTimeSlot is provided and exists today`() {
+      allocation(startDate = LocalDate.now())
+
+      val attendances = service.createAnyAttendancesForToday(allocation, null, TimeSlot.AM)
+
+      assertThat(attendances).hasSize(1)
+      assertThat(attendances.first().scheduledInstance).isEqualTo(allocation.activitySchedule.instances().first())
+    }
+
+    @Test
+    fun `should create an attendance record when scheduleInstanceId is provided and is today`() {
       whenever(scheduledInstanceRepository.findById(1)).thenReturn(Optional.of(allocation.activitySchedule.instances()[0]))
       whenever(
         scheduledInstanceRepository.findByActivityScheduleAndSessionDateEqualsAndStartTimeGreaterThanEqual(
@@ -1143,7 +1153,7 @@ class ManageAttendancesServiceTest {
         ),
       ).thenReturn(listOf(allocation.activitySchedule.instances()[0]))
 
-      val attendances = service.createAnyAttendancesForToday(1, allocation)
+      val attendances = service.createAnyAttendancesForToday(allocation, 1)
 
       assertThat(attendances).hasSize(1)
       assertThat(attendances.first().scheduledInstance).isEqualTo(allocation.activitySchedule.instances().first())
@@ -1156,7 +1166,7 @@ class ManageAttendancesServiceTest {
 
       whenever(scheduledInstanceRepository.findById(1)).thenReturn(Optional.of(allocation.activitySchedule.instances()[0]))
 
-      val attendances = service.createAnyAttendancesForToday(1, allocation)
+      val attendances = service.createAnyAttendancesForToday(allocation, 1)
 
       assertThat(attendances).isEmpty()
     }
@@ -1181,7 +1191,7 @@ class ManageAttendancesServiceTest {
         ),
       ).thenReturn(listOf(allocation.activitySchedule.instances()[1], allocation.activitySchedule.instances()[2]))
 
-      val attendances = service.createAnyAttendancesForToday(1, allocation)
+      val attendances = service.createAnyAttendancesForToday(allocation, 1)
 
       // Should not contain first instance as it is before the second instance that is selected
       assertThat(attendances).hasSize(2)
@@ -1195,7 +1205,7 @@ class ManageAttendancesServiceTest {
 
       whenever(scheduledInstanceRepository.findById(1)).thenReturn(Optional.of(allocation.activitySchedule.instances()[0]))
 
-      val attendances = service.createAnyAttendancesForToday(1, allocation)
+      val attendances = service.createAnyAttendancesForToday(allocation, 1)
 
       assertThat(attendances).isEmpty()
     }

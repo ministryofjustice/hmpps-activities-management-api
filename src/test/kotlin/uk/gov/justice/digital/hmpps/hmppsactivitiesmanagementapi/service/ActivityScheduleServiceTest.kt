@@ -76,6 +76,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 import java.util.*
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation as AllocationEntity
 
 @ExtendWith(FakeSecurityContext::class, FakeCaseLoad::class)
 class ActivityScheduleServiceTest {
@@ -819,7 +820,7 @@ class ActivityScheduleServiceTest {
     val attendance1: Attendance = mock()
     val attendance2: Attendance = mock()
     val newAttendances: List<Attendance> = listOf(attendance1, attendance2)
-    whenever(manageAttendancesService.createAnyAttendancesForToday(eq(123L), any())) doReturn newAttendances
+    whenever(manageAttendancesService.createAnyAttendancesForToday(any(), eq(123L), eq(null))) doReturn newAttendances
     whenever(manageAttendancesService.saveAttendances(newAttendances, schedule.description)) doReturn newAttendances
 
     service.allocatePrisoner(
@@ -838,7 +839,7 @@ class ActivityScheduleServiceTest {
     verify(auditService).logEvent(any())
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATED, 0)
     inOrder(manageAttendancesService) {
-      verify(manageAttendancesService).createAnyAttendancesForToday(eq(123L), any())
+      verify(manageAttendancesService).createAnyAttendancesForToday(any(), eq(123L), eq(null))
       verify(manageAttendancesService).saveAttendances(newAttendances, schedule.description)
       verify(manageAttendancesService).sendCreatedEvent(attendance1)
       verify(manageAttendancesService).sendCreatedEvent(attendance2)
@@ -1111,7 +1112,7 @@ class ActivityScheduleServiceTest {
     whenever(prisonPayBandRepository.findByPrisonCode(PENTONVILLE_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh(PENTONVILLE_PRISON_CODE))
     whenever(waitingListRepository.findByPrisonCodeAndPrisonerNumberAndActivitySchedule(any(), any(), any())) doReturn emptyList()
     manageAttendancesService.stub {
-      on { createAnyAttendancesForToday(any(), any()) }.doReturn(emptyList())
+      on { createAnyAttendancesForToday(any<AllocationEntity>(), any<Long>(), eq(null)) }.doReturn(emptyList())
     }
 
     service.allocatePrisonersToSchedule(

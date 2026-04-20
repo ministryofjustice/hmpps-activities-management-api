@@ -24,6 +24,7 @@ data class ActivitySummary(
   val allocated: Int,
   val waitlisted: Int,
   val createdTime: LocalDateTime,
+  val outsideWork: Boolean,
 
   @Enumerated(EnumType.STRING)
   val activityState: ActivityState,
@@ -40,6 +41,7 @@ data class ActivitySummary(
     allocated = allocated,
     waitlisted = waitlisted,
     createdTime = createdTime,
+    outsideWork = outsideWork,
     activityState = activityState,
   )
 }

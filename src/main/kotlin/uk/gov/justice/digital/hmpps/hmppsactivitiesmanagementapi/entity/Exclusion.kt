@@ -48,6 +48,11 @@ data class Exclusion(
 
   fun endNow() = run { endDate = LocalDate.now() }
 
+  fun endYesterday() {
+    require(startDate.isBefore(LocalDate.now()), { "Can only end an exclusion for yesterday if exclusion started in the past" })
+    endDate = LocalDate.now().minusDays(1)
+  }
+
   fun getDaysOfWeek() = this.exclusionDaysOfWeek.map { it.dayOfWeek }.toSet()
 
   fun setDaysOfWeek(daysOfWeek: Set<DayOfWeek>) {

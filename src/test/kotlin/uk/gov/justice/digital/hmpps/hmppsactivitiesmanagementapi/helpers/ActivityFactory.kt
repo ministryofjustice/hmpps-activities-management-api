@@ -144,6 +144,7 @@ internal fun activitySummary(
   allocated: Int = 10,
   waitlisted: Int = 2,
   activityState: ActivityState = ActivityState.LIVE,
+  outsideWork: Boolean = false,
 ) = ActivitySummary(
   id = activityId,
   prisonCode = prisonCode,
@@ -154,6 +155,7 @@ internal fun activitySummary(
   createdTime = timestamp,
   activityState = activityState,
   activityCategory = category,
+  outsideWork = outsideWork,
 )
 
 internal fun activityCategory(code: String = "category code") = ActivityCategory(
