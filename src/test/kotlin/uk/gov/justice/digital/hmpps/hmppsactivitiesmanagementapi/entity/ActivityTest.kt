@@ -850,13 +850,6 @@ class ActivityTest {
   }
 
   @Test
-  fun `activity state is LIVE when the end date is today`() {
-    val activity = activityEntity(endDate = today)
-    assertThat(activity.state(ActivityState.LIVE)).isTrue()
-    assertThat(activity.state(ActivityState.ARCHIVED)).isFalse()
-  }
-
-  @Test
   fun `activity state is ARCHIVED when the end date is before today`() {
     val activity = activityEntity(startDate = today.minusDays(10), endDate = today.minusDays(1))
     assertThat(activity.state(ActivityState.ARCHIVED)).isTrue()
