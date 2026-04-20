@@ -834,4 +834,25 @@ class ActivityTest {
     // no op so allowed
     assertDoesNotThrow { activity.paid = false }
   }
+
+  @Test
+  fun `activity state is LIVE when there is no end date`() {
+    val activity = activityEntity(endDate = null)
+    assertThat(activity.state(ActivityState.LIVE)).isTrue()
+    assertThat(activity.state(ActivityState.ARCHIVED)).isFalse()
+  }
+
+  @Test
+  fun `activity state is LIVE when the end date is in future`() {
+    val activity = activityEntity(endDate = today.plusDays(1))
+    assertThat(activity.state(ActivityState.LIVE)).isTrue()
+    assertThat(activity.state(ActivityState.ARCHIVED)).isFalse()
+  }
+
+  @Test
+  fun `activity state is ARCHIVED when the end date is before today`() {
+    val activity = activityEntity(startDate = today.minusDays(10), endDate = today.minusDays(1))
+    assertThat(activity.state(ActivityState.ARCHIVED)).isTrue()
+    assertThat(activity.state(ActivityState.LIVE)).isFalse()
+  }
 }

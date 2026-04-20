@@ -9,7 +9,7 @@ select a.activity_id                                           id,
        count(distinct w.waiting_list_id)                       waitlisted,
        a.created_time,
        CASE
-           WHEN a.end_date < current_timestamp THEN
+           WHEN a.end_date < current_date THEN
                'ARCHIVED'
            ELSE
                'LIVE'
