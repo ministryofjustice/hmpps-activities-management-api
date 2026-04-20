@@ -28,8 +28,13 @@ abstract class ActivitiesIntegrationTestBase : IntegrationTestBase() {
     .expectBodyList(ActivityScheduleInstance::class.java)
     .returnResult().responseBody
 
-  fun WebTestClient.getActivities(prisonCode: String, nameSearch: String? = null) = get()
-    .uri("/prison/$prisonCode/activities" + (nameSearch?.let { "?nameSearch=$nameSearch" } ?: ""))
+  fun WebTestClient.getActivities(prisonCode: String, nameSearch: String? = null, excludeArchived: Boolean = true) = get()
+    .uri { uriBuilder ->
+      uriBuilder.path("/prison/$prisonCode/activities")
+        .queryParam("excludeArchived", excludeArchived)
+        .also { if (nameSearch != null) it.queryParam("nameSearch", nameSearch) }
+        .build()
+    }
     .accept(MediaType.APPLICATION_JSON)
     .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
     .exchange()

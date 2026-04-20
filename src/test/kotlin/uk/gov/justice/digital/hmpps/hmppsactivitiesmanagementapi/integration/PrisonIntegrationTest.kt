@@ -49,4 +49,40 @@ class PrisonIntegrationTest : ActivitiesIntegrationTestBase() {
         activityState = ActivityState.LIVE,
       )
   }
+
+  @Sql("classpath:test_data/seed-activity-archived.sql")
+  @Test
+  fun `activity is ARCHIVED when the end date is before today`() {
+    val activities = webTestClient.getActivities("PVI", excludeArchived = false)!!
+
+    val archivedActivity = activities.single { it.activityName == "Maths Level 1" }
+    archivedActivity.activityState isEqualTo ActivityState.ARCHIVED
+  }
+
+  @Sql("classpath:test_data/seed-activity-archived.sql")
+  @Test
+  fun `activity is LIVE when the end date is today`() {
+    val activities = webTestClient.getActivities("PVI")!!
+
+    val liveActivity = activities.single { it.activityName == "English Level 1" }
+    liveActivity.activityState isEqualTo ActivityState.LIVE
+  }
+
+  @Sql("classpath:test_data/seed-activity-archived.sql")
+  @Test
+  fun `activity is LIVE when the end date is in the future`() {
+    val activities = webTestClient.getActivities("PVI")!!
+
+    val liveActivity = activities.single { it.activityName == "History Level 1" }
+    liveActivity.activityState isEqualTo ActivityState.LIVE
+  }
+
+  @Sql("classpath:test_data/seed-activity-archived.sql")
+  @Test
+  fun `activity is LIVE when there is no end date`() {
+    val activities = webTestClient.getActivities("PVI")!!
+
+    val liveActivity = activities.single { it.activityName == "Science Level 1" }
+    liveActivity.activityState isEqualTo ActivityState.LIVE
+  }
 }
