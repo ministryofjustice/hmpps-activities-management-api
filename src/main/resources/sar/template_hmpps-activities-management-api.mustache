@@ -108,34 +108,23 @@
     {{#appointments}}
         <br>
         <h3>Appointment</h3>
-        <table class="data-table">
-            <tr>
-                <td class="data-column-25">Prison Name</td>
-                <td class="data-column-25">Date created</td>
-                <td class="data-column-25">Category</td>
-                <td class="data-column-25">Attended</td>
-            </tr>
-
-            <tr>
-                <td>{{ getPrisonName prisonCode }}</td>
-                <td>{{ optionalValue (formatDate createdDate) }}</td>
-                <td>{{ optionalValue category }}</td>
-                <td>{{ optionalValue attended }}</td>
-            </tr>
-        </table>
-        <table class="data-table">
-            <tr>
-                <td class="data-column-25">Start date</td>
-                <td class="data-column-25">Start time</td>
-                <td class="data-column-25">End time</td>
-                <td class="data-column-25">Extra information</td>
-            </tr>
-            <tr>
-                <td>{{ optionalValue (formatDate startDate) }}</td>
-                <td>{{ optionalValue startTime }}</td>
-                <td>{{ optionalValue endTime }}</td>
-                <td>{{ optionalValue extraInformation }}</td>
-            </tr>
+        <table class="summary-list">
+            <tr><td>Prison Name</td><td>{{ getPrisonName prisonCode }}</td></tr>
+            <tr><td>Date created</td><td>{{ optionalValue (formatDate createdDate) }}</td></tr>
+            <tr><td>Category</td><td>{{ category }}</td></tr>
+            <tr><td>Attended</td><td>{{ attended }}</td></tr>
+            <tr><td>Date</td><td>{{ optionalValue (formatDate startDate) }}</td></tr>
+            <tr><td>Start time</td><td>{{ optionalValue startTime }}</td></tr>
+            <tr><td>End time</td><td>{{ optionalValue endTime }}</td></tr>
+            <tr><td>Extra information</td><td>{{ optionalValue extraInformation }}</td></tr>
+            <tr><td>Custom name</td><td>{{ optionalValue customName }}</td></tr>
+            <tr><td>Organiser Description</td><td>{{ optionalValue originator }}</td></tr>
+            <tr><td>Organiser Description</td><td>{{ optionalValue originator }}</td></tr>
+            <tr><td>In cell</td><td>{{ convertBoolean inCell }}</td></tr>
+            <tr><td>Off wing</td><td>{{ convertBoolean offWing }}</td></tr>
+            <tr><td>On wing</td><td>{{ convertBoolean onWing }}</td></tr>
+            <tr><td>Cancellation reason</td><td>{{ optionalValue cancellationReason }}</td></tr>
+            <tr><td>Cancellation by</td><td>{{ getUserLastName cancelledBy }}</td></tr>
         </table>
     {{/appointments}}
     {{^appointments}}

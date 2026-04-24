@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDate
 import java.time.LocalTime
 import java.util.Locale
+import java.util.UUID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.SarAllocation as EntitySarAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.SarAppointment as EntitySarAppointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.SarWaitingList as EntitySarWaitingList
@@ -146,9 +147,9 @@ data class SarAppointment(
   @Schema(description = "The category of the appointment", example = "Education")
   val category: String,
 
-  @Schema(description = "The start date of the appointment", example = "2022-01-01")
+  @Schema(description = "The date of the appointment", example = "2022-01-01")
   @JsonFormat(pattern = "yyyy-MM-dd")
-  val startDate: LocalDate,
+  val date: LocalDate,
 
   @Schema(description = "The start time of the appointment", example = "12:30")
   @JsonFormat(pattern = "HH:mm")
@@ -170,6 +171,30 @@ data class SarAppointment(
   @Schema(description = "The date the appointment entry was created", example = "2022-01-01")
   @JsonFormat(pattern = "yyyy-MM-dd")
   val createdDate: LocalDate,
+
+  @Schema(description = "The custom name of the appointment, can be null", example = "Gym Activity")
+  val customName: String? = null,
+
+  @Schema(description = "The organiser of the appointment, can be null", example = "Prison staff")
+  val organiser: String? = null,
+
+  @Schema(description = "The DPS location id of the appointment, can be null", example = "4475b5d5-873c-4f88-a5b7-2d20e9224a62")
+  val dpsLocationId: UUID? = null,
+
+  @Schema(description = "Is the appointment location in cell or not?", example = "false")
+  val inCell: Boolean = false,
+
+  @Schema(description = "Is the appointment location off wing or not?", example = "false")
+  val offWing: Boolean = false,
+
+  @Schema(description = "Is the appointment location on wing or not?", example = "true")
+  val onWing: Boolean = false,
+
+  @Schema(description = "The reason the appointment was cancelled, can be null", example = "Created in error")
+  val cancellationReason: String? = null,
+
+  @Schema(description = "Who cancelled the appointment, can be null", example = "ABC12D")
+  val cancelledBy: String? = null,
 ) {
   constructor(appointment: EntitySarAppointment) : this(
     appointment.appointmentId,
@@ -182,5 +207,13 @@ data class SarAppointment(
     appointment.prisonerExtraInformation,
     appointment.attended,
     appointment.createdDate,
+    appointment.customName,
+    appointment.organiser,
+    appointment.dpsLocationId,
+    appointment.inCell,
+    appointment.offWing,
+    appointment.onWing,
+    appointment.cancellationReason,
+    appointment.cancelledBy,
   )
 }

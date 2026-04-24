@@ -49,15 +49,19 @@ VALUES (2, 'GROUP', 'PVI', 'EDUC', 1, 123, false, '2022-10-12', '09:00:00', '10:
 insert into appointment_series (appointment_series_id, appointment_type, prison_code, category_code, appointment_tier_id, internal_location_id, in_cell, start_date, start_time, end_time, appointment_series_schedule_id, created_time, created_by)
 VALUES (3, 'GROUP', 'PVI', 'NOT_KNOWN', 1, 123, false, '2022-10-12', '09:00:00', '10:30:00', 1, '2022-10-10 00:00:00', 'TEST.USER');
 
-insert into appointment (appointment_id, appointment_series_id, sequence_number, prison_code, category_code, appointment_tier_id, internal_location_id, in_cell, start_date, start_time, end_time, created_time, created_by)
-VALUES  (1, 1, 1, 'PVI', 'EDUC', 1, 123, false, '2022-10-12', '09:30:00', '11:45:00', '2022-10-11 09:00:00', 'TEST.USER'),
-        (2, 2, 2, 'PVI', 'EDUC', 1, 123, false, '2022-10-13', '14:00:00', '15:30:00', '2022-10-08 09:00:00', 'TEST.USER'),
-        (3, 3, 3, 'PVI', 'NOT_KNOWN', 1, 123, false, '2022-10-14', '06:00:00', '08:30:00', '2022-10-09 09:00:00', 'TEST.USER');
+insert into appointment (appointment_id, appointment_series_id, sequence_number, prison_code, category_code, custom_name, appointment_tier_id, in_cell, on_wing, off_wing, dps_location_id, start_date, start_time, end_time, created_time, created_by, appointment_organiser_id, cancellation_reason_id, cancelled_by)
+VALUES  (1, 1, 1, 'PVI', 'EDUC', 'Education Induction', 1, true, false, false, null, '2022-10-12', '09:30:00', '11:45:00', '2022-10-11 09:00:00', 'TEST.USER', 1, null, null),
+        (2, 2, 2, 'PVI', 'EDUC', 'Distance Learning', 1, false, true, false, null, '2022-10-13', '14:00:00', '15:30:00', '2022-10-08 09:00:00', 'TEST.USER', 3, null, null),
+        (3, 3, 3, 'PVI', 'NOT_KNOWN', null, 1, false, false, true, null,'2022-10-14', '06:00:00', '08:30:00', '2022-10-09 09:00:00', 'TEST.USER', null, 1, 'ABC12D'),
+        (4, 3, 4, 'PVI', 'MEOT', 'Nurse Clinic', 1, false, false, false,'4475b5d5-873c-4f88-a5b7-2d20e9224a62', '2022-10-15', '11:00:00', '12:00:00', '2022-10-13 09:00:00', 'TEST.USER', null, 2, 'XYZ45F'),
+        (5, 1, 5, 'PVI', 'MEOT', 'Nurse Clinic', 1, true, false, false, null, '2022-10-12', '09:30:00', '11:45:00', '2022-10-11 09:00:00', 'TEST.USER', 1, null, null);
 
-insert into appointment_attendee (appointment_attendee_id, appointment_id, prisoner_number, booking_id, attended, attendance_recorded_time, attendance_recorded_by)
-VALUES  (1, 1, '111222', 1, null, null, null),
-        (2, 2, '111222', 2, true, '2022-10-12 09:00:00', 'PREV.ATTENDANCE.RECORDED.BY'),
-        (3, 3, '111222', 3, false, '2022-10-12 09:00:00', 'PREV.ATTENDANCE.RECORDED.BY');
+insert into appointment_attendee (appointment_attendee_id, appointment_id, prisoner_number, booking_id, attended, attendance_recorded_time, attendance_recorded_by, is_deleted)
+VALUES  (1, 1, '111222', 1, null, null, null, false),
+        (2, 2, '111222', 2, true, '2022-10-12 09:00:00', 'PREV.ATTENDANCE.RECORDED.BY', false),
+        (3, 3, '111222', 3, false, '2022-10-12 09:00:00', 'PREV.ATTENDANCE.RECORDED.BY', false),
+        (4, 4, '111222', 4, false, '2022-10-12 09:00:00', 'PREV.ATTENDANCE.RECORDED.BY', false),
+        (5, 5, '111222', 5, false, '2022-10-12 09:00:00', 'PREV.ATTENDANCE.RECORDED.BY', true); -- Deleted attendee should not be included
 
 --attendance
 insert into activity(activity_id, prison_code, activity_category_id, activity_tier_id, attendance_required, in_cell, piece_work, outside_work, pay_per_session, summary, description, start_date, end_date, risk_level, created_time, created_by, paid)

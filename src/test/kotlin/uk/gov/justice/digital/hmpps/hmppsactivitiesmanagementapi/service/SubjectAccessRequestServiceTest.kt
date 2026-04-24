@@ -19,6 +19,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.SarR
 import uk.gov.justice.hmpps.kotlin.sar.HmppsSubjectAccessRequestContent
 import java.time.LocalDate
 import java.time.LocalTime
+import java.util.UUID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.SarAllocation as ModelSarAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.SarAppointment as ModelSarAppointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.SarAttendanceSummary as ModelSarAttendanceSummary
@@ -70,6 +71,14 @@ class SubjectAccessRequestServiceTest {
     attended = "Yes",
     createdDate = TimeSource.yesterday(),
     category = "Activity",
+    customName = "Gym Activity",
+    organiser = "Prison staff",
+    dpsLocationId = UUID.randomUUID(),
+    inCell = false,
+    offWing = true,
+    onWing = true,
+    cancellationReason = "Created in error",
+    cancelledBy = "ABC12D",
   )
 
   private val modelSarAttendanceSummary = ModelSarAttendanceSummary(
