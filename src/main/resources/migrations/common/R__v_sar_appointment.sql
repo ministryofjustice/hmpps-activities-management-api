@@ -28,5 +28,3 @@ SELECT ap.prison_code AS prison_code,
   LEFT JOIN event_organiser eo on eo.event_organiser_id =  ap.appointment_organiser_id
   LEFT JOIN appointment_cancellation_reason cr on cr.appointment_cancellation_reason_id = ap.cancellation_reason_id
   WHERE apa.is_deleted = false;
-
-select * from appointment_category;
