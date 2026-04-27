@@ -4,6 +4,8 @@ import net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.verify
@@ -121,7 +123,9 @@ class ActivityIntegrationTest : LocalStackTestBase() {
 
     locationsInsidePrisonApiMockServer.stubLocationFromDpsUuid()
 
-    val createActivityRequest: ActivityCreateRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-7.json").copy(startDate = TimeSource.tomorrow())
+    val createActivityRequest: ActivityCreateRequest =
+      mapper.read<ActivityCreateRequest>("activity/activity-create-request-7.json")
+        .copy(startDate = TimeSource.tomorrow())
 
     val activity = webTestClient.createActivity(createActivityRequest)
 
@@ -226,7 +230,9 @@ class ActivityIntegrationTest : LocalStackTestBase() {
       startDate = futureDate,
     )
 
-    val createActivityRequest: ActivityCreateRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-7.json").copy(startDate = TimeSource.tomorrow(), pay = listOf(apr1, apr2))
+    val createActivityRequest: ActivityCreateRequest =
+      mapper.read<ActivityCreateRequest>("activity/activity-create-request-7.json")
+        .copy(startDate = TimeSource.tomorrow(), pay = listOf(apr1, apr2))
 
     val activity = webTestClient.createActivity(createActivityRequest)
 
@@ -297,8 +303,16 @@ class ActivityIntegrationTest : LocalStackTestBase() {
 
     val newActivity = activityCreateRequest(
       prisonCode = MOORLAND_PRISON_CODE,
-      educationLevel = prisonApiMockServer.stubGetReferenceCode("EDU_LEVEL", "1", "prisonapi/education-level-code-1.json"),
-      studyArea = prisonApiMockServer.stubGetReferenceCode("STUDY_AREA", "ENGLA", "prisonapi/study-area-code-ENGLA.json"),
+      educationLevel = prisonApiMockServer.stubGetReferenceCode(
+        "EDU_LEVEL",
+        "1",
+        "prisonapi/education-level-code-1.json",
+      ),
+      studyArea = prisonApiMockServer.stubGetReferenceCode(
+        "STUDY_AREA",
+        "ENGLA",
+        "prisonapi/study-area-code-ENGLA.json",
+      ),
       paid = false,
     )
 
@@ -313,7 +327,14 @@ class ActivityIntegrationTest : LocalStackTestBase() {
       assertThat(pay).isEmpty()
       assertThat(createdBy).isEqualTo("test-client")
       assertThat(paid).isFalse()
-      assertThat(schedules[0].internalLocation).isEqualTo(InternalLocation(1, location.code, location.localName!!, UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc")))
+      assertThat(schedules[0].internalLocation).isEqualTo(
+        InternalLocation(
+          1,
+          location.code,
+          location.localName!!,
+          UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc"),
+        ),
+      )
     }
 
     validateOutboundEvents(
@@ -358,8 +379,16 @@ class ActivityIntegrationTest : LocalStackTestBase() {
 
     val newActivity = activityCreateRequest(
       prisonCode = MOORLAND_PRISON_CODE,
-      educationLevel = prisonApiMockServer.stubGetReferenceCode("EDU_LEVEL", "1", "prisonapi/education-level-code-1.json"),
-      studyArea = prisonApiMockServer.stubGetReferenceCode("STUDY_AREA", "ENGLA", "prisonapi/study-area-code-ENGLA.json"),
+      educationLevel = prisonApiMockServer.stubGetReferenceCode(
+        "EDU_LEVEL",
+        "1",
+        "prisonapi/education-level-code-1.json",
+      ),
+      studyArea = prisonApiMockServer.stubGetReferenceCode(
+        "STUDY_AREA",
+        "ENGLA",
+        "prisonapi/study-area-code-ENGLA.json",
+      ),
       paid = false,
     ).copy(dpsLocationId = UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc"))
 
@@ -374,7 +403,14 @@ class ActivityIntegrationTest : LocalStackTestBase() {
       assertThat(pay).isEmpty()
       assertThat(createdBy).isEqualTo("test-client")
       assertThat(paid).isFalse()
-      assertThat(schedules[0].internalLocation).isEqualTo(InternalLocation(1, location.code, location.localName!!, UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc")))
+      assertThat(schedules[0].internalLocation).isEqualTo(
+        InternalLocation(
+          1,
+          location.code,
+          location.localName!!,
+          UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc"),
+        ),
+      )
     }
 
     validateOutboundEvents(
@@ -419,8 +455,16 @@ class ActivityIntegrationTest : LocalStackTestBase() {
   fun `createActivity - external activity with outsideWork as true and no location is successful`() {
     val newActivityRequest = activityCreateRequest(
       prisonCode = MOORLAND_PRISON_CODE,
-      educationLevel = prisonApiMockServer.stubGetReferenceCode("EDU_LEVEL", "1", "prisonapi/education-level-code-1.json"),
-      studyArea = prisonApiMockServer.stubGetReferenceCode("STUDY_AREA", "ENGLA", "prisonapi/study-area-code-ENGLA.json"),
+      educationLevel = prisonApiMockServer.stubGetReferenceCode(
+        "EDU_LEVEL",
+        "1",
+        "prisonapi/education-level-code-1.json",
+      ),
+      studyArea = prisonApiMockServer.stubGetReferenceCode(
+        "STUDY_AREA",
+        "ENGLA",
+        "prisonapi/study-area-code-ENGLA.json",
+      ),
     ).copy(
       inCell = false,
       onWing = false,
@@ -504,7 +548,9 @@ class ActivityIntegrationTest : LocalStackTestBase() {
 
     locationsInsidePrisonApiMockServer.stubLocationFromDpsUuid()
 
-    val createActivityRequest: ActivityCreateRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-8.json").copy(startDate = TimeSource.tomorrow())
+    val createActivityRequest: ActivityCreateRequest =
+      mapper.read<ActivityCreateRequest>("activity/activity-create-request-8.json")
+        .copy(startDate = TimeSource.tomorrow())
 
     val activity = webTestClient.createActivity(createActivityRequest)
 
@@ -567,8 +613,9 @@ class ActivityIntegrationTest : LocalStackTestBase() {
   @Test
   @Sql("classpath:test_data/seed-activity-id-1.sql")
   fun `createActivity - should fail to create with existing active activity with same summary`() {
-    val activityCreateRequest: ActivityCreateRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-2.json")
-      .copy(startDate = TimeSource.tomorrow())
+    val activityCreateRequest: ActivityCreateRequest =
+      mapper.read<ActivityCreateRequest>("activity/activity-create-request-2.json")
+        .copy(startDate = TimeSource.tomorrow())
 
     val error = webTestClient.post()
       .uri("/activities")
@@ -602,8 +649,16 @@ class ActivityIntegrationTest : LocalStackTestBase() {
 
     val newActivityWithDuplicateSummary = activityCreateRequest(
       prisonCode = MOORLAND_PRISON_CODE,
-      educationLevel = prisonApiMockServer.stubGetReferenceCode("EDU_LEVEL", "1", "prisonapi/education-level-code-1.json"),
-      studyArea = prisonApiMockServer.stubGetReferenceCode("STUDY_AREA", "ENGLA", "prisonapi/study-area-code-ENGLA.json"),
+      educationLevel = prisonApiMockServer.stubGetReferenceCode(
+        "EDU_LEVEL",
+        "1",
+        "prisonapi/education-level-code-1.json",
+      ),
+      studyArea = prisonApiMockServer.stubGetReferenceCode(
+        "STUDY_AREA",
+        "ENGLA",
+        "prisonapi/study-area-code-ENGLA.json",
+      ),
     ).copy(summary = "Maths")
 
     val createdDuplicateActivity = webTestClient.createActivity(newActivityWithDuplicateSummary)
@@ -617,8 +672,9 @@ class ActivityIntegrationTest : LocalStackTestBase() {
   @Test
   @Sql("classpath:test_data/seed-activity-id-1.sql")
   fun `createActivity - failed tier 1 with non attendance`() {
-    val activityCreateRequest: ActivityCreateRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-10.json")
-      .copy(startDate = TimeSource.tomorrow())
+    val activityCreateRequest: ActivityCreateRequest =
+      mapper.read<ActivityCreateRequest>("activity/activity-create-request-10.json")
+        .copy(startDate = TimeSource.tomorrow())
 
     val error = webTestClient.post()
       .uri("/activities")
@@ -645,7 +701,9 @@ class ActivityIntegrationTest : LocalStackTestBase() {
     "classpath:test_data/seed-activity-id-1.sql",
   )
   fun `createActivity - failed authorisation`() {
-    val activityCreateRequest: ActivityCreateRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-2.json").copy(startDate = TimeSource.tomorrow())
+    val activityCreateRequest: ActivityCreateRequest =
+      mapper.read<ActivityCreateRequest>("activity/activity-create-request-2.json")
+        .copy(startDate = TimeSource.tomorrow())
 
     val error = webTestClient.post()
       .uri("/activities")
@@ -1226,6 +1284,22 @@ class ActivityIntegrationTest : LocalStackTestBase() {
     .expectBody(Activity::class.java)
     .returnResult().responseBody!!
 
+  private fun WebTestClient.updateActivityExpectingError(
+    prisonCode: String,
+    id: Long,
+    activityUpdateRequest: ActivityUpdateRequest,
+  ) = patch()
+    .uri("/activities/$prisonCode/activityId/$id")
+    .bodyValue(activityUpdateRequest)
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisationAsUser(roles = listOf(ROLE_ACTIVITY_HUB)))
+    .header(CASELOAD_ID, prisonCode)
+    .exchange()
+    .expectStatus().is4xxClientError
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBody(ErrorResponse::class.java)
+    .returnResult().responseBody!!
+
   private fun Activity.schedule(description: String) = schedules.schedule(description)
 
   private fun List<ActivitySchedule>.schedule(description: String) = firstOrNull { it.description.equals(description, ignoreCase = true) }
@@ -1392,7 +1466,13 @@ class ActivityIntegrationTest : LocalStackTestBase() {
       assertThat(schedules.first().internalLocation).isNull()
     }
 
-    with(webTestClient.updateActivity(PENTONVILLE_PRISON_CODE, 1, ActivityUpdateRequest(dpsLocationId = UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc")))) {
+    with(
+      webTestClient.updateActivity(
+        PENTONVILLE_PRISON_CODE,
+        1,
+        ActivityUpdateRequest(dpsLocationId = UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc")),
+      ),
+    ) {
       onWing isEqualTo false
       with(schedules.first()) {
         internalLocation?.id isEqualTo 1
@@ -1455,8 +1535,24 @@ class ActivityIntegrationTest : LocalStackTestBase() {
   fun `updateActivity slots and instances from today - is successful`() {
     with(webTestClient.getActivityById(1).schedules.first()) {
       assertThat(slots).hasSize(2)
-      assertThat(slots.first { it.timeSlot == TimeSlot.AM }.daysOfWeek).containsExactly("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
-      assertThat(slots.first { it.timeSlot == TimeSlot.PM }.daysOfWeek).containsExactly("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+      assertThat(slots.first { it.timeSlot == TimeSlot.AM }.daysOfWeek).containsExactly(
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri",
+        "Sat",
+        "Sun",
+      )
+      assertThat(slots.first { it.timeSlot == TimeSlot.PM }.daysOfWeek).containsExactly(
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri",
+        "Sat",
+        "Sun",
+      )
       assertThat(instances).hasSize(1)
     }
 
@@ -1705,7 +1801,8 @@ class ActivityIntegrationTest : LocalStackTestBase() {
 
     activity.schedules.flatMap { it.instances } hasSize 2
 
-    val updatedActivity = webTestClient.updateActivity(activity.prisonCode, activity.id, ActivityUpdateRequest(runsOnBankHoliday = false))
+    val updatedActivity =
+      webTestClient.updateActivity(activity.prisonCode, activity.id, ActivityUpdateRequest(runsOnBankHoliday = false))
 
     updatedActivity.schedules.flatMap { it.instances } hasSize 1
   }
@@ -1759,7 +1856,8 @@ class ActivityIntegrationTest : LocalStackTestBase() {
 
     activity.schedules.flatMap { it.instances } hasSize 1
 
-    val updatedActivity = webTestClient.updateActivity(activity.prisonCode, activity.id, ActivityUpdateRequest(runsOnBankHoliday = true))
+    val updatedActivity =
+      webTestClient.updateActivity(activity.prisonCode, activity.id, ActivityUpdateRequest(runsOnBankHoliday = true))
 
     updatedActivity.schedules.flatMap { it.instances } hasSize 2
   }
@@ -1878,7 +1976,14 @@ class ActivityIntegrationTest : LocalStackTestBase() {
       pay hasSize 0
     }
 
-    val activityPay = ActivityPayCreateRequest(incentiveNomisCode = "BAS", incentiveLevel = "Basic", payBandId = 1L, rate = 125, pieceRate = 150, pieceRateItems = 1)
+    val activityPay = ActivityPayCreateRequest(
+      incentiveNomisCode = "BAS",
+      incentiveLevel = "Basic",
+      payBandId = 1L,
+      rate = 125,
+      pieceRate = 150,
+      pieceRateItems = 1,
+    )
 
     with(webTestClient.updateActivity("PVI", 1, ActivityUpdateRequest(paid = true, pay = listOf(activityPay)))) {
       paid isBool true
@@ -1963,6 +2068,381 @@ class ActivityIntegrationTest : LocalStackTestBase() {
         assertThat(it.startTime == LocalTime.of(9, 45))
         assertThat(it.endTime == LocalTime.of(11, 45))
         assertThat(it.timeSlot == TimeSlot.AM)
+      }
+    }
+  }
+
+  @ParameterizedTest
+  @CsvSource(
+    "5, Induction",
+    "8, Not in work",
+  )
+  fun `updateActivity - activity category cannot be updated to Induction or Not in work for an external activity`(
+    categoryId: Long,
+    categoryName: String,
+  ) {
+    val newActivityRequest = activityCreateRequest(
+      educationLevel = prisonApiMockServer.stubGetReferenceCode(
+        "EDU_LEVEL",
+        "1",
+        "prisonapi/education-level-code-1.json",
+      ),
+      studyArea = prisonApiMockServer.stubGetReferenceCode(
+        "STUDY_AREA",
+        "ENGLA",
+        "prisonapi/study-area-code-ENGLA.json",
+      ),
+    ).copy(
+      inCell = false,
+      onWing = false,
+      offWing = false,
+      outsideWork = true,
+      dpsLocationId = null,
+    )
+
+    val createdActivity = webTestClient.createActivity(newActivityRequest)!!
+
+    val error = webTestClient.updateActivityExpectingError(
+      MOORLAND_PRISON_CODE,
+      createdActivity.id,
+      ActivityUpdateRequest(categoryId = categoryId),
+    )
+
+    with(error) {
+      assertThat(status).isEqualTo(400)
+      assertThat(developerMessage).isEqualTo("Activity category cannot be updated to $categoryName for an external activity")
+      assertThat(userMessage).isEqualTo("Exception: Activity category cannot be updated to $categoryName for an external activity")
+    }
+  }
+
+  @ParameterizedTest
+  @CsvSource(
+    "1, SAA_EDUCATION, Education",
+    "2, SAA_INDUSTRIES, Industries",
+    "3, SAA_PRISON_JOBS, Prison jobs",
+    "4, SAA_GYM_SPORTS_FITNESS, 'Gym, sport, fitness'",
+    "6, SAA_INTERVENTIONS, Intervention programmes",
+    "7, SAA_FAITH_SPIRITUALITY, Faith and spirituality",
+    "9, SAA_OTHER, Other",
+  )
+  fun `updateActivity - activity category can be updated to a non-restricted category for an external activity`(
+    categoryId: Long,
+    categoryCode: String,
+    categoryName: String,
+  ) {
+    val newActivityRequest = activityCreateRequest(
+      educationLevel = prisonApiMockServer.stubGetReferenceCode(
+        "EDU_LEVEL",
+        "1",
+        "prisonapi/education-level-code-1.json",
+      ),
+      studyArea = prisonApiMockServer.stubGetReferenceCode(
+        "STUDY_AREA",
+        "ENGLA",
+        "prisonapi/study-area-code-ENGLA.json",
+      ),
+    ).copy(
+      inCell = false,
+      onWing = false,
+      offWing = false,
+      outsideWork = true,
+      dpsLocationId = null,
+    )
+
+    val createdActivity = webTestClient.createActivity(newActivityRequest)!!
+
+    val updatedActivity = webTestClient.updateActivity(
+      MOORLAND_PRISON_CODE,
+      createdActivity.id,
+      ActivityUpdateRequest(categoryId = categoryId),
+    )
+
+    with(updatedActivity) {
+      assertThat(category.id).isEqualTo(categoryId)
+      assertThat(category.code).isEqualTo(categoryCode)
+      assertThat(category.name).isEqualTo(categoryName)
+    }
+  }
+
+  @ParameterizedTest
+  @CsvSource(
+    "5, SAA_INDUCTION, Induction",
+    "8, SAA_NOT_IN_WORK, Not in work",
+  )
+  fun `updateActivity - activity category can be updated to Not in Work and Induction for a non-external activity`(
+    categoryId: Long,
+    categoryCode: String,
+    categoryName: String,
+  ) {
+    val newActivityRequest = activityCreateRequest(
+      educationLevel = prisonApiMockServer.stubGetReferenceCode(
+        "EDU_LEVEL",
+        "1",
+        "prisonapi/education-level-code-1.json",
+      ),
+      studyArea = prisonApiMockServer.stubGetReferenceCode(
+        "STUDY_AREA",
+        "ENGLA",
+        "prisonapi/study-area-code-ENGLA.json",
+      ),
+    )
+
+    val createdActivity = webTestClient.createActivity(newActivityRequest)!!
+
+    val updatedActivity = webTestClient.updateActivity(
+      MOORLAND_PRISON_CODE,
+      createdActivity.id,
+      ActivityUpdateRequest(categoryId = categoryId),
+    )
+
+    with(updatedActivity) {
+      assertThat(category.id).isEqualTo(categoryId)
+      assertThat(category.code).isEqualTo(categoryCode)
+      assertThat(category.name).isEqualTo(categoryName)
+      assertThat(outsideWork).isFalse
+    }
+  }
+
+  @Test
+  fun `updateActivity - dpsLocationId cannot be set for an external activity`() {
+    val newActivityRequest = activityCreateRequest(
+      educationLevel = prisonApiMockServer.stubGetReferenceCode(
+        "EDU_LEVEL",
+        "1",
+        "prisonapi/education-level-code-1.json",
+      ),
+      studyArea = prisonApiMockServer.stubGetReferenceCode(
+        "STUDY_AREA",
+        "ENGLA",
+        "prisonapi/study-area-code-ENGLA.json",
+      ),
+    ).copy(
+      inCell = false,
+      onWing = false,
+      offWing = false,
+      outsideWork = true,
+      dpsLocationId = null,
+    )
+
+    val createdActivity = webTestClient.createActivity(newActivityRequest)!!
+
+    val error = webTestClient.updateActivityExpectingError(
+      MOORLAND_PRISON_CODE,
+      createdActivity.id,
+      ActivityUpdateRequest(dpsLocationId = UUID.randomUUID()),
+    )
+
+    with(error) {
+      assertThat(status).isEqualTo(400)
+      assertThat(developerMessage).isEqualTo("Activity location cannot be updated for an external activity")
+      assertThat(userMessage).isEqualTo("Exception: Activity location cannot be updated for an external activity")
+    }
+  }
+
+  @ParameterizedTest
+  @CsvSource(
+    "true, false, false",
+    "false, true, false",
+    "false, false, true",
+    "true, true, false",
+    "false, true, true",
+    "true, false, true",
+    "true, true, true",
+  )
+  fun `updateActivity - inCell, onWing, offWing cannot be set to true for an external activity`(
+    inCell: Boolean,
+    onWing: Boolean,
+    offWing: Boolean,
+  ) {
+    val newActivityRequest = activityCreateRequest(
+      educationLevel = prisonApiMockServer.stubGetReferenceCode(
+        "EDU_LEVEL",
+        "1",
+        "prisonapi/education-level-code-1.json",
+      ),
+      studyArea = prisonApiMockServer.stubGetReferenceCode(
+        "STUDY_AREA",
+        "ENGLA",
+        "prisonapi/study-area-code-ENGLA.json",
+      ),
+    ).copy(
+      inCell = false,
+      onWing = false,
+      offWing = false,
+      outsideWork = true,
+      dpsLocationId = null,
+    )
+
+    val createdActivity = webTestClient.createActivity(newActivityRequest)!!
+
+    val error = webTestClient.updateActivityExpectingError(
+      MOORLAND_PRISON_CODE,
+      createdActivity.id,
+      ActivityUpdateRequest(inCell = inCell, onWing = onWing, offWing = offWing),
+    )
+
+    with(error) {
+      assertThat(status).isEqualTo(400)
+      assertThat(developerMessage).isEqualTo("Activity location cannot be updated for an external activity")
+      assertThat(userMessage).isEqualTo("Exception: Activity location cannot be updated for an external activity")
+    }
+  }
+
+  @Test
+  fun `updateActivity - succeeds when location fields are not updated for an external activity`() {
+    val newActivityRequest = activityCreateRequest(
+      educationLevel = prisonApiMockServer.stubGetReferenceCode(
+        "EDU_LEVEL",
+        "1",
+        "prisonapi/education-level-code-1.json",
+      ),
+      studyArea = prisonApiMockServer.stubGetReferenceCode(
+        "STUDY_AREA",
+        "ENGLA",
+        "prisonapi/study-area-code-ENGLA.json",
+      ),
+    ).copy(
+      inCell = false,
+      onWing = false,
+      offWing = false,
+      outsideWork = true,
+      dpsLocationId = null,
+    )
+
+    val createdActivity = webTestClient.createActivity(newActivityRequest)!!
+
+    val updatedActivity = webTestClient.updateActivity(
+      MOORLAND_PRISON_CODE,
+      createdActivity.id,
+      ActivityUpdateRequest(summary = "Updated external Activity"),
+    )
+
+    with(updatedActivity) {
+      assertThat(summary).isEqualTo("Updated external Activity")
+      assertThat(outsideWork).isTrue
+      assertThat(inCell).isFalse
+      assertThat(onWing).isFalse
+      assertThat(offWing).isFalse
+      assertThat(schedules[0].internalLocation).isNull()
+    }
+  }
+
+  @Test
+  fun `updateActivity - paid and pay fields cannot be updated for an employer paid (paid = false) external activity`() {
+    val newActivityRequest = activityCreateRequest(
+      educationLevel = prisonApiMockServer.stubGetReferenceCode(
+        "EDU_LEVEL",
+        "1",
+        "prisonapi/education-level-code-1.json",
+      ),
+      studyArea = prisonApiMockServer.stubGetReferenceCode(
+        "STUDY_AREA",
+        "ENGLA",
+        "prisonapi/study-area-code-ENGLA.json",
+      ),
+      paid = false,
+    ).copy(
+      outsideWork = true,
+      dpsLocationId = null,
+    )
+
+    val createdActivity = webTestClient.createActivity(newActivityRequest)!!
+
+    val updatedActivity = webTestClient.updateActivity(
+      MOORLAND_PRISON_CODE,
+      createdActivity.id,
+      ActivityUpdateRequest(
+        paid = true,
+        pay = listOf(
+          ActivityPayCreateRequest(
+            incentiveNomisCode = "BAS",
+            incentiveLevel = "Basic",
+            payBandId = 12,
+            rate = 100,
+          ),
+        ),
+      ),
+    )
+
+    with(updatedActivity) {
+      assertThat(paid).isFalse
+      assertThat(pay).isEmpty()
+    }
+  }
+
+  @Test
+  fun `updateActivity - paid field cannot be updated for a prison paid (paid = true) external activity`() {
+    val newActivityRequest = activityCreateRequest(
+      educationLevel = prisonApiMockServer.stubGetReferenceCode(
+        "EDU_LEVEL",
+        "1",
+        "prisonapi/education-level-code-1.json",
+      ),
+      studyArea = prisonApiMockServer.stubGetReferenceCode(
+        "STUDY_AREA",
+        "ENGLA",
+        "prisonapi/study-area-code-ENGLA.json",
+      ),
+      paid = true,
+    ).copy(
+      outsideWork = true,
+      dpsLocationId = null,
+    )
+
+    val createdActivity = webTestClient.createActivity(newActivityRequest)!!
+
+    val updatedActivity = webTestClient.updateActivity(
+      MOORLAND_PRISON_CODE,
+      createdActivity.id,
+      ActivityUpdateRequest(paid = false),
+    )
+
+    with(updatedActivity) {
+      assertThat(paid).isTrue
+      assertThat(pay).hasSize(1)
+    }
+  }
+
+  @Test
+  fun `updateActivity - pay rates can be updated for a prison paid (paid = true) external activity`() {
+    val newActivityRequest = activityCreateRequest(
+      educationLevel = prisonApiMockServer.stubGetReferenceCode(
+        "EDU_LEVEL",
+        "1",
+        "prisonapi/education-level-code-1.json",
+      ),
+      studyArea = prisonApiMockServer.stubGetReferenceCode(
+        "STUDY_AREA",
+        "ENGLA",
+        "prisonapi/study-area-code-ENGLA.json",
+      ),
+      paid = true,
+    ).copy(
+      outsideWork = true,
+      dpsLocationId = null,
+    )
+
+    val createdActivity = webTestClient.createActivity(newActivityRequest)!!
+
+    val updatedActivity = webTestClient.updateActivity(
+      MOORLAND_PRISON_CODE,
+      createdActivity.id,
+      ActivityUpdateRequest(
+        pay = listOf(
+          ActivityPayCreateRequest(
+            incentiveNomisCode = "BAS",
+            incentiveLevel = "Basic",
+            payBandId = 12,
+            rate = 100,
+          ),
+        ),
+      ),
+    )
+
+    with(updatedActivity) {
+      assertThat(paid).isTrue
+      with(pay.single()) {
+        assertThat(rate).isEqualTo(100)
       }
     }
   }

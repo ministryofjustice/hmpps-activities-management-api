@@ -516,7 +516,13 @@ class ActivityService(
     activity: Activity,
   ) {
     request.categoryId?.apply {
-      activity.activityCategory = activityCategoryRepository.findOrThrowIllegalArgument(this)
+      val newCategory = activityCategoryRepository.findOrThrowIllegalArgument(this)
+
+      require(!(activity.outsideWork && (newCategory.isNotInWork() || newCategory.isInduction()))) {
+        "Activity category cannot be updated to ${newCategory.name} for an external activity"
+      }
+
+      activity.activityCategory = newCategory
     }
   }
 
@@ -670,6 +676,13 @@ class ActivityService(
       return
     }
 
+    if (activity.outsideWork) {
+      require(request.dpsLocationId == null && request.inCell != true && request.onWing != true && request.offWing != true) {
+        "Activity location cannot be updated for an external activity"
+      }
+      return
+    }
+
     require((request.dpsLocationId != null) xor (request.onWing == true) xor (request.inCell == true) xor (request.offWing == true)) { "Activity location must be one of offWing, onWing, inCell or a DPS location UUID" }
 
     if (request.dpsLocationId == null) {
@@ -753,7 +766,16 @@ class ActivityService(
     request: ActivityUpdateRequest,
     activity: Activity,
   ): AllocationIds {
-    request.paid?.let { activity.paid = request.paid }
+    if (!activity.outsideWork) {
+      request.paid?.let {
+        activity.paid = it
+      }
+    }
+
+    // For external unpaid activities (paid = false), skip pay processing
+    if (activity.outsideWork && !activity.paid) {
+      return emptySet()
+    }
 
     request.pay?.let { pay ->
       val prisonPayBands = prisonPayBandRepository.findByPrisonCode(activity.prisonCode)

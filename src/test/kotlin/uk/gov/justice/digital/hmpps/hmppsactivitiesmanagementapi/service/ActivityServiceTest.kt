@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
+import org.junit.jupiter.params.provider.ValueSource
 import org.mockito.ArgumentMatchers.anyList
 import org.mockito.MockitoAnnotations.openMocks
 import org.mockito.kotlin.any
@@ -3539,5 +3540,283 @@ class ActivityServiceTest {
     assertThat(result).isEqualTo(transform(activity, false))
 
     verify(activityRepository).getActivityByIdWithFilters(activity.activityId, earliestSessionDate)
+  }
+
+  @Nested
+  inner class ExternalActivityValidationsForUpdate {
+
+    private val externalActivity = activityEntity(outsideWork = true, noSchedules = true, paid = true).also {
+      it.addSchedule(activitySchedule(it, activityScheduleId = it.activityId, noAllocations = true))
+    }
+
+    @BeforeEach
+    fun setup() {
+      whenever(
+        activityRepository.findByActivityIdAndPrisonCodeWithFilters(1, MOORLAND_PRISON_CODE, LocalDate.now()),
+      ).thenReturn(externalActivity)
+    }
+
+    @ParameterizedTest
+    @CsvSource(
+      "SAA_NOT_IN_WORK, Not in work, Not in work",
+      "SAA_INDUCTION, Induction, Induction",
+    )
+    fun `activity category cannot be updated to restricted categories for an external activity`(
+      categoryCode: String,
+      categoryName: String,
+      categoryDescription: String,
+    ) {
+      val newActivityCategory = ActivityCategory(
+        activityCategoryId = 100,
+        code = categoryCode,
+        name = categoryName,
+        description = categoryDescription,
+      )
+      whenever(activityCategoryRepository.findById(100)).thenReturn(Optional.of(newActivityCategory))
+
+      assertThatThrownBy {
+        service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(categoryId = 100), "TEST")
+      }
+        .isInstanceOf(IllegalArgumentException::class.java)
+        .hasMessage("Activity category cannot be updated to $categoryName for an external activity")
+
+      verify(activityCategoryRepository).findById(100)
+      verify(activityRepository, never()).saveAndFlush(any())
+      verifyNoInteractions(manageAttendancesService)
+    }
+
+    @ParameterizedTest
+    @CsvSource(
+      "SAA_EDUCATION, Education, Education",
+      "SAA_INDUSTRIES, Industries, Industries",
+      "SAA_PRISON_JOBS, Prison jobs, Prison Jobs",
+    )
+    fun `activity category can be updated to non-restricted categories for an external activity`(
+      categoryCode: String,
+      categoryName: String,
+      categoryDescription: String,
+    ) {
+      val allowedActivityCategory = ActivityCategory(
+        activityCategoryId = 100,
+        code = categoryCode,
+        name = categoryName,
+        description = categoryDescription,
+      )
+
+      whenever(activityCategoryRepository.findById(100)).thenReturn(Optional.of(allowedActivityCategory))
+      whenever(prisonPayBandRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh())
+      whenever(activityRepository.saveAndFlush(any<ActivityEntity>())).thenReturn(externalActivity)
+
+      service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(categoryId = 100), "TEST")
+
+      verify(activityCategoryRepository).findById(100)
+      verify(activityRepository).saveAndFlush(activityCaptor.capture())
+      verifyNoInteractions(manageAttendancesService)
+
+      with(activityCaptor.firstValue.activityCategory) {
+        assertThat(activityCategoryId).isEqualTo(100)
+        assertThat(code).isEqualTo(categoryCode)
+        assertThat(name).isEqualTo(categoryName)
+        assertThat(description).isEqualTo(categoryDescription)
+      }
+    }
+
+    @ParameterizedTest
+    @CsvSource(
+      "SAA_NOT_IN_WORK, Not in work, Not in work",
+      "SAA_INDUCTION, Induction, Induction",
+    )
+    fun `activity category can be updated to restricted categories for a non-external activity`(
+      categoryCode: String,
+      categoryName: String,
+      categoryDescription: String,
+    ) {
+      val nonExternalActivity = activityEntity(noPayBands = true, outsideWork = false, noSchedules = true).also {
+        it.addSchedule(activitySchedule(it, activityScheduleId = it.activityId, noAllocations = true))
+      }
+      whenever(
+        activityRepository.findByActivityIdAndPrisonCodeWithFilters(1, MOORLAND_PRISON_CODE, LocalDate.now()),
+      ).thenReturn(nonExternalActivity)
+
+      val newActivityCategory = ActivityCategory(
+        activityCategoryId = 100,
+        code = categoryCode,
+        name = categoryName,
+        description = categoryDescription,
+      )
+      whenever(activityCategoryRepository.findById(100)).thenReturn(Optional.of(newActivityCategory))
+      whenever(prisonPayBandRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh())
+      whenever(activityRepository.saveAndFlush(any<ActivityEntity>())).thenReturn(nonExternalActivity)
+
+      service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(categoryId = 100), "TEST")
+
+      verify(activityCategoryRepository).findById(100)
+      verify(activityRepository).saveAndFlush(activityCaptor.capture())
+      verifyNoInteractions(manageAttendancesService)
+
+      with(activityCaptor.firstValue.activityCategory) {
+        assertThat(code).isEqualTo(categoryCode)
+        assertThat(name).isEqualTo(categoryName)
+        assertThat(description).isEqualTo(categoryDescription)
+      }
+    }
+
+    @ParameterizedTest
+    @CsvSource(
+      "true, false, false",
+      "true, true, false",
+      "true, true, true",
+      "false, true, false",
+      "false, false, true",
+      "true, false, true",
+      "false, true, true",
+    )
+    fun `activity location cannot be updated for an external activity`(
+      inCell: Boolean,
+      onWing: Boolean,
+      offWing: Boolean,
+    ) {
+      assertThatThrownBy {
+        service().updateActivity(
+          MOORLAND_PRISON_CODE,
+          1,
+          ActivityUpdateRequest(inCell = inCell, onWing = onWing, offWing = offWing),
+          "TEST",
+        )
+      }
+        .isInstanceOf(IllegalArgumentException::class.java)
+        .hasMessage("Activity location cannot be updated for an external activity")
+
+      verify(activityRepository, never()).saveAndFlush(any())
+      verifyNoInteractions(manageAttendancesService)
+    }
+
+    @Test
+    fun `dpsLocationId cannot be set to any location other than null for an external activity`() {
+      assertThatThrownBy {
+        service().updateActivity(
+          MOORLAND_PRISON_CODE,
+          1,
+          ActivityUpdateRequest(dpsLocationId = UUID.randomUUID()),
+          "TEST",
+        )
+      }
+        .isInstanceOf(IllegalArgumentException::class.java)
+        .hasMessage("Activity location cannot be updated for an external activity")
+
+      verify(activityRepository, never()).saveAndFlush(any())
+      verifyNoInteractions(manageAttendancesService)
+    }
+
+    @Test
+    fun `activity location with all flags false and no dpsLocationId is allowed for an external activity`() {
+      whenever(prisonPayBandRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh())
+      whenever(activityRepository.saveAndFlush(any<ActivityEntity>())).thenReturn(externalActivity)
+
+      val result = service().updateActivity(
+        MOORLAND_PRISON_CODE,
+        1,
+        ActivityUpdateRequest(inCell = false, onWing = false, offWing = false),
+        "TEST",
+      )
+
+      verify(activityRepository).saveAndFlush(any())
+      assertThat(result).isNotNull
+      verifyNoInteractions(locationService)
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    fun `updates to paid are ignored for a prison paid (paid = true) external activity`(paid: Boolean) {
+      whenever(prisonPayBandRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh())
+      whenever(activityRepository.saveAndFlush(any<ActivityEntity>())).thenReturn(externalActivity)
+
+      val externalPaidActivity = service().updateActivity(
+        MOORLAND_PRISON_CODE,
+        1,
+        ActivityUpdateRequest(paid = paid),
+        "TEST",
+      )
+
+      assertThat(externalPaidActivity).isNotNull
+      assertThat(externalActivity.paid).isTrue()
+      verify(activityRepository).saveAndFlush(any())
+    }
+
+    @Test
+    fun `pay rates can be updated for a prison paid (paid = true) external activity`() {
+      whenever(prisonPayBandRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh())
+      whenever(activityRepository.saveAndFlush(any<ActivityEntity>())).thenReturn(externalActivity)
+
+      service().updateActivity(
+        MOORLAND_PRISON_CODE,
+        1,
+        ActivityUpdateRequest(
+          paid = true,
+          pay = listOf(
+            ActivityPayCreateRequest(
+              incentiveNomisCode = "123",
+              incentiveLevel = "level",
+              payBandId = 1,
+              rate = 100,
+            ),
+          ),
+        ),
+        "TEST",
+      )
+
+      assertThat(externalActivity.paid).isTrue
+      assertThat(externalActivity.activityPay()).isNotEmpty()
+      verify(activityRepository).saveAndFlush(any())
+    }
+
+    @Test
+    fun `updates to paid are ignored for an employer paid (paid = false) external activity`() {
+      val externalActivity = activityEntity(
+        paid = false,
+        noPayBands = true,
+        outsideWork = true,
+      )
+
+      whenever(
+        activityRepository.findByActivityIdAndPrisonCodeWithFilters(1, MOORLAND_PRISON_CODE, LocalDate.now()),
+      ).thenReturn(externalActivity)
+
+      val externalUnpaidActivity = service().updateActivity(
+        MOORLAND_PRISON_CODE,
+        1,
+        ActivityUpdateRequest(paid = true),
+        "TEST",
+      )
+
+      assertThat(externalUnpaidActivity).isNotNull
+      assertThat(externalActivity.paid).isFalse()
+      verify(activityRepository).saveAndFlush(any())
+    }
+
+    @Test
+    fun `pay rates cannot be updated for an employer paid (paid = false) external activity`() {
+      val externalActivity = activityEntity(
+        paid = false,
+        noPayBands = true,
+        outsideWork = true,
+      )
+
+      whenever(prisonPayBandRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh())
+      whenever(activityRepository.saveAndFlush(any<ActivityEntity>())).thenReturn(externalActivity)
+
+      service().updateActivity(
+        MOORLAND_PRISON_CODE,
+        1,
+        ActivityUpdateRequest(
+          paid = true,
+        ),
+        "TEST",
+      )
+
+      assertThat(externalActivity.paid).isFalse
+      assertThat(externalActivity.activityPay()).isEmpty()
+      verify(activityRepository).saveAndFlush(any())
+    }
   }
 }
