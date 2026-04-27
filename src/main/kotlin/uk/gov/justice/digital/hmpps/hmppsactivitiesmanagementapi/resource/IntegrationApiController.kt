@@ -426,7 +426,7 @@ class IntegrationApiController(
         content = [
           Content(
             mediaType = "application/json",
-            array = ArraySchema(schema = Schema(implementation = ActivitySuitabilityCriteria::class)),
+            schema = Schema(implementation = ActivitySuitabilityCriteria::class),
           ),
         ],
       ),
