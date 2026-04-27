@@ -43,6 +43,17 @@ class SubjectAccessRequestServiceTest {
     activitySummary = "Activity Summary",
     payBand = "Pay band 1",
     createdDate = TimeSource.yesterday(),
+    activityCategoryName = "Prison jobs",
+    activityCategoryDescription = "Such as kitchen, cleaning, gardens or other maintenance and services to keep the prison running",
+    attendanceRequired = true,
+    paid = true,
+    outsideWork = false,
+    riskLevel = "low",
+    organiser = "Prison staff",
+    dpsLocationId = UUID.randomUUID(),
+    inCell = false,
+    offWing = true,
+    onWing = true,
   )
 
   private val sarWaitingList = SarWaitingList(

@@ -65,11 +65,44 @@ data class SarAllocation(
   val activitySummary: String,
 
   @Schema(description = "The pay band for the allocation, can be null e.g. unpaid activity", example = "Pay band 1 (lowest)")
-  val payBand: String?,
+  val payBand: String? = null,
 
   @Schema(description = "The date the allocation entry was created", example = "2022-01-01")
   @JsonFormat(pattern = "yyyy-MM-dd")
   val createdDate: LocalDate,
+
+  @Schema(description = "The category name for this activity", example = "Gym, sport, fitness")
+  val activityCategoryName: String,
+
+  @Schema(description = "The category description for this activity", example = "Such as sports clubs, like football, or recreational gym sessions")
+  val activityCategoryDescription: String,
+
+  @Schema(description = "Flag to indicate if attendance is required for this activity", example = "true")
+  val attendanceRequired: Boolean,
+
+  @Schema(description = "Whether the activity is a paid activity", example = "true")
+  val paid: Boolean,
+
+  @Schema(description = "Flag to indicate if the activity is carried out outside of the prison", example = "false")
+  var outsideWork: Boolean,
+
+  @Schema(description = "The most recent risk assessment level for this activity", example = "high")
+  val riskLevel: String,
+
+  @Schema(description = "The organiser of the activity, can be null", example = "Prison staff")
+  val organiser: String? = null,
+
+  @Schema(description = "The DPS location id of the activity, can be null", example = "4475b5d5-873c-4f88-a5b7-2d20e9224a62")
+  val dpsLocationId: UUID? = null,
+
+  @Schema(description = "Is the activity location in cell or not?", example = "false")
+  val inCell: Boolean = false,
+
+  @Schema(description = "Is the activity location off wing or not?", example = "false")
+  val offWing: Boolean = false,
+
+  @Schema(description = "Is the activity location on wing or not?", example = "true")
+  val onWing: Boolean = false,
 ) {
   constructor(allocation: EntitySarAllocation) : this(
     allocation.allocationId,
@@ -81,6 +114,17 @@ data class SarAllocation(
     allocation.activitySummary,
     allocation.payBand,
     allocation.createdDate,
+    allocation.activityCategoryName,
+    allocation.activityCategoryDescription,
+    allocation.attendanceRequired,
+    allocation.paid,
+    allocation.outsideWork,
+    allocation.riskLevel,
+    allocation.organiser,
+    allocation.dpsLocationId,
+    allocation.inCell,
+    allocation.offWing,
+    allocation.onWing,
   )
 }
 
