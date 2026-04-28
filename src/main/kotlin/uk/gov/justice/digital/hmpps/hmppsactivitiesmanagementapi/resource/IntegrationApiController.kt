@@ -252,7 +252,6 @@ class IntegrationApiController(
       ApiResponse(
         responseCode = "200",
         description = "Activity schedules",
-        useReturnTypeSchema = true,
         content = [
           Content(
             mediaType = "application/json",
@@ -427,7 +426,7 @@ class IntegrationApiController(
         content = [
           Content(
             mediaType = "application/json",
-            array = ArraySchema(schema = Schema(implementation = ActivitySuitabilityCriteria::class)),
+            schema = Schema(implementation = ActivitySuitabilityCriteria::class),
           ),
         ],
       ),

@@ -3,11 +3,11 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
 
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "10.2.1"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "10.2.3"
   kotlin("plugin.spring") version "2.3.21"
   kotlin("plugin.jpa") version "2.3.21"
   jacoco
-  id("org.openapi.generator") version "7.21.0"
+  id("org.openapi.generator") version "7.22.0"
   id("io.sentry.jvm.gradle") version "6.5.0"
 }
 
@@ -16,7 +16,7 @@ configurations {
 }
 
 dependencies {
-  implementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter:2.1.0")
+  implementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter:2.1.1")
 
   // Spring boot dependencies
   implementation("org.springframework.boot:spring-boot-starter-security")
@@ -26,7 +26,7 @@ dependencies {
   implementation("org.springframework.boot:spring-boot-starter-webclient")
   implementation("org.springframework.boot:spring-boot-starter-data-jpa")
   implementation("org.springframework.data:spring-data-envers:4.0.5")
-  implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:7.3.0")
+  implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:7.3.1")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.10.2")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:1.10.2")
@@ -49,7 +49,7 @@ dependencies {
     }
   }
 
-  implementation("aws.sdk.kotlin:s3:1.6.64")
+  implementation("aws.sdk.kotlin:s3:1.6.65")
 
   // Other dependencies
   implementation("org.apache.commons:commons-text:1.15.0")
@@ -59,7 +59,7 @@ dependencies {
   runtimeOnly("org.postgresql:postgresql")
 
   // Test dependencies
-  testImplementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter-test:2.1.0")
+  testImplementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter-test:2.1.1")
   testImplementation("uk.gov.justice.service.hmpps:hmpps-subject-access-request-test-support:2.3.0")
   testImplementation("org.springframework.boot:spring-boot-starter-webflux-test")
   testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
