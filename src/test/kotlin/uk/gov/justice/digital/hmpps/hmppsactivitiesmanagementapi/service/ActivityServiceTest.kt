@@ -3727,20 +3727,20 @@ class ActivityServiceTest {
 
     @ParameterizedTest
     @ValueSource(booleans = [true, false])
-    fun `updates to paid are ignored for a prison paid (paid = true) external activity`(paid: Boolean) {
-      whenever(prisonPayBandRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh())
-      whenever(activityRepository.saveAndFlush(any<ActivityEntity>())).thenReturn(externalActivity)
+    fun `paid status is unchanged and throws an exception for a prison paid (paid = true) external activity`(paid: Boolean) {
+      assertThatThrownBy {
+        service().updateActivity(
+          MOORLAND_PRISON_CODE,
+          1,
+          ActivityUpdateRequest(paid = paid),
+          "TEST",
+        )
+      }
+        .isInstanceOf(IllegalArgumentException::class.java)
+        .hasMessage("Paid status cannot be updated for an external activity")
 
-      val externalPaidActivity = service().updateActivity(
-        MOORLAND_PRISON_CODE,
-        1,
-        ActivityUpdateRequest(paid = paid),
-        "TEST",
-      )
-
-      assertThat(externalPaidActivity).isNotNull
       assertThat(externalActivity.paid).isTrue()
-      verify(activityRepository).saveAndFlush(any())
+      verify(activityRepository, never()).saveAndFlush(any())
     }
 
     @Test
@@ -3752,7 +3752,6 @@ class ActivityServiceTest {
         MOORLAND_PRISON_CODE,
         1,
         ActivityUpdateRequest(
-          paid = true,
           pay = listOf(
             ActivityPayCreateRequest(
               incentiveNomisCode = "123",
@@ -3771,7 +3770,7 @@ class ActivityServiceTest {
     }
 
     @Test
-    fun `updates to paid are ignored for an employer paid (paid = false) external activity`() {
+    fun `paid status is unchanged and throws an exception for an employer paid (paid = false) external activity`() {
       val externalActivity = activityEntity(
         paid = false,
         noPayBands = true,
@@ -3782,41 +3781,55 @@ class ActivityServiceTest {
         activityRepository.findByActivityIdAndPrisonCodeWithFilters(1, MOORLAND_PRISON_CODE, LocalDate.now()),
       ).thenReturn(externalActivity)
 
-      val externalUnpaidActivity = service().updateActivity(
-        MOORLAND_PRISON_CODE,
-        1,
-        ActivityUpdateRequest(paid = true),
-        "TEST",
-      )
+      assertThatThrownBy {
+        service().updateActivity(
+          MOORLAND_PRISON_CODE,
+          1,
+          ActivityUpdateRequest(paid = true),
+          "TEST",
+        )
+      }
+        .isInstanceOf(IllegalArgumentException::class.java)
+        .hasMessage("Paid status cannot be updated for an external activity")
 
-      assertThat(externalUnpaidActivity).isNotNull
       assertThat(externalActivity.paid).isFalse()
-      verify(activityRepository).saveAndFlush(any())
+      verify(activityRepository, never()).saveAndFlush(any())
     }
 
     @Test
-    fun `pay rates cannot be updated for an employer paid (paid = false) external activity`() {
+    fun `pay rates cannot be updated and throws an exception for an employer paid (paid = false) external activity`() {
       val externalActivity = activityEntity(
         paid = false,
         noPayBands = true,
         outsideWork = true,
       )
 
-      whenever(prisonPayBandRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh())
-      whenever(activityRepository.saveAndFlush(any<ActivityEntity>())).thenReturn(externalActivity)
+      whenever(
+        activityRepository.findByActivityIdAndPrisonCodeWithFilters(1, MOORLAND_PRISON_CODE, LocalDate.now()),
+      ).thenReturn(externalActivity)
 
-      service().updateActivity(
-        MOORLAND_PRISON_CODE,
-        1,
-        ActivityUpdateRequest(
-          paid = true,
-        ),
-        "TEST",
-      )
+      assertThatThrownBy {
+        service().updateActivity(
+          MOORLAND_PRISON_CODE,
+          1,
+          ActivityUpdateRequest(
+            pay = listOf(
+              ActivityPayCreateRequest(
+                incentiveNomisCode = "BAS",
+                incentiveLevel = "Basic",
+                payBandId = 1,
+                rate = 100,
+              ),
+            ),
+          ),
+          "TEST",
+        )
+      }
+        .isInstanceOf(IllegalArgumentException::class.java)
+        .hasMessage("Pay rates cannot be updated for an unpaid external activity")
 
-      assertThat(externalActivity.paid).isFalse
-      assertThat(externalActivity.activityPay()).isEmpty()
-      verify(activityRepository).saveAndFlush(any())
+      assertThat(externalActivity.paid).isFalse()
+      verify(activityRepository, never()).saveAndFlush(any())
     }
   }
 }

@@ -770,11 +770,18 @@ class ActivityService(
       request.paid?.let {
         activity.paid = it
       }
-    }
+    } else {
+      require(request.paid == null) {
+        "Paid status cannot be updated for an external activity"
+      }
 
-    // For external unpaid activities (paid = false), skip pay processing
-    if (activity.outsideWork && !activity.paid) {
-      return emptySet()
+      // For external employer paid activities (paid = false), skip pay rate processing
+      if (!activity.paid) {
+        require(request.pay.isNullOrEmpty()) {
+          "Pay rates cannot be updated for an unpaid external activity"
+        }
+        return emptySet()
+      }
     }
 
     request.pay?.let { pay ->

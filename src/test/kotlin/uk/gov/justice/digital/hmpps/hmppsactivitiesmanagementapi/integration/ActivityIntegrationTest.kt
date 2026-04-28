@@ -2328,7 +2328,7 @@ class ActivityIntegrationTest : LocalStackTestBase() {
   }
 
   @Test
-  fun `updateActivity - paid and pay fields cannot be updated for an employer paid (paid = false) external activity`() {
+  fun `updateActivity - paid status cannot be updated for an employer paid (paid = false) external activity`() {
     val newActivityRequest = activityCreateRequest(
       educationLevel = prisonApiMockServer.stubGetReferenceCode(
         "EDU_LEVEL",
@@ -2348,7 +2348,7 @@ class ActivityIntegrationTest : LocalStackTestBase() {
 
     val createdActivity = webTestClient.createActivity(newActivityRequest)!!
 
-    val updatedActivity = webTestClient.updateActivity(
+    val error = webTestClient.updateActivityExpectingError(
       MOORLAND_PRISON_CODE,
       createdActivity.id,
       ActivityUpdateRequest(
@@ -2364,14 +2364,58 @@ class ActivityIntegrationTest : LocalStackTestBase() {
       ),
     )
 
-    with(updatedActivity) {
-      assertThat(paid).isFalse
-      assertThat(pay).isEmpty()
+    with(error) {
+      assertThat(status).isEqualTo(400)
+      assertThat(developerMessage).isEqualTo("Paid status cannot be updated for an external activity")
+      assertThat(userMessage).isEqualTo("Exception: Paid status cannot be updated for an external activity")
     }
   }
 
   @Test
-  fun `updateActivity - paid field cannot be updated for a prison paid (paid = true) external activity`() {
+  fun `updateActivity - pay rates cannot be updated for an employer paid (paid = false) external activity`() {
+    val newActivityRequest = activityCreateRequest(
+      educationLevel = prisonApiMockServer.stubGetReferenceCode(
+        "EDU_LEVEL",
+        "1",
+        "prisonapi/education-level-code-1.json",
+      ),
+      studyArea = prisonApiMockServer.stubGetReferenceCode(
+        "STUDY_AREA",
+        "ENGLA",
+        "prisonapi/study-area-code-ENGLA.json",
+      ),
+      paid = false,
+    ).copy(
+      outsideWork = true,
+      dpsLocationId = null,
+    )
+
+    val createdActivity = webTestClient.createActivity(newActivityRequest)!!
+
+    val error = webTestClient.updateActivityExpectingError(
+      MOORLAND_PRISON_CODE,
+      createdActivity.id,
+      ActivityUpdateRequest(
+        pay = listOf(
+          ActivityPayCreateRequest(
+            incentiveNomisCode = "BAS",
+            incentiveLevel = "Basic",
+            payBandId = 12,
+            rate = 100,
+          ),
+        ),
+      ),
+    )
+
+    with(error) {
+      assertThat(status).isEqualTo(400)
+      assertThat(developerMessage).isEqualTo("Pay rates cannot be updated for an unpaid external activity")
+      assertThat(userMessage).isEqualTo("Exception: Pay rates cannot be updated for an unpaid external activity")
+    }
+  }
+
+  @Test
+  fun `updateActivity - paid status cannot be updated for a prison paid (paid = true) external activity`() {
     val newActivityRequest = activityCreateRequest(
       educationLevel = prisonApiMockServer.stubGetReferenceCode(
         "EDU_LEVEL",
@@ -2391,15 +2435,16 @@ class ActivityIntegrationTest : LocalStackTestBase() {
 
     val createdActivity = webTestClient.createActivity(newActivityRequest)!!
 
-    val updatedActivity = webTestClient.updateActivity(
+    val updatedActivity = webTestClient.updateActivityExpectingError(
       MOORLAND_PRISON_CODE,
       createdActivity.id,
       ActivityUpdateRequest(paid = false),
     )
 
     with(updatedActivity) {
-      assertThat(paid).isTrue
-      assertThat(pay).hasSize(1)
+      assertThat(status).isEqualTo(400)
+      assertThat(developerMessage).isEqualTo("Paid status cannot be updated for an external activity")
+      assertThat(userMessage).isEqualTo("Exception: Paid status cannot be updated for an external activity")
     }
   }
 
