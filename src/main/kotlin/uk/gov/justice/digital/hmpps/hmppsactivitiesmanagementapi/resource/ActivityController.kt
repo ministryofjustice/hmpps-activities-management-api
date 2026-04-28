@@ -162,7 +162,6 @@ class ActivityController(
       ApiResponse(
         responseCode = "200",
         description = "Activity schedules",
-        useReturnTypeSchema = true,
         content = [
           Content(
             mediaType = "application/json",
