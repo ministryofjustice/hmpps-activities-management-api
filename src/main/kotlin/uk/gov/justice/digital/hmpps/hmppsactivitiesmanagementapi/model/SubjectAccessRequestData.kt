@@ -167,6 +167,41 @@ data class SarWaitingList(
   @JsonFormat(pattern = "yyyy-MM-dd")
   val createdDate: LocalDate,
 
+  @Schema(description = "The reason for the waiting list request to be declined, can be null", example = "The prisoner has specifically requested to attend this activity")
+  val declinedReason: String? = null,
+
+  @Schema(description = "The category name for this activity", example = "Gym, sport, fitness")
+  val activityCategoryName: String,
+
+  @Schema(description = "The category description for this activity", example = "Such as sports clubs, like football, or recreational gym sessions")
+  val activityCategoryDescription: String,
+
+  @Schema(description = "Flag to indicate if attendance is required for this activity", example = "true")
+  val attendanceRequired: Boolean,
+
+  @Schema(description = "Whether the activity is a paid activity", example = "true")
+  val paid: Boolean,
+
+  @Schema(description = "Flag to indicate if the activity is carried out outside of the prison", example = "false")
+  var outsideWork: Boolean,
+
+  @Schema(description = "The most recent risk assessment level for this activity", example = "high")
+  val riskLevel: String,
+
+  @Schema(description = "The organiser of the activity, can be null", example = "Prison staff")
+  val organiser: String? = null,
+
+  @Schema(description = "The DPS location id of the activity, can be null", example = "4475b5d5-873c-4f88-a5b7-2d20e9224a62")
+  val dpsLocationId: UUID? = null,
+
+  @Schema(description = "Is the activity location in cell or not?", example = "false")
+  val inCell: Boolean = false,
+
+  @Schema(description = "Is the activity location off wing or not?", example = "false")
+  val offWing: Boolean = false,
+
+  @Schema(description = "Is the activity location on wing or not?", example = "true")
+  val onWing: Boolean = false,
 ) {
   constructor(waitingList: EntitySarWaitingList) : this(
     waitingList.waitingListId,
@@ -178,6 +213,18 @@ data class SarWaitingList(
     waitingList.statusDate,
     waitingList.comments,
     waitingList.createdDate,
+    waitingList.declinedReason,
+    waitingList.activityCategoryName,
+    waitingList.activityCategoryDescription,
+    waitingList.attendanceRequired,
+    waitingList.paid,
+    waitingList.outsideWork,
+    waitingList.riskLevel,
+    waitingList.organiser,
+    waitingList.dpsLocationId,
+    waitingList.inCell,
+    waitingList.offWing,
+    waitingList.onWing,
   )
 }
 

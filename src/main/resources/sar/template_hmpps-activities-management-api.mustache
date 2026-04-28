@@ -12,34 +12,34 @@
         </tr>
     </table>
 
-    <h2>Allocations</h2>
-    {{#allocations}}
-        <br>
-        <h3>Allocation</h3>
-        <table class="summary-list">
-            <tr><td>Prison name</td><td>{{ getPrisonName prisonCode }}</td></tr>
-            <tr><td>Prisoner status</td><td>{{ prisonerStatus }}</td></tr>
-            <tr><td>Activity summary</td><td>{{ activitySummary }}</td></tr>
-            <tr><td>Activity category name</td><td>{{ activityCategoryName }}</td></tr>
-            <tr><td>Activity category description</td><td>{{ activityCategoryDescription }}</td></tr>
-            <tr><td>Start date</td><td>{{ formatDate startDate }}</td></tr>
-            <tr><td>End date</td><td>{{ optionalValue (formatDate endDate) }}</td></tr>
-            <tr><td>Date created</td><td>{{ formatDate createdDate }}</td></tr>
-            <tr><td>Pay band</td><td>{{ optionalValue payBand }}</td></tr>
-            <tr><td>Attendance required</td><td>{{ convertBoolean attendanceRequired }}</td></tr>
-            <tr><td>Paid</td><td>{{ convertBoolean paid }}</td></tr>
-            <tr><td>Outside work</td><td>{{ convertBoolean outsideWork }}</td></tr>
-            <tr><td>Risk level</td><td>{{ riskLevel }}</td></tr>
-            <tr><td>Organiser description</td><td>{{ optionalValue organiser }}</td></tr>
-            <tr><td>Location</td><td>{{ getLocationNameByDpsId dpsLocationId }}</td></tr>
-            <tr><td>In cell</td><td>{{ convertBoolean inCell }}</td></tr>
-            <tr><td>Off wing</td><td>{{ convertBoolean offWing }}</td></tr>
-            <tr><td>On wing</td><td>{{ convertBoolean onWing }}</td></tr>
-        </table>
-    {{/allocations}}
-    {{^allocations}}
-        <p>No data held</p>
-    {{/allocations}}
+<!--    <h2>Allocations</h2>-->
+<!--    {{#allocations}}-->
+<!--        <br>-->
+<!--        <h3>Allocation</h3>-->
+<!--        <table class="summary-list">-->
+<!--            <tr><td>Prison name</td><td>{{ getPrisonName prisonCode }}</td></tr>-->
+<!--            <tr><td>Prisoner status</td><td>{{ prisonerStatus }}</td></tr>-->
+<!--            <tr><td>Activity summary</td><td>{{ activitySummary }}</td></tr>-->
+<!--            <tr><td>Activity category name</td><td>{{ activityCategoryName }}</td></tr>-->
+<!--            <tr><td>Activity category description</td><td>{{ activityCategoryDescription }}</td></tr>-->
+<!--            <tr><td>Start date</td><td>{{ formatDate startDate }}</td></tr>-->
+<!--            <tr><td>End date</td><td>{{ optionalValue (formatDate endDate) }}</td></tr>-->
+<!--            <tr><td>Date created</td><td>{{ formatDate createdDate }}</td></tr>-->
+<!--            <tr><td>Pay band</td><td>{{ optionalValue payBand }}</td></tr>-->
+<!--            <tr><td>Attendance required</td><td>{{ convertBoolean attendanceRequired }}</td></tr>-->
+<!--            <tr><td>Paid</td><td>{{ convertBoolean paid }}</td></tr>-->
+<!--            <tr><td>Outside work</td><td>{{ convertBoolean outsideWork }}</td></tr>-->
+<!--            <tr><td>Risk level</td><td>{{ riskLevel }}</td></tr>-->
+<!--            <tr><td>Organiser description</td><td>{{ optionalValue organiser }}</td></tr>-->
+<!--            <tr><td>Location</td><td>{{ getLocationNameByDpsId dpsLocationId }}</td></tr>-->
+<!--            <tr><td>In cell</td><td>{{ convertBoolean inCell }}</td></tr>-->
+<!--            <tr><td>Off wing</td><td>{{ convertBoolean offWing }}</td></tr>-->
+<!--            <tr><td>On wing</td><td>{{ convertBoolean onWing }}</td></tr>-->
+<!--        </table>-->
+<!--    {{/allocations}}-->
+<!--    {{^allocations}}-->
+<!--        <p>No data held</p>-->
+<!--    {{/allocations}}-->
 
     <br>
     <h2>Attendance summary</h2>
@@ -70,27 +70,36 @@
                 <td class="data-column-25">Date created</td>
                 <td class="data-column-30">Application date</td>
                 <td class="data-column-20">Originator</td>
+                <td class="data-column-20">Status</td>
+                <td class="data-column-20">Status date</td>
+                <td class="data-column-20">Comments</td>
+                <td class="data-column-20">Declined reason</td>
             </tr>
             <tr>
                 <td>{{ getPrisonName prisonCode }}</td>
-                <td>{{ optionalValue (formatDate createdDate) }}</td>
-                <td>{{ optionalValue (formatDate applicationDate) }}</td>
-                <td>{{ optionalValue originator }}</td>
+                <td>{{ formatDate createdDate }}</td>
+                <td>{{ formatDate applicationDate }}</td>
+                <td>{{ originator }}</td>
+                <td>{{ status }}</td>
+                <td>{{ formatDate statusDate }}</td>
+                <td>{{ optionalValue coments }}</td>
+                <td>{{ optionalValue declinedReason }}</td>
             </tr>
         </table>
-        <table class="data-table">
-            <tr>
-                <td class="data-column-25">Status</td>
-                <td class="data-column-25">Status date</td>
-                <td class="data-column-30">Activity summary</td>
-                <td class="data-column-20">Comments</td>
-            </tr>
-            <tr>
-                <td>{{ optionalValue status }}</td>
-                <td>{{ optionalValue (formatDate statusDate) }}</td>
-                <td>{{ optionalValue activitySummary }}</td>
-                <td>{{ optionalValue comments }}</td>
-            </tr>
+        <h4>Activity</h4>
+        <table class="summary-list">
+            <tr><td>Summary</td><td>{{ activitySummary }}</td></tr>
+            <tr><td>Category name</td><td>{{ activityCategoryName }}</td></tr>
+            <tr><td>Category description</td><td>{{ activityCategoryDescription }}</td></tr>
+            <tr><td>Attendance required</td><td>{{ convertBoolean attendanceRequired }}</td></tr>
+            <tr><td>Paid</td><td>{{ convertBoolean paid }}</td></tr>
+            <tr><td>Outside work</td><td>{{ convertBoolean outsideWork }}</td></tr>
+            <tr><td>Risk level</td><td>{{ riskLevel }}</td></tr>
+            <tr><td>Organiser description</td><td>{{ optionalValue organiser }}</td></tr>
+            <tr><td>Location</td><td>{{ getLocationNameByDpsId dpsLocationId }}</td></tr>
+            <tr><td>In cell</td><td>{{ convertBoolean inCell }}</td></tr>
+            <tr><td>Off wing</td><td>{{ convertBoolean offWing }}</td></tr>
+            <tr><td>On wing</td><td>{{ convertBoolean onWing }}</td></tr>
         </table>
     {{/waitingListApplications}}
     {{^waitingListApplications}}

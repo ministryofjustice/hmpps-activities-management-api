@@ -67,6 +67,18 @@ class SubjectAccessRequestServiceTest {
     statusDate = TimeSource.tomorrow(),
     comments = "Like to try",
     createdDate = TimeSource.yesterday(),
+    declinedReason = "Activity ended",
+    activityCategoryName = "Prison jobs",
+    activityCategoryDescription = "Such as kitchen, cleaning, gardens or other maintenance and services to keep the prison running",
+    attendanceRequired = true,
+    paid = true,
+    outsideWork = false,
+    riskLevel = "low",
+    organiser = "Prison staff",
+    dpsLocationId = UUID.randomUUID(),
+    inCell = false,
+    offWing = true,
+    onWing = true,
   )
 
   private val sarAppointment = SarAppointment(
