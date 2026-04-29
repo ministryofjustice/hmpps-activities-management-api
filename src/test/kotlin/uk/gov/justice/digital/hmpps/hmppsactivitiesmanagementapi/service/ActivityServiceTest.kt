@@ -12,7 +12,10 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.CsvSource
+import org.junit.jupiter.params.provider.MethodSource
+import org.junit.jupiter.params.provider.ValueSource
 import org.mockito.ArgumentMatchers.anyList
 import org.mockito.MockitoAnnotations.openMocks
 import org.mockito.kotlin.any
@@ -942,20 +945,6 @@ class ActivityServiceTest {
   }
 
   @Test
-  fun `createActivity - Cannot be off-wing and in-cell`() {
-    val createInCellActivityRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-6.json")
-      .copy(startDate = TimeSource.tomorrow(), inCell = true, offWing = true)
-
-    assertThatThrownBy {
-      service().createActivity(createInCellActivityRequest, "SCH_ACTIVITY")
-    }
-      .isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Activity location must be one of offWing, onWing, inCell or a DPS location UUID")
-
-    verifyNoMoreInteractions(activityRepository)
-  }
-
-  @Test
   fun `create activity - success when external activity with outside work is true and no location`() {
     val createExternalActivityRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-6.json")
       .copy(
@@ -1092,25 +1081,58 @@ class ActivityServiceTest {
     verifyNoInteractions(locationService)
   }
 
-  @Test
-  fun `createActivity - fails when outsideWork is false and no location`() {
-    val createActivityRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-6.json")
+  @ParameterizedTest(name = "createActivity - throws an exception for invalid location combination: inCell={0}, onWing={1}, offWing={2}, hasDpsLocationId={3}")
+  @MethodSource("invalidCreateLocationCombinations")
+  fun `createActivity - throws an exception for invalid location combinations`(inCell: Boolean, onWing: Boolean, offWing: Boolean, hasDpsLocationId: Boolean) {
+    val dpsLocationId = if (hasDpsLocationId) UUID.randomUUID() else null
+    val request = mapper.read<ActivityCreateRequest>("activity/activity-create-request-6.json")
       .copy(
         startDate = TimeSource.tomorrow(),
-        inCell = false,
-        onWing = false,
-        offWing = false,
         outsideWork = false,
-        dpsLocationId = null,
+        inCell = inCell,
+        onWing = onWing,
+        offWing = offWing,
+        dpsLocationId = dpsLocationId,
       )
 
     assertThatThrownBy {
-      service().createActivity(createActivityRequest, "SCH_ACTIVITY")
+      service().createActivity(request, "SCH_ACTIVITY")
     }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Activity location must be one of offWing, onWing, inCell or a DPS location UUID")
 
     verifyNoMoreInteractions(activityRepository)
+  }
+
+  @ParameterizedTest(name = "createActivity - accepts valid location combination: inCell={0}, onWing={1}, offWing={2}, hasDpsLocationId={3}")
+  @MethodSource("validCreateLocationCombinations")
+  fun `createActivity - accepts valid location combinations`(inCell: Boolean, onWing: Boolean, offWing: Boolean, hasDpsLocationId: Boolean) {
+    val dpsLocationId = if (hasDpsLocationId) UUID.randomUUID() else null
+    val request = mapper.read<ActivityCreateRequest>("activity/activity-create-request-6.json")
+      .copy(
+        startDate = TimeSource.tomorrow(),
+        outsideWork = false,
+        inCell = inCell,
+        onWing = onWing,
+        offWing = offWing,
+        dpsLocationId = dpsLocationId,
+      )
+
+    whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.of(activityCategory()))
+    whenever(eventTierRepository.findByCode("TIER_1")).thenReturn(eventTier())
+    whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(prisonPayBandsLowMediumHigh())
+    whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
+    whenever(prisonApiClient.getStudyArea("ENGLA")).thenReturn(Mono.just(studyArea))
+    val eligibilityRule = EligibilityRuleEntity(eligibilityRuleId = 1, code = "ER1", "Eligibility rule 1")
+    whenever(eligibilityRuleRepository.findById(1L)).thenReturn(Optional.of(eligibilityRule))
+    if (hasDpsLocationId) {
+      whenever(locationService.getLocationDetails(dpsLocationId!!)).thenReturn(locationDetails(locationId = 1L, dpsLocationId = dpsLocationId, agencyId = MOORLAND_PRISON_CODE))
+    }
+    whenever(activityRepository.saveAndFlush(any<ActivityEntity>())).thenReturn(activityEntity())
+
+    service().createActivity(request, "SCH_ACTIVITY")
+
+    verify(activityRepository).saveAndFlush(any())
   }
 
   @Test
@@ -2789,8 +2811,9 @@ class ActivityServiceTest {
     }
   }
 
-  @Test
-  fun `updateActivity - cannot be both in-cell and off-wing`() {
+  @ParameterizedTest(name = "updateActivity - throws an exception for invalid location combination: inCell={0}, onWing={1}, offWing={2}, dpsLocationId={3}")
+  @MethodSource("invalidLocationCombinations")
+  fun `updateActivity - throws an exception for invalid location combinations`(inCell: Boolean?, onWing: Boolean?, offWing: Boolean?, hasDpsLocationId: Boolean) {
     val activity = activityEntity()
 
     whenever(
@@ -2801,8 +2824,10 @@ class ActivityServiceTest {
       ),
     ).thenReturn(activity)
 
+    val dpsLocationId = if (hasDpsLocationId) UUID.randomUUID() else null
+
     assertThatThrownBy {
-      service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(offWing = true, inCell = true), "TEST")
+      service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(inCell = inCell, onWing = onWing, offWing = offWing, dpsLocationId = dpsLocationId), "TEST")
     }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Activity location must be one of offWing, onWing, inCell or a DPS location UUID")
@@ -3539,5 +3564,338 @@ class ActivityServiceTest {
     assertThat(result).isEqualTo(transform(activity, false))
 
     verify(activityRepository).getActivityByIdWithFilters(activity.activityId, earliestSessionDate)
+  }
+
+  @Nested
+  inner class ExternalActivityValidationsForUpdate {
+
+    private val externalActivity = activityEntity(outsideWork = true, noSchedules = true, paid = true).also {
+      it.addSchedule(activitySchedule(it, activityScheduleId = it.activityId, noAllocations = true))
+    }
+
+    @BeforeEach
+    fun setup() {
+      whenever(
+        activityRepository.findByActivityIdAndPrisonCodeWithFilters(1, MOORLAND_PRISON_CODE, LocalDate.now()),
+      ).thenReturn(externalActivity)
+    }
+
+    @ParameterizedTest
+    @CsvSource(
+      "SAA_NOT_IN_WORK, Not in work, Not in work",
+      "SAA_INDUCTION, Induction, Induction",
+    )
+    fun `activity category cannot be updated to restricted categories for an external activity`(
+      categoryCode: String,
+      categoryName: String,
+      categoryDescription: String,
+    ) {
+      val newActivityCategory = ActivityCategory(
+        activityCategoryId = 100,
+        code = categoryCode,
+        name = categoryName,
+        description = categoryDescription,
+      )
+      whenever(activityCategoryRepository.findById(100)).thenReturn(Optional.of(newActivityCategory))
+
+      assertThatThrownBy {
+        service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(categoryId = 100), "TEST")
+      }
+        .isInstanceOf(IllegalArgumentException::class.java)
+        .hasMessage("Activity category cannot be updated to $categoryName for an external activity")
+
+      verify(activityCategoryRepository).findById(100)
+      verify(activityRepository, never()).saveAndFlush(any())
+      verifyNoInteractions(manageAttendancesService)
+    }
+
+    @ParameterizedTest
+    @CsvSource(
+      "SAA_EDUCATION, Education, Education",
+      "SAA_INDUSTRIES, Industries, Industries",
+      "SAA_PRISON_JOBS, Prison jobs, Prison Jobs",
+    )
+    fun `activity category can be updated to non-restricted categories for an external activity`(
+      categoryCode: String,
+      categoryName: String,
+      categoryDescription: String,
+    ) {
+      val allowedActivityCategory = ActivityCategory(
+        activityCategoryId = 100,
+        code = categoryCode,
+        name = categoryName,
+        description = categoryDescription,
+      )
+
+      whenever(activityCategoryRepository.findById(100)).thenReturn(Optional.of(allowedActivityCategory))
+      whenever(prisonPayBandRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh())
+      whenever(activityRepository.saveAndFlush(any<ActivityEntity>())).thenReturn(externalActivity)
+
+      service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(categoryId = 100), "TEST")
+
+      verify(activityCategoryRepository).findById(100)
+      verify(activityRepository).saveAndFlush(activityCaptor.capture())
+      verifyNoInteractions(manageAttendancesService)
+
+      with(activityCaptor.firstValue.activityCategory) {
+        assertThat(activityCategoryId).isEqualTo(100)
+        assertThat(code).isEqualTo(categoryCode)
+        assertThat(name).isEqualTo(categoryName)
+        assertThat(description).isEqualTo(categoryDescription)
+      }
+    }
+
+    @ParameterizedTest
+    @CsvSource(
+      "SAA_NOT_IN_WORK, Not in work, Not in work",
+      "SAA_INDUCTION, Induction, Induction",
+    )
+    fun `activity category can be updated to restricted categories for a non-external activity`(
+      categoryCode: String,
+      categoryName: String,
+      categoryDescription: String,
+    ) {
+      val nonExternalActivity = activityEntity(noPayBands = true, outsideWork = false, noSchedules = true).also {
+        it.addSchedule(activitySchedule(it, activityScheduleId = it.activityId, noAllocations = true))
+      }
+      whenever(
+        activityRepository.findByActivityIdAndPrisonCodeWithFilters(1, MOORLAND_PRISON_CODE, LocalDate.now()),
+      ).thenReturn(nonExternalActivity)
+
+      val newActivityCategory = ActivityCategory(
+        activityCategoryId = 100,
+        code = categoryCode,
+        name = categoryName,
+        description = categoryDescription,
+      )
+      whenever(activityCategoryRepository.findById(100)).thenReturn(Optional.of(newActivityCategory))
+      whenever(prisonPayBandRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh())
+      whenever(activityRepository.saveAndFlush(any<ActivityEntity>())).thenReturn(nonExternalActivity)
+
+      service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(categoryId = 100), "TEST")
+
+      verify(activityCategoryRepository).findById(100)
+      verify(activityRepository).saveAndFlush(activityCaptor.capture())
+      verifyNoInteractions(manageAttendancesService)
+
+      with(activityCaptor.firstValue.activityCategory) {
+        assertThat(code).isEqualTo(categoryCode)
+        assertThat(name).isEqualTo(categoryName)
+        assertThat(description).isEqualTo(categoryDescription)
+      }
+    }
+
+    @ParameterizedTest
+    @CsvSource(
+      "true, false, false",
+      "true, true, false",
+      "true, true, true",
+      "false, true, false",
+      "false, false, true",
+      "true, false, true",
+      "false, true, true",
+    )
+    fun `activity location cannot be updated for an external activity`(
+      inCell: Boolean,
+      onWing: Boolean,
+      offWing: Boolean,
+    ) {
+      assertThatThrownBy {
+        service().updateActivity(
+          MOORLAND_PRISON_CODE,
+          1,
+          ActivityUpdateRequest(inCell = inCell, onWing = onWing, offWing = offWing),
+          "TEST",
+        )
+      }
+        .isInstanceOf(IllegalArgumentException::class.java)
+        .hasMessage("Activity location cannot be updated for an external activity")
+
+      verify(activityRepository, never()).saveAndFlush(any())
+      verifyNoInteractions(manageAttendancesService)
+    }
+
+    @Test
+    fun `dpsLocationId cannot be set to any location other than null for an external activity`() {
+      assertThatThrownBy {
+        service().updateActivity(
+          MOORLAND_PRISON_CODE,
+          1,
+          ActivityUpdateRequest(dpsLocationId = UUID.randomUUID()),
+          "TEST",
+        )
+      }
+        .isInstanceOf(IllegalArgumentException::class.java)
+        .hasMessage("Activity location cannot be updated for an external activity")
+
+      verify(activityRepository, never()).saveAndFlush(any())
+      verifyNoInteractions(manageAttendancesService)
+    }
+
+    @Test
+    fun `activity location with all flags false and no dpsLocationId is allowed for an external activity`() {
+      whenever(prisonPayBandRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh())
+      whenever(activityRepository.saveAndFlush(any<ActivityEntity>())).thenReturn(externalActivity)
+
+      val result = service().updateActivity(
+        MOORLAND_PRISON_CODE,
+        1,
+        ActivityUpdateRequest(inCell = false, onWing = false, offWing = false),
+        "TEST",
+      )
+
+      verify(activityRepository).saveAndFlush(any())
+      assertThat(result).isNotNull
+      verifyNoInteractions(locationService)
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    fun `paid status is unchanged and throws an exception for a prison paid (paid = true) external activity`(paid: Boolean) {
+      assertThatThrownBy {
+        service().updateActivity(
+          MOORLAND_PRISON_CODE,
+          1,
+          ActivityUpdateRequest(paid = paid),
+          "TEST",
+        )
+      }
+        .isInstanceOf(IllegalArgumentException::class.java)
+        .hasMessage("Paid status cannot be updated for an external activity")
+
+      assertThat(externalActivity.paid).isTrue()
+      verify(activityRepository, never()).saveAndFlush(any())
+    }
+
+    @Test
+    fun `pay rates can be updated for a prison paid (paid = true) external activity`() {
+      whenever(prisonPayBandRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh())
+      whenever(activityRepository.saveAndFlush(any<ActivityEntity>())).thenReturn(externalActivity)
+
+      service().updateActivity(
+        MOORLAND_PRISON_CODE,
+        1,
+        ActivityUpdateRequest(
+          pay = listOf(
+            ActivityPayCreateRequest(
+              incentiveNomisCode = "123",
+              incentiveLevel = "level",
+              payBandId = 1,
+              rate = 100,
+            ),
+          ),
+        ),
+        "TEST",
+      )
+
+      assertThat(externalActivity.paid).isTrue
+      assertThat(externalActivity.activityPay()).isNotEmpty()
+      verify(activityRepository).saveAndFlush(any())
+    }
+
+    @Test
+    fun `paid status is unchanged and throws an exception for an employer paid (paid = false) external activity`() {
+      val externalActivity = activityEntity(
+        paid = false,
+        noPayBands = true,
+        outsideWork = true,
+      )
+
+      whenever(
+        activityRepository.findByActivityIdAndPrisonCodeWithFilters(1, MOORLAND_PRISON_CODE, LocalDate.now()),
+      ).thenReturn(externalActivity)
+
+      assertThatThrownBy {
+        service().updateActivity(
+          MOORLAND_PRISON_CODE,
+          1,
+          ActivityUpdateRequest(paid = true),
+          "TEST",
+        )
+      }
+        .isInstanceOf(IllegalArgumentException::class.java)
+        .hasMessage("Paid status cannot be updated for an external activity")
+
+      assertThat(externalActivity.paid).isFalse()
+      verify(activityRepository, never()).saveAndFlush(any())
+    }
+
+    @Test
+    fun `pay rates cannot be updated and throws an exception for an employer paid (paid = false) external activity`() {
+      val externalActivity = activityEntity(
+        paid = false,
+        noPayBands = true,
+        outsideWork = true,
+      )
+
+      whenever(
+        activityRepository.findByActivityIdAndPrisonCodeWithFilters(1, MOORLAND_PRISON_CODE, LocalDate.now()),
+      ).thenReturn(externalActivity)
+
+      assertThatThrownBy {
+        service().updateActivity(
+          MOORLAND_PRISON_CODE,
+          1,
+          ActivityUpdateRequest(
+            pay = listOf(
+              ActivityPayCreateRequest(
+                incentiveNomisCode = "BAS",
+                incentiveLevel = "Basic",
+                payBandId = 1,
+                rate = 100,
+              ),
+            ),
+          ),
+          "TEST",
+        )
+      }
+        .isInstanceOf(IllegalArgumentException::class.java)
+        .hasMessage("Pay rates cannot be updated for an unpaid external activity")
+
+      assertThat(externalActivity.paid).isFalse()
+      verify(activityRepository, never()).saveAndFlush(any())
+    }
+  }
+
+  companion object {
+    @JvmStatic
+    fun invalidCreateLocationCombinations() = listOf(
+      // inCell, onWing, offWing, hasDpsLocationId
+      Arguments.of(false, false, false, false),
+      Arguments.of(true, true, false, false),
+      Arguments.of(true, false, true, false),
+      Arguments.of(false, true, true, false),
+      Arguments.of(true, true, true, false),
+      Arguments.of(true, false, false, true),
+      Arguments.of(false, true, false, true),
+      Arguments.of(false, false, true, true),
+      Arguments.of(true, true, false, true),
+      Arguments.of(true, false, true, true),
+      Arguments.of(false, true, true, true),
+      Arguments.of(true, true, true, true),
+    )
+
+    @JvmStatic
+    fun validCreateLocationCombinations() = listOf(
+      // inCell, onWing, offWing, hasDpsLocationId
+      Arguments.of(true, false, false, false),
+      Arguments.of(false, true, false, false),
+      Arguments.of(false, false, true, false),
+      Arguments.of(false, false, false, true),
+    )
+
+    @JvmStatic
+    fun invalidLocationCombinations() = listOf(
+      // inCell, onWing, offWing, hasDpsLocationId
+      Arguments.of(true, true, null, false),
+      Arguments.of(true, null, true, false),
+      Arguments.of(null, true, true, false),
+      Arguments.of(true, true, true, false),
+      Arguments.of(true, null, null, true),
+      Arguments.of(null, true, null, true),
+      Arguments.of(null, null, true, true),
+      Arguments.of(true, true, null, true),
+      Arguments.of(true, true, true, true),
+    )
   }
 }
