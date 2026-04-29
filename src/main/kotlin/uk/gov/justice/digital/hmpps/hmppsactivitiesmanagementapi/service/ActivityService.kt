@@ -138,7 +138,16 @@ class ActivityService(
     checkCaseloadAccess(request.prisonCode!!)
 
     require(request.startDate!! > LocalDate.now()) { "Activity start date must be in the future" }
-    require(request.outsideWork || ((request.dpsLocationId != null) xor request.offWing xor request.onWing xor request.inCell)) { "Activity location must be one of offWing, onWing, inCell or a DPS location UUID" }
+
+    require(
+      request.outsideWork ||
+        listOf(
+          request.dpsLocationId != null,
+          request.offWing,
+          request.onWing,
+          request.inCell,
+        ).count { it } == 1,
+    ) { "Activity location must be one of offWing, onWing, inCell or a DPS location UUID" }
 
     if (request.paid.not() && request.pay.isNotEmpty()) throw IllegalArgumentException("Unpaid activity cannot have pay rates associated with it")
     if (request.paid && request.pay.isEmpty()) throw IllegalArgumentException("Paid activity must have at least one pay rate associated with it")
@@ -683,7 +692,16 @@ class ActivityService(
       return
     }
 
-    require((request.dpsLocationId != null) xor (request.onWing == true) xor (request.inCell == true) xor (request.offWing == true)) { "Activity location must be one of offWing, onWing, inCell or a DPS location UUID" }
+    require(
+      listOf(
+        request.dpsLocationId != null,
+        request.onWing == true,
+        request.offWing == true,
+        request.inCell == true,
+      ).count { it } == 1,
+    ) {
+      "Activity location must be one of offWing, onWing, inCell or a DPS location UUID"
+    }
 
     if (request.dpsLocationId == null) {
       activity.schedules().forEach {

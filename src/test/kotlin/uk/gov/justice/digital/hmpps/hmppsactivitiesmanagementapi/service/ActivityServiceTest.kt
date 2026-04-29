@@ -12,7 +12,9 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.CsvSource
+import org.junit.jupiter.params.provider.MethodSource
 import org.junit.jupiter.params.provider.ValueSource
 import org.mockito.ArgumentMatchers.anyList
 import org.mockito.MockitoAnnotations.openMocks
@@ -943,20 +945,6 @@ class ActivityServiceTest {
   }
 
   @Test
-  fun `createActivity - Cannot be off-wing and in-cell`() {
-    val createInCellActivityRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-6.json")
-      .copy(startDate = TimeSource.tomorrow(), inCell = true, offWing = true)
-
-    assertThatThrownBy {
-      service().createActivity(createInCellActivityRequest, "SCH_ACTIVITY")
-    }
-      .isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Activity location must be one of offWing, onWing, inCell or a DPS location UUID")
-
-    verifyNoMoreInteractions(activityRepository)
-  }
-
-  @Test
   fun `create activity - success when external activity with outside work is true and no location`() {
     val createExternalActivityRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-6.json")
       .copy(
@@ -1093,25 +1081,58 @@ class ActivityServiceTest {
     verifyNoInteractions(locationService)
   }
 
-  @Test
-  fun `createActivity - fails when outsideWork is false and no location`() {
-    val createActivityRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-6.json")
+  @ParameterizedTest(name = "createActivity - throws an exception for invalid location combination: inCell={0}, onWing={1}, offWing={2}, hasDpsLocationId={3}")
+  @MethodSource("invalidCreateLocationCombinations")
+  fun `createActivity - throws an exception for invalid location combinations`(inCell: Boolean, onWing: Boolean, offWing: Boolean, hasDpsLocationId: Boolean) {
+    val dpsLocationId = if (hasDpsLocationId) UUID.randomUUID() else null
+    val request = mapper.read<ActivityCreateRequest>("activity/activity-create-request-6.json")
       .copy(
         startDate = TimeSource.tomorrow(),
-        inCell = false,
-        onWing = false,
-        offWing = false,
         outsideWork = false,
-        dpsLocationId = null,
+        inCell = inCell,
+        onWing = onWing,
+        offWing = offWing,
+        dpsLocationId = dpsLocationId,
       )
 
     assertThatThrownBy {
-      service().createActivity(createActivityRequest, "SCH_ACTIVITY")
+      service().createActivity(request, "SCH_ACTIVITY")
     }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Activity location must be one of offWing, onWing, inCell or a DPS location UUID")
 
     verifyNoMoreInteractions(activityRepository)
+  }
+
+  @ParameterizedTest(name = "createActivity - accepts valid location combination: inCell={0}, onWing={1}, offWing={2}, hasDpsLocationId={3}")
+  @MethodSource("validCreateLocationCombinations")
+  fun `createActivity - accepts valid location combinations`(inCell: Boolean, onWing: Boolean, offWing: Boolean, hasDpsLocationId: Boolean) {
+    val dpsLocationId = if (hasDpsLocationId) UUID.randomUUID() else null
+    val request = mapper.read<ActivityCreateRequest>("activity/activity-create-request-6.json")
+      .copy(
+        startDate = TimeSource.tomorrow(),
+        outsideWork = false,
+        inCell = inCell,
+        onWing = onWing,
+        offWing = offWing,
+        dpsLocationId = dpsLocationId,
+      )
+
+    whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.of(activityCategory()))
+    whenever(eventTierRepository.findByCode("TIER_1")).thenReturn(eventTier())
+    whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(prisonPayBandsLowMediumHigh())
+    whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
+    whenever(prisonApiClient.getStudyArea("ENGLA")).thenReturn(Mono.just(studyArea))
+    val eligibilityRule = EligibilityRuleEntity(eligibilityRuleId = 1, code = "ER1", "Eligibility rule 1")
+    whenever(eligibilityRuleRepository.findById(1L)).thenReturn(Optional.of(eligibilityRule))
+    if (hasDpsLocationId) {
+      whenever(locationService.getLocationDetails(dpsLocationId!!)).thenReturn(locationDetails(locationId = 1L, dpsLocationId = dpsLocationId, agencyId = MOORLAND_PRISON_CODE))
+    }
+    whenever(activityRepository.saveAndFlush(any<ActivityEntity>())).thenReturn(activityEntity())
+
+    service().createActivity(request, "SCH_ACTIVITY")
+
+    verify(activityRepository).saveAndFlush(any())
   }
 
   @Test
@@ -2790,8 +2811,9 @@ class ActivityServiceTest {
     }
   }
 
-  @Test
-  fun `updateActivity - cannot be both in-cell and off-wing`() {
+  @ParameterizedTest(name = "updateActivity - throws an exception for invalid location combination: inCell={0}, onWing={1}, offWing={2}, dpsLocationId={3}")
+  @MethodSource("invalidLocationCombinations")
+  fun `updateActivity - throws an exception for invalid location combinations`(inCell: Boolean?, onWing: Boolean?, offWing: Boolean?, hasDpsLocationId: Boolean) {
     val activity = activityEntity()
 
     whenever(
@@ -2802,8 +2824,10 @@ class ActivityServiceTest {
       ),
     ).thenReturn(activity)
 
+    val dpsLocationId = if (hasDpsLocationId) UUID.randomUUID() else null
+
     assertThatThrownBy {
-      service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(offWing = true, inCell = true), "TEST")
+      service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(inCell = inCell, onWing = onWing, offWing = offWing, dpsLocationId = dpsLocationId), "TEST")
     }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Activity location must be one of offWing, onWing, inCell or a DPS location UUID")
@@ -3831,5 +3855,47 @@ class ActivityServiceTest {
       assertThat(externalActivity.paid).isFalse()
       verify(activityRepository, never()).saveAndFlush(any())
     }
+  }
+
+  companion object {
+    @JvmStatic
+    fun invalidCreateLocationCombinations() = listOf(
+      // inCell, onWing, offWing, hasDpsLocationId
+      Arguments.of(false, false, false, false),
+      Arguments.of(true, true, false, false),
+      Arguments.of(true, false, true, false),
+      Arguments.of(false, true, true, false),
+      Arguments.of(true, true, true, false),
+      Arguments.of(true, false, false, true),
+      Arguments.of(false, true, false, true),
+      Arguments.of(false, false, true, true),
+      Arguments.of(true, true, false, true),
+      Arguments.of(true, false, true, true),
+      Arguments.of(false, true, true, true),
+      Arguments.of(true, true, true, true),
+    )
+
+    @JvmStatic
+    fun validCreateLocationCombinations() = listOf(
+      // inCell, onWing, offWing, hasDpsLocationId
+      Arguments.of(true, false, false, false),
+      Arguments.of(false, true, false, false),
+      Arguments.of(false, false, true, false),
+      Arguments.of(false, false, false, true),
+    )
+
+    @JvmStatic
+    fun invalidLocationCombinations() = listOf(
+      // inCell, onWing, offWing, hasDpsLocationId
+      Arguments.of(true, true, null, false),
+      Arguments.of(true, null, true, false),
+      Arguments.of(null, true, true, false),
+      Arguments.of(true, true, true, false),
+      Arguments.of(true, null, null, true),
+      Arguments.of(null, true, null, true),
+      Arguments.of(null, null, true, true),
+      Arguments.of(true, true, null, true),
+      Arguments.of(true, true, true, true),
+    )
   }
 }
