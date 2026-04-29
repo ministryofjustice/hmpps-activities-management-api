@@ -766,15 +766,20 @@ class ActivityService(
     request: ActivityUpdateRequest,
     activity: Activity,
   ): AllocationIds {
-if (activity.outsideWork) {
-    require(request.paid == null) { "Paid status cannot be updated for an external activity" }
-    if (!activity.paid) {
-        require(request.pay.isNullOrEmpty()) { "Pay rates cannot be updated for an unpaid external activity" }
+    if (activity.outsideWork) {
+      require(request.paid == null) {
+        "Paid status cannot be updated for an external activity"
+      }
+
+      if (!activity.paid) {
+        require(request.pay.isNullOrEmpty()) {
+          "Pay rates cannot be updated for an unpaid external activity"
+        }
         return emptySet()
+      }
+    } else {
+      request.paid?.let { activity.paid = it }
     }
-} else {
-    request.paid?.let { activity.paid = it }
-}
 
     request.pay?.let { pay ->
       val prisonPayBands = prisonPayBandRepository.findByPrisonCode(activity.prisonCode)
