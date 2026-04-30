@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDate
 import java.time.LocalTime
 import java.util.Locale
+import java.util.UUID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.SarAllocation as EntitySarAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.SarAppointment as EntitySarAppointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.SarWaitingList as EntitySarWaitingList
@@ -64,11 +65,44 @@ data class SarAllocation(
   val activitySummary: String,
 
   @Schema(description = "The pay band for the allocation, can be null e.g. unpaid activity", example = "Pay band 1 (lowest)")
-  val payBand: String?,
+  val payBand: String? = null,
 
   @Schema(description = "The date the allocation entry was created", example = "2022-01-01")
   @JsonFormat(pattern = "yyyy-MM-dd")
   val createdDate: LocalDate,
+
+  @Schema(description = "The category name for this activity", example = "Gym, sport, fitness")
+  val activityCategoryName: String,
+
+  @Schema(description = "The category description for this activity", example = "Such as sports clubs, like football, or recreational gym sessions")
+  val activityCategoryDescription: String,
+
+  @Schema(description = "Flag to indicate if attendance is required for this activity", example = "true")
+  val attendanceRequired: Boolean,
+
+  @Schema(description = "Whether the activity is a paid activity", example = "true")
+  val paid: Boolean,
+
+  @Schema(description = "Flag to indicate if the activity is carried out outside of the prison", example = "false")
+  var outsideWork: Boolean,
+
+  @Schema(description = "The most recent risk assessment level for this activity", example = "high")
+  val riskLevel: String,
+
+  @Schema(description = "The organiser of the activity, can be null", example = "Prison staff")
+  val organiser: String? = null,
+
+  @Schema(description = "The DPS location id of the activity, can be null", example = "4475b5d5-873c-4f88-a5b7-2d20e9224a62")
+  val dpsLocationId: UUID? = null,
+
+  @Schema(description = "Is the activity location in cell or not?", example = "false")
+  val inCell: Boolean = false,
+
+  @Schema(description = "Is the activity location off wing or not?", example = "false")
+  val offWing: Boolean = false,
+
+  @Schema(description = "Is the activity location on wing or not?", example = "true")
+  val onWing: Boolean = false,
 ) {
   constructor(allocation: EntitySarAllocation) : this(
     allocation.allocationId,
@@ -80,6 +114,17 @@ data class SarAllocation(
     allocation.activitySummary,
     allocation.payBand,
     allocation.createdDate,
+    allocation.activityCategoryName,
+    allocation.activityCategoryDescription,
+    allocation.attendanceRequired,
+    allocation.paid,
+    allocation.outsideWork,
+    allocation.riskLevel,
+    allocation.organiser,
+    allocation.dpsLocationId,
+    allocation.inCell,
+    allocation.offWing,
+    allocation.onWing,
   )
 }
 
@@ -122,6 +167,41 @@ data class SarWaitingList(
   @JsonFormat(pattern = "yyyy-MM-dd")
   val createdDate: LocalDate,
 
+  @Schema(description = "The reason for the waiting list request to be declined, can be null", example = "The prisoner has specifically requested to attend this activity")
+  val declinedReason: String? = null,
+
+  @Schema(description = "The category name for this activity", example = "Gym, sport, fitness")
+  val activityCategoryName: String,
+
+  @Schema(description = "The category description for this activity", example = "Such as sports clubs, like football, or recreational gym sessions")
+  val activityCategoryDescription: String,
+
+  @Schema(description = "Flag to indicate if attendance is required for this activity", example = "true")
+  val attendanceRequired: Boolean,
+
+  @Schema(description = "Whether the activity is a paid activity", example = "true")
+  val paid: Boolean,
+
+  @Schema(description = "Flag to indicate if the activity is carried out outside of the prison", example = "false")
+  var outsideWork: Boolean,
+
+  @Schema(description = "The most recent risk assessment level for this activity", example = "high")
+  val riskLevel: String,
+
+  @Schema(description = "The organiser of the activity, can be null", example = "Prison staff")
+  val organiser: String? = null,
+
+  @Schema(description = "The DPS location id of the activity, can be null", example = "4475b5d5-873c-4f88-a5b7-2d20e9224a62")
+  val dpsLocationId: UUID? = null,
+
+  @Schema(description = "Is the activity location in cell or not?", example = "false")
+  val inCell: Boolean = false,
+
+  @Schema(description = "Is the activity location off wing or not?", example = "false")
+  val offWing: Boolean = false,
+
+  @Schema(description = "Is the activity location on wing or not?", example = "true")
+  val onWing: Boolean = false,
 ) {
   constructor(waitingList: EntitySarWaitingList) : this(
     waitingList.waitingListId,
@@ -133,6 +213,18 @@ data class SarWaitingList(
     waitingList.statusDate,
     waitingList.comments,
     waitingList.createdDate,
+    waitingList.declinedReason,
+    waitingList.activityCategoryName,
+    waitingList.activityCategoryDescription,
+    waitingList.attendanceRequired,
+    waitingList.paid,
+    waitingList.outsideWork,
+    waitingList.riskLevel,
+    waitingList.organiser,
+    waitingList.dpsLocationId,
+    waitingList.inCell,
+    waitingList.offWing,
+    waitingList.onWing,
   )
 }
 
@@ -146,9 +238,9 @@ data class SarAppointment(
   @Schema(description = "The category of the appointment", example = "Education")
   val category: String,
 
-  @Schema(description = "The start date of the appointment", example = "2022-01-01")
+  @Schema(description = "The date of the appointment", example = "2022-01-01")
   @JsonFormat(pattern = "yyyy-MM-dd")
-  val startDate: LocalDate,
+  val date: LocalDate,
 
   @Schema(description = "The start time of the appointment", example = "12:30")
   @JsonFormat(pattern = "HH:mm")
@@ -170,6 +262,30 @@ data class SarAppointment(
   @Schema(description = "The date the appointment entry was created", example = "2022-01-01")
   @JsonFormat(pattern = "yyyy-MM-dd")
   val createdDate: LocalDate,
+
+  @Schema(description = "The custom name of the appointment, can be null", example = "Gym Activity")
+  val customName: String? = null,
+
+  @Schema(description = "The organiser of the appointment, can be null", example = "Prison staff")
+  val organiser: String? = null,
+
+  @Schema(description = "The DPS location id of the appointment, can be null", example = "4475b5d5-873c-4f88-a5b7-2d20e9224a62")
+  val dpsLocationId: UUID? = null,
+
+  @Schema(description = "Is the appointment location in cell or not?", example = "false")
+  val inCell: Boolean = false,
+
+  @Schema(description = "Is the appointment location off wing or not?", example = "false")
+  val offWing: Boolean = false,
+
+  @Schema(description = "Is the appointment location on wing or not?", example = "true")
+  val onWing: Boolean = false,
+
+  @Schema(description = "The reason the appointment was cancelled, can be null", example = "Created in error")
+  val cancellationReason: String? = null,
+
+  @Schema(description = "Who cancelled the appointment, can be null", example = "ABC12D")
+  val cancelledBy: String? = null,
 ) {
   constructor(appointment: EntitySarAppointment) : this(
     appointment.appointmentId,
@@ -182,5 +298,13 @@ data class SarAppointment(
     appointment.prisonerExtraInformation,
     appointment.attended,
     appointment.createdDate,
+    appointment.customName,
+    appointment.organiser,
+    appointment.dpsLocationId,
+    appointment.inCell,
+    appointment.offWing,
+    appointment.onWing,
+    appointment.cancellationReason,
+    appointment.cancelledBy,
   )
 }

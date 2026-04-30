@@ -15,6 +15,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.SubjectAc
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.Role
 import java.time.LocalDate
 import java.time.LocalTime
+import java.util.UUID
 
 class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
 
@@ -34,6 +35,14 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
         activitySummary = "Maths Level 1",
         payBand = "Pay band 1 (lowest)",
         createdDate = LocalDate.of(2020, 1, 1),
+        activityCategoryName = "Education",
+        activityCategoryDescription = "Such as classes in English, maths, construction or barbering",
+        attendanceRequired = true,
+        paid = true,
+        outsideWork = true,
+        riskLevel = "low",
+        organiser = "Prison staff",
+        inCell = true,
       ),
     )
   }
@@ -54,6 +63,14 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
         activitySummary = "Maths Level 1",
         payBand = "Pay band 1 (lowest)",
         createdDate = LocalDate.of(2020, 1, 1),
+        activityCategoryName = "Education",
+        activityCategoryDescription = "Such as classes in English, maths, construction or barbering",
+        attendanceRequired = true,
+        paid = true,
+        outsideWork = true,
+        riskLevel = "low",
+        organiser = "Prison staff",
+        inCell = true,
       ),
       SarAllocation(
         allocationId = 2,
@@ -65,6 +82,32 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
         activitySummary = "Maths Level 1",
         payBand = "Pay band 1 (lowest)",
         createdDate = LocalDate.of(2022, 10, 10),
+        activityCategoryName = "Education",
+        activityCategoryDescription = "Such as classes in English, maths, construction or barbering",
+        attendanceRequired = true,
+        paid = true,
+        outsideWork = true,
+        riskLevel = "low",
+        organiser = "Prison staff",
+        inCell = true,
+      ),
+      SarAllocation(
+        allocationId = 3,
+        prisonCode = PENTONVILLE_PRISON_CODE,
+        prisonerStatus = "Active",
+        startDate = LocalDate.of(2022, 11, 27),
+        endDate = null,
+        activityId = 2,
+        activitySummary = "Activity Summary WL",
+        createdDate = LocalDate.of(2022, 10, 10),
+        activityCategoryName = "Industries",
+        activityCategoryDescription = "Such as work like recycling, packing or assembly operated by the prison, external firms or charities",
+        attendanceRequired = false,
+        paid = false,
+        outsideWork = false,
+        riskLevel = "high",
+        organiser = "A prisoner or group of prisoners",
+        dpsLocationId = UUID.fromString("4475b5d5-873c-4f88-a5b7-2d20e9224a62"),
       ),
     )
   }
@@ -85,6 +128,14 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
         statusDate = null,
         comments = null,
         createdDate = LocalDate.of(2022, 10, 10),
+        activityCategoryName = "Industries",
+        activityCategoryDescription = "Such as work like recycling, packing or assembly operated by the prison, external firms or charities",
+        attendanceRequired = false,
+        paid = false,
+        outsideWork = false,
+        riskLevel = "high",
+        organiser = "A prisoner or group of prisoners",
+        dpsLocationId = UUID.fromString("4475b5d5-873c-4f88-a5b7-2d20e9224a62"),
       ),
     )
   }
@@ -105,6 +156,14 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
         statusDate = null,
         comments = null,
         createdDate = LocalDate.of(2022, 10, 10),
+        activityCategoryName = "Industries",
+        activityCategoryDescription = "Such as work like recycling, packing or assembly operated by the prison, external firms or charities",
+        attendanceRequired = false,
+        paid = false,
+        outsideWork = false,
+        riskLevel = "high",
+        organiser = "A prisoner or group of prisoners",
+        dpsLocationId = UUID.fromString("4475b5d5-873c-4f88-a5b7-2d20e9224a62"),
       ),
     )
   }
@@ -125,6 +184,14 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
         statusDate = null,
         comments = null,
         createdDate = LocalDate.of(2022, 10, 10),
+        activityCategoryName = "Industries",
+        activityCategoryDescription = "Such as work like recycling, packing or assembly operated by the prison, external firms or charities",
+        attendanceRequired = false,
+        paid = false,
+        outsideWork = false,
+        riskLevel = "high",
+        organiser = "A prisoner or group of prisoners",
+        dpsLocationId = UUID.fromString("4475b5d5-873c-4f88-a5b7-2d20e9224a62"),
       ),
       SarWaitingList(
         waitingListId = 3,
@@ -136,13 +203,22 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
         statusDate = LocalDate.of(2022, 11, 12),
         comments = "added to the waiting list",
         createdDate = LocalDate.of(2022, 10, 12),
+        declinedReason = "Activity ended",
+        activityCategoryName = "Industries",
+        activityCategoryDescription = "Such as work like recycling, packing or assembly operated by the prison, external firms or charities",
+        attendanceRequired = false,
+        paid = false,
+        outsideWork = false,
+        riskLevel = "high",
+        organiser = "A prisoner or group of prisoners",
+        dpsLocationId = UUID.fromString("4475b5d5-873c-4f88-a5b7-2d20e9224a62"),
       ),
     )
   }
 
   @Sql("classpath:test_data/seed-subject-access-request.sql")
   @Test
-  fun `should return 3 appointments for a subject access request (Attended, Not attended and Unknown Attendance with one unknown category)`() {
+  fun `should return 4 appointments for a subject access request (Attended, Not attended and Unknown Attendance with one unknown category)`() {
     val response = webTestClient.getSarContent("111222", LocalDate.of(2022, 10, 8), LocalDate.of(2024, 10, 10))
 
     response.content.appointments containsExactlyInAnyOrder listOf(
@@ -150,34 +226,58 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
         appointmentId = 1,
         prisonCode = PENTONVILLE_PRISON_CODE,
         category = "Education",
-        startDate = LocalDate.of(2022, 10, 12),
+        customName = "Education Induction",
+        date = LocalDate.of(2022, 10, 12),
         startTime = LocalTime.of(9, 30),
         endTime = LocalTime.of(11, 45),
         extraInformation = "Prayer session",
         attended = "Unmarked",
         createdDate = LocalDate.of(2022, 10, 11),
+        inCell = true,
+        organiser = "Prison staff",
       ),
       SarAppointment(
         appointmentId = 2,
         prisonCode = PENTONVILLE_PRISON_CODE,
         category = "Education",
-        startDate = LocalDate.of(2022, 10, 13),
+        customName = "Distance Learning",
+        date = LocalDate.of(2022, 10, 13),
         startTime = LocalTime.of(14, 0),
         endTime = LocalTime.of(15, 30),
         extraInformation = null,
         attended = "Yes",
         createdDate = LocalDate.of(2022, 10, 8),
+        onWing = true,
+        organiser = "An external provider",
       ),
       SarAppointment(
         appointmentId = 3,
         prisonCode = PENTONVILLE_PRISON_CODE,
         category = "Unknown category",
-        startDate = LocalDate.of(2022, 10, 14),
+        date = LocalDate.of(2022, 10, 14),
         startTime = LocalTime.of(6, 0),
         endTime = LocalTime.of(8, 30),
         extraInformation = null,
         attended = "No",
         createdDate = LocalDate.of(2022, 10, 9),
+        offWing = true,
+        cancellationReason = "Created in error",
+        cancelledBy = "ABC12D",
+      ),
+      SarAppointment(
+        appointmentId = 4,
+        prisonCode = PENTONVILLE_PRISON_CODE,
+        category = "Medical - Other",
+        customName = "Nurse Clinic",
+        date = LocalDate.of(2022, 10, 15),
+        startTime = LocalTime.of(11, 0),
+        endTime = LocalTime.of(12, 0),
+        extraInformation = null,
+        attended = "No",
+        createdDate = LocalDate.of(2022, 10, 13),
+        dpsLocationId = UUID.fromString("4475b5d5-873c-4f88-a5b7-2d20e9224a62"),
+        cancellationReason = "Cancelled",
+        cancelledBy = "XYZ45F",
       ),
     )
   }
@@ -192,12 +292,15 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
         appointmentId = 1,
         prisonCode = PENTONVILLE_PRISON_CODE,
         category = "Education",
-        startDate = LocalDate.of(2022, 10, 12),
+        customName = "Education Induction",
+        date = LocalDate.of(2022, 10, 12),
         startTime = LocalTime.of(9, 30),
         endTime = LocalTime.of(11, 45),
         extraInformation = "Prayer session",
         attended = "Unmarked",
         createdDate = LocalDate.of(2022, 10, 11),
+        inCell = true,
+        organiser = "Prison staff",
       ),
     )
   }
@@ -282,7 +385,7 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
 
     response.content.allocations containsExactly listOf(
       SarAllocation(
-        allocationId = 3,
+        allocationId = 4,
         prisonCode = PENTONVILLE_PRISON_CODE,
         prisonerStatus = "Suspended with pay",
         startDate = LocalDate.of(2022, 10, 10),
@@ -291,6 +394,14 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
         activitySummary = "Activity Summary WL",
         payBand = "Pay band 1 (lowest)",
         createdDate = LocalDate.of(2022, 10, 10),
+        activityCategoryName = "Industries",
+        activityCategoryDescription = "Such as work like recycling, packing or assembly operated by the prison, external firms or charities",
+        attendanceRequired = false,
+        paid = false,
+        outsideWork = false,
+        riskLevel = "high",
+        organiser = "A prisoner or group of prisoners",
+        dpsLocationId = UUID.fromString("4475b5d5-873c-4f88-a5b7-2d20e9224a62"),
       ),
     )
 
@@ -305,6 +416,14 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
         statusDate = null,
         comments = null,
         createdDate = LocalDate.of(2022, 10, 10),
+        activityCategoryName = "Industries",
+        activityCategoryDescription = "Such as work like recycling, packing or assembly operated by the prison, external firms or charities",
+        attendanceRequired = false,
+        paid = false,
+        outsideWork = false,
+        riskLevel = "high",
+        organiser = "A prisoner or group of prisoners",
+        dpsLocationId = UUID.fromString("4475b5d5-873c-4f88-a5b7-2d20e9224a62"),
       ),
       SarWaitingList(
         waitingListId = 3,
@@ -316,6 +435,15 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
         statusDate = LocalDate.of(2022, 11, 12),
         comments = "added to the waiting list",
         createdDate = LocalDate.of(2022, 10, 12),
+        declinedReason = "Activity ended",
+        activityCategoryName = "Industries",
+        activityCategoryDescription = "Such as work like recycling, packing or assembly operated by the prison, external firms or charities",
+        attendanceRequired = false,
+        paid = false,
+        outsideWork = false,
+        riskLevel = "high",
+        organiser = "A prisoner or group of prisoners",
+        dpsLocationId = UUID.fromString("4475b5d5-873c-4f88-a5b7-2d20e9224a62"),
       ),
     )
 
@@ -324,12 +452,15 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
         appointmentId = 1,
         prisonCode = PENTONVILLE_PRISON_CODE,
         category = "Education",
-        startDate = LocalDate.of(2022, 10, 12),
+        customName = "Education Induction",
+        date = LocalDate.of(2022, 10, 12),
         startTime = LocalTime.of(9, 30),
         endTime = LocalTime.of(11, 45),
         extraInformation = "Prayer session",
         attended = "Unmarked",
         createdDate = LocalDate.of(2022, 10, 11),
+        inCell = true,
+        organiser = "Prison staff",
       ),
     )
   }
