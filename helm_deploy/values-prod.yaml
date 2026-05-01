@@ -15,6 +15,7 @@ generic-service:
     MANAGE_ADJUDICATIONS_API_URL: https://manage-adjudications-api.hmpps.service.justice.gov.uk
     LOCATIONS_INSIDE_PRISON_API_URL: https://locations-inside-prison-api.hmpps.service.justice.gov.uk
     NOMIS_MAPPING_API_URL: https://nomis-sync-prisoner-mapping.hmpps.service.justice.gov.uk
+    EXTERNAL_MOVEMENTS_API_URL: https://external-movements-api.hmpps.service.justice.gov.uk
     APPLICATIONINSIGHTS_CONFIGURATION_FILE: applicationinsights.json
     FEATURE_AUDIT_SERVICE_HMPPS_ENABLED: true
     FEATURE_EVENTS_SNS_ENABLED: true
