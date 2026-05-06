@@ -77,6 +77,11 @@ nomis-mapping:
     url: https://nomis-sync-prisoner-mapping-dev.hmpps.service.justice.gov.uk
     timeout: 10s
 
+external-movements:
+  api:
+    url: https://external-movements-api-dev.hmpps.service.justice.gov.uk
+    timeout: 10s
+
 jobs:
   create-scheduled-instances:
     days-in-advance: ${SCHEDULE_AHEAD_DAYS:14}

@@ -96,6 +96,10 @@ nomis-mapping:
   api:
     url: http://localhost:8094
 
+external-movements:
+  api:
+    url: http://localhost:8095
+
 migrate:
   activities-live: PVI,RSI,MDI,IWI,FMI
   appointments-live: PVI,RSI,MDI,IWI,FMI

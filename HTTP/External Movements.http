@@ -1,0 +1,15 @@
+### Get external movements
+
+// @no-log
+
+POST {{ baseUrl }}/search/prisons/NSI/external-activities
+Authorization: Bearer {{$auth.token("auth-token")}}
+Content-Type: application/json
+
+{
+  "personIdentifiers": [
+    "G9889UI", "G4445GE"
+  ],
+  "start": "2026-05-01T12:44:15",
+  "end": "2026-06-30T12:44:15"
+}
