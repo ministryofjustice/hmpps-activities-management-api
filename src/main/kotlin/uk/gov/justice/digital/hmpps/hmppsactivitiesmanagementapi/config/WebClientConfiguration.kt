@@ -33,6 +33,7 @@ class WebClientConfiguration(
   @Value("\${manage.adjudications.api.url}") private val manageAdjudicationsApiUrl: String,
   @Value("\${locations-inside-prison.api.url}") private val locationsInsidePrisonApiUrl: String,
   @Value("\${nomis-mapping.api.url}") private val nomisMappingApiUrl: String,
+  @Value("\${external-movements.api.url}") private val externalMovementsApiUrl: String,
   @Value("\${api.health-timeout:2s}") private val healthTimeout: Duration,
   @Value("\${api.timeout:30s}") private val apiTimeout: Duration,
   @Value("\${prison.api.timeout:10s}") private val shorterTimeout: Duration,
@@ -69,6 +70,9 @@ class WebClientConfiguration(
 
   @Bean
   fun nomisMappingApiHealthWebClient(builder: WebClient.Builder) = builder.healthWebClient(nomisMappingApiUrl, healthTimeout)
+
+  @Bean
+  fun externalMovementsApiHealthWebClient(builder: WebClient.Builder) = builder.healthWebClient(externalMovementsApiUrl, healthTimeout)
 
   @Bean
   fun incentivesApiWebClient(authorizedClientManager: OAuth2AuthorizedClientManager, builder: WebClient.Builder) = builder
@@ -116,6 +120,11 @@ class WebClientConfiguration(
   fun nomisMappingApiWebClient(authorizedClientManager: OAuth2AuthorizedClientManager, builder: WebClient.Builder) = builder
     .authorisedWebClient(authorizedClientManager, "nomis-mapping-api", nomisMappingApiUrl, shorterTimeout)
     .also { log.info("WEB CLIENT CONFIG: creating NOMIS mapping api web client") }
+
+  @Bean
+  fun externalMovementsApiWebClient(authorizedClientManager: OAuth2AuthorizedClientManager, builder: WebClient.Builder) = builder
+    .authorisedWebClient(authorizedClientManager, "external-movements-api", externalMovementsApiUrl, shorterTimeout)
+    .also { log.info("WEB CLIENT CONFIG: creating external movements api web client") }
 
   private fun addAuthHeaderFilterFunction() = ExchangeFilterFunction { request: ClientRequest, next: ExchangeFunction ->
     val token = when (val authentication = SecurityContextHolder.getContext().authentication) {
