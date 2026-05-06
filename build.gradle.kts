@@ -8,7 +8,7 @@ plugins {
   kotlin("plugin.jpa") version "2.3.21"
   jacoco
   id("org.openapi.generator") version "7.22.0"
-  id("io.sentry.jvm.gradle") version "6.5.0"
+  id("io.sentry.jvm.gradle") version "6.6.0"
 }
 
 configurations {
@@ -16,7 +16,7 @@ configurations {
 }
 
 dependencies {
-  implementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter:2.1.1")
+  implementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter:2.2.0")
 
   // Spring boot dependencies
   implementation("org.springframework.boot:spring-boot-starter-security")
@@ -49,7 +49,7 @@ dependencies {
     }
   }
 
-  implementation("aws.sdk.kotlin:s3:1.6.65")
+  implementation("aws.sdk.kotlin:s3:1.6.70")
 
   // Other dependencies
   implementation("org.apache.commons:commons-text:1.15.0")
@@ -59,8 +59,8 @@ dependencies {
   runtimeOnly("org.postgresql:postgresql")
 
   // Test dependencies
-  testImplementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter-test:2.1.1")
-  testImplementation("uk.gov.justice.service.hmpps:hmpps-subject-access-request-test-support:2.3.0")
+  testImplementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter-test:2.2.0")
+  testImplementation("uk.gov.justice.service.hmpps:hmpps-subject-access-request-test-support:2.4.0")
   testImplementation("org.springframework.boot:spring-boot-starter-webflux-test")
   testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
   testImplementation("org.wiremock:wiremock-standalone:3.13.2")
@@ -79,7 +79,7 @@ dependencies {
   testImplementation("org.awaitility:awaitility-kotlin")
   testImplementation("org.skyscreamer:jsonassert")
   testImplementation("io.mockk:mockk:1.14.9")
-  testImplementation("io.swagger.parser.v3:swagger-parser:2.1.40") {
+  testImplementation("io.swagger.parser.v3:swagger-parser:2.1.41") {
     exclude(group = "io.swagger.core.v3")
   }
 }
