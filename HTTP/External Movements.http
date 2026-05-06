@@ -1,6 +1,6 @@
 ### Get external movements
 
-// @no-log POST {{ baseUrl }}/search/prisons/NSI/external-activities
+// @no-log
 
 POST {{ baseUrl }}/search/prisons/NSI/external-activities
 Authorization: Bearer {{$auth.token("auth-token")}}
