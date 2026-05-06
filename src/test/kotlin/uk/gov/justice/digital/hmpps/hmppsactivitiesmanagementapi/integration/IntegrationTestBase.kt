@@ -30,6 +30,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.con
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.config.PostgresContainer
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.BankHolidayApiExtension
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.CaseNotesApiMockServer
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.ExternalMovementsApiMockServer
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.IncentivesApiMockServer
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.LocationsInsidePrisonApiMockServer
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.ManageAdjudicationsApiMockServer
@@ -81,6 +82,7 @@ abstract class IntegrationTestBase {
     internal val manageAdjudicationsApiMockServer = ManageAdjudicationsApiMockServer()
     internal val nomisMappingApiMockServer = NomisMappingApiMockServer()
     internal val locationsInsidePrisonApiMockServer = LocationsInsidePrisonApiMockServer()
+    internal val externalMovementsApiMockServer = ExternalMovementsApiMockServer()
 
     internal val db = PostgresContainer.instance
     internal val localStackContainer = LocalStackContainer.instance
@@ -107,6 +109,7 @@ abstract class IntegrationTestBase {
       manageAdjudicationsApiMockServer.start()
       nomisMappingApiMockServer.start()
       locationsInsidePrisonApiMockServer.start()
+      externalMovementsApiMockServer.start()
     }
 
     @AfterAll
@@ -120,6 +123,7 @@ abstract class IntegrationTestBase {
       manageAdjudicationsApiMockServer.stop()
       nomisMappingApiMockServer.stop()
       locationsInsidePrisonApiMockServer.stop()
+      externalMovementsApiMockServer.stop()
     }
 
     @BeforeEach
