@@ -899,6 +899,7 @@ class ActivityScheduleInstanceIntegrationTest : LocalStackTestBase() {
           onWing = false,
           offWing = false,
           attendanceRequired = true,
+          outsideWork = false,
           internalLocation = InternalLocation(
             id = 1,
             code = "L1",
@@ -928,6 +929,7 @@ class ActivityScheduleInstanceIntegrationTest : LocalStackTestBase() {
           onWing = false,
           offWing = false,
           attendanceRequired = true,
+          outsideWork = false,
           internalLocation = InternalLocation(
             id = 2,
             code = "L2",

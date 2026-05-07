@@ -66,4 +66,6 @@ data class ScheduledInstanceAttendanceSummary(
   val paid: Long? = null,
 
   val attendanceRequired: Boolean,
+
+  val outsideWork: Boolean,
 )

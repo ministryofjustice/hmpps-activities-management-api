@@ -1,3 +1,10 @@
+### Health
+
+// @no-log
+
+GET {{ baseUrl }}/health
+Authorization: Bearer {{$auth.token("auth-token")}}
+
 ### Get external movements
 
 // @no-log
