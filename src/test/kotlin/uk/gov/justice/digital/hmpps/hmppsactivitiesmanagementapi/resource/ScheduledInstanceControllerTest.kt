@@ -195,6 +195,7 @@ class ScheduledInstanceControllerTest : ControllerTestBase() {
           attendanceSummary = AttendanceSummaryDetails(
             allocations = 10,
           ),
+          outsideWork = true,
         ),
       )
 

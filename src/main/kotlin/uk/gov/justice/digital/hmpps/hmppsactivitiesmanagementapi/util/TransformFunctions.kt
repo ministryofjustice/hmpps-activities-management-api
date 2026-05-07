@@ -22,6 +22,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService.LocationDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.EventPriorities
 import java.time.DayOfWeek
+import kotlin.enums.enumEntries
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity as EntityActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityBasic as EntityActivityBasic
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityEligibility as EntityActivityEligibility
@@ -477,7 +478,7 @@ fun transform(entityEventReview: EventReview) = ModelEventReview(
   eventData = entityEventReview.eventData,
   acknowledgedTime = entityEventReview.acknowledgedTime,
   acknowledgedBy = entityEventReview.acknowledgedBy,
-  eventDescription = enumValues<EventDescription>().firstOrNull { it.name == entityEventReview.eventDescription?.name },
+  eventDescription = enumEntries<EventDescription>().firstOrNull { it.name == entityEventReview.eventDescription?.name },
 )
 
 fun transform(activityBasic: EntityActivityBasic) = ModelActivityBasic(
@@ -524,6 +525,7 @@ fun ScheduledInstanceAttendanceSummary.toModel() = (
       absences = this.absences,
       paid = this.paid,
     ),
+    outsideWork = this.outsideWork,
   )
   )
 
