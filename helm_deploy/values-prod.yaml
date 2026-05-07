@@ -30,10 +30,10 @@ generic-service:
   resources:
     requests:
       cpu: 10m
-      memory: 1Gi
+      memory: 2Gi
     limits:
       cpu: 2000m
-      memory: 4Gi
+      memory: 3Gi
 
   postgresDatabaseRestore:
     enabled: true
