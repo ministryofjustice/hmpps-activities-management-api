@@ -16,7 +16,7 @@ class HealthCheckTest : IntegrationTestBase() {
       manageAdjudicationsApiMockServer,
       nomisMappingApiMockServer,
       locationsInsidePrisonApiMockServer,
-      externalMovementsApiMockServer
+      externalMovementsApiMockServer,
     ).forEach { it.stubHealthPing(200) }
 
     webTestClient.get()
