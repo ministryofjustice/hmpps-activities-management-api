@@ -362,7 +362,7 @@ data class ActivitySchedule(
     endDate = this.endDate,
     usePrisonRegimeTime = this.usePrisonRegimeTime,
   ).apply {
-    if (!this.activity.inCell && !this.activity.onWing && !this.activity.offWing) {
+    if (!this.activity.inCell && !this.activity.onWing && !this.activity.offWing && dpsLocationId != null) {
       this.internalLocation = InternalLocation(
         id = internalLocationId!!,
         code = internalLocationCode!!,
