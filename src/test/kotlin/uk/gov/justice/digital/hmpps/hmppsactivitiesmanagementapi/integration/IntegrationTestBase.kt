@@ -133,6 +133,7 @@ abstract class IntegrationTestBase {
       incentivesApiMockServer.resetAll()
       nomisMappingApiMockServer.resetAll()
       locationsInsidePrisonApiMockServer.resetAll()
+      externalMovementsApiMockServer.resetAll()
     }
 
     @AfterEach
@@ -145,6 +146,7 @@ abstract class IntegrationTestBase {
       manageAdjudicationsApiMockServer.resetAll()
       nomisMappingApiMockServer.resetAll()
       locationsInsidePrisonApiMockServer.resetAll()
+      externalMovementsApiMockServer.resetAll()
     }
   }
 
