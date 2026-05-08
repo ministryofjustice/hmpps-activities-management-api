@@ -16,7 +16,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.RetryApi
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.PrisonerSearchApiMockServer
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
-
 class PrisonerSearchApiClientTest {
   private lateinit var prisonerSearchApiClient: PrisonerSearchApiClient
 
@@ -146,7 +145,7 @@ class PrisonerSearchApiClientTest {
     val prisonerNumber = "G4793VF"
 
     @Test
-    fun `will succeed if number of fails is not less than maximum allowed`(): Unit = runBlocking {
+    fun `will succeed if number of fails is less than maximum allowed`(): Unit = runBlocking {
       prisonerSearchApiMockServer.stubSearchByPrisonerNumberWithConnectionReset(prisonerNumber)
 
       with(prisonerSearchApiClient.findByPrisonerNumber("G4793VF")!!) {

@@ -79,7 +79,7 @@ class LocationsInsidePrisonAPIClientTest {
   @DisplayName("Retrying failed api calls")
   inner class RetryFailedCalls {
     @Test
-    fun `will succeed if number of fails is not less than maximum allowed`(): Unit = runBlocking {
+    fun `will succeed if number of fails is less than maximum allowed`(): Unit = runBlocking {
       val mockLocation = mockServer.stubLocationFromDpsUuidWithConnectionReset()
 
       var location = apiClient.getLocationById(dpsLocation().id)
