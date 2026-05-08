@@ -32,6 +32,7 @@ class ExternalMovementsApiMockServer : MockServer(8095) {
     for (i in 1..numFails) {
       stubFor(
         WireMock.post(WireMock.urlEqualTo(url))
+          .withRequestBody(equalToJson(dateMapper.writeValueAsString(ExternalMovementsRequest(prisonerNumbers, start, end)), true, true))
           .inScenario("Network fail")
           .whenScenarioStateIs(if (i == 1) STARTED else "Fail ${i - 1}")
           .willReturn(
@@ -44,6 +45,7 @@ class ExternalMovementsApiMockServer : MockServer(8095) {
 
     stubFor(
       WireMock.post(WireMock.urlEqualTo(url))
+        .withRequestBody(equalToJson(dateMapper.writeValueAsString(ExternalMovementsRequest(prisonerNumbers, start, end)), true, true))
         .inScenario("Network fail")
         .whenScenarioStateIs("Fail $numFails")
         .willReturn(

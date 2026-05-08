@@ -61,10 +61,11 @@ class ExternalMovementsApiClientTest {
         ExternalMovement(
           id = "3fa85f64-5717-4562-b3fc-2c963f66afa6",
           prisonerNumber = "A1234AA",
-          description = ExternalMovementDescription(full = "Standard ROTL", short = "Accomodation-related", code = "FB"),
+          description = ExternalMovementDescription(full = "Standard ROTL", short = "Accommodation-related", code = "FB"),
           start = LocalDateTime.of(2026, 5, 10, 9, 0),
           end = LocalDateTime.of(2026, 5, 10, 17, 0),
           status = ExternalMovementStatus(code = "SCHEDULED", description = "Scheduled"),
+          isSensitive = true,
         ),
       ),
     )
@@ -77,11 +78,12 @@ class ExternalMovementsApiClientTest {
       prisonerNumber isEqualTo "A1234AA"
       id isEqualTo "3fa85f64-5717-4562-b3fc-2c963f66afa6"
       description.full isEqualTo "Standard ROTL"
-      description.short isEqualTo "Accomodation-related"
+      description.short isEqualTo "Accommodation-related"
       description.code isEqualTo "FB"
       this.start isEqualTo LocalDateTime.of(2026, 5, 10, 9, 0)
       this.end isEqualTo LocalDateTime.of(2026, 5, 10, 17, 0)
       status.code isEqualTo "SCHEDULED"
+      isSensitive isEqualTo true
     }
   }
 
@@ -111,18 +113,20 @@ class ExternalMovementsApiClientTest {
         ExternalMovement(
           id = "3fa85f64-5717-4562-b3fc-2c963f66afa6",
           prisonerNumber = "A1234AA",
-          description = ExternalMovementDescription(full = "Standard ROTL", short = "Accomodation-related", code = "FB"),
+          description = ExternalMovementDescription(full = "Standard ROTL", short = "Accommodation-related", code = "FB"),
           start = LocalDateTime.of(2026, 5, 10, 9, 0),
           end = LocalDateTime.of(2026, 5, 10, 17, 0),
           status = ExternalMovementStatus(code = "SCHEDULED", description = "Scheduled"),
+          isSensitive = true,
         ),
         ExternalMovement(
           id = "3fa85f64-5717-7156-b3fc-c2963a63afb5",
           prisonerNumber = "A1234AA",
-          description = ExternalMovementDescription(full = "Standard ROTL", short = "Accomodation-related", code = "FB"),
+          description = ExternalMovementDescription(full = "Standard ROTL", short = "Accommodation-related", code = "FB"),
           start = LocalDateTime.of(2026, 5, 11, 9, 0),
           end = LocalDateTime.of(2026, 5, 11, 17, 0),
           status = ExternalMovementStatus(code = "SCHEDULED", description = "Scheduled"),
+          isSensitive = true,
         ),
       ),
     )
@@ -132,7 +136,7 @@ class ExternalMovementsApiClientTest {
     val response = externalMovementsApiClient.getExternalMovements(prisonCode, prisonerNumbers, start, end)
 
     assertThat(response.content)
-      .extracting(ExternalMovement::prisonerNumber, { it.description.code }, ExternalMovement::start, ExternalMovement::end, { it.status.code })
+      .extracting(ExternalMovement::prisonerNumber, { it.description.code }, ExternalMovement::start, ExternalMovement::end, { it.status.code }, ExternalMovement::isSensitive)
       .containsExactly(
         tuple(
           "A1234AA",
@@ -140,6 +144,7 @@ class ExternalMovementsApiClientTest {
           LocalDateTime.of(2026, 5, 10, 9, 0),
           LocalDateTime.of(2026, 5, 10, 17, 0),
           "SCHEDULED",
+          true,
         ),
         tuple(
           "A1234AA",
@@ -147,6 +152,7 @@ class ExternalMovementsApiClientTest {
           LocalDateTime.of(2026, 5, 11, 9, 0),
           LocalDateTime.of(2026, 5, 11, 17, 0),
           "SCHEDULED",
+          true,
         ),
       )
   }
@@ -163,18 +169,20 @@ class ExternalMovementsApiClientTest {
         ExternalMovement(
           id = "3fa85f64-5717-4562-b3fc-2c963f66afa6",
           prisonerNumber = "A1234AA",
-          description = ExternalMovementDescription(full = "Standard ROTL", short = "Accomodation-related", code = "FB"),
+          description = ExternalMovementDescription(full = "Standard ROTL", short = "Accommodation-related", code = "FB"),
           start = LocalDateTime.of(2026, 5, 10, 9, 0),
           end = LocalDateTime.of(2026, 5, 10, 17, 0),
           status = ExternalMovementStatus(code = "SCHEDULED", description = "Scheduled"),
+          isSensitive = true,
         ),
         ExternalMovement(
           id = "3fa85f64-5717-7156-b3fc-c2963a63afb5",
           prisonerNumber = "A1234AA",
-          description = ExternalMovementDescription(full = "Standard ROTL", short = "Accomodation-related", code = "FB"),
+          description = ExternalMovementDescription(full = "Standard ROTL", short = "Accommodation-related", code = "FB"),
           start = LocalDateTime.of(2026, 5, 11, 9, 0),
           end = LocalDateTime.of(2026, 5, 11, 17, 0),
           status = ExternalMovementStatus(code = "SCHEDULED", description = "Scheduled"),
+          isSensitive = true,
         ),
         ExternalMovement(
           id = "4af94f64-5717-7166-b3fc-c2963a63afb9",
@@ -183,6 +191,7 @@ class ExternalMovementsApiClientTest {
           start = LocalDateTime.of(2026, 5, 5, 9, 0),
           end = LocalDateTime.of(2026, 5, 5, 17, 0),
           status = ExternalMovementStatus(code = "IN_PROGRESS", description = "In Progress"),
+          isSensitive = true,
         ),
       ),
     )
@@ -192,7 +201,7 @@ class ExternalMovementsApiClientTest {
     val response = externalMovementsApiClient.getExternalMovements(prisonCode, prisonerNumbers, start, end)
 
     assertThat(response.content)
-      .extracting(ExternalMovement::prisonerNumber, { it.description.code }, ExternalMovement::start, ExternalMovement::end, { it.status.code })
+      .extracting(ExternalMovement::prisonerNumber, { it.description.code }, ExternalMovement::start, ExternalMovement::end, { it.status.code }, ExternalMovement::isSensitive)
       .containsExactly(
         tuple(
           "A1234AA",
@@ -200,6 +209,7 @@ class ExternalMovementsApiClientTest {
           LocalDateTime.of(2026, 5, 10, 9, 0),
           LocalDateTime.of(2026, 5, 10, 17, 0),
           "SCHEDULED",
+          true,
         ),
         tuple(
           "A1234AA",
@@ -207,6 +217,7 @@ class ExternalMovementsApiClientTest {
           LocalDateTime.of(2026, 5, 11, 9, 0),
           LocalDateTime.of(2026, 5, 11, 17, 0),
           "SCHEDULED",
+          true,
         ),
         tuple(
           "B1234BB",
@@ -214,6 +225,7 @@ class ExternalMovementsApiClientTest {
           LocalDateTime.of(2026, 5, 5, 9, 0),
           LocalDateTime.of(2026, 5, 5, 17, 0),
           "IN_PROGRESS",
+          true,
         ),
       )
   }
@@ -230,10 +242,11 @@ class ExternalMovementsApiClientTest {
         ExternalMovement(
           id = "3fa85f64-5717-4562-b3fc-2c963f66afa6",
           prisonerNumber = "A1234AA",
-          description = ExternalMovementDescription(full = "Standard ROTL", short = "Accomodation-related", code = "FB"),
+          description = ExternalMovementDescription(full = "Standard ROTL", short = "Accommodation-related", code = "FB"),
           start = LocalDateTime.of(2026, 5, 10, 9, 0),
           end = LocalDateTime.of(2026, 5, 10, 17, 0),
           status = ExternalMovementStatus(code = "SCHEDULED", description = "Scheduled"),
+          isSensitive = true,
         ),
       ),
     )

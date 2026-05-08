@@ -14,6 +14,7 @@ data class ExternalMovement(
   val end: LocalDateTime,
   val status: ExternalMovementStatus,
   val detail: ExternalMovementDetail? = null,
+  val isSensitive: Boolean,
 )
 
 data class ExternalMovementDescription(
