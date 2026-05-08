@@ -4,8 +4,8 @@ values (1, 'PVI', 1, 1, true, false, true, true, 'H', 'Maths', 'Maths Level 1', 
 insert into activity_pay(activity_pay_id, activity_id, incentive_nomis_code, incentive_level, prison_pay_band_id, rate, piece_rate, piece_rate_items)
 values (1, 1, 'BAS', 'Basic', 1, 125, 150, 1);
 
-insert into activity_schedule(activity_schedule_id, activity_id, description, internal_location_id, internal_location_code, internal_location_description, capacity, start_date, schedule_weeks)
-values (1, 1, 'Maths AM', 1, 'L1', 'Location 1', 10, '2022-10-10', 2);
+insert into activity_schedule(activity_schedule_id, activity_id, description, dps_location_id, internal_location_id, internal_location_code, internal_location_description, capacity, start_date, schedule_weeks)
+values (1, 1, 'Maths AM', '11111111-1111-1111-1111-111111111111', 1, 'L1', 'Location 1', 10, '2022-10-10', 2);
 
 insert into activity_schedule_slot(activity_schedule_slot_id, activity_schedule_id, start_time, end_time, monday_flag, wednesday_flag, week_number, time_slot)
 values (1, 1, '10:00:00', '11:00:00', true, true, 1, 'AM');

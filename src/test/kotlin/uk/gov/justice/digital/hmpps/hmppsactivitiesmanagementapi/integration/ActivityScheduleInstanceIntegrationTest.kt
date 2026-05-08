@@ -139,6 +139,17 @@ class ActivityScheduleInstanceIntegrationTest : LocalStackTestBase() {
         assertThat(it.attendances[0].attendanceReason!!.code).isEqualTo("SICK")
       }
     }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-id-1.sql")
+    fun `get schedule, with no location details, by its id`() {
+      with(webTestClient.getScheduledInstancesByIds(5)!!.first().activitySchedule) {
+        assertThat(activity.inCell).isFalse()
+        assertThat(activity.onWing).isFalse()
+        assertThat(activity.offWing).isFalse()
+        assertThat(internalLocation).isNull()
+      }
+    }
   }
 
   @Nested
