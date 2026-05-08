@@ -11,6 +11,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSou
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.internalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
@@ -39,7 +40,7 @@ class ActivityScheduleTest {
   private val noonSlot = TimeSlot.PM
 
   @Test
-  fun `converted to model lite`() {
+  fun `converted to model lite with internal location`() {
     val expectedModel = ActivityScheduleLite(
       id = 1,
       description = "schedule description",
@@ -947,6 +948,21 @@ class ActivityScheduleTest {
       assertThat(id).isEqualTo(1)
       assertThat(inCell).isFalse
       assertThat(onWing).isTrue
+    }
+  }
+
+  @Test
+  fun `activity, with no location details, should not contain internal location`() {
+    val activitySchedule = activitySchedule(activity = activityEntity(), noInternalLocation = true).toModelLite()
+
+    assertThat(activitySchedule.id).isEqualTo(1)
+    assertThat(activitySchedule.internalLocation).isNull()
+
+    with(activitySchedule.activity) {
+      assertThat(id).isEqualTo(1)
+      assertThat(inCell).isFalse
+      assertThat(onWing).isFalse
+      assertThat(offWing).isFalse
     }
   }
 

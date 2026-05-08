@@ -35,10 +35,10 @@ generic-service:
   resources:
     requests:
       cpu: 10m
-      memory: 1Gi
+      memory: 2Gi
     limits:
       cpu: 2000m
-      memory: 4Gi
+      memory: 3Gi
 
 # CloudPlatform AlertManager receiver to route prometheus alerts to slack
 # See https://user-guide.cloud-platform.service.justice.gov.uk/documentation/monitoring-an-app/how-to-create-alarms.html#creating-your-own-custom-alerts
