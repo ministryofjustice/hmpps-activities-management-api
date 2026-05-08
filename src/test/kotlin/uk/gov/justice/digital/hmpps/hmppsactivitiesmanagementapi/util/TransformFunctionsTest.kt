@@ -866,6 +866,7 @@ class TransformFunctionsTest {
       absences = 1,
       paid = 1,
       timeSlot = TimeSlot.AM,
+      outsideWork = true,
     )
 
     with(attendanceSummary.toModel()) {
@@ -889,6 +890,7 @@ class TransformFunctionsTest {
         absences isEqualTo 1
         paid isEqualTo 1
       }
+      outsideWork isEqualTo true
     }
   }
 

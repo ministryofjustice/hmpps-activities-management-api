@@ -47,6 +47,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Prisone
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.util.UUID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance as ModelAttendance
 
 @TestPropertySource(
@@ -288,7 +289,7 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
         ActivityScheduleLite(
           id = 1,
           description = "Maths AM",
-          internalLocation = InternalLocation(1, "L1", "Location 1"),
+          internalLocation = InternalLocation(1, "L1", "Location 1", UUID.fromString("11111111-1111-1111-1111-111111111111")),
           capacity = 10,
           activity = ActivityLite(
             id = 1L,
@@ -343,7 +344,7 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
         ActivityScheduleLite(
           id = 2,
           description = "Maths PM",
-          internalLocation = InternalLocation(2, "L2", "Location 2"),
+          internalLocation = InternalLocation(2, "L2", "Location 2", UUID.fromString("22222222-2222-2222-2222-222222222222")),
           capacity = 10,
           activity = ActivityLite(
             id = 1L,
@@ -409,7 +410,7 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
         ActivityScheduleLite(
           id = 1,
           description = "Maths AM",
-          internalLocation = InternalLocation(1, "L1", "Location 1"),
+          internalLocation = InternalLocation(1, "L1", "Location 1", UUID.fromString("11111111-1111-1111-1111-111111111111")),
           capacity = 10,
           activity = ActivityLite(
             id = 1L,
@@ -481,7 +482,7 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
         ActivityScheduleLite(
           id = 1,
           description = "Maths AM",
-          internalLocation = InternalLocation(1, "L1", "Location 1"),
+          internalLocation = InternalLocation(1, "L1", "Location 1", UUID.fromString("11111111-1111-1111-1111-111111111111")),
           capacity = 10,
           activity = ActivityLite(
             id = 1L,

@@ -139,6 +139,17 @@ class ActivityScheduleInstanceIntegrationTest : LocalStackTestBase() {
         assertThat(it.attendances[0].attendanceReason!!.code).isEqualTo("SICK")
       }
     }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-id-1.sql")
+    fun `get schedule, with no location details, by its id`() {
+      with(webTestClient.getScheduledInstancesByIds(5)!!.first().activitySchedule) {
+        assertThat(activity.inCell).isFalse()
+        assertThat(activity.onWing).isFalse()
+        assertThat(activity.offWing).isFalse()
+        assertThat(internalLocation).isNull()
+      }
+    }
   }
 
   @Nested
@@ -148,9 +159,7 @@ class ActivityScheduleInstanceIntegrationTest : LocalStackTestBase() {
     @Sql("classpath:test_data/seed-activity-id-1.sql")
     fun `get scheduled attendees by scheduled instance id`() {
       val attendees = webTestClient.getScheduledAttendeesByInstanceId(1)!!
-      assertThat(attendees).hasSize(2)
-      with(attendees[0]) { assertThat(prisonerNumber).isEqualTo("A11111A") }
-      with(attendees[1]) { assertThat(prisonerNumber).isEqualTo("A22222A") }
+      assertThat(attendees).extracting("prisonerNumber").containsExactlyInAnyOrder("A11111A", "A22222A")
     }
 
     @Test
@@ -899,6 +908,7 @@ class ActivityScheduleInstanceIntegrationTest : LocalStackTestBase() {
           onWing = false,
           offWing = false,
           attendanceRequired = true,
+          outsideWork = false,
           internalLocation = InternalLocation(
             id = 1,
             code = "L1",
@@ -928,6 +938,7 @@ class ActivityScheduleInstanceIntegrationTest : LocalStackTestBase() {
           onWing = false,
           offWing = false,
           attendanceRequired = true,
+          outsideWork = false,
           internalLocation = InternalLocation(
             id = 2,
             code = "L2",

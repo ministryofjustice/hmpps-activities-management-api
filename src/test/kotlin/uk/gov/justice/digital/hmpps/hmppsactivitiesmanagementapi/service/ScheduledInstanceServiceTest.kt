@@ -507,6 +507,7 @@ class ScheduledInstanceServiceTest {
       paid = 1,
       attendanceRequired = true,
       timeSlot = TimeSlot.AM,
+      outsideWork = true,
     )
 
     whenever(attendanceSummaryRepository.findByPrisonAndDate("MDI", LocalDate.now()))
