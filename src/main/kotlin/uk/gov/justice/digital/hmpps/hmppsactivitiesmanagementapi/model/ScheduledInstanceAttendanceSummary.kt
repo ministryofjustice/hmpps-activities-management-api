@@ -81,6 +81,9 @@ data class ScheduledInstanceAttendanceSummary(
 
   @Schema(description = "Flag to indicate if attendance is required", example = "false")
   var attendanceRequired: Boolean,
+
+  @Schema(description = "Flag to indicate if the activity carried out outside of the prison", example = "false")
+  var outsideWork: Boolean,
 ) {
   @Schema(description = "Attendance summary details")
   data class AttendanceSummaryDetails(
