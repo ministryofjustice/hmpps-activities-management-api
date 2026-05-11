@@ -2,9 +2,10 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.externa
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import java.time.LocalDateTime
+import java.util.UUID
 
 data class ExternalMovement(
-  val id: String,
+  val id: UUID,
 
   @JsonProperty("personIdentifier")
   val prisonerNumber: String,
@@ -13,7 +14,7 @@ data class ExternalMovement(
   val start: LocalDateTime,
   val end: LocalDateTime,
   val status: ExternalMovementStatus,
-  val detail: ExternalMovementDetail? = null,
+  val detail: ExternalMovementDetail,
   val isSensitive: Boolean,
 )
 
@@ -30,6 +31,6 @@ data class ExternalMovementStatus(
 )
 
 data class ExternalMovementDetail(
-  val uiUrl: String? = null,
-  val requiredRoles: List<String>? = null,
+  val uiUrl: String,
+  val requiredRoles: Set<String>,
 )

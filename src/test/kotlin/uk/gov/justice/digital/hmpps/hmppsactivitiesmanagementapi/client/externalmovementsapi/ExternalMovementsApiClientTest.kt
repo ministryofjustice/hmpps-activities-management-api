@@ -16,11 +16,13 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.RetryApi
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.externalmovementsapi.api.ExternalMovementsApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.externalmovementsapi.model.ExternalMovement
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.externalmovementsapi.model.ExternalMovementDescription
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.externalmovementsapi.model.ExternalMovementDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.externalmovementsapi.model.ExternalMovementStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.externalmovementsapi.model.ExternalMovementsResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.ExternalMovementsApiMockServer
 import java.time.LocalDateTime
+import java.util.UUID
 
 class ExternalMovementsApiClientTest {
   private lateinit var externalMovementsApiClient: ExternalMovementsApiClient
@@ -59,12 +61,13 @@ class ExternalMovementsApiClientTest {
     val expectedResponse = ExternalMovementsResponse(
       content = listOf(
         ExternalMovement(
-          id = "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          id = UUID.fromString("3fa85f64-5717-4562-b3fc-2c963f66afa6"),
           prisonerNumber = "A1234AA",
           description = ExternalMovementDescription(full = "Standard ROTL", short = "Accommodation-related", code = "FB"),
           start = LocalDateTime.of(2026, 5, 10, 9, 0),
           end = LocalDateTime.of(2026, 5, 10, 17, 0),
           status = ExternalMovementStatus(code = "SCHEDULED", description = "Scheduled"),
+          detail = ExternalMovementDetail(uiUrl = "uiUrl String", requiredRoles = setOf("TEST_ROLE")),
           isSensitive = true,
         ),
       ),
@@ -76,7 +79,7 @@ class ExternalMovementsApiClientTest {
 
     with(response.content.single()) {
       prisonerNumber isEqualTo "A1234AA"
-      id isEqualTo "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+      id isEqualTo UUID.fromString("3fa85f64-5717-4562-b3fc-2c963f66afa6")
       description.full isEqualTo "Standard ROTL"
       description.short isEqualTo "Accommodation-related"
       description.code isEqualTo "FB"
@@ -111,21 +114,23 @@ class ExternalMovementsApiClientTest {
     val expectedResponse = ExternalMovementsResponse(
       content = listOf(
         ExternalMovement(
-          id = "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          id = UUID.fromString("3fa85f64-5717-4562-b3fc-2c963f66afa6"),
           prisonerNumber = "A1234AA",
           description = ExternalMovementDescription(full = "Standard ROTL", short = "Accommodation-related", code = "FB"),
           start = LocalDateTime.of(2026, 5, 10, 9, 0),
           end = LocalDateTime.of(2026, 5, 10, 17, 0),
           status = ExternalMovementStatus(code = "SCHEDULED", description = "Scheduled"),
+          detail = ExternalMovementDetail(uiUrl = "uiUrl String", requiredRoles = setOf("TEST_ROLE")),
           isSensitive = true,
         ),
         ExternalMovement(
-          id = "3fa85f64-5717-7156-b3fc-c2963a63afb5",
+          id = UUID.fromString("3fa85f64-5717-7156-b3fc-c2963a63afb5"),
           prisonerNumber = "A1234AA",
           description = ExternalMovementDescription(full = "Standard ROTL", short = "Accommodation-related", code = "FB"),
           start = LocalDateTime.of(2026, 5, 11, 9, 0),
           end = LocalDateTime.of(2026, 5, 11, 17, 0),
           status = ExternalMovementStatus(code = "SCHEDULED", description = "Scheduled"),
+          detail = ExternalMovementDetail(uiUrl = "uiUrl String", requiredRoles = setOf("TEST_ROLE")),
           isSensitive = true,
         ),
       ),
@@ -167,30 +172,33 @@ class ExternalMovementsApiClientTest {
     val expectedResponse = ExternalMovementsResponse(
       content = listOf(
         ExternalMovement(
-          id = "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          id = UUID.fromString("3fa85f64-5717-4562-b3fc-2c963f66afa6"),
           prisonerNumber = "A1234AA",
           description = ExternalMovementDescription(full = "Standard ROTL", short = "Accommodation-related", code = "FB"),
           start = LocalDateTime.of(2026, 5, 10, 9, 0),
           end = LocalDateTime.of(2026, 5, 10, 17, 0),
           status = ExternalMovementStatus(code = "SCHEDULED", description = "Scheduled"),
+          detail = ExternalMovementDetail(uiUrl = "uiUrl String", requiredRoles = setOf("TEST_ROLE")),
           isSensitive = true,
         ),
         ExternalMovement(
-          id = "3fa85f64-5717-7156-b3fc-c2963a63afb5",
+          id = UUID.fromString("3fa85f64-5717-7156-b3fc-c2963a63afb5"),
           prisonerNumber = "A1234AA",
           description = ExternalMovementDescription(full = "Standard ROTL", short = "Accommodation-related", code = "FB"),
           start = LocalDateTime.of(2026, 5, 11, 9, 0),
           end = LocalDateTime.of(2026, 5, 11, 17, 0),
           status = ExternalMovementStatus(code = "SCHEDULED", description = "Scheduled"),
+          detail = ExternalMovementDetail(uiUrl = "uiUrl String", requiredRoles = setOf("TEST_ROLE")),
           isSensitive = true,
         ),
         ExternalMovement(
-          id = "4af94f64-5717-7166-b3fc-c2963a63afb9",
+          id = UUID.fromString("4af94f64-5717-7166-b3fc-c2963a63afb9"),
           prisonerNumber = "B1234BB",
           description = ExternalMovementDescription(full = "Standard ROTL", short = "Other temporary release", code = "YOTR"),
           start = LocalDateTime.of(2026, 5, 5, 9, 0),
           end = LocalDateTime.of(2026, 5, 5, 17, 0),
           status = ExternalMovementStatus(code = "IN_PROGRESS", description = "In Progress"),
+          detail = ExternalMovementDetail(uiUrl = "uiUrl String", requiredRoles = setOf("TEST_ROLE")),
           isSensitive = true,
         ),
       ),
@@ -240,12 +248,13 @@ class ExternalMovementsApiClientTest {
     val response = ExternalMovementsResponse(
       content = listOf(
         ExternalMovement(
-          id = "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          id = UUID.fromString("3fa85f64-5717-4562-b3fc-2c963f66afa6"),
           prisonerNumber = "A1234AA",
           description = ExternalMovementDescription(full = "Standard ROTL", short = "Accommodation-related", code = "FB"),
           start = LocalDateTime.of(2026, 5, 10, 9, 0),
           end = LocalDateTime.of(2026, 5, 10, 17, 0),
           status = ExternalMovementStatus(code = "SCHEDULED", description = "Scheduled"),
+          detail = ExternalMovementDetail(uiUrl = "uiUrl String", requiredRoles = setOf("TEST_ROLE")),
           isSensitive = true,
         ),
       ),
