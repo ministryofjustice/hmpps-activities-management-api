@@ -209,6 +209,7 @@ This service is dependent on the following services:
 * [Non-Associations API](https://non-associations-api-dev.hmpps.service.justice.gov.uk/swagger-ui/index.html#/) - non-associations api
 * [Prison API](https://prison-api-dev.prison.service.justice.gov.uk/swagger-ui/index.html#/) - prison api
 * [Prisoner Search API](https://prisoner-search-dev.prison.service.justice.gov.uk/swagger-ui/index.html#/) - prisoner search api
+* [External Movements API](https://external-movements-api-dev.hmpps.service.justice.gov.uk/swagger-ui/index.html#/) - external movements api
 
 ## Runbook
 

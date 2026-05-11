@@ -21,3 +21,12 @@ class PrisonerSearchApiHealth(prisonerSearchApiHealthWebClient: WebClient) : Hea
 
 @Component
 class ManageAdjudicationsApiHealth(manageAdjudicationsApiHealthWebClient: WebClient) : HealthPingCheck(manageAdjudicationsApiHealthWebClient)
+
+@Component
+class NomisMappingApiHealth(nomisMappingApiHealthWebClient: WebClient) : HealthPingCheck(nomisMappingApiHealthWebClient)
+
+@Component
+class LocationsInsidePrisonApiHealth(locationsInsidePrisonApiHealthWebClient: WebClient) : HealthPingCheck(locationsInsidePrisonApiHealthWebClient)
+
+@Component
+class ExternalMovementsApiHealth(externalMovementsApiHealthWebClient: WebClient) : HealthPingCheck(externalMovementsApiHealthWebClient)
