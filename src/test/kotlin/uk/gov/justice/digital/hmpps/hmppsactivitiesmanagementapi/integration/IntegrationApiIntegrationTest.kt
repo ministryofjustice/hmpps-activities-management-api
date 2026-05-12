@@ -79,7 +79,7 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
       )
 
       with(attendanceList!!) {
-        assertThat(this.map { it.scheduleInstanceId }.toSet()).isEqualTo(setOf(1L, 2L, 3L, 4L , 5L))
+        assertThat(this.map { it.scheduleInstanceId }.toSet()).isEqualTo(setOf(1L, 2L, 3L, 4L, 5L))
 
         this.forEach {
           assertThat(it.prisonerNumber).isEqualTo(prisonerNumber)
