@@ -26,6 +26,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PlannedS
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
@@ -40,7 +42,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloa
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.clearCaseloadIdFromRequestHeader
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.util.UUID
+import java.util.*
 
 class PrisonerSuspensionsServiceTest {
   private val caseLoad = MOORLAND_PRISON_CODE
@@ -83,7 +85,7 @@ class PrisonerSuspensionsServiceTest {
   }
 
   @Test
-  fun `suspension start date must be on or after todays date`() {
+  fun `suspension start date must be on or after today's date`() {
     val allocation = allocation()
     val prisonCode = allocation.activitySchedule.activity.prisonCode
 
@@ -152,6 +154,7 @@ class PrisonerSuspensionsServiceTest {
       startDate() isEqualTo allocation.startDate.plusWeeks(1)
       caseNoteId() isEqualTo null
       dpsCaseNoteId() isEqualTo UUID.fromString("c94f5885-9036-409e-9743-10ce07088748")
+      paid() isEqualTo false
     }
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocationId)
     verifyNoMoreInteractions(outboundEventsService)
@@ -192,6 +195,7 @@ class PrisonerSuspensionsServiceTest {
       startDate() isEqualTo allocation.startDate.plusWeeks(1)
       caseNoteId() isEqualTo null
       dpsCaseNoteId() isEqualTo UUID.fromString("c94f5885-9036-409e-9743-10ce07088748")
+      paid() isEqualTo false
     }
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocationId)
     verifyNoMoreInteractions(outboundEventsService)
@@ -232,6 +236,7 @@ class PrisonerSuspensionsServiceTest {
       startDate() isEqualTo allocation.startDate.plusWeeks(1)
       caseNoteId() isEqualTo null
       dpsCaseNoteId() isEqualTo UUID.fromString("c94f5885-9036-409e-9743-10ce07088748")
+      paid() isEqualTo false
     }
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocationId)
     verifyNoMoreInteractions(outboundEventsService)
@@ -269,6 +274,7 @@ class PrisonerSuspensionsServiceTest {
     assertThat(allocationCaptor.firstValue.first().plannedSuspension()).isNotNull
     with(allocationCaptor.firstValue.first().plannedSuspension()!!) {
       startDate() isEqualTo allocation.startDate.plusWeeks(1)
+      paid() isEqualTo false
     }
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocationId)
     verifyNoMoreInteractions(outboundEventsService)
@@ -276,7 +282,7 @@ class PrisonerSuspensionsServiceTest {
   }
 
   @Test
-  fun `an existing planned suspension is updated if it hasnt started yet`() {
+  fun `an existing planned suspension is updated if it hasn't started yet`() {
     val allocation = allocation().apply {
       addPlannedSuspension(
         PlannedSuspension(
@@ -311,6 +317,7 @@ class PrisonerSuspensionsServiceTest {
       newSuspension isEqualTo originalSuspension
       startDate() isEqualTo allocation.startDate
       endDate() isEqualTo null
+      paid() isEqualTo false
     }
 
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocationId)
@@ -369,7 +376,10 @@ class PrisonerSuspensionsServiceTest {
 
     with(allocationCaptor.firstValue.first()) {
       status(PrisonerStatus.PENDING) isBool true
-      plannedSuspension()!!.startDate() isEqualTo LocalDate.now().plusDays(1)
+      with(plannedSuspension()!!) {
+        startDate() isEqualTo LocalDate.now().plusDays(1)
+        paid() isEqualTo false
+      }
     }
 
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocationId)
@@ -574,8 +584,11 @@ class PrisonerSuspensionsServiceTest {
 
     assertThat(allocationCaptor.firstValue.first().plannedSuspension()).isNotNull
     with(allocationCaptor.firstValue.first()) {
-      prisonerStatus == PrisonerStatus.SUSPENDED
-      plannedSuspension()!!.paid() isEqualTo false
+      prisonerStatus isEqualTo PrisonerStatus.ACTIVE
+      with(plannedSuspension()!!) {
+        startDate() isEqualTo suspendPrisonerRequest.suspendFrom
+        paid() isEqualTo false
+      }
     }
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocationId)
     verifyNoMoreInteractions(outboundEventsService)
@@ -583,7 +596,7 @@ class PrisonerSuspensionsServiceTest {
   }
 
   @Test
-  fun `suspension with prisoner status SUSPENDED_WITH_PAY gets set`() {
+  fun `suspension with prisoner status SUSPENDED_WITH_PAY gets set when activity is paid`() {
     val allocation = allocation()
     val allocationId = allocation.allocationId
     val prisonCode = allocation.activitySchedule.activity.prisonCode
@@ -603,8 +616,11 @@ class PrisonerSuspensionsServiceTest {
 
     assertThat(allocationCaptor.firstValue.first().plannedSuspension()).isNotNull
     with(allocationCaptor.firstValue.first()) {
-      prisonerStatus == PrisonerStatus.SUSPENDED_WITH_PAY
-      plannedSuspension()!!.paid() isEqualTo true
+      prisonerStatus isEqualTo PrisonerStatus.ACTIVE
+      with(plannedSuspension()!!) {
+        startDate() isEqualTo suspendPrisonerRequest.suspendFrom
+        paid() isEqualTo true
+      }
     }
 
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocationId)
@@ -613,7 +629,41 @@ class PrisonerSuspensionsServiceTest {
   }
 
   @Test
-  fun `unsuspension of a paid suspenson is successful`() {
+  fun `suspension with prisoner status SUSPENDED_WITH_PAY gets set when activity is unpaid and suspension starts today`() {
+    val allocation = activitySchedule(activityEntity(paid = false, noPayBands = true), paid = false, noExclusions = true).allocations().first()
+    val allocationId = allocation.allocationId
+    val prisonCode = allocation.activitySchedule.activity.prisonCode
+
+    val suspendPrisonerRequest = SuspendPrisonerRequest(
+      prisonerNumber = "A1234AA",
+      allocationIds = listOf(allocation.allocationId),
+      suspendFrom = allocation.startDate,
+      status = PrisonerStatus.SUSPENDED_WITH_PAY,
+    )
+
+    whenever(allocationRepository.findAllById(setOf(allocationId))).thenReturn(listOf(allocation))
+
+    service.suspend(prisonCode, suspendPrisonerRequest, "user")
+
+    verify(allocationRepository).saveAllAndFlush(allocationCaptor.capture())
+
+    assertThat(allocationCaptor.firstValue.first().plannedSuspension()).isNotNull
+    with(allocationCaptor.firstValue.first()) {
+      prisonerStatus isEqualTo PrisonerStatus.SUSPENDED
+      with(plannedSuspension()!!) {
+        startDate() isEqualTo suspendPrisonerRequest.suspendFrom
+        paid() isEqualTo false
+      }
+    }
+
+    verify(attendanceSuspensionDomainService).suspendFutureAttendancesForAllocation(any(), eq(allocation), eq(false))
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocationId)
+    verifyNoMoreInteractions(outboundEventsService)
+    verifyNoInteractions(caseNotesApiClient)
+  }
+
+  @Test
+  fun `unsuspension of a paid suspension is successful`() {
     val allocation = allocation(withPlannedSuspensions = true, withPaidSuspension = true)
     val allocationId = allocation.allocationId
     val prisonCode = allocation.activitySchedule.activity.prisonCode

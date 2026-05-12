@@ -79,11 +79,13 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
       )
 
       with(attendanceList!!) {
-        assertThat(size).isEqualTo(5)
-        assertThat(first().prisonerNumber).isEqualTo(prisonerNumber)
-        assertThat(first().scheduleInstanceId).isEqualTo(1)
-        assertThat(first().attendanceReason).isNull()
-        assertThat(first().comment).isNull()
+        assertThat(this.map { it.scheduleInstanceId }.toSet()).isEqualTo(setOf(1L, 2L, 3L, 4L , 5L))
+
+        this.forEach {
+          assertThat(it.prisonerNumber).isEqualTo(prisonerNumber)
+          assertThat(it.attendanceReason).isNull()
+          assertThat(it.comment).isNull()
+        }
       }
     }
 
