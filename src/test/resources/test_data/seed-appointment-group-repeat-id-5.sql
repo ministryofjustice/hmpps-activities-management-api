@@ -8,7 +8,7 @@ INSERT INTO appointment (appointment_id, appointment_series_id, sequence_number,
     (10, 5, 1, 'TPR', 'OIC', 1, 123, '44444444-1111-2222-3333-444444444444', false, now()::date - 3, '09:00', '10:30', 'Appointment level comment', now()::timestamp, 'TEST.USER'),
     (11, 5, 2, 'TPR', 'OIC', 1, 123, '44444444-1111-2222-3333-444444444444', false, now()::date + 4, '09:00', '10:30', 'Appointment level comment', now()::timestamp, 'TEST.USER'),
     (12, 5, 3, 'TPR', 'OIC', 1, 123, '44444444-1111-2222-3333-444444444444', false, now()::date + 11, '09:00', '10:30', 'Appointment level comment', now()::timestamp, 'TEST.USER'),
-    (13, 5, 4, 'TPR', 'OIC', 1, 123, '44444444-1111-2222-3333-444444444444', false, now()::date + 18, '09:00', '10:30', 'Appointment level comment', now()::timestamp, 'TEST.USER');
+    (13, 5, 4, 'TPR', 'OIC', 1, 123, '44444444-1111-2222-3333-444444444444', false, now()::date + 18, '09:00', '09:45', 'Appointment level comment', now()::timestamp, 'TEST.USER');
 
 INSERT INTO appointment_attendee (appointment_attendee_id, appointment_id, prisoner_number, booking_id) VALUES
     (20, 10, 'A1234BC', 456),
