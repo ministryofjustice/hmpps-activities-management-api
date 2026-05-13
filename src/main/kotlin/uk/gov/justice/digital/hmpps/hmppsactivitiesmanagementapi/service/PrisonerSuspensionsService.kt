@@ -43,11 +43,9 @@ class PrisonerSuspensionsService(
       require(it.onOrAfter(LocalDate.now())) { "Suspension start date must be on or after today's date" }
     }
 
-    require(listOf(PrisonerStatus.SUSPENDED, PrisonerStatus.SUSPENDED_WITH_PAY).contains(request.status)) {
+    require(request.status in setOf(PrisonerStatus.SUSPENDED, PrisonerStatus.SUSPENDED_WITH_PAY)) {
       "Only 'SUSPENDED' or 'SUSPENDED_WITH_PAY' are allowed for status"
     }
-
-    val issuePayment = request.status == PrisonerStatus.SUSPENDED_WITH_PAY
 
     val impactedAttendanceIds = transactionHandler.newSpringTransaction {
       val allocations = allocationRepository.findAllById(allocationIds)
@@ -62,28 +60,7 @@ class PrisonerSuspensionsService(
         request.suspensionCaseNote?.let { createCaseNote(prisonCode, prisonerNumber, suspendFrom, it, allocations) }
       val now = LocalDateTime.now()
       val attendanceIds = allocations.flatMap { allocation ->
-        allocation.plannedSuspension().let { plannedSuspension ->
-          plannedSuspension?.plan(suspendFrom, now, byWhom, mayBeCaseNoteId)
-            ?: allocation.addPlannedSuspension(
-              PlannedSuspension(
-                allocation = allocation,
-                plannedStartDate = maxOf(suspendFrom, allocation.startDate),
-                plannedBy = byWhom,
-                plannedAt = now,
-                dpsCaseNoteId = mayBeCaseNoteId,
-                paid = issuePayment,
-              ),
-            )
-        }
-
-        allocation.takeIf { it.status(PrisonerStatus.ACTIVE) && it.isCurrentlySuspended() }?.let { alloc ->
-          alloc.activatePlannedSuspension(request.status)
-          attendanceSuspensionDomainService.suspendFutureAttendancesForAllocation(
-            dateTime = LocalDateTime.now(),
-            allocation = alloc,
-            issuePayment = issuePayment,
-          ).map(Attendance::attendanceId)
-        } ?: emptyList()
+        planSuspension(allocation, suspendFrom, now, byWhom, mayBeCaseNoteId, request.status)
       }
 
       allocationRepository.saveAllAndFlush(allocations)
@@ -91,6 +68,39 @@ class PrisonerSuspensionsService(
     }
 
     publishChangesFor(allocationIds, impactedAttendanceIds)
+  }
+
+  private fun planSuspension(
+    allocation: Allocation,
+    suspendFrom: LocalDate,
+    now: LocalDateTime,
+    byWhom: String,
+    caseNoteId: UUID?,
+    requestedStatus: PrisonerStatus,
+  ): List<Long> {
+    val status = if (allocation.activitySchedule.isPaid()) requestedStatus else PrisonerStatus.SUSPENDED
+    val issuePayment = status == PrisonerStatus.SUSPENDED_WITH_PAY && allocation.activitySchedule.isPaid()
+
+    allocation.plannedSuspension()?.plan(suspendFrom, now, byWhom, caseNoteId)
+      ?: allocation.addPlannedSuspension(
+        PlannedSuspension(
+          allocation = allocation,
+          plannedStartDate = maxOf(suspendFrom, allocation.startDate),
+          plannedBy = byWhom,
+          plannedAt = now,
+          dpsCaseNoteId = caseNoteId,
+          paid = issuePayment,
+        ),
+      )
+
+    return allocation.takeIf { it.status(PrisonerStatus.ACTIVE) && it.isCurrentlySuspended() }?.let { alloc ->
+      alloc.activatePlannedSuspension(status)
+      attendanceSuspensionDomainService.suspendFutureAttendancesForAllocation(
+        dateTime = now,
+        allocation = alloc,
+        issuePayment = issuePayment,
+      ).map(Attendance::attendanceId)
+    } ?: emptyList()
   }
 
   private fun Collection<Allocation>.checkAllSuspensionStartDates(suspendStartDate: LocalDate) {
