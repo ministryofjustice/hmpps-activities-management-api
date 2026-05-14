@@ -14,6 +14,7 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.Appointment
@@ -34,6 +35,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloa
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.clearCaseloadIdFromRequestHeader
 import java.security.Principal
 import java.time.LocalDate
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 import java.util.*
 
 class AppointmentServiceUpdateTest {
@@ -198,6 +201,24 @@ class AppointmentServiceUpdateTest {
 
     assertThatThrownBy { service.updateAppointment(appointment.appointmentId, request, principal) }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("You cannot modify more than 200 appointment instances for this number of attendees")
+  }
+
+  @Test
+  fun `updating start time fails if another appointment in the series would not have start time before end time`() {
+    val appointment = expectRepeatAppointment()
+    val startTime = LocalTime.of(10, 0)
+    appointment.appointmentSeries.appointments()[3].endTime = startTime
+
+    val request = AppointmentUpdateRequest(startTime = startTime, applyTo = ApplyTo.THIS_AND_ALL_FUTURE_APPOINTMENTS)
+    val expectedDate = LocalDate.now().plusDays(4).format(DateTimeFormatter.ofPattern("dd-MM-yyyy"))
+
+    assertThatThrownBy {
+      service.updateAppointment(appointment.appointmentId, request, principal)
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Appointment on $expectedDate would have a start time (10:00) on or after the end time (10:00)")
+
+    verifyNoInteractions(appointmentUpdateDomainService)
+    verifyNoInteractions(updateAppointmentsJob)
   }
 
   private fun expectRepeatAppointment(): Appointment {
