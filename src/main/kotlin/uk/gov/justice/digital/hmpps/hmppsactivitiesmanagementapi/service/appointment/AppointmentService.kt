@@ -20,6 +20,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCasel
 import java.security.Principal
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeries as AppointmentSeriesModel
 
 @Service
@@ -80,16 +81,18 @@ class AppointmentService(
     val appointment = appointmentRepository.findOrThrowNotFound(appointmentId)
     val appointmentSeries = appointment.appointmentSeries
     val appointmentsToUpdate = appointmentSeries.applyToAppointments(appointment, request.applyTo, "update", false)
-    checkCaseloadAccess(appointmentSeries.prisonCode)
 
-    if (request.categoryCode != null) {
-      appointmentCategoryService.getAll()
-        .also {
-          require(it.containsKey(request.categoryCode)) {
-            "Appointment Category with code ${request.categoryCode} not found or is not active"
-          }
-        }
+    appointmentsToUpdate.forEach {
+      val startTime = request.startTime ?: it.startTime
+      val endTime = request.endTime ?: it.endTime
+      require(endTime == null || endTime > startTime) {
+        val startDateStr = it.startDate.format(DateTimeFormatter.ofPattern("dd-MM-yyyy"))
+        "Appointment on $startDateStr would have a start time ($startTime) on or after the end time ($endTime)"
+      }
     }
+
+    checkCaseloadAccess(appointmentSeries.prisonCode)
+    validateUpdateRequest(request, appointmentSeries.prisonCode, appointmentSeries.appointmentType)
 
     if (request.internalLocationId != null) {
       locationService.getLocationDetailsForAppointmentsMap(appointmentSeries.prisonCode)
@@ -175,6 +178,34 @@ class AppointmentService(
     }
 
     return updatedAppointmentSeries
+  }
+
+  private fun validateUpdateRequest(request: AppointmentUpdateRequest, prisonCode: String, appointmentType: AppointmentType) {
+    request.categoryCode?.let { code ->
+      require(appointmentCategoryService.getAll().containsKey(code)) {
+        "Appointment Category with code $code not found or is not active"
+      }
+    }
+
+    request.internalLocationId?.let { locationId ->
+      require(locationService.getLocationDetailsForAppointmentsMap(prisonCode).containsKey(locationId)) {
+        "Appointment location with Nomis location id $locationId not found in prison '$prisonCode'"
+      }
+    }
+
+    request.dpsLocationId?.let { locationId ->
+      require(locationService.getLocationDetailsForAppointmentsMapByDpsLocationId(prisonCode).containsKey(locationId)) {
+        "Appointment location with DPS location id $locationId not found in prison '$prisonCode'"
+      }
+    }
+
+    require(request.removePrisonerNumbers.isNullOrEmpty() || appointmentType != AppointmentType.INDIVIDUAL) {
+      "Cannot remove prisoners from an individual appointment"
+    }
+
+    require(request.startDate == null || request.startDate <= LocalDate.now().plusDays(maxStartDateOffsetDays)) {
+      "Start date cannot be more than $maxStartDateOffsetDays days into the future"
+    }
   }
 
   fun cancelAppointment(appointmentId: Long, request: AppointmentCancelRequest, principal: Principal): AppointmentSeriesModel {
