@@ -15,7 +15,6 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.CsvSource
 import org.junit.jupiter.params.provider.MethodSource
-import org.junit.jupiter.params.provider.ValueSource
 import org.mockito.ArgumentMatchers.anyList
 import org.mockito.MockitoAnnotations.openMocks
 import org.mockito.kotlin.any
@@ -3749,14 +3748,13 @@ class ActivityServiceTest {
       verifyNoInteractions(locationService)
     }
 
-    @ParameterizedTest
-    @ValueSource(booleans = [true, false])
-    fun `paid status is unchanged and throws an exception for a prison paid (paid = true) external activity`(paid: Boolean) {
+    @Test
+    fun `paid status is unchanged and throws an exception for a prison paid (paid = true) external activity when request pais is false`() {
       assertThatThrownBy {
         service().updateActivity(
           MOORLAND_PRISON_CODE,
           1,
-          ActivityUpdateRequest(paid = paid),
+          ActivityUpdateRequest(paid = false),
           "TEST",
         )
       }
@@ -3768,7 +3766,7 @@ class ActivityServiceTest {
     }
 
     @Test
-    fun `pay rates can be updated for a prison paid (paid = true) external activity`() {
+    fun `pay rates can be updated for a prison paid (paid = true) external activity when request paid is null`() {
       whenever(prisonPayBandRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh())
       whenever(activityRepository.saveAndFlush(any<ActivityEntity>())).thenReturn(externalActivity)
 
@@ -3776,6 +3774,33 @@ class ActivityServiceTest {
         MOORLAND_PRISON_CODE,
         1,
         ActivityUpdateRequest(
+          pay = listOf(
+            ActivityPayCreateRequest(
+              incentiveNomisCode = "123",
+              incentiveLevel = "level",
+              payBandId = 1,
+              rate = 100,
+            ),
+          ),
+        ),
+        "TEST",
+      )
+
+      assertThat(externalActivity.paid).isTrue
+      assertThat(externalActivity.activityPay()).isNotEmpty()
+      verify(activityRepository).saveAndFlush(any())
+    }
+
+    @Test
+    fun `pay rates can be updated for a prison paid (paid = true) external activity when request paid is true`() {
+      whenever(prisonPayBandRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh())
+      whenever(activityRepository.saveAndFlush(any<ActivityEntity>())).thenReturn(externalActivity)
+
+      service().updateActivity(
+        MOORLAND_PRISON_CODE,
+        1,
+        ActivityUpdateRequest(
+          paid = true,
           pay = listOf(
             ActivityPayCreateRequest(
               incentiveNomisCode = "123",
