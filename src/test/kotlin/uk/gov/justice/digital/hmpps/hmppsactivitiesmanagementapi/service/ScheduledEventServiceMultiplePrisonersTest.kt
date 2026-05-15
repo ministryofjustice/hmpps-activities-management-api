@@ -797,7 +797,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
 
     @ParameterizedTest(name = "includeExternalActivities = {0}")
     @ValueSource(booleans = [true, false])
-    fun `outside work activities from DB are always filtered out regardless of includeExternalActivities`(includeExternalActivities: Boolean) {
+    fun `outside work activities from DB are always filtered out for EA enabled prisons regardless of includeExternalActivities`(includeExternalActivities: Boolean) {
       setupRolledOutPrisonMock(
         activitiesRolledOut = true,
         appointmentsRolledOut = true,
@@ -948,14 +948,14 @@ class ScheduledEventServiceMultiplePrisonersTest {
       "false, true",
       "false, false",
     )
-    fun `external movements API is not called and outside work activities from DB are excluded when EA is not rolled out`(
+    fun `external movements API is not called and outside work activities from DB are included when EA is not rolled out`(
       externalActivitiesRolledOut: Boolean,
       includeExternalActivities: Boolean,
     ) {
       setupRolledOutPrisonMock(
         activitiesRolledOut = true,
         appointmentsRolledOut = true,
-        externalActivitiesRolledOut = externalActivitiesRolledOut,
+        externalActivitiesRolledOut = false,
         prisonLive = true,
       )
 
@@ -971,22 +971,27 @@ class ScheduledEventServiceMultiplePrisonersTest {
         ),
       ).thenReturn(listOf(internalActivity, outsideWorkActivity))
 
-      val scheduledEvents = service.getScheduledEventsForMultiplePrisoners(
-        prisonCode,
-        prisonerNumbers,
-        today,
-        timeSlot,
-        appointmentCategories(),
-        includeExternalActivities = includeExternalActivities,
+      val scheduledEvents = requireNotNull(
+        service.getScheduledEventsForMultiplePrisoners(
+          prisonCode,
+          prisonerNumbers,
+          today,
+          timeSlot,
+          appointmentCategories(),
+          includeExternalActivities = includeExternalActivities,
+        ),
       )
 
       verifyBlocking(externalMovementsApiClient, never()) {
         getExternalMovements(any(), any(), any(), any())
       }
 
-      val activities = requireNotNull(scheduledEvents).activities.orEmpty().single()
-      assertThat(activities.outsidePrison).isFalse()
-      assertThat(activities.scheduledInstanceId).isEqualTo(internalActivity.scheduledInstanceId)
+      val activities = scheduledEvents.activities.orEmpty()
+      assertThat(activities).hasSize(2)
+      assertThat(activities.map { it.scheduledInstanceId }).containsExactlyInAnyOrder(
+        internalActivity.scheduledInstanceId,
+        outsideWorkActivity.scheduledInstanceId,
+      )
     }
   }
 }
