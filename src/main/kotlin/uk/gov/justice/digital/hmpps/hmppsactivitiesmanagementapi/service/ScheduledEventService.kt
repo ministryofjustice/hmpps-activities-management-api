@@ -7,6 +7,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.AdjudicationsHearingAdapter
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.externalmovementsapi.api.ExternalMovementsApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.OffenderAdjudicationHearing
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.PrisonerSchedule
@@ -28,6 +29,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.multiplePr
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.multiplePrisonerTransfersToScheduledEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.multiplePrisonerVisitsToScheduledEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.nomisAdjudicationsToScheduledEvents
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toScheduledEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transformAppointmentInstanceToScheduledEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transformPrisonerScheduledActivityToScheduledEvents
 import java.time.LocalDate
@@ -42,6 +44,7 @@ class ScheduledEventService(
   private val prisonRegimeService: PrisonRegimeService,
   private val adjudicationsHearingAdapter: AdjudicationsHearingAdapter,
   private val locationService: LocationService,
+  private val externalMovementsApiClient: ExternalMovementsApiClient,
 ) {
   /**
    * Get the scheduled events for a list of prisoner numbers for one date and optional time slot
@@ -55,6 +58,7 @@ class ScheduledEventService(
     date: LocalDate,
     timeSlot: TimeSlot? = null,
     appointmentCategories: Map<String, AppointmentCategory>,
+    includeExternalActivities: Boolean = false,
   ): PrisonerScheduledEvents? = runBlocking {
     val eventPriorities = withContext(Dispatchers.IO) { prisonRegimeService.getEventPrioritiesForPrison(prisonCode) }
     val prisonLocations = prisonApiClient.getEventLocationsForPrison(prisonCode)
@@ -101,14 +105,33 @@ class ScheduledEventService(
         )
       }
       .apply {
-        // If activities is enabled replace the empty list with the details from the local database
         if (prisonRolledOut.activitiesRolledOut) {
+          val includeExternalActivitiesFromTaps = prisonRolledOut.externalActivitiesRolledOut && includeExternalActivities
+
+          val allScheduledActivities = getMultiplePrisonerScheduledActivities(prisonCode, prisonerNumbers, date, timeSlot)
+
+          val scheduledActivities = allScheduledActivities.filterNot { it.outsideWork }
+
           activities = transformPrisonerScheduledActivityToScheduledEvents(
             prisonCode,
             eventPriorities,
-            getMultiplePrisonerScheduledActivities(prisonCode, prisonerNumbers, date, timeSlot),
+            scheduledActivities,
             prisonLocations,
           )
+
+          if (includeExternalActivitiesFromTaps) {
+            val externalActivities = externalMovementsApiClient.getExternalMovements(
+              prisonCode,
+              prisonerNumbers,
+              date.atStartOfDay(),
+              date.plusDays(1).atStartOfDay(),
+            ).content.toScheduledEvents(
+              prisonCode,
+              eventPriorities,
+            )
+
+            activities = activities.orEmpty() + externalActivities
+          }
         }
 
         // If appointments is enabled replace the empty list with the details from the local database

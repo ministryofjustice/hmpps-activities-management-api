@@ -7,6 +7,9 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
+import org.junit.jupiter.params.provider.ValueSource
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.doReturn
@@ -20,6 +23,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudica
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.Hearing
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.HearingsResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.ManageAdjudicationsApiFacade
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.externalmovementsapi.api.ExternalMovementsApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.externalmovementsapi.model.ExternalMovement
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.externalmovementsapi.model.ExternalMovementDescription
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.externalmovementsapi.model.ExternalMovementDetail
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.externalmovementsapi.model.ExternalMovementStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.externalmovementsapi.model.ExternalMovementsResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api.NomisDpsLocationMapping
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api.NomisMappingAPIClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
@@ -67,6 +76,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
     nomisMappingAPIClient = nomisMappingAPIClient,
   )
   private val locationService: LocationService = mock()
+  private val externalMovementsApiClient: ExternalMovementsApiClient = mock()
 
   private val service = ScheduledEventService(
     prisonApiClient,
@@ -76,6 +86,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
     prisonRegimeService,
     adjudicationsHearingAdapter,
     locationService,
+    externalMovementsApiClient,
   )
 
   val now: LocalDateTime = LocalDate.now().atStartOfDay().plusHours(4)
@@ -111,7 +122,12 @@ class ScheduledEventServiceMultiplePrisonersTest {
 
   // --- Private utility functions used to set up the mocked responses ---
 
-  private fun setupRolledOutPrisonMock(activitiesRolledOut: Boolean, appointmentsRolledOut: Boolean, prisonLive: Boolean) {
+  private fun setupRolledOutPrisonMock(
+    activitiesRolledOut: Boolean,
+    appointmentsRolledOut: Boolean,
+    externalActivitiesRolledOut: Boolean,
+    prisonLive: Boolean,
+  ) {
     val prisonCode = "MDI"
 
     whenever(rolloutPrisonRepository.getByPrisonCode(prisonCode))
@@ -120,6 +136,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
           prisonCode = prisonCode,
           activitiesRolledOut = activitiesRolledOut,
           appointmentsRolledOut = appointmentsRolledOut,
+          externalActivitiesRolledOut = externalActivitiesRolledOut,
           maxDaysToExpiry = 21,
           prisonLive = prisonLive,
         ),
@@ -306,7 +323,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
       val timeSlot: TimeSlot = TimeSlot.AM
 
       setupMultiplePrisonerApiMocks(prisonerNumbers, today, timeSlot)
-      setupRolledOutPrisonMock(true, false, true)
+      setupRolledOutPrisonMock(true, false, false, true)
 
       val activityEntity1 = activityFromDbInstance(sessionDate = today)
       val activityEntity2 = activityFromDbInstance(sessionDate = today, prisonerNumber = "B2222BB", attendanceStatus = null)
@@ -463,7 +480,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
       val timeSlot: TimeSlot = TimeSlot.AM
 
       setupMultiplePrisonerApiMocks(prisonerNumbers, tomorrow, timeSlot)
-      setupRolledOutPrisonMock(true, false, true)
+      setupRolledOutPrisonMock(true, false, false, true)
 
       val activityEntity = activityFromDbInstance(sessionDate = tomorrow)
       whenever(
@@ -583,7 +600,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
       val timeSlot: TimeSlot = TimeSlot.AM
 
       setupMultiplePrisonerApiMocks(prisonerNumbers, today, timeSlot)
-      setupRolledOutPrisonMock(true, true, true)
+      setupRolledOutPrisonMock(true, true, false, true)
 
       val activityEntity = activityFromDbInstance(sessionDate = today)
       whenever(
@@ -712,7 +729,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
 
     @BeforeEach
     fun beforeEach() {
-      setupRolledOutPrisonMock(true, true, true)
+      setupRolledOutPrisonMock(true, true, false, true)
 
       whenever(prisonRegimeService.getPrisonRegimesByDaysOfWeek(any())).thenReturn(
         mapOf(
@@ -757,6 +774,219 @@ class ScheduledEventServiceMultiplePrisonersTest {
       verifyBlocking(prisonApiClient, never()) {
         getExternalTransfersOnDateAsync(prisonCode, prisonerNumbers, tomorrow)
       }
+    }
+  }
+
+  @Nested
+  @DisplayName("External activities from External Movements API")
+  inner class ExternalActivitiesFromExternalMovementsApi {
+    private val prisonCode = "MDI"
+    private val prisonerNumbers = setOf("G4793VF", "G1234GK")
+    private val today = LocalDate.now()
+    private val timeSlot: TimeSlot = TimeSlot.AM
+
+    @BeforeEach
+    fun beforeEach() {
+      whenever(prisonRegimeService.getPrisonRegimesByDaysOfWeek(any())).thenReturn(
+        mapOf(DayOfWeek.entries.toSet() to prisonRegime),
+      )
+      whenever(prisonRegimeService.getEventPrioritiesForPrison(prisonCode))
+        .thenReturn(EventPriorities(EventType.entries.associateWith { listOf(Priority(it.defaultPriority)) }))
+      setupMultiplePrisonerApiMocks(prisonerNumbers, today, timeSlot)
+    }
+
+    @ParameterizedTest(name = "includeExternalActivities = {0}")
+    @ValueSource(booleans = [true, false])
+    fun `outside work activities from DB are always filtered out regardless of includeExternalActivities`(includeExternalActivities: Boolean) {
+      setupRolledOutPrisonMock(
+        activitiesRolledOut = true,
+        appointmentsRolledOut = true,
+        externalActivitiesRolledOut = true,
+        prisonLive = true,
+      )
+
+      if (includeExternalActivities) {
+        externalMovementsApiClient.stub {
+          on {
+            runBlocking {
+              getExternalMovements(any(), any(), any(), any())
+            }
+          } doReturn ExternalMovementsResponse(content = emptyList())
+        }
+      }
+
+      val internalActivity = activityFromDbInstance(sessionDate = today, outsideWork = false)
+      val externalActivity = activityFromDbInstance(sessionDate = today, outsideWork = true, scheduledInstanceId = 2)
+
+      whenever(
+        prisonerScheduledActivityRepository.getScheduledActivitiesForPrisonerListAndDate(
+          prisonCode,
+          prisonerNumbers,
+          today,
+          timeSlot,
+        ),
+      ).thenReturn(listOf(internalActivity, externalActivity))
+
+      val scheduledEvents = service.getScheduledEventsForMultiplePrisoners(
+        prisonCode,
+        prisonerNumbers,
+        today,
+        timeSlot,
+        appointmentCategories(),
+        includeExternalActivities = includeExternalActivities,
+      )
+
+      val dbActivities = requireNotNull(scheduledEvents)
+        .activities
+        .orEmpty()
+        .filter { it.eventSource == "SAA" }
+
+      assertThat(dbActivities.single().scheduledInstanceId).isEqualTo(internalActivity.scheduledInstanceId)
+      assertThat(dbActivities.none { it.scheduledInstanceId == externalActivity.scheduledInstanceId }).isTrue()
+    }
+
+    @Test
+    fun `returns internal activities plus external activities from external movement API when EA is enabled and includeExternalActivities is true`() {
+      setupRolledOutPrisonMock(
+        activitiesRolledOut = true,
+        appointmentsRolledOut = true,
+        externalActivitiesRolledOut = true,
+        prisonLive = true,
+      )
+
+      val internalActivity = activityFromDbInstance(sessionDate = today, outsideWork = false)
+      whenever(
+        prisonerScheduledActivityRepository.getScheduledActivitiesForPrisonerListAndDate(
+          prisonCode,
+          prisonerNumbers,
+          today,
+          timeSlot,
+        ),
+      ).thenReturn(listOf(internalActivity))
+
+      val externalMovement = ExternalMovement(
+        id = UUID.randomUUID(),
+        prisonerNumber = "G4793VF",
+        description = ExternalMovementDescription(full = "Standard ROTL", short = "Accommodation-related", code = "FB"),
+        start = LocalDateTime.of(2026, 5, 10, 9, 0),
+        end = LocalDateTime.of(2026, 5, 10, 17, 0),
+        status = ExternalMovementStatus(code = "SCHEDULED", description = "Scheduled"),
+        detail = ExternalMovementDetail(uiUrl = "TestUrl", requiredRoles = setOf("TEST_ROLE")),
+        isSensitive = false,
+      )
+
+      externalMovementsApiClient.stub {
+        on {
+          runBlocking {
+            getExternalMovements(any(), any(), any(), any())
+          }
+        } doReturn ExternalMovementsResponse(content = listOf(externalMovement))
+      }
+
+      val scheduledEvents = service.getScheduledEventsForMultiplePrisoners(
+        prisonCode,
+        prisonerNumbers,
+        today,
+        timeSlot,
+        appointmentCategories(),
+        includeExternalActivities = true,
+      )
+
+      val activities = requireNotNull(scheduledEvents).activities.orEmpty()
+
+      val external = activities.single { it.eventSource == "EXTERNAL_MOVEMENTS_API" }
+      assertThat(external.summary).isEqualTo("Accommodation-related ROTL")
+      assertThat(external.categoryDescription).isEqualTo("Standard ROTL")
+      assertThat(external.categoryCode).isEqualTo("FB")
+      assertThat(external.outsidePrison).isTrue()
+      assertThat(external.startTime).isEqualTo(LocalTime.of(9, 0))
+      assertThat(external.endTime).isEqualTo(LocalTime.of(17, 0))
+
+      val internal = activities.single { it.eventSource == "SAA" }
+      assertThat(internal.outsidePrison).isFalse()
+    }
+
+    @Test
+    fun `returns only internal activities when includeExternalActivities is false even if EA is enabled`() {
+      setupRolledOutPrisonMock(
+        activitiesRolledOut = true,
+        appointmentsRolledOut = true,
+        externalActivitiesRolledOut = true,
+        prisonLive = true,
+      )
+
+      val internalActivity = activityFromDbInstance(sessionDate = today, outsideWork = false)
+      whenever(
+        prisonerScheduledActivityRepository.getScheduledActivitiesForPrisonerListAndDate(
+          prisonCode,
+          prisonerNumbers,
+          today,
+          timeSlot,
+        ),
+      ).thenReturn(listOf(internalActivity))
+
+      val scheduledEvents = service.getScheduledEventsForMultiplePrisoners(
+        prisonCode,
+        prisonerNumbers,
+        today,
+        timeSlot,
+        appointmentCategories(),
+        includeExternalActivities = false,
+      )
+
+      verifyBlocking(externalMovementsApiClient, never()) {
+        getExternalMovements(any(), any(), any(), any())
+      }
+
+      val activities = requireNotNull(scheduledEvents).activities.orEmpty().single()
+      assertThat(activities.eventSource).isEqualTo("SAA")
+      assertThat(activities.outsidePrison).isFalse()
+    }
+
+    @ParameterizedTest(name = "EA rolled out = {0}, includeExternalActivities = {1}")
+    @CsvSource(
+      "false, true",
+      "false, false",
+    )
+    fun `external movements API is not called and outside work activities from DB are excluded when EA is not rolled out`(
+      externalActivitiesRolledOut: Boolean,
+      includeExternalActivities: Boolean,
+    ) {
+      setupRolledOutPrisonMock(
+        activitiesRolledOut = true,
+        appointmentsRolledOut = true,
+        externalActivitiesRolledOut = externalActivitiesRolledOut,
+        prisonLive = true,
+      )
+
+      val internalActivity = activityFromDbInstance(sessionDate = today, outsideWork = false)
+      val outsideWorkActivity = activityFromDbInstance(sessionDate = today, outsideWork = true, scheduledInstanceId = 2)
+
+      whenever(
+        prisonerScheduledActivityRepository.getScheduledActivitiesForPrisonerListAndDate(
+          prisonCode,
+          prisonerNumbers,
+          today,
+          timeSlot,
+        ),
+      ).thenReturn(listOf(internalActivity, outsideWorkActivity))
+
+      val scheduledEvents = service.getScheduledEventsForMultiplePrisoners(
+        prisonCode,
+        prisonerNumbers,
+        today,
+        timeSlot,
+        appointmentCategories(),
+        includeExternalActivities = includeExternalActivities,
+      )
+
+      verifyBlocking(externalMovementsApiClient, never()) {
+        getExternalMovements(any(), any(), any(), any())
+      }
+
+      val activities = requireNotNull(scheduledEvents).activities.orEmpty().single()
+      assertThat(activities.outsidePrison).isFalse()
+      assertThat(activities.scheduledInstanceId).isEqualTo(internalActivity.scheduledInstanceId)
     }
   }
 }

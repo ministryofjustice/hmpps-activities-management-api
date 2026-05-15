@@ -6,12 +6,19 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.Hearing
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.HearingSummaryResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.HearingsResponse
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.externalmovementsapi.model.ExternalMovement
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.externalmovementsapi.model.ExternalMovementDescription
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.externalmovementsapi.model.ExternalMovementDetail
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.externalmovementsapi.model.ExternalMovementStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.externalmovementsapi.model.ExternalMovementsResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api.NomisDpsLocationMapping
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
@@ -1133,5 +1140,139 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
         },
       ),
     )
+  }
+
+  @Nested
+  @DisplayName("External activities from External Movement API")
+  inner class ExternalActivitiesFromExternalMovementApi {
+    private val prisonCode = "MDI"
+    private val prisonerNumbers = setOf("A11111A", "A22222A")
+    private val date = LocalDate.now()
+
+    @BeforeEach
+    fun setUp() {
+      val activityLocation1 = internalLocation(
+        1L,
+        prisonCode = prisonCode,
+        description = "MDI-ACT-LOC1",
+        userDescription = "Activity Location 1",
+      )
+      prisonApiMockServer.stubGetScheduledAppointmentsForPrisonerNumbers(prisonCode, date)
+      prisonApiMockServer.stubGetScheduledVisitsForPrisonerNumbers(prisonCode, date)
+      prisonApiMockServer.stubGetCourtEventsForPrisonerNumbers(prisonCode, date)
+      prisonApiMockServer.stubGetExternalTransfersOnDate(prisonCode, prisonerNumbers, date)
+      prisonApiMockServer.stubGetEventLocations(prisonCode, listOf(activityLocation1))
+      adjudicationsMock(prisonCode, date, prisonerNumbers.toList())
+    }
+
+    @Test
+    fun `returns external activities from external movement API when EA is rolled out and includeExternalActivities is true`() {
+      val externalMovement = ExternalMovement(
+        id = UUID.randomUUID(),
+        prisonerNumber = "A11111A",
+        description = ExternalMovementDescription(full = "Standard ROTL", short = "Accommodation-related", code = "FB"),
+        start = date.atTime(9, 0),
+        end = date.atTime(17, 0),
+        status = ExternalMovementStatus(code = "SCHEDULED", description = "Scheduled"),
+        detail = ExternalMovementDetail(uiUrl = "TestUrl", requiredRoles = setOf("TEST_ROLE")),
+        isSensitive = false,
+      )
+
+      externalMovementsApiMockServer.stubGetExternalMovements(
+        prisonCode,
+        prisonerNumbers.toList(),
+        date.atStartOfDay(),
+        date.plusDays(1).atStartOfDay(),
+        ExternalMovementsResponse(content = listOf(externalMovement)),
+      )
+
+      val scheduledEvents = webTestClient.getScheduledEventsWithExternalActivities(
+        prisonCode,
+        prisonerNumbers,
+        date,
+        includeExternalActivities = true,
+      )
+
+      val externalActivities = requireNotNull(scheduledEvents)
+        .activities
+        .orEmpty()
+        .single { it.eventSource == "EXTERNAL_MOVEMENTS_API" }
+
+      with(externalActivities) {
+        assertThat(summary).isEqualTo("Accommodation-related ROTL")
+        assertThat(categoryDescription).isEqualTo("Standard ROTL")
+        assertThat(categoryCode).isEqualTo("FB")
+        assertThat(outsidePrison).isTrue()
+        assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
+        assertThat(endTime).isEqualTo(LocalTime.of(17, 0))
+      }
+    }
+
+    @Test
+    fun `does not return external activities from external movement API when EA is rolled out and includeExternalActivities is false`() {
+      val scheduledEvents = webTestClient.getScheduledEventsWithExternalActivities(
+        prisonCode,
+        prisonerNumbers,
+        date,
+        includeExternalActivities = false,
+      )
+
+      val externalActivities = requireNotNull(scheduledEvents)
+        .activities
+        .orEmpty()
+        .filter { it.eventSource == "EXTERNAL_MOVEMENTS_API" }
+
+      assertThat(externalActivities).isEmpty()
+    }
+
+    @ParameterizedTest(name = "includeExternalActivities = {0}")
+    @ValueSource(booleans = [true, false])
+    fun `does not return external activities from external movements API when prison is not rolled out for EA`(includeExternalActivities: Boolean) {
+      val nonEaPrisonCode = "FMI"
+
+      val activityLocation = internalLocation(1L, prisonCode = nonEaPrisonCode, description = "FMI-LOC1", userDescription = "Location 1")
+      prisonApiMockServer.stubGetScheduledAppointmentsForPrisonerNumbers(nonEaPrisonCode, date)
+      prisonApiMockServer.stubGetScheduledVisitsForPrisonerNumbers(nonEaPrisonCode, date)
+      prisonApiMockServer.stubGetCourtEventsForPrisonerNumbers(nonEaPrisonCode, date)
+      prisonApiMockServer.stubGetExternalTransfersOnDate(nonEaPrisonCode, prisonerNumbers, date)
+      prisonApiMockServer.stubGetEventLocations(nonEaPrisonCode, listOf(activityLocation))
+      prisonApiMockServer.stubGetLocationsForTypeUnrestricted(nonEaPrisonCode, "APP", "prisonapi/locations-MDI-appointments.json")
+      locationsInsidePrisonApiMockServer.stubLocationsForServiceType(prisonCode = nonEaPrisonCode, locations = emptyList())
+      adjudicationsMock(nonEaPrisonCode, date, prisonerNumbers.toList())
+
+      val scheduledEvents = webTestClient.getScheduledEventsWithExternalActivities(
+        nonEaPrisonCode,
+        prisonerNumbers,
+        date,
+        includeExternalActivities = includeExternalActivities,
+      )
+
+      val externalActivities = requireNotNull(scheduledEvents)
+        .activities
+        .orEmpty()
+        .filter { it.eventSource == "EXTERNAL_MOVEMENTS_API" }
+
+      assertThat(externalActivities).isEmpty()
+    }
+
+    private fun WebTestClient.getScheduledEventsWithExternalActivities(
+      prisonCode: String,
+      prisonerNumbers: Set<String>,
+      date: LocalDate,
+      includeExternalActivities: Boolean = false,
+      timeSlot: TimeSlot? = null,
+    ) = post()
+      .uri(
+        "/scheduled-events/prison/$prisonCode?date=$date&includeExternalActivities=$includeExternalActivities" +
+          (timeSlot?.let { "&timeSlot=$it" } ?: ""),
+      )
+      .bodyValue(prisonerNumbers)
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
+      .exchange()
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(PrisonerScheduledEvents::class.java)
+      .returnResult().responseBody
   }
 }

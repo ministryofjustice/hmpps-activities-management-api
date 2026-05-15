@@ -36,6 +36,7 @@ create or replace view v_prisoner_scheduled_activities as
         att.status                                                                            as attendance_status,
         attr.code                                                                             as attendance_reason_code,
         act.paid                                                                              as paid_activity,
+        act.outside_work,
         schedule.dps_location_id,
         case when adv_att.advance_attendance_id is not null then true
             else false
