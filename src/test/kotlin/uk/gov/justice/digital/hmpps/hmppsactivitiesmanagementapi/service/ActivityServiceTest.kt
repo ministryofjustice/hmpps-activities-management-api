@@ -3749,7 +3749,7 @@ class ActivityServiceTest {
     }
 
     @Test
-    fun `paid status is unchanged and throws an exception for a prison paid (paid = true) external activity when request pais is false`() {
+    fun `paid status is unchanged and throws an exception for a prison paid (paid = true) external activity when request paid is false`() {
       assertThatThrownBy {
         service().updateActivity(
           MOORLAND_PRISON_CODE,
