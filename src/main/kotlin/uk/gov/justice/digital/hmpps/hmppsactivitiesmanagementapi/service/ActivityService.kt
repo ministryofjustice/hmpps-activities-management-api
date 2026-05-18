@@ -785,7 +785,7 @@ class ActivityService(
     activity: Activity,
   ): AllocationIds {
     if (activity.outsideWork) {
-      require(request.paid == null) {
+      require(request.paid == null || request.paid == activity.paid) {
         "Paid status cannot be updated for an external activity"
       }
 
