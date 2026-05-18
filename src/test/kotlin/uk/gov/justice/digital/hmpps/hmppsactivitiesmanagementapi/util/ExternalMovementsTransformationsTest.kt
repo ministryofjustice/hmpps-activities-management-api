@@ -70,7 +70,7 @@ class ExternalMovementsTransformationsTest {
     assertThat(result.eventSource).isEqualTo("EXTERNAL_MOVEMENTS_API")
     assertThat(result.eventType).isEqualTo(EventType.ACTIVITY.name)
     assertThat(result.categoryCode).isEqualTo("FB")
-    assertThat(result.categoryDescription).isEqualTo("Standard ROTL")
+    assertThat(result.categoryDescription).isNull()
     assertThat(result.summary).isEqualTo("Accommodation-related ROTL")
     assertThat(result.outsidePrison).isTrue()
     assertThat(result.prisonerNumber).isEqualTo("A1234AA")

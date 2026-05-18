@@ -1183,7 +1183,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
         .single { it.eventSource == "EXTERNAL_MOVEMENTS_API" }
         .apply {
           assertThat(summary).isEqualTo("Accommodation-related ROTL")
-          assertThat(categoryDescription).isEqualTo("Standard ROTL")
+          assertThat(categoryDescription).isNull()
           assertThat(categoryCode).isEqualTo("FB")
           assertThat(outsidePrison).isTrue()
           assertThat(startTime).isEqualTo(LocalTime.of(9, 0))

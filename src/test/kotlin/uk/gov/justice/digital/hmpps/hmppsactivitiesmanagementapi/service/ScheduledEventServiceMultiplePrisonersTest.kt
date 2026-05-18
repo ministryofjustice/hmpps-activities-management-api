@@ -878,7 +878,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
 
       val external = activities.single { it.eventSource == "EXTERNAL_MOVEMENTS_API" }
       with(external) {
-        assertThat(categoryDescription).isEqualTo("Standard ROTL")
+        assertThat(categoryDescription).isNull()
         assertThat(categoryCode).isEqualTo("FB")
         assertThat(outsidePrison).isTrue()
         assertThat(startTime).isEqualTo(LocalTime.of(9, 0))

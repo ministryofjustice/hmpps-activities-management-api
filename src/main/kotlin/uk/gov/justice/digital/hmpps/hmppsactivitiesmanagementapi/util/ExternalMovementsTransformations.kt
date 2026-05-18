@@ -23,7 +23,7 @@ fun ExternalMovement.toScheduledEvent(prisonCode: String, priorities: EventPrior
   internalLocationUserDescription = null,
   internalLocationDescription = null,
   categoryCode = description.code,
-  categoryDescription = description.full,
+  categoryDescription = null,
   summary = transformedSummary(),
   comments = null,
   outsidePrison = true,
