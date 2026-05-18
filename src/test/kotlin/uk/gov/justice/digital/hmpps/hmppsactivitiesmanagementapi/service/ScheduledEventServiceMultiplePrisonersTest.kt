@@ -808,9 +808,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
       if (includeExternalMovements) {
         externalMovementsApiClient.stub {
           on {
-            runBlocking {
-              getExternalMovements(any(), any(), any(), any())
-            }
+            getExternalMovements(any(), any(), any(), any())
           } doReturn ExternalMovementsResponse(content = emptyList())
         }
       }
@@ -877,9 +875,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
 
       externalMovementsApiClient.stub {
         on {
-          runBlocking {
-            getExternalMovements(any(), any(), any(), any())
-          }
+          getExternalMovements(any(), any(), any(), any())
         } doReturn ExternalMovementsResponse(content = listOf(externalMovement))
       }
 
