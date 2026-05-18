@@ -1166,7 +1166,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `returns external activities from external movement API when EA is rolled out and includeExternalActivities is true`() {
+    fun `returns external activities from external movement API when EA is rolled out and includeExternalMovements is true`() {
       val externalMovement = ExternalMovement(
         id = UUID.randomUUID(),
         prisonerNumber = "A11111A",
@@ -1190,7 +1190,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
         prisonCode,
         prisonerNumbers,
         date,
-        includeExternalActivities = true,
+        includeExternalMovements = true,
       )
 
       val externalActivities = requireNotNull(scheduledEvents)
@@ -1209,12 +1209,12 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `does not return external activities from external movement API when EA is rolled out and includeExternalActivities is false`() {
+    fun `does not return external activities from external movement API when EA is rolled out and includeExternalMovements is false`() {
       val scheduledEvents = webTestClient.getScheduledEventsWithExternalActivities(
         prisonCode,
         prisonerNumbers,
         date,
-        includeExternalActivities = false,
+        includeExternalMovements = false,
       )
 
       val externalActivities = requireNotNull(scheduledEvents)
@@ -1225,9 +1225,9 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       assertThat(externalActivities).isEmpty()
     }
 
-    @ParameterizedTest(name = "includeExternalActivities = {0}")
+    @ParameterizedTest(name = "includeExternalMovements = {0}")
     @ValueSource(booleans = [true, false])
-    fun `does not return external activities from external movements API when prison is not rolled out for EA`(includeExternalActivities: Boolean) {
+    fun `does not return external activities from external movements API when prison is not rolled out for EA`(includeExternalMovements: Boolean) {
       val nonEaPrisonCode = "FMI"
 
       val activityLocation = internalLocation(1L, prisonCode = nonEaPrisonCode, description = "FMI-LOC1", userDescription = "Location 1")
@@ -1244,7 +1244,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
         nonEaPrisonCode,
         prisonerNumbers,
         date,
-        includeExternalActivities = includeExternalActivities,
+        includeExternalMovements = includeExternalMovements,
       )
 
       val externalActivities = requireNotNull(scheduledEvents)
@@ -1259,11 +1259,11 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       prisonCode: String,
       prisonerNumbers: Set<String>,
       date: LocalDate,
-      includeExternalActivities: Boolean = false,
+      includeExternalMovements: Boolean = false,
       timeSlot: TimeSlot? = null,
     ) = post()
       .uri(
-        "/scheduled-events/prison/$prisonCode?date=$date&includeExternalActivities=$includeExternalActivities" +
+        "/scheduled-events/prison/$prisonCode?date=$date&includeExternalMovements=$includeExternalMovements" +
           (timeSlot?.let { "&timeSlot=$it" } ?: ""),
       )
       .bodyValue(prisonerNumbers)

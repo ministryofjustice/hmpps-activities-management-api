@@ -795,9 +795,9 @@ class ScheduledEventServiceMultiplePrisonersTest {
       setupMultiplePrisonerApiMocks(prisonerNumbers, today, timeSlot)
     }
 
-    @ParameterizedTest(name = "includeExternalActivities = {0}")
+    @ParameterizedTest(name = "includeExternalMovements = {0}")
     @ValueSource(booleans = [true, false])
-    fun `outside work activities from DB are always filtered out for EA enabled prisons regardless of includeExternalActivities`(includeExternalActivities: Boolean) {
+    fun `outside work activities from DB are always filtered out for EA enabled prisons regardless of includeExternalMovements`(includeExternalMovements: Boolean) {
       setupRolledOutPrisonMock(
         activitiesRolledOut = true,
         appointmentsRolledOut = true,
@@ -805,7 +805,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
         prisonLive = true,
       )
 
-      if (includeExternalActivities) {
+      if (includeExternalMovements) {
         externalMovementsApiClient.stub {
           on {
             runBlocking {
@@ -833,7 +833,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
         today,
         timeSlot,
         appointmentCategories(),
-        includeExternalActivities = includeExternalActivities,
+        includeExternalMovements = includeExternalMovements,
       )
 
       val dbActivities = requireNotNull(scheduledEvents)
@@ -846,7 +846,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
     }
 
     @Test
-    fun `returns internal activities plus external activities from external movement API when EA is enabled and includeExternalActivities is true`() {
+    fun `returns internal activities plus external activities from external movement API when EA is enabled and includeExternalMovements is true`() {
       setupRolledOutPrisonMock(
         activitiesRolledOut = true,
         appointmentsRolledOut = true,
@@ -889,7 +889,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
         today,
         timeSlot,
         appointmentCategories(),
-        includeExternalActivities = true,
+        includeExternalMovements = true,
       )
 
       val activities = requireNotNull(scheduledEvents).activities.orEmpty()
@@ -907,7 +907,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
     }
 
     @Test
-    fun `returns only internal activities when includeExternalActivities is false even if EA is enabled`() {
+    fun `returns only internal activities when includeExternalMovements is false even if EA is enabled`() {
       setupRolledOutPrisonMock(
         activitiesRolledOut = true,
         appointmentsRolledOut = true,
@@ -931,7 +931,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
         today,
         timeSlot,
         appointmentCategories(),
-        includeExternalActivities = false,
+        includeExternalMovements = false,
       )
 
       verifyBlocking(externalMovementsApiClient, never()) {
@@ -943,14 +943,13 @@ class ScheduledEventServiceMultiplePrisonersTest {
       assertThat(activities.outsidePrison).isFalse()
     }
 
-    @ParameterizedTest(name = "EA rolled out = {0}, includeExternalActivities = {1}")
+    @ParameterizedTest(name = "includeExternalMovements = {1}")
     @CsvSource(
-      "false, true",
-      "false, false",
+      "true",
+      "false",
     )
     fun `external movements API is not called and outside work activities from DB are included when EA is not rolled out`(
-      externalActivitiesRolledOut: Boolean,
-      includeExternalActivities: Boolean,
+      includeExternalMovements: Boolean,
     ) {
       setupRolledOutPrisonMock(
         activitiesRolledOut = true,
@@ -978,7 +977,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
           today,
           timeSlot,
           appointmentCategories(),
-          includeExternalActivities = includeExternalActivities,
+          includeExternalMovements = includeExternalMovements,
         ),
       )
 

@@ -58,7 +58,7 @@ class ScheduledEventService(
     date: LocalDate,
     timeSlot: TimeSlot? = null,
     appointmentCategories: Map<String, AppointmentCategory>,
-    includeExternalActivities: Boolean = false,
+    includeExternalMovements: Boolean = false,
   ): PrisonerScheduledEvents? = runBlocking {
     val eventPriorities = withContext(Dispatchers.IO) { prisonRegimeService.getEventPrioritiesForPrison(prisonCode) }
     val prisonLocations = prisonApiClient.getEventLocationsForPrison(prisonCode)
@@ -106,13 +106,8 @@ class ScheduledEventService(
       }
       .apply {
         if (prisonRolledOut.activitiesRolledOut) {
-          val allScheduledActivities = getMultiplePrisonerScheduledActivities(prisonCode, prisonerNumbers, date, timeSlot)
-
-          val scheduledActivities = if (prisonRolledOut.externalActivitiesRolledOut) {
-            allScheduledActivities.filterNot { it.outsideWork }
-          } else {
-            allScheduledActivities
-          }
+          val scheduledActivities = getMultiplePrisonerScheduledActivities(prisonCode, prisonerNumbers, date, timeSlot)
+            .filterNot { prisonRolledOut.externalActivitiesRolledOut && it.outsideWork }
 
           activities = transformPrisonerScheduledActivityToScheduledEvents(
             prisonCode,
@@ -121,7 +116,7 @@ class ScheduledEventService(
             prisonLocations,
           )
 
-          val includeExternalActivitiesFromTaps = prisonRolledOut.externalActivitiesRolledOut && includeExternalActivities
+          val includeExternalActivitiesFromTaps = prisonRolledOut.externalActivitiesRolledOut && includeExternalMovements
 
           if (includeExternalActivitiesFromTaps) {
             val externalActivities = externalMovementsApiClient.getExternalMovements(
