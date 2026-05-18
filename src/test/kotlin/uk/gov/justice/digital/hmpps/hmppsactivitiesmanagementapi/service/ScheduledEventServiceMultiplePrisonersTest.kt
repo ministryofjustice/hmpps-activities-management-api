@@ -8,7 +8,6 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.CsvSource
 import org.junit.jupiter.params.provider.ValueSource
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
@@ -18,16 +17,13 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.reset
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.verifyBlocking
+import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.AdjudicationsHearingAdapter
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.Hearing
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.HearingsResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.ManageAdjudicationsApiFacade
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.externalmovementsapi.api.ExternalMovementsApiClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.externalmovementsapi.model.ExternalMovement
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.externalmovementsapi.model.ExternalMovementDescription
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.externalmovementsapi.model.ExternalMovementDetail
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.externalmovementsapi.model.ExternalMovementStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.externalmovementsapi.model.ExternalMovementsResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api.NomisDpsLocationMapping
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api.NomisMappingAPIClient
@@ -40,6 +36,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityFromDbInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.adjudicationHearing
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategory
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.externalMovement
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrisonPlan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonerScheduledActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appointment.AppointmentInstanceRepository
@@ -825,22 +822,22 @@ class ScheduledEventServiceMultiplePrisonersTest {
         ),
       ).thenReturn(listOf(internalActivity, externalActivity))
 
-      val scheduledEvents = service.getScheduledEventsForMultiplePrisoners(
+      val activities = service.getScheduledEventsForMultiplePrisoners(
         prisonCode,
         prisonerNumbers,
         today,
         timeSlot,
         appointmentCategories(),
         includeExternalMovements = includeExternalMovements,
-      )
+      )!!.activities!!
 
-      val dbActivities = requireNotNull(scheduledEvents)
-        .activities
-        .orEmpty()
-        .filter { it.eventSource == "SAA" }
+      with(activities.single { it.eventSource == "SAA" }) {
+        assertThat(scheduledInstanceId).isEqualTo(internalActivity.scheduledInstanceId)
+      }
 
-      assertThat(dbActivities.single().scheduledInstanceId).isEqualTo(internalActivity.scheduledInstanceId)
-      assertThat(dbActivities.none { it.scheduledInstanceId == externalActivity.scheduledInstanceId }).isTrue()
+      assertThat(
+        activities.none { it.scheduledInstanceId == externalActivity.scheduledInstanceId },
+      ).isTrue()
     }
 
     @Test
@@ -862,16 +859,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
         ),
       ).thenReturn(listOf(internalActivity))
 
-      val externalMovement = ExternalMovement(
-        id = UUID.randomUUID(),
-        prisonerNumber = "G4793VF",
-        description = ExternalMovementDescription(full = "Standard ROTL", short = "Accommodation-related", code = "FB"),
-        start = LocalDateTime.of(2026, 5, 10, 9, 0),
-        end = LocalDateTime.of(2026, 5, 10, 17, 0),
-        status = ExternalMovementStatus(code = "SCHEDULED", description = "Scheduled"),
-        detail = ExternalMovementDetail(uiUrl = "TestUrl", requiredRoles = setOf("TEST_ROLE")),
-        isSensitive = false,
-      )
+      val externalMovement = externalMovement()
 
       externalMovementsApiClient.stub {
         on {
@@ -879,27 +867,36 @@ class ScheduledEventServiceMultiplePrisonersTest {
         } doReturn ExternalMovementsResponse(content = listOf(externalMovement))
       }
 
-      val scheduledEvents = service.getScheduledEventsForMultiplePrisoners(
+      val activities = service.getScheduledEventsForMultiplePrisoners(
         prisonCode,
         prisonerNumbers,
         today,
         timeSlot,
         appointmentCategories(),
         includeExternalMovements = true,
-      )
-
-      val activities = requireNotNull(scheduledEvents).activities.orEmpty()
+      )!!.activities!!
 
       val external = activities.single { it.eventSource == "EXTERNAL_MOVEMENTS_API" }
-      assertThat(external.summary).isEqualTo("Accommodation-related ROTL")
-      assertThat(external.categoryDescription).isEqualTo("Standard ROTL")
-      assertThat(external.categoryCode).isEqualTo("FB")
-      assertThat(external.outsidePrison).isTrue()
-      assertThat(external.startTime).isEqualTo(LocalTime.of(9, 0))
-      assertThat(external.endTime).isEqualTo(LocalTime.of(17, 0))
+      with(external) {
+        assertThat(categoryDescription).isEqualTo("Standard ROTL")
+        assertThat(categoryCode).isEqualTo("FB")
+        assertThat(outsidePrison).isTrue()
+        assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
+        assertThat(endTime).isEqualTo(LocalTime.of(17, 0))
+      }
 
-      val internal = activities.single { it.eventSource == "SAA" }
-      assertThat(internal.outsidePrison).isFalse()
+      with(activities.single { it.eventSource == "SAA" }) {
+        assertThat(outsidePrison).isFalse()
+      }
+
+      verifyBlocking(externalMovementsApiClient) {
+        getExternalMovements(
+          prisonCode,
+          prisonerNumbers,
+          today.atStartOfDay(),
+          today.plusDays(1).atStartOfDay(),
+        )
+      }
     }
 
     @Test
@@ -921,29 +918,26 @@ class ScheduledEventServiceMultiplePrisonersTest {
         ),
       ).thenReturn(listOf(internalActivity))
 
-      val scheduledEvents = service.getScheduledEventsForMultiplePrisoners(
+      val activities = service.getScheduledEventsForMultiplePrisoners(
         prisonCode,
         prisonerNumbers,
         today,
         timeSlot,
         appointmentCategories(),
         includeExternalMovements = false,
-      )
+      )!!.activities!!
 
-      verifyBlocking(externalMovementsApiClient, never()) {
-        getExternalMovements(any(), any(), any(), any())
+      val internal = activities.single { it.eventSource == "SAA" }
+      with(internal) {
+        assertThat(eventSource).isEqualTo("SAA")
+        assertThat(outsidePrison).isFalse()
       }
 
-      val activities = requireNotNull(scheduledEvents).activities.orEmpty().single()
-      assertThat(activities.eventSource).isEqualTo("SAA")
-      assertThat(activities.outsidePrison).isFalse()
+      verifyNoInteractions(externalMovementsApiClient)
     }
 
-    @ParameterizedTest(name = "includeExternalMovements = {1}")
-    @CsvSource(
-      "true",
-      "false",
-    )
+    @ParameterizedTest(name = "includeExternalMovements = {0}")
+    @ValueSource(booleans = [true, false])
     fun `external movements API is not called and outside work activities from DB are included when EA is not rolled out`(
       includeExternalMovements: Boolean,
     ) {
@@ -966,27 +960,21 @@ class ScheduledEventServiceMultiplePrisonersTest {
         ),
       ).thenReturn(listOf(internalActivity, outsideWorkActivity))
 
-      val scheduledEvents = requireNotNull(
-        service.getScheduledEventsForMultiplePrisoners(
-          prisonCode,
-          prisonerNumbers,
-          today,
-          timeSlot,
-          appointmentCategories(),
-          includeExternalMovements = includeExternalMovements,
-        ),
-      )
+      val activities = service.getScheduledEventsForMultiplePrisoners(
+        prisonCode,
+        prisonerNumbers,
+        today,
+        timeSlot,
+        appointmentCategories(),
+        includeExternalMovements = includeExternalMovements,
+      )!!.activities!!
 
-      verifyBlocking(externalMovementsApiClient, never()) {
-        getExternalMovements(any(), any(), any(), any())
-      }
-
-      val activities = scheduledEvents.activities.orEmpty()
-      assertThat(activities).hasSize(2)
       assertThat(activities.map { it.scheduledInstanceId }).containsExactlyInAnyOrder(
         internalActivity.scheduledInstanceId,
         outsideWorkActivity.scheduledInstanceId,
       )
+
+      verifyNoInteractions(externalMovementsApiClient)
     }
   }
 }
