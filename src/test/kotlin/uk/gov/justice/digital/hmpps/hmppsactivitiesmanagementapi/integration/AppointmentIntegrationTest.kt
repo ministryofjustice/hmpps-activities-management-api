@@ -11,6 +11,7 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 import org.springframework.http.MediaType
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
@@ -59,6 +60,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.USER_
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.util.*
 
@@ -948,6 +950,32 @@ class AppointmentIntegrationTest : LocalStackTestBase() {
   }
 
   @Sql(
+    "classpath:test_data/seed-appointment-group-repeat-id-5.sql",
+  )
+  @Test
+  fun `update multiple appointments throws error due to start date being after end date`() {
+    val request = AppointmentUpdateRequest(
+      startTime = LocalTime.of(10, 0),
+      applyTo = ApplyTo.THIS_AND_ALL_FUTURE_APPOINTMENTS,
+    )
+
+    with(webTestClient.updateAppointmentNoResponse(12, request)) {
+      val date = LocalDate.now().plusDays(18).format(DateTimeFormatter.ofPattern("dd-MM-yyyy"))
+      expectStatus().isBadRequest
+        .expectBody().jsonPath("developerMessage").isEqualTo("Appointment on $date would have a start time (10:00) on or after the end time (09:45)")
+    }
+
+    with(webTestClient.getAppointmentSeriesById(5)!!) {
+      assertThat(appointments.map { it.startTime }.toSet()).containsOnly(LocalTime.of(9, 0))
+      assertThat(appointments.filter { it.id != 13L && it.endTime == LocalTime.of(10, 30) }).hasSize(3)
+      assertThat(appointments.filter { it.id == 13L && it.endTime == LocalTime.of(9, 45) }).hasSize(1)
+    }
+
+    validateNoMessagesSent()
+    verifyNoInteractions(auditService)
+  }
+
+  @Sql(
     "classpath:test_data/seed-appointment-group-repeat-12-instances-id-7.sql",
   )
   @Test
@@ -1220,6 +1248,16 @@ class AppointmentIntegrationTest : LocalStackTestBase() {
     .expectHeader().contentType(MediaType.APPLICATION_JSON)
     .expectBody(AppointmentSeries::class.java)
     .returnResult().responseBody
+
+  private fun WebTestClient.updateAppointmentNoResponse(
+    id: Long,
+    request: AppointmentUpdateRequest,
+  ) = patch()
+    .uri("/appointments/$id")
+    .bodyValue(request)
+    .headers(setAuthorisationAsUser(roles = listOf(ROLE_PRISON)))
+    .header(CASELOAD_ID, "TPR")
+    .exchange()
 
   private fun WebTestClient.updateAppointment(
     id: Long,
