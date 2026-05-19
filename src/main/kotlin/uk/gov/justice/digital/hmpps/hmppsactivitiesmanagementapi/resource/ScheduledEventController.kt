@@ -96,6 +96,9 @@ class ScheduledEventController(
     @RequestParam(value = "timeSlot", required = false)
     @Parameter(description = "Time slot of the events (optional). If supplied, one of AM, PM or ED.")
     timeSlot: TimeSlot?,
+    @RequestParam(value = "includeExternalMovements", required = false, defaultValue = "false")
+    @Parameter(description = "Determines whether to include external activities (TAPs) in the response.")
+    includeExternalMovements: Boolean = false,
     @RequestBody(required = true)
     @Parameter(description = "Set of prisoner numbers (required). Example ['G11234YI', 'B5234YI'].", required = true)
     prisonerNumbers: Set<String>,
@@ -105,6 +108,7 @@ class ScheduledEventController(
     date,
     timeSlot,
     appointmentCategoryService.getAll(),
+    includeExternalMovements,
   )
 
   @PostMapping(

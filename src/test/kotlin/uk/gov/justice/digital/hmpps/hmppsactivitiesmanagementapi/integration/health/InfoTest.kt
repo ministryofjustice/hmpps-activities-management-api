@@ -2,11 +2,13 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.he
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.info.BuildProperties
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.IntegrationTestBase
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 
 class InfoTest : IntegrationTestBase() {
+  @Autowired
+  private lateinit var buildProperties: BuildProperties
 
   @Test
   fun `Info page is accessible`() {
@@ -25,7 +27,7 @@ class InfoTest : IntegrationTestBase() {
       .exchange()
       .expectStatus().isOk
       .expectBody().jsonPath("build.version").value<String> {
-        assertThat(it).startsWith(LocalDateTime.now().format(DateTimeFormatter.ISO_DATE))
+        assertThat(it).isEqualTo(buildProperties.version)
       }
   }
 }

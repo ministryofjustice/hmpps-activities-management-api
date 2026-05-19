@@ -82,6 +82,8 @@ data class PrisonerScheduledActivity(
 
   val offWing: Boolean,
 
+  val outsideWork: Boolean = false,
+
   val internalLocationId: Int? = null,
 
   val dpsLocationId: UUID? = null,

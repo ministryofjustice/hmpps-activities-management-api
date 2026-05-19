@@ -11,7 +11,7 @@ data class ScheduledEvent(
   @Schema(description = "The prison code for this scheduled event", example = "MDI")
   val prisonCode: String?,
 
-  @Schema(description = "The source of this event - valid values are NOMIS or SAA (scheduling activities and appointments)", example = "NOMIS")
+  @Schema(description = "The source of this event - valid values are NOMIS, EXTERNAL_MOVEMENTS_API, or SAA (scheduling activities and appointments)", example = "NOMIS")
   val eventSource: String?,
 
   @Schema(description = "The event type (APPOINTMENT, ACTIVITY, COURT_HEARING, EXTERNAL_TRANSFER, ADJUDICATION_HEARING, VISIT)", example = "APPOINTMENT")

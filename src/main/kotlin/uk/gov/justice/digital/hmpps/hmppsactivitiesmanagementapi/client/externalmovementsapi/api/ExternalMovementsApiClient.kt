@@ -21,13 +21,13 @@ class ExternalMovementsApiClient(
 ) {
   private val backoffSpec = retryApiService.getBackoffSpec(maxRetryAttempts, backoffMillis)
 
-  suspend fun getExternalMovements(prisonCode: String, prisonerNumbers: List<String>, start: LocalDateTime, end: LocalDateTime): ExternalMovementsResponse = externalMovementsApiWebClient.post()
+  suspend fun getExternalMovements(prisonCode: String, prisonerNumbers: Collection<String>, start: LocalDateTime, end: LocalDateTime): ExternalMovementsResponse = externalMovementsApiWebClient.post()
     .uri { uriBuilder: UriBuilder ->
       uriBuilder
         .path("/search/prisons/{prisonCode}/external-activities")
         .build(prisonCode)
     }
-    .bodyValue(ExternalMovementsRequest(prisonerNumbers, start, end))
+    .bodyValue(ExternalMovementsRequest(prisonerNumbers.toList(), start, end))
     .retrieve()
     .bodyToMono(typeReference<ExternalMovementsResponse>())
     .retryWhen(backoffSpec.withRetryContext(Context.of("api", "external-movements-api", "path", "/search/prisons/{prisonCode}/external-activities")))
