@@ -122,20 +122,15 @@ class ScheduledEventService(
             val timeRange = timeSlot?.let {
               prisonRegimeService.getTimeRangeForPrisonAndTimeSlot(prisonCode, it, date.dayOfWeek)
             }
-            val earliestStartTime = timeRange?.start ?: LocalTime.of(0, 0)
-            // minusMinutes(1) as end time is exclusive
-            val latestStartTime = timeRange?.end?.minusMinutes(1) ?: LocalTime.of(23, 59)
+            val startDateTime = timeRange?.let { date.atTime(it.start) } ?: date.atStartOfDay()
+            val endDateTime = timeRange?.let { date.atTime(it.end) } ?: date.plusDays(1).atStartOfDay()
 
             val externalActivities = externalMovementsApiClient.getExternalMovements(
               prisonCode,
               prisonerNumbers,
-              date.atStartOfDay(),
-              date.plusDays(1).atStartOfDay(),
+              startDateTime,
+              endDateTime,
             ).content.toScheduledEvents(prisonCode, eventPriorities)
-              .filter { event ->
-                val startTime = event.startTime
-                startTime != null && startTime in earliestStartTime..latestStartTime
-              }
 
             activities = activities.orEmpty() + externalActivities
           }

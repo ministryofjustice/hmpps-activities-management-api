@@ -728,7 +728,6 @@ class ScheduledEventServiceMultiplePrisonersTest {
     @BeforeEach
     fun beforeEach() {
       setupRolledOutPrisonMock(true, true, false, true)
-
       whenever(prisonRegimeService.getPrisonRegimesByDaysOfWeek(any())).thenReturn(
         mapOf(
           DayOfWeek.entries.toSet() to prisonRegime,
@@ -938,7 +937,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
     }
 
     @Test
-    fun `external activities are filtered by AM time slot`() {
+    fun `external activities are requested with AM time slot boundaries`() {
       setupRolledOutPrisonMock(
         activitiesRolledOut = true,
         appointmentsRolledOut = true,
@@ -959,28 +958,34 @@ class ScheduledEventServiceMultiplePrisonersTest {
         .thenReturn(LocalTimeRange(LocalTime.of(0, 0), LocalTime.of(12, 0)))
 
       val amMovement = externalMovement(start = today.atTime(8, 30))
-      val pmMovement = externalMovement(start = today.atTime(14, 0), code = "YOTR")
 
       externalMovementsApiClient.stub {
         on { getExternalMovements(any(), any(), any(), any()) } doReturn ExternalMovementsResponse(
-          content = listOf(amMovement, pmMovement),
+          content = listOf(amMovement),
         )
       }
 
-      val activities = service.getScheduledEventsForMultiplePrisoners(
+      service.getScheduledEventsForMultiplePrisoners(
         prisonCode,
         prisonerNumbers,
         today,
         TimeSlot.AM,
         appointmentCategories(),
         includeExternalMovements = true,
-      )!!.activities!!
+      )
 
-      assertThat(activities.single().startTime).isEqualTo(LocalTime.of(8, 30))
+      verifyBlocking(externalMovementsApiClient) {
+        getExternalMovements(
+          prisonCode,
+          prisonerNumbers,
+          today.atStartOfDay(),
+          today.atTime(LocalTime.of(12, 0)),
+        )
+      }
     }
 
     @Test
-    fun `external activities are filtered by PM time slot`() {
+    fun `external activities are requested with PM time slot boundaries`() {
       setupRolledOutPrisonMock(
         activitiesRolledOut = true,
         appointmentsRolledOut = true,
@@ -1002,30 +1007,35 @@ class ScheduledEventServiceMultiplePrisonersTest {
       whenever(prisonRegimeService.getTimeRangeForPrisonAndTimeSlot(prisonCode, TimeSlot.PM, today.dayOfWeek))
         .thenReturn(LocalTimeRange(LocalTime.of(12, 0), LocalTime.of(17, 0)))
 
-      val amMovement = externalMovement(start = today.atTime(8, 30))
       val pmMovement = externalMovement(start = today.atTime(14, 0), code = "YOTR")
-      val edMovement = externalMovement(start = today.atTime(18, 0), code = "20")
 
       externalMovementsApiClient.stub {
         on { getExternalMovements(any(), any(), any(), any()) } doReturn ExternalMovementsResponse(
-          content = listOf(amMovement, pmMovement, edMovement),
+          content = listOf(pmMovement),
         )
       }
 
-      val activities = service.getScheduledEventsForMultiplePrisoners(
+      service.getScheduledEventsForMultiplePrisoners(
         prisonCode,
         prisonerNumbers,
         today,
         TimeSlot.PM,
         appointmentCategories(),
         includeExternalMovements = true,
-      )!!.activities!!
+      )
 
-      assertThat(activities.single().startTime).isEqualTo(LocalTime.of(14, 0))
+      verifyBlocking(externalMovementsApiClient) {
+        getExternalMovements(
+          prisonCode,
+          prisonerNumbers,
+          today.atTime(LocalTime.of(12, 0)),
+          today.atTime(LocalTime.of(17, 0)),
+        )
+      }
     }
 
     @Test
-    fun `external activities are not filtered by time slot when no time slot specified`() {
+    fun `external activities are requested with full day boundaries when no time slot specified`() {
       setupRolledOutPrisonMock(
         activitiesRolledOut = true,
         appointmentsRolledOut = true,
@@ -1064,10 +1074,19 @@ class ScheduledEventServiceMultiplePrisonersTest {
       )!!.activities!!
 
       assertThat(activities).hasSize(3)
+
+      verifyBlocking(externalMovementsApiClient) {
+        getExternalMovements(
+          prisonCode,
+          prisonerNumbers,
+          today.atStartOfDay(),
+          today.plusDays(1).atStartOfDay(),
+        )
+      }
     }
 
     @Test
-    fun `external activity at exactly the end boundary minus one minute is included`() {
+    fun `external activities request uses exclusive end time from prison regime`() {
       setupRolledOutPrisonMock(
         activitiesRolledOut = true,
         appointmentsRolledOut = true,
@@ -1087,27 +1106,29 @@ class ScheduledEventServiceMultiplePrisonersTest {
       whenever(prisonRegimeService.getTimeRangeForPrisonAndTimeSlot(prisonCode, TimeSlot.AM, today.dayOfWeek))
         .thenReturn(LocalTimeRange(LocalTime.of(0, 0), LocalTime.of(12, 0)))
 
-      // 11:59 is end.minusMinutes(1) so should be included
-      val boundaryMovement = externalMovement(start = today.atTime(11, 59))
-      // 12:00 would be end itself, but latestStartTime is 11:59 so excluded
-      val excludedMovement = externalMovement(start = today.atTime(12, 0), code = "YOTR")
-
       externalMovementsApiClient.stub {
         on { getExternalMovements(any(), any(), any(), any()) } doReturn ExternalMovementsResponse(
-          content = listOf(boundaryMovement, excludedMovement),
+          content = emptyList(),
         )
       }
 
-      val activities = service.getScheduledEventsForMultiplePrisoners(
+      service.getScheduledEventsForMultiplePrisoners(
         prisonCode,
         prisonerNumbers,
         today,
         TimeSlot.AM,
         appointmentCategories(),
         includeExternalMovements = true,
-      )!!.activities!!
+      )
 
-      assertThat(activities.single().startTime).isEqualTo(LocalTime.of(11, 59))
+      verifyBlocking(externalMovementsApiClient) {
+        getExternalMovements(
+          prisonCode,
+          prisonerNumbers,
+          today.atStartOfDay(),
+          today.atTime(LocalTime.of(12, 0)),
+        )
+      }
     }
 
     @ParameterizedTest(name = "includeExternalMovements = {0}")
