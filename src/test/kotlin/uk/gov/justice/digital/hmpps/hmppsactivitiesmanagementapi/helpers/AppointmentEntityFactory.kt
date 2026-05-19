@@ -230,7 +230,7 @@ internal fun appointmentSearchEntity(
   sequenceNumber = 1,
   maxSequenceNumber = 1,
   unlockNotes = null,
-  extraInformation = "Appointment level comment",
+  extraInformation = "Staff level comment",
   createdBy = createdBy,
   isEdited = false,
   isCancelled = false,
