@@ -1086,7 +1086,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
     }
 
     @Test
-    fun `external activities request uses exclusive end time from prison regime`() {
+    fun `external activities request uses start and end times from prison regime`() {
       setupRolledOutPrisonMock(
         activitiesRolledOut = true,
         appointmentsRolledOut = true,
@@ -1094,17 +1094,19 @@ class ScheduledEventServiceMultiplePrisonersTest {
         prisonLive = true,
       )
 
+      setupMultiplePrisonerApiMocks(prisonerNumbers, today, TimeSlot.ED)
+
       whenever(
         prisonerScheduledActivityRepository.getScheduledActivitiesForPrisonerListAndDate(
           prisonCode,
           prisonerNumbers,
           today,
-          TimeSlot.AM,
+          TimeSlot.ED,
         ),
       ).thenReturn(emptyList())
 
-      whenever(prisonRegimeService.getTimeRangeForPrisonAndTimeSlot(prisonCode, TimeSlot.AM, today.dayOfWeek))
-        .thenReturn(LocalTimeRange(LocalTime.of(0, 0), LocalTime.of(12, 0)))
+      whenever(prisonRegimeService.getTimeRangeForPrisonAndTimeSlot(prisonCode, TimeSlot.ED, today.dayOfWeek))
+        .thenReturn(LocalTimeRange(LocalTime.of(17, 0), LocalTime.of(21, 30)))
 
       externalMovementsApiClient.stub {
         on { getExternalMovements(any(), any(), any(), any()) } doReturn ExternalMovementsResponse(
@@ -1116,7 +1118,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
         prisonCode,
         prisonerNumbers,
         today,
-        TimeSlot.AM,
+        TimeSlot.ED,
         appointmentCategories(),
         includeExternalMovements = true,
       )
@@ -1125,8 +1127,8 @@ class ScheduledEventServiceMultiplePrisonersTest {
         getExternalMovements(
           prisonCode,
           prisonerNumbers,
-          today.atStartOfDay(),
-          today.atTime(LocalTime.of(12, 0)),
+          today.atTime(LocalTime.of(17, 0)),
+          today.atTime(LocalTime.of(21, 30)),
         )
       }
     }
