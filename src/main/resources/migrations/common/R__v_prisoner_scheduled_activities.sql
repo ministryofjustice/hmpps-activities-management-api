@@ -36,11 +36,11 @@ create or replace view v_prisoner_scheduled_activities as
         att.status                                                                            as attendance_status,
         attr.code                                                                             as attendance_reason_code,
         act.paid                                                                              as paid_activity,
-        act.outside_work,
         schedule.dps_location_id,
         case when adv_att.advance_attendance_id is not null then true
             else false
-        end                                                                                   as possible_advance_attendance
+        end                                                                                   as possible_advance_attendance,
+        act.outside_work
     from scheduled_instance si
         join activity_schedule schedule on
             schedule.activity_schedule_id = si.activity_schedule_id and
