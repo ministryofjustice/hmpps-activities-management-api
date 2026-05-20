@@ -121,6 +121,7 @@ data class AppointmentSearch(
     updatedTime = updatedTime,
     cancelledTime = cancelledTime,
     cancelledBy = cancelledBy,
+    extraInformation = extraInformation,
     prisonerExtraInformation = prisonerExtraInformation,
   )
 
