@@ -16,6 +16,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.reset
 import org.mockito.kotlin.stub
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyBlocking
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
@@ -775,8 +776,8 @@ class ScheduledEventServiceMultiplePrisonersTest {
   }
 
   @Nested
-  @DisplayName("External activities from External Movements API")
-  inner class ExternalActivitiesFromExternalMovementsApi {
+  @DisplayName("External movements from External Movements API for Unlock list")
+  inner class ExternalMovementsFromExternalMovementsApiForUnlockList {
     private val prisonCode = "MDI"
     private val prisonerNumbers = setOf("G4793VF", "G1234GK")
     private val today = LocalDate.now()
@@ -1172,6 +1173,207 @@ class ScheduledEventServiceMultiplePrisonersTest {
       )
 
       verifyNoInteractions(externalMovementsApiClient)
+    }
+  }
+
+  @Nested
+  @DisplayName("getExternalMovementsForMultiplePrisonersForMovementList")
+  inner class GetExternalMovementsForMultiplePrisonersForMovementList {
+
+    private val prisonCode = "MDI"
+    private val prisonerNumbers = setOf("G4793VF", "A1234AA")
+    private val today = LocalDate.now()
+    private val timeSlot: TimeSlot = TimeSlot.AM
+
+    @BeforeEach
+    fun beforeEach() {
+      whenever(prisonRegimeService.getEventPrioritiesForPrison(prisonCode))
+        .thenReturn(EventPriorities(EventType.entries.associateWith { listOf(Priority(it.defaultPriority)) }))
+      setupMultiplePrisonerApiMocks(prisonerNumbers, today, timeSlot)
+    }
+
+    @Test
+    fun `returns external movements wrapped in LocationEvents`() {
+      val externalMovement = externalMovement(prisonerNumber = "G4793VF")
+
+      externalMovementsApiClient.stub {
+        on {
+          getExternalMovements(any(), any(), any(), any())
+        } doReturn ExternalMovementsResponse(content = listOf(externalMovement))
+      }
+
+      val result = service.getExternalMovementsForMultiplePrisoners(prisonCode, prisonerNumbers, today, null)
+
+      with(result.single()) {
+        assertThat(id).isNull()
+        assertThat(dpsLocationId).isNull()
+        assertThat(prisonCode).isEqualTo("MDI")
+        assertThat(code).isEqualTo("OUTSIDE")
+        assertThat(description).isEqualTo("Outside")
+        with(events.single()) {
+          assertThat(prisonerNumber).isEqualTo("G4793VF")
+          assertThat(eventSource).isEqualTo("EXTERNAL_MOVEMENTS_API")
+          assertThat(outsidePrison).isTrue()
+          assertThat(categoryDescription).isNull()
+          assertThat(categoryCode).isEqualTo("FB")
+          assertThat(summary).isEqualTo("Accommodation-related ROTL")
+          assertThat(date).isEqualTo(today)
+          assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
+          assertThat(endTime).isEqualTo(LocalTime.of(17, 0))
+        }
+      }
+    }
+
+    @Test
+    fun `groups multiple external movements under one outside location`() {
+      val movement1 = externalMovement(
+        prisonerNumber = "G4793VF",
+        start = today.atTime(9, 0),
+        end = today.atTime(11, 0),
+      )
+
+      val movement2 = externalMovement(
+        prisonerNumber = "A1234AA",
+        start = today.atTime(13, 0),
+        end = today.atTime(15, 0),
+      )
+
+      externalMovementsApiClient.stub {
+        on {
+          getExternalMovements(any(), any(), any(), any())
+        } doReturn ExternalMovementsResponse(content = listOf(movement1, movement2))
+      }
+
+      val externalMovements = service.getExternalMovementsForMultiplePrisoners(
+        prisonCode,
+        prisonerNumbers,
+        today,
+        null,
+      )
+
+      with(externalMovements.single()) {
+        assertThat(code).isEqualTo("OUTSIDE")
+        assertThat(description).isEqualTo("Outside")
+        assertThat(events).hasSize(2)
+
+        assertThat(events.map { it.prisonerNumber })
+          .containsExactlyInAnyOrder("G4793VF", "A1234AA")
+      }
+    }
+
+    @Test
+    fun `returns empty set when no external movements found`() {
+      externalMovementsApiClient.stub {
+        on {
+          getExternalMovements(any(), any(), any(), any())
+        } doReturn ExternalMovementsResponse(content = emptyList())
+      }
+
+      val externalMovements = service.getExternalMovementsForMultiplePrisoners(prisonCode, prisonerNumbers, today, null)
+
+      assertThat(externalMovements).isEmpty()
+    }
+
+    @Test
+    fun `external movements are requested with AM time slot boundaries when provided`() {
+      whenever(prisonRegimeService.getTimeRangeForPrisonAndTimeSlot(prisonCode, TimeSlot.AM, today.dayOfWeek))
+        .thenReturn(LocalTimeRange(LocalTime.of(8, 0), LocalTime.of(12, 0)))
+
+      val amMovement = externalMovement(prisonerNumber = "G4793VF", start = today.atTime(9, 0), end = today.atTime(11, 0))
+
+      externalMovementsApiClient.stub {
+        on {
+          getExternalMovements(any(), any(), any(), any())
+        } doReturn ExternalMovementsResponse(content = listOf(amMovement))
+      }
+
+      val externalMovements = service.getExternalMovementsForMultiplePrisoners(prisonCode, prisonerNumbers, today, TimeSlot.AM)
+
+      assertThat(externalMovements.single().events.single().prisonerNumber).isEqualTo("G4793VF")
+
+      verifyBlocking(externalMovementsApiClient) {
+        getExternalMovements(
+          prisonCode,
+          prisonerNumbers,
+          today.atTime(8, 0),
+          today.atTime(12, 0),
+        )
+      }
+    }
+
+    @Test
+    fun `external movements are requested with PM time slot boundaries when provided`() {
+      whenever(prisonRegimeService.getTimeRangeForPrisonAndTimeSlot(prisonCode, TimeSlot.PM, today.dayOfWeek))
+        .thenReturn(LocalTimeRange(LocalTime.of(12, 0), LocalTime.of(17, 0)))
+
+      val pmMovement = externalMovement(prisonerNumber = "G4793VF", start = today.atTime(14, 0), end = today.atTime(16, 0))
+
+      externalMovementsApiClient.stub {
+        on {
+          getExternalMovements(any(), any(), any(), any())
+        } doReturn ExternalMovementsResponse(content = listOf(pmMovement))
+      }
+
+      val externalMovements = service.getExternalMovementsForMultiplePrisoners(prisonCode, prisonerNumbers, today, TimeSlot.PM)
+
+      assertThat(externalMovements.single().events.single().prisonerNumber).isEqualTo("G4793VF")
+
+      verifyBlocking(externalMovementsApiClient) {
+        getExternalMovements(
+          prisonCode,
+          prisonerNumbers,
+          today.atTime(12, 0),
+          today.atTime(17, 0),
+        )
+      }
+    }
+
+    @Test
+    fun `external movements are requested with ED time slot boundaries when provided`() {
+      whenever(prisonRegimeService.getTimeRangeForPrisonAndTimeSlot(prisonCode, TimeSlot.ED, today.dayOfWeek))
+        .thenReturn(LocalTimeRange(LocalTime.of(17, 0), LocalTime.of(21, 30)))
+
+      externalMovementsApiClient.stub {
+        on {
+          getExternalMovements(any(), any(), any(), any())
+        } doReturn ExternalMovementsResponse(content = emptyList())
+      }
+
+      val externalMovements = service.getExternalMovementsForMultiplePrisoners(prisonCode, prisonerNumbers, today, TimeSlot.ED)
+
+      assertThat(externalMovements).isEmpty()
+
+      verifyBlocking(externalMovementsApiClient) {
+        getExternalMovements(
+          prisonCode,
+          prisonerNumbers,
+          today.atTime(17, 0),
+          today.atTime(21, 30),
+        )
+      }
+    }
+
+    @Test
+    fun `uses full day range when no time slot provided and does not lookup time range`() {
+      externalMovementsApiClient.stub {
+        on {
+          getExternalMovements(any(), any(), any(), any())
+        } doReturn ExternalMovementsResponse(content = emptyList())
+      }
+
+      service.getExternalMovementsForMultiplePrisoners(prisonCode, prisonerNumbers, today, null)
+
+      verifyBlocking(externalMovementsApiClient) {
+        getExternalMovements(
+          prisonCode,
+          prisonerNumbers,
+          today.atStartOfDay(),
+          today.plusDays(1).atStartOfDay(),
+        )
+      }
+
+      verify(prisonRegimeService, never())
+        .getTimeRangeForPrisonAndTimeSlot(any(), any(), any())
     }
   }
 }
