@@ -78,6 +78,7 @@ class ExternalMovementsTransformationsTest {
     assertThat(result.startTime).isEqualTo(movement.start.toLocalTime())
     assertThat(result.endTime).isEqualTo(movement.end.toLocalTime())
     assertThat(result.priority).isEqualTo(EventType.ACTIVITY.defaultPriority)
+    assertThat(result.status).isEqualTo("Scheduled")
   }
 
   @Test

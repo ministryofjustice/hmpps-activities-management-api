@@ -1189,6 +1189,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
           assertThat(outsidePrison).isTrue()
           assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
           assertThat(endTime).isEqualTo(LocalTime.of(17, 0))
+          assertThat(status).isEqualTo("Scheduled")
         }
     }
 
@@ -1287,6 +1288,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
           assertThat(summary).isEqualTo("Accommodation-related ROTL")
           assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
           assertThat(endTime).isEqualTo(LocalTime.of(17, 0))
+          assertThat(status).isEqualTo("Scheduled")
         }
       }
     }

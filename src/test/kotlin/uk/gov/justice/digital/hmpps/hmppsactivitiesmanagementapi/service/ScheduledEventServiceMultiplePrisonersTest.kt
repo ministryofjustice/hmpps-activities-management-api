@@ -884,6 +884,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
         assertThat(outsidePrison).isTrue()
         assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
         assertThat(endTime).isEqualTo(LocalTime.of(17, 0))
+        assertThat(status).isEqualTo("Scheduled")
       }
 
       with(activities.single { it.eventSource == "SAA" }) {
@@ -1220,6 +1221,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
           assertThat(date).isEqualTo(today)
           assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
           assertThat(endTime).isEqualTo(LocalTime.of(17, 0))
+          assertThat(status).isEqualTo("Scheduled")
         }
       }
     }
