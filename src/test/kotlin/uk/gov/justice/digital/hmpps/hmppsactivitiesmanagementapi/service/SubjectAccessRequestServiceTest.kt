@@ -19,6 +19,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.SarR
 import uk.gov.justice.hmpps.kotlin.sar.HmppsSubjectAccessRequestContent
 import java.time.LocalDate
 import java.time.LocalTime
+import java.util.UUID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.SarAllocation as ModelSarAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.SarAppointment as ModelSarAppointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.SarAttendanceSummary as ModelSarAttendanceSummary
@@ -42,6 +43,17 @@ class SubjectAccessRequestServiceTest {
     activitySummary = "Activity Summary",
     payBand = "Pay band 1",
     createdDate = TimeSource.yesterday(),
+    activityCategoryName = "Prison jobs",
+    activityCategoryDescription = "Such as kitchen, cleaning, gardens or other maintenance and services to keep the prison running",
+    attendanceRequired = true,
+    paid = true,
+    outsideWork = false,
+    riskLevel = "low",
+    organiser = "Prison staff",
+    dpsLocationId = UUID.randomUUID(),
+    inCell = false,
+    offWing = true,
+    onWing = true,
   )
 
   private val sarWaitingList = SarWaitingList(
@@ -55,6 +67,18 @@ class SubjectAccessRequestServiceTest {
     statusDate = TimeSource.tomorrow(),
     comments = "Like to try",
     createdDate = TimeSource.yesterday(),
+    declinedReason = "Activity ended",
+    activityCategoryName = "Prison jobs",
+    activityCategoryDescription = "Such as kitchen, cleaning, gardens or other maintenance and services to keep the prison running",
+    attendanceRequired = true,
+    paid = true,
+    outsideWork = false,
+    riskLevel = "low",
+    organiser = "Prison staff",
+    dpsLocationId = UUID.randomUUID(),
+    inCell = false,
+    offWing = true,
+    onWing = true,
   )
 
   private val sarAppointment = SarAppointment(
@@ -70,6 +94,14 @@ class SubjectAccessRequestServiceTest {
     attended = "Yes",
     createdDate = TimeSource.yesterday(),
     category = "Activity",
+    customName = "Gym Activity",
+    organiser = "Prison staff",
+    dpsLocationId = UUID.randomUUID(),
+    inCell = false,
+    offWing = true,
+    onWing = true,
+    cancellationReason = "Created in error",
+    cancelledBy = "ABC12D",
   )
 
   private val modelSarAttendanceSummary = ModelSarAttendanceSummary(

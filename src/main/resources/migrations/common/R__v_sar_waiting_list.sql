@@ -8,6 +8,21 @@ SELECT wl.waiting_list_id AS waiting_list_id,
        replace(wl.status, '_', ' ') AS status,
        wl.status_updated_time AS status_date,
        wl.comments AS comments,
-       wl.creation_time as created_date
+       wl.creation_time as created_date,
+       wl.declined_reason AS declined_reason,
+       act_cat.name AS activity_category_name,
+       act_cat.description AS activity_category_description,
+       act.attendance_required AS attendance_required,
+       act.paid AS paid,
+       act.outside_work AS outside_work,
+       act.risk_level AS risk_level,
+       eo.description AS organiser,
+       act_sch.dps_location_id AS dps_location_id,
+       act.in_cell AS in_cell,
+       act.off_wing AS off_wing,
+       act.on_wing AS on_wing
    FROM waiting_list wl
-   JOIN activity act ON act.activity_id = wl.activity_id;
+   JOIN activity act ON act.activity_id = wl.activity_id
+   JOIN activity_schedule act_sch ON act_sch.activity_id = act.activity_id
+   JOIN activity_category act_cat ON act_cat.activity_category_id = act.activity_category_id
+   LEFT JOIN event_organiser eo on eo.event_organiser_id = act.activity_organiser_id;

@@ -5,6 +5,7 @@ import jakarta.persistence.Id
 import jakarta.persistence.Table
 import org.hibernate.annotations.Immutable
 import java.time.LocalDate
+import java.util.UUID
 
 @Entity
 @Immutable
@@ -21,4 +22,16 @@ data class SarWaitingList(
   val statusDate: LocalDate?,
   val comments: String?,
   val createdDate: LocalDate,
+  val declinedReason: String?,
+  val activityCategoryName: String,
+  val activityCategoryDescription: String,
+  val attendanceRequired: Boolean,
+  val paid: Boolean,
+  val outsideWork: Boolean,
+  val riskLevel: String,
+  val organiser: String?,
+  val dpsLocationId: UUID?,
+  val inCell: Boolean,
+  val offWing: Boolean,
+  val onWing: Boolean,
 )

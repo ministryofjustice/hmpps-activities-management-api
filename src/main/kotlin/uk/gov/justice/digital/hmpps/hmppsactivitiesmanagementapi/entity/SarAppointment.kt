@@ -6,6 +6,7 @@ import jakarta.persistence.Table
 import org.hibernate.annotations.Immutable
 import java.time.LocalDate
 import java.time.LocalTime
+import java.util.UUID
 
 @Entity
 @Immutable
@@ -23,6 +24,14 @@ data class SarAppointment(
   val prisonerExtraInformation: String?,
   val attended: String,
   val createdDate: LocalDate,
+  val customName: String?,
+  val organiser: String?,
+  val dpsLocationId: UUID?,
+  val inCell: Boolean,
+  val offWing: Boolean,
+  val onWing: Boolean,
+  val cancellationReason: String?,
+  val cancelledBy: String?,
 
   @Transient
   var category: String,

@@ -137,10 +137,10 @@ data class AppointmentSetAppointment(
   @Schema(
     description =
     """
-    Extra information for the prisoner or prisoners attending the appointment. Shown only on the appointments details
-    page and on printed movement slips. Wing staff will be notified there is extra information via the unlock list.
+    This could include details about who will be attending, or other relevant appointment information. This won't 
+    appear on movement slips or the printed unlock list. Unlock lists will just show 'Extra information'.
     """,
-    example = "This appointment will help adjusting to life outside of prison",
+    example = "An interpreter will be attending this appointment",
   )
   val extraInformation: String? = null,
 
