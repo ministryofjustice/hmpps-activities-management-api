@@ -34,6 +34,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transformAppointmentInstanceToScheduledEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transformPrisonerScheduledActivityToScheduledEvents
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 
 @Service
@@ -120,11 +121,7 @@ class ScheduledEventService(
           val includeExternalActivitiesFromTaps = prisonRolledOut.externalActivitiesRolledOut && includeExternalMovements
 
           if (includeExternalActivitiesFromTaps) {
-            val timeRange = timeSlot?.let {
-              prisonRegimeService.getTimeRangeForPrisonAndTimeSlot(prisonCode, it, date.dayOfWeek)
-            }
-            val startDateTime = timeRange?.let { date.atTime(it.start) } ?: date.atStartOfDay()
-            val endDateTime = timeRange?.let { date.atTime(it.end) } ?: date.plusDays(1).atStartOfDay()
+            val (startDateTime, endDateTime) = getDateTimeRange(prisonCode, date, timeSlot)
 
             val externalActivities = externalMovementsApiClient.getExternalMovements(
               prisonCode,
@@ -304,11 +301,7 @@ class ScheduledEventService(
   ): Set<LocationEvents> = runBlocking {
     val eventPriorities = withContext(Dispatchers.IO) { prisonRegimeService.getEventPrioritiesForPrison(prisonCode) }
 
-    val timeRange = timeSlot?.let {
-      prisonRegimeService.getTimeRangeForPrisonAndTimeSlot(prisonCode, it, date.dayOfWeek)
-    }
-    val startDateTime = timeRange?.let { date.atTime(it.start) } ?: date.atStartOfDay()
-    val endDateTime = timeRange?.let { date.atTime(it.end) } ?: date.plusDays(1).atStartOfDay()
+    val (startDateTime, endDateTime) = getDateTimeRange(prisonCode, date, timeSlot)
 
     externalMovementsApiClient.getExternalMovements(prisonCode, prisonerNumbers, startDateTime, endDateTime)
       .content
@@ -326,5 +319,14 @@ class ScheduledEventService(
           ),
         )
       } ?: emptySet()
+  }
+
+  private fun getDateTimeRange(prisonCode: String, date: LocalDate, timeSlot: TimeSlot?): Pair<LocalDateTime, LocalDateTime> {
+    val timeRange = timeSlot?.let {
+      prisonRegimeService.getTimeRangeForPrisonAndTimeSlot(prisonCode, it, date.dayOfWeek)
+    }
+    val startDateTime = timeRange?.let { date.atTime(it.start) } ?: date.atStartOfDay()
+    val endDateTime = timeRange?.let { date.atTime(it.end) } ?: date.plusDays(1).atStartOfDay()
+    return startDateTime to endDateTime
   }
 }
