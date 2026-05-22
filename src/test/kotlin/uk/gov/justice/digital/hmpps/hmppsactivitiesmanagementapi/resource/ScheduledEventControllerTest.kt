@@ -17,6 +17,7 @@ import org.springframework.test.web.servlet.post
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.internalLocationEvents
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.LocationEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentCategoryService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.InternalLocationService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerScheduledEventsFixture
@@ -435,6 +436,96 @@ class ScheduledEventControllerTest : ControllerTestBase() {
     assertThat(response.contentAsString + "\n").isEqualTo(result)
   }
 
+  @Test
+  fun `getExternalMovementsForMultiplePrisoners - 200 response when no external movements found`() {
+    val prisonCode = "MDI"
+    val date = LocalDate.now()
+    val prisonerNumbers = setOf("G4793VF")
+    val result = emptySet<LocationEvents>()
+
+    whenever(scheduledEventService.getExternalMovementsForMultiplePrisoners(prisonCode, prisonerNumbers, date, null))
+      .thenReturn(result)
+
+    val response = mockMvc.getExternalMovements(prisonCode, prisonerNumbers, date, null)
+      .andExpect { status { isOk() } }
+      .andReturn().response
+
+    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(result))
+  }
+
+  @Test
+  fun `getExternalMovementsForMultiplePrisoners - 200 response with time slot`() {
+    val prisonCode = "MDI"
+    val date = LocalDate.now()
+    val prisonerNumbers = setOf("G4793VF")
+
+    whenever(scheduledEventService.getExternalMovementsForMultiplePrisoners(prisonCode, prisonerNumbers, date, TimeSlot.AM))
+      .thenReturn(emptySet())
+
+    mockMvc.getExternalMovements(prisonCode, prisonerNumbers, date, TimeSlot.AM)
+      .andExpect { status { isOk() } }
+
+    verify(scheduledEventService).getExternalMovementsForMultiplePrisoners(prisonCode, prisonerNumbers, date, TimeSlot.AM)
+  }
+
+  @Test
+  fun `getExternalMovementsForMultiplePrisoners - 400 response when no date supplied`() {
+    mockMvc.post("/scheduled-events/prison/MDI/external-movements") {
+      accept = MediaType.APPLICATION_JSON
+      contentType = MediaType.APPLICATION_JSON
+      content = mapper.writeValueAsBytes(setOf("G4793VF"))
+    }
+      .andExpect { status { isBadRequest() } }
+      .andExpect {
+        content {
+          jsonPath("$.userMessage") {
+            value("Required request parameter 'date' for method parameter type LocalDate is not present")
+          }
+        }
+      }
+
+    verifyNoInteractions(scheduledEventService)
+  }
+
+  @Test
+  fun `getExternalMovementsForMultiplePrisoners - 400 response when invalid date supplied`() {
+    mockMvc.post("/scheduled-events/prison/MDI/external-movements?date=invalid") {
+      accept = MediaType.APPLICATION_JSON
+      contentType = MediaType.APPLICATION_JSON
+      content = mapper.writeValueAsBytes(setOf("G4793VF"))
+    }
+      .andExpect { status { isBadRequest() } }
+      .andExpect {
+        content {
+          jsonPath("$.userMessage") {
+            value("Error converting 'date' (invalid): Method parameter 'date': Failed to convert value of type 'java.lang.String' to required type 'java.time.LocalDate'")
+          }
+        }
+      }
+
+    verifyNoInteractions(scheduledEventService)
+  }
+
+  @Test
+  fun `getExternalMovementsForMultiplePrisoners - 400 response when invalid time slot supplied`() {
+    val date = LocalDate.now()
+    mockMvc.post("/scheduled-events/prison/MDI/external-movements?date=$date&timeSlot=no") {
+      accept = MediaType.APPLICATION_JSON
+      contentType = MediaType.APPLICATION_JSON
+      content = mapper.writeValueAsBytes(setOf("G4793VF"))
+    }
+      .andExpect { status { isBadRequest() } }
+      .andExpect {
+        content {
+          jsonPath("$.userMessage") {
+            value("Error converting 'timeSlot' (no): Method parameter 'timeSlot': Failed to convert value of type 'java.lang.String' to required type 'uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot'")
+          }
+        }
+      }
+
+    verifyNoInteractions(scheduledEventService)
+  }
+
   private fun MockMvc.getScheduledEventsForSinglePrisoner(
     prisonCode: String,
     prisonerNumber: String,
@@ -478,6 +569,19 @@ class ScheduledEventControllerTest : ControllerTestBase() {
     contentType = MediaType.APPLICATION_JSON
     content = mapper.writeValueAsBytes(
       dpsLocationIds,
+    )
+  }.andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+
+  private fun MockMvc.getExternalMovements(
+    prisonCode: String,
+    prisonerNumbers: Set<String>,
+    date: LocalDate,
+    timeSlot: TimeSlot? = null,
+  ) = post("/scheduled-events/prison/$prisonCode/external-movements?date=$date" + (timeSlot?.let { "&timeSlot=$timeSlot" } ?: "")) {
+    accept = MediaType.APPLICATION_JSON
+    contentType = MediaType.APPLICATION_JSON
+    content = mapper.writeValueAsBytes(
+      prisonerNumbers,
     )
   }.andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
 }
