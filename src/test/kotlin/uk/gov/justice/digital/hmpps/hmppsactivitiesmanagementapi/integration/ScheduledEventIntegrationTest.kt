@@ -1090,7 +1090,6 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
       .expectBodyList<InternalLocationEvents>()
-      
       .returnResult().responseBody
 
     private fun WebTestClient.getLocationEvents(
