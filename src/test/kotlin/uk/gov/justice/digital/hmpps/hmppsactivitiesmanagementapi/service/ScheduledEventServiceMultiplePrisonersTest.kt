@@ -880,11 +880,11 @@ class ScheduledEventServiceMultiplePrisonersTest {
       val external = activities.single { it.eventSource == "EXTERNAL_MOVEMENTS_API" }
       with(external) {
         assertThat(categoryDescription).isNull()
-        assertThat(categoryCode).isEqualTo("FB")
+        assertThat(categoryCode).isEqualTo(externalMovement.description.code)
         assertThat(outsidePrison).isTrue()
         assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
         assertThat(endTime).isEqualTo(LocalTime.of(17, 0))
-        assertThat(status).isEqualTo("Scheduled")
+        assertThat(status).isEqualTo(externalMovement.status.description)
       }
 
       with(activities.single { it.eventSource == "SAA" }) {
@@ -1212,16 +1212,16 @@ class ScheduledEventServiceMultiplePrisonersTest {
         assertThat(code).isEqualTo("OUTSIDE")
         assertThat(description).isEqualTo("Outside")
         with(events.single()) {
-          assertThat(prisonerNumber).isEqualTo("G4793VF")
+          assertThat(prisonerNumber).isEqualTo(externalMovement.prisonerNumber)
           assertThat(eventSource).isEqualTo("EXTERNAL_MOVEMENTS_API")
           assertThat(outsidePrison).isTrue()
           assertThat(categoryDescription).isNull()
-          assertThat(categoryCode).isEqualTo("FB")
+          assertThat(categoryCode).isEqualTo(externalMovement.description.code)
           assertThat(summary).isEqualTo("Accommodation-related ROTL")
           assertThat(date).isEqualTo(today)
           assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
           assertThat(endTime).isEqualTo(LocalTime.of(17, 0))
-          assertThat(status).isEqualTo("Scheduled")
+          assertThat(status).isEqualTo(externalMovement.status.description)
         }
       }
     }
