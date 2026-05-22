@@ -16,12 +16,13 @@ import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
-import org.mockito.invocation.InvocationOnMock
+import org.mockito.ArgumentMatchers.anyList
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.times
@@ -49,6 +50,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAN
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.earliestReleaseDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
@@ -64,6 +66,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Acti
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListSearchSpecification
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.NUMBER_OF_RESULTS_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISONER_NUMBER_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
@@ -91,6 +94,7 @@ class WaitingListServiceTest {
   private val telemetryClient: TelemetryClient = mock()
   private val auditService: AuditService = mock()
   private val nonAssociationsApiClient: NonAssociationsApiClient = mockk()
+  private val rolloutPrisonService: RolloutPrisonService = mock()
   private val declinedEventCaptor = argumentCaptor<PrisonerDeclinedFromWaitingListEvent>()
   private val removedEventCaptor = argumentCaptor<PrisonerRemovedFromWaitingListEvent>()
   private val service = WaitingListService(
@@ -102,6 +106,7 @@ class WaitingListServiceTest {
     telemetryClient,
     auditService,
     nonAssociationsApiClient,
+    rolloutPrisonService,
     1,
   )
   private val waitingListCaptor = argumentCaptor<WaitingList>()
@@ -134,6 +139,7 @@ class WaitingListServiceTest {
   @BeforeEach
   fun setUp() {
     clearAllMocks()
+//    whenever(rolloutPrisonService.isExternalActivitiesRolledOutAt(PENTONVILLE_PRISON_CODE)).thenReturn(false)
   }
 
   @Test
@@ -265,7 +271,7 @@ class WaitingListServiceTest {
 
     assertThatThrownBy { service.addPrisoner(DEFAULT_CASELOAD_PENTONVILLE, request, "test") }
       .isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Application date cannot be not be in the future")
+      .hasMessage("Application date cannot be in the future")
   }
 
   @Test
@@ -293,6 +299,97 @@ class WaitingListServiceTest {
     assertThatThrownBy { service.addPrisoner(DEFAULT_CASELOAD_PENTONVILLE, request, "test") }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Cannot add prisoner to the waiting list because a pending application already exists")
+  }
+
+  @Test
+  fun `fails if prison is rolled out for external activities and activity is outside work`() {
+    val request = WaitingListApplicationRequest(
+      prisonerNumber = "123456",
+      activityScheduleId = schedule.activityScheduleId,
+      applicationDate = TimeSource.today(),
+      requestedBy = "Test",
+      status = WaitingListStatus.PENDING,
+    )
+
+    whenever(rolloutPrisonService.isExternalActivitiesRolledOutAt(PENTONVILLE_PRISON_CODE)).thenReturn(true)
+    whenever(scheduleRepository.findBy(schedule.activityScheduleId, PENTONVILLE_PRISON_CODE)).thenReturn(activitySchedule(activityEntity(outsideWork = true)))
+
+    assertThatThrownBy { service.addPrisoner(DEFAULT_CASELOAD_PENTONVILLE, request, "test") }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Cannot add prisoner to the waiting list for 'Maths basic' as it is an outside work activity")
+  }
+
+  @Test
+  fun `successfully adds a prisoner when prison is rolled out for external activities and activity is not outside work`() {
+    whenever(prisonerSearchApiClient.findByPrisonerNumber(prisonerNumber = "123456")).thenReturn(activeInPentonvillePrisoner)
+
+    val request = WaitingListApplicationRequest(
+      prisonerNumber = "123456",
+      activityScheduleId = 1L,
+      applicationDate = TimeSource.today(),
+      requestedBy = "Bob",
+      comments = "Bob's comments",
+      status = WaitingListStatus.PENDING,
+    )
+
+    whenever(rolloutPrisonService.isExternalActivitiesRolledOutAt(PENTONVILLE_PRISON_CODE)).thenReturn(true)
+
+    service.addPrisoner(DEFAULT_CASELOAD_PENTONVILLE, request, "Test user")
+
+    verify(waitingListRepository).saveAndFlush(waitingListCaptor.capture())
+    verify(telemetryClient).trackEvent(
+      TelemetryEvent.PRISONER_ADDED_TO_WAITLIST.value,
+      mapOf(PRISONER_NUMBER_PROPERTY_KEY to "123456"),
+      mapOf(NUMBER_OF_RESULTS_METRIC_KEY to 1.0),
+    )
+
+    with(waitingListCaptor.firstValue) {
+      prisonerNumber isEqualTo "123456"
+      activitySchedule isEqualTo schedule
+      applicationDate isEqualTo TimeSource.today()
+      requestedBy isEqualTo "Bob"
+      comments isEqualTo "Bob's comments"
+      status isEqualTo WaitingListStatus.PENDING
+    }
+  }
+
+  @Test
+  fun `successfully adds a prisoner when prison is not rolled out for external activities and activity is outside work`() {
+    val outsideWorkSchedule = activitySchedule(activityEntity(outsideWork = true))
+
+    prisonerSearchApiClient.stub {
+      on { findByPrisonerNumber(prisonerNumber = "123456") } doReturn activeInPentonvillePrisoner
+    }
+    scheduleRepository.stub {
+      on { findBy(1L, PENTONVILLE_PRISON_CODE) } doReturn outsideWorkSchedule
+    }
+
+    val request = WaitingListApplicationRequest(
+      prisonerNumber = "123456",
+      activityScheduleId = 1L,
+      applicationDate = TimeSource.today(),
+      requestedBy = "Bob",
+      comments = "Bob's comments",
+      status = WaitingListStatus.PENDING,
+    )
+
+    service.addPrisoner(DEFAULT_CASELOAD_PENTONVILLE, request, "Test user")
+
+    verify(waitingListRepository).saveAndFlush(waitingListCaptor.capture())
+    verify(telemetryClient).trackEvent(
+      TelemetryEvent.PRISONER_ADDED_TO_WAITLIST.value,
+      mapOf(PRISONER_NUMBER_PROPERTY_KEY to "123456"),
+      mapOf(NUMBER_OF_RESULTS_METRIC_KEY to 1.0),
+    )
+
+    with(waitingListCaptor.firstValue) {
+      prisonerNumber isEqualTo "123456"
+      activitySchedule isEqualTo outsideWorkSchedule
+      applicationDate isEqualTo TimeSource.today()
+      requestedBy isEqualTo "Bob"
+      comments isEqualTo "Bob's comments"
+      status isEqualTo WaitingListStatus.PENDING
+    }
   }
 
   @Test
@@ -529,9 +626,7 @@ class WaitingListServiceTest {
 
     prisonerSearchApiClient.stub {
       on {
-        runBlocking {
-          prisonerSearchApiClient.findByPrisonerNumbersAsync(listOf("123456"))
-        }
+        prisonerSearchApiClient.findByPrisonerNumbersAsync(listOf("123456"))
       } doReturn emptyList()
     }
 
@@ -626,9 +721,7 @@ class WaitingListServiceTest {
 
     prisonerSearchApiClient.stub {
       on {
-        runBlocking {
-          prisonerSearchApiClient.findByPrisonerNumbersAsync(listOf("CCCCCC"))
-        }
+        prisonerSearchApiClient.findByPrisonerNumbersAsync(listOf("CCCCCC"))
       } doReturn listOf(validPrisoner)
     }
 
@@ -675,9 +768,7 @@ class WaitingListServiceTest {
 
     prisonerSearchApiClient.stub {
       on {
-        runBlocking {
-          prisonerSearchApiClient.findByPrisonerNumbersAsync(listOf("CCCCCC"))
-        }
+        prisonerSearchApiClient.findByPrisonerNumbersAsync(listOf("CCCCCC"))
       } doReturn listOf(validPrisoner)
     }
 
@@ -724,9 +815,7 @@ class WaitingListServiceTest {
 
     prisonerSearchApiClient.stub {
       on {
-        runBlocking {
-          prisonerSearchApiClient.findByPrisonerNumbersAsync(listOf("G4793VF"))
-        }
+        prisonerSearchApiClient.findByPrisonerNumbersAsync(listOf("G4793VF"))
       } doReturn listOf(prisoner)
     }
 
@@ -1180,7 +1269,7 @@ class WaitingListServiceTest {
   @Test
   fun `update status fails if already allocated`() {
     val waitingList =
-      waitingList(prisonCode = PENTONVILLE_PRISON_CODE, initialStatus = WaitingListStatus.ALLOCATED).also {
+      waitingList(prisonCode = PENTONVILLE_PRISON_CODE, initialStatus = ALLOCATED).also {
         whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
       }
 
@@ -1194,7 +1283,7 @@ class WaitingListServiceTest {
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("The waiting list ${waitingList.waitingListId} can no longer be updated")
 
-    waitingList.status isEqualTo WaitingListStatus.ALLOCATED
+    waitingList.status isEqualTo ALLOCATED
     waitingList.updatedTime isEqualTo null
     waitingList.updatedBy isEqualTo null
     waitingList.statusUpdatedTime isEqualTo null
@@ -1226,7 +1315,7 @@ class WaitingListServiceTest {
 
   @Test
   fun `update status fails if already removed`() {
-    val waitingList = waitingList(prisonCode = PENTONVILLE_PRISON_CODE, initialStatus = WaitingListStatus.REMOVED).also {
+    val waitingList = waitingList(prisonCode = PENTONVILLE_PRISON_CODE, initialStatus = REMOVED).also {
       whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
     }
 
@@ -1240,7 +1329,7 @@ class WaitingListServiceTest {
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("The waiting list ${waitingList.waitingListId} can no longer be updated")
 
-    waitingList.status isEqualTo WaitingListStatus.REMOVED
+    waitingList.status isEqualTo REMOVED
     waitingList.updatedTime isEqualTo null
     waitingList.updatedBy isEqualTo null
     waitingList.statusUpdatedTime isEqualTo null
@@ -1355,7 +1444,7 @@ class WaitingListServiceTest {
     assertThatThrownBy {
       service.updateWaitingList(
         waitingList.waitingListId,
-        WaitingListApplicationUpdateRequest(status = WaitingListStatus.ALLOCATED),
+        WaitingListApplicationUpdateRequest(status = ALLOCATED),
         "Frank",
       )
     }
@@ -1372,7 +1461,7 @@ class WaitingListServiceTest {
     whenever(waitingListRepository.findById(any())) doReturn Optional.empty()
 
     assertThatThrownBy {
-      service.updateWaitingList(99, WaitingListApplicationUpdateRequest(status = WaitingListStatus.ALLOCATED), "Frank")
+      service.updateWaitingList(99, WaitingListApplicationUpdateRequest(status = ALLOCATED), "Frank")
     }
       .isInstanceOf(EntityNotFoundException::class.java)
       .hasMessage("Waiting List 99 not found")
@@ -1387,7 +1476,7 @@ class WaitingListServiceTest {
     assertThatThrownBy {
       service.updateWaitingList(
         waitingList.waitingListId,
-        WaitingListApplicationUpdateRequest(status = WaitingListStatus.ALLOCATED),
+        WaitingListApplicationUpdateRequest(status = ALLOCATED),
         "Frank",
       )
     }
@@ -1432,19 +1521,19 @@ class WaitingListServiceTest {
     )
 
     with(pending) {
-      status isEqualTo WaitingListStatus.REMOVED
+      status isEqualTo REMOVED
       updatedTime!! isCloseTo TimeSource.now()
       updatedBy isEqualTo "Fred"
     }
 
     with(approved) {
-      status isEqualTo WaitingListStatus.REMOVED
+      status isEqualTo REMOVED
       updatedTime!! isCloseTo TimeSource.now()
       updatedBy isEqualTo "Fred"
     }
 
     with(declined) {
-      status isEqualTo WaitingListStatus.REMOVED
+      status isEqualTo REMOVED
       updatedTime!! isCloseTo TimeSource.now()
       updatedBy isEqualTo "Fred"
     }
@@ -1680,6 +1769,7 @@ class WaitingListServiceTest {
   fun `should throw an exception if activity schedule is not found`() {
     val requestList = createPrisonerWaitingListRequest(3)
     whenever(scheduleRepository.findBy(1L, prisonCode)).thenReturn(null)
+    whenever(prisonerSearchApiClient.findByPrisonerNumber(prisonerNumber)).thenReturn(activeInPentonvillePrisoner)
     assertThrows<EntityNotFoundException> {
       service.addPrisonerToMultipleActivities(prisonCode, prisonerNumber, requestList, createdBy)
     }.also {
@@ -1696,6 +1786,48 @@ class WaitingListServiceTest {
     }.also {
       assertThat(it.message).isEqualTo("Activity schedule IDs cannot be the same for more than one waiting list application request")
     }
+  }
+
+  @Test
+  fun `should throw an exception if prison is rolled out for external activities and one of the activities is outside work`() {
+    val requests = createPrisonerWaitingListRequest(2)
+
+    whenever(prisonerSearchApiClient.findByPrisonerNumber(prisonerNumber)).thenReturn(activeInPentonvillePrisoner)
+    whenever(rolloutPrisonService.isExternalActivitiesRolledOutAt(PENTONVILLE_PRISON_CODE)).thenReturn(true)
+    whenever(scheduleRepository.findBy(2L, PENTONVILLE_PRISON_CODE)).thenReturn(activitySchedule(activityEntity(description = "English", outsideWork = true)))
+
+    assertThrows<IllegalArgumentException> {
+      service.addPrisonerToMultipleActivities(prisonCode, prisonerNumber, requests, createdBy)
+    }.also {
+      assertThat(it.message).isEqualTo("Cannot add prisoner to the waiting list for 'English' as it is an outside work activity")
+    }
+    verify(waitingListRepository, never()).saveAllAndFlush(anyList())
+  }
+
+  @Test
+  fun `should allow request when prison is rolled out for external activities and all of the activities are not outside work`() {
+    val request1 = PrisonerWaitingListApplicationRequest(
+      activityScheduleId = 1L,
+      applicationDate = TimeSource.yesterday(),
+      requestedBy = "Requester",
+      comments = "Testing",
+      status = WaitingListStatus.PENDING,
+    )
+    val request2 = request1.copy(activityScheduleId = 2L)
+    val schedule1 = activitySchedule(activityEntity(), 1L)
+    val schedule2 = activitySchedule(activityEntity(), 2L)
+
+    whenever(prisonerSearchApiClient.findByPrisonerNumber(prisonerNumber = "AB1234C")).thenReturn(activeInPentonvillePrisoner)
+    whenever(rolloutPrisonService.isExternalActivitiesRolledOutAt(PENTONVILLE_PRISON_CODE)).thenReturn(true)
+    whenever(scheduleRepository.findBy(1L, PENTONVILLE_PRISON_CODE)).thenReturn(schedule1)
+    whenever(scheduleRepository.findBy(2L, PENTONVILLE_PRISON_CODE)).thenReturn(schedule2)
+    whenever(waitingListRepository.saveAllAndFlush(any<List<WaitingList>>())).thenAnswer { it.getArgument<List<WaitingList>>(0) }
+
+    service.addPrisonerToMultipleActivities(prisonCode, prisonerNumber, listOf(request1, request2), createdBy)
+
+    val captor = argumentCaptor<List<WaitingList>>()
+    verify(waitingListRepository).saveAllAndFlush(captor.capture())
+    assertThat(captor.firstValue.map { it.activitySchedule }).containsExactlyInAnyOrder(schedule1, schedule2)
   }
 
   @ParameterizedTest
@@ -1743,10 +1875,7 @@ class WaitingListServiceTest {
     val requestList = createPrisonerWaitingListRequest(5)
 
     whenever(scheduleRepository.findBy(any(), any())).thenReturn(schedule)
-    whenever(waitingListRepository.saveAllAndFlush(any<List<WaitingList>>()))
-      .thenAnswer { invocation: InvocationOnMock ->
-        invocation.getArgument<List<WaitingList>>(0)
-      }
+    whenever(waitingListRepository.saveAllAndFlush(any<List<WaitingList>>())).thenAnswer { it.getArgument<List<WaitingList>>(0) }
 
     assertDoesNotThrow {
       service.addPrisonerToMultipleActivities(prisonCode, prisonerNumber, requestList, createdBy)

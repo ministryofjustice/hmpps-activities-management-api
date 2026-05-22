@@ -36,6 +36,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Acti
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListSearchSpecification
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISONER_NUMBER_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.activityMetricsMap
@@ -57,6 +58,7 @@ class WaitingListService(
   private val telemetryClient: TelemetryClient,
   private val auditService: AuditService,
   private val nonAssociationsApiClient: NonAssociationsApiClient,
+  private val rolloutPrisonService: RolloutPrisonService,
   @Value("\${waiting-list.prisoner-search-limit:1000}") private val prisonerSearchLimit: Long = 1000,
 ) {
   companion object {
@@ -147,6 +149,7 @@ class WaitingListService(
     request.failIfApplicationDateInFuture()
     request.failIfNotAllowableStatus()
     failIfAlreadyPendingOrApproved(prisonCode, request.prisonerNumber, schedule)
+    failIfActivityIsOutsideAndExternalActivitiesIsRolledOut(prisonCode, schedule)
 
     waitingListRepository.saveAndFlush(
       WaitingList(
@@ -177,9 +180,11 @@ class WaitingListService(
       "A maximum of 5 waiting list application requests can be submitted at once"
     }
 
-    require(requests.map { it.activityScheduleId }.distinct().size == requests.size) {
+    require(requests.distinctBy { it.activityScheduleId }.size == requests.size) {
       "Activity schedule IDs cannot be the same for more than one waiting list application request"
     }
+
+    val bookingId = getActivePrisonerBookingId(prisonCode, prisonerNumber)
 
     val waitingLists = requests.map { request ->
       val schedule = scheduleRepository.findBy(request.activityScheduleId!!, prisonCode)
@@ -191,13 +196,14 @@ class WaitingListService(
       request.failIfApplicationDateInFuture()
       request.failIfNotAllowableStatus()
       failIfAlreadyPendingOrApproved(prisonCode, prisonerNumber, schedule)
+      failIfActivityIsOutsideAndExternalActivitiesIsRolledOut(prisonCode, schedule)
 
       log.info("Preparing ${request.status} waiting list application for prisoner $prisonerNumber to activity ${schedule.description}")
 
       WaitingList(
         prisonCode = prisonCode,
         prisonerNumber = prisonerNumber,
-        bookingId = getActivePrisonerBookingId(prisonCode, prisonerNumber),
+        bookingId = bookingId,
         activitySchedule = schedule,
         applicationDate = request.applicationDate!!,
         requestedBy = request.requestedBy!!,
@@ -267,7 +273,7 @@ class WaitingListService(
 
   @Deprecated("Use - PrisonerWaitingListApplicationRequest.failIfApplicationDateInFuture()")
   private fun WaitingListApplicationRequest.failIfApplicationDateInFuture() {
-    require(applicationDate!! <= LocalDate.now()) { "Application date cannot be not be in the future" }
+    require(applicationDate!! <= LocalDate.now()) { "Application date cannot be in the future" }
   }
 
   private fun failIfAlreadyPendingOrApproved(
@@ -288,6 +294,10 @@ class WaitingListService(
         "Cannot add prisoner to the waiting list because an approved application already exists"
       }
     }
+  }
+
+  private fun failIfActivityIsOutsideAndExternalActivitiesIsRolledOut(prisonCode: String, schedule: ActivitySchedule) = require(!schedule.activity.outsideWork || !rolloutPrisonService.isExternalActivitiesRolledOutAt(prisonCode)) {
+    "Cannot add prisoner to the waiting list for '${schedule.activity.description}' as it is an outside work activity"
   }
 
   @Deprecated("Use - getActivePrisonerBookingId(prisonCode, prisonerNumber")

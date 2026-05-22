@@ -81,8 +81,8 @@ INSERT INTO prison_regime
 VALUES ('MDI', '09:00:00', '12:00:00', '13:00:00', '16:30:00', '18:00:00', '20:00:00'),
        ('RSI', '09:00:00', '12:00:00', '13:45:00', '16:45:00', '18:00:00', '20:00:00');
 
-insert into prison_regime_days_of_week(prison_regime_id, day_of_week)
-values ((select prison_regime_id from prison_regime where prison_code = 'RSI'), 'MONDAY'),
+insert into prison_regime_days_of_week(prison_regime_id, day_of_week) values
+((select prison_regime_id from prison_regime where prison_code = 'RSI'), 'MONDAY'),
 ((select prison_regime_id from prison_regime where prison_code = 'RSI'), 'TUESDAY'),
 ((select prison_regime_id from prison_regime where prison_code = 'RSI'), 'WEDNESDAY'),
 ((select prison_regime_id from prison_regime where prison_code = 'RSI'), 'THURSDAY'),
@@ -96,20 +96,4 @@ values ((select prison_regime_id from prison_regime where prison_code = 'RSI'), 
 ((select prison_regime_id from prison_regime where prison_code = 'MDI'), 'THURSDAY'),
 ((select prison_regime_id from prison_regime where prison_code = 'MDI'), 'FRIDAY'),
 ((select prison_regime_id from prison_regime where prison_code = 'MDI'), 'SATURDAY'),
-((select prison_regime_id from prison_regime where prison_code = 'MDI'), 'SUNDAY'),
-
-((select prison_regime_id from prison_regime where prison_code = 'WDI'), 'MONDAY'),
-((select prison_regime_id from prison_regime where prison_code = 'WDI'), 'TUESDAY'),
-((select prison_regime_id from prison_regime where prison_code = 'WDI'), 'WEDNESDAY'),
-((select prison_regime_id from prison_regime where prison_code = 'WDI'), 'THURSDAY'),
-((select prison_regime_id from prison_regime where prison_code = 'WDI'), 'FRIDAY'),
-((select prison_regime_id from prison_regime where prison_code = 'WDI'), 'SATURDAY'),
-((select prison_regime_id from prison_regime where prison_code = 'WDI'), 'SUNDAY'),
-
-((select prison_regime_id from prison_regime where prison_code = 'LPI'), 'MONDAY'),
-((select prison_regime_id from prison_regime where prison_code = 'LPI'), 'TUESDAY'),
-((select prison_regime_id from prison_regime where prison_code = 'LPI'), 'WEDNESDAY'),
-((select prison_regime_id from prison_regime where prison_code = 'LPI'), 'THURSDAY'),
-((select prison_regime_id from prison_regime where prison_code = 'LPI'), 'FRIDAY'),
-((select prison_regime_id from prison_regime where prison_code = 'LPI'), 'SATURDAY'),
-((select prison_regime_id from prison_regime where prison_code = 'LPI'), 'SUNDAY');
+((select prison_regime_id from prison_regime where prison_code = 'MDI'), 'SUNDAY');
