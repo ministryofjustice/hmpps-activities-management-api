@@ -1335,7 +1335,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       .exchange()
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBodyList(LocationEvents::class.java)
+      .expectBodyList<LocationEvents>()
       .returnResult().responseBody!!
   }
 }
