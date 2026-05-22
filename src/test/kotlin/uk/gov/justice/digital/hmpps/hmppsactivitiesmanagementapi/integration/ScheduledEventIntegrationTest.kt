@@ -11,6 +11,7 @@ import org.junit.jupiter.params.provider.ValueSource
 import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
+import org.springframework.test.web.reactive.server.expectBodyList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.Hearing
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.HearingSummaryResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.HearingsResponse
@@ -1088,7 +1089,8 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       .exchange()
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBodyList(InternalLocationEvents::class.java)
+      .expectBodyList<InternalLocationEvents>()
+      
       .returnResult().responseBody
 
     private fun WebTestClient.getLocationEvents(
@@ -1109,7 +1111,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       .exchange()
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBodyList(InternalLocationEvents::class.java)
+      .expectBodyList<InternalLocationEvents>()
       .returnResult().responseBody
   }
 
@@ -1332,7 +1334,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       .exchange()
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBodyList(LocationEvents::class.java)
+      .expectBodyList<LocationEvents>()
       .returnResult().responseBody!!
   }
 }
