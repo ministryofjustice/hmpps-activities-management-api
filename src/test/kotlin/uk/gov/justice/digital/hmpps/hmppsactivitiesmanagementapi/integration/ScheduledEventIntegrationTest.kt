@@ -11,6 +11,7 @@ import org.junit.jupiter.params.provider.ValueSource
 import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
+import org.springframework.test.web.reactive.server.expectBodyList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.Hearing
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.HearingSummaryResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.HearingsResponse
@@ -28,6 +29,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.interna
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentFrequency
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocationEvents
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.LocationEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerScheduledEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonApiPrisonerScheduleFixture
@@ -1087,7 +1089,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       .exchange()
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBodyList(InternalLocationEvents::class.java)
+      .expectBodyList<InternalLocationEvents>()
       .returnResult().responseBody
 
     private fun WebTestClient.getLocationEvents(
@@ -1108,7 +1110,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       .exchange()
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBodyList(InternalLocationEvents::class.java)
+      .expectBodyList<InternalLocationEvents>()
       .returnResult().responseBody
   }
 
@@ -1140,8 +1142,8 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
   }
 
   @Nested
-  @DisplayName("External activities from External Movement API")
-  inner class ExternalActivitiesFromExternalMovementApi {
+  @DisplayName("External movements from External Movement API for unlock list")
+  inner class ExternalMovementsFromExternalMovementApiForUnlockList {
     private val prisonCode = "MDI"
     private val prisonerNumbers = setOf("A11111A", "A22222A")
     private val date = LocalDate.now()
@@ -1249,5 +1251,89 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
       .expectBody(PrisonerScheduledEvents::class.java)
       .returnResult().responseBody
+  }
+
+  @Nested
+  @DisplayName("External movements from External Movement API for movement list")
+  inner class ExternalMovementsFromExternalMovementApiForMovementList {
+    private val prisonCode = "MDI"
+    private val prisonerNumbers = setOf("A11111A", "A22222A")
+    private val date = LocalDate.now()
+
+    @Test
+    fun `returns external movements wrapped in LocationEvents`() {
+      val movement = externalMovement()
+
+      externalMovementsApiMockServer.stubGetExternalMovements(
+        prisonCode,
+        prisonerNumbers.toList(),
+        date.atStartOfDay(),
+        date.plusDays(1).atStartOfDay(),
+        ExternalMovementsResponse(content = listOf(movement)),
+      )
+
+      val result = webTestClient.getExternalMovements(prisonCode, prisonerNumbers, date)
+
+      with(result.single()) {
+        assertThat(id).isNull()
+        assertThat(dpsLocationId).isNull()
+        assertThat(this.prisonCode).isEqualTo("MDI")
+        assertThat(code).isEqualTo("OUTSIDE")
+        assertThat(description).isEqualTo("Outside")
+        with(events.single()) {
+          assertThat(prisonerNumber).isEqualTo("A11111A")
+          assertThat(eventSource).isEqualTo("EXTERNAL_MOVEMENTS_API")
+          assertThat(outsidePrison).isTrue()
+          assertThat(categoryCode).isEqualTo("FB")
+          assertThat(summary).isEqualTo("Accommodation-related ROTL")
+          assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
+          assertThat(endTime).isEqualTo(LocalTime.of(17, 0))
+        }
+      }
+    }
+
+    @Test
+    fun `returns empty set when no external movements`() {
+      externalMovementsApiMockServer.stubGetExternalMovements(
+        prisonCode,
+        prisonerNumbers.toList(),
+        date.atStartOfDay(),
+        date.plusDays(1).atStartOfDay(),
+        ExternalMovementsResponse(content = emptyList()),
+      )
+
+      val result = webTestClient.getExternalMovements(prisonCode, prisonerNumbers, date)
+
+      assertThat(result).isEmpty()
+    }
+
+    @Test
+    fun `returns 401 when not authenticated`() {
+      webTestClient.post()
+        .uri("/scheduled-events/prison/$prisonCode/external-movements?date=$date")
+        .bodyValue(prisonerNumbers)
+        .accept(MediaType.APPLICATION_JSON)
+        .exchange()
+        .expectStatus().isUnauthorized
+    }
+
+    private fun WebTestClient.getExternalMovements(
+      prisonCode: String,
+      prisonerNumbers: Set<String>,
+      date: LocalDate,
+      timeSlot: TimeSlot? = null,
+    ) = post()
+      .uri(
+        "/scheduled-events/prison/$prisonCode/external-movements?date=$date" +
+          (timeSlot?.let { "&timeSlot=$it" } ?: ""),
+      )
+      .bodyValue(prisonerNumbers)
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
+      .exchange()
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBodyList<LocationEvents>()
+      .returnResult().responseBody!!
   }
 }

@@ -16,6 +16,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.LocationEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerScheduledEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrisonPlan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonerScheduledActivityRepository
@@ -33,6 +34,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transformAppointmentInstanceToScheduledEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transformPrisonerScheduledActivityToScheduledEvents
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 
 @Service
@@ -119,11 +121,7 @@ class ScheduledEventService(
           val includeExternalActivitiesFromTaps = prisonRolledOut.externalActivitiesRolledOut && includeExternalMovements
 
           if (includeExternalActivitiesFromTaps) {
-            val timeRange = timeSlot?.let {
-              prisonRegimeService.getTimeRangeForPrisonAndTimeSlot(prisonCode, it, date.dayOfWeek)
-            }
-            val startDateTime = timeRange?.let { date.atTime(it.start) } ?: date.atStartOfDay()
-            val endDateTime = timeRange?.let { date.atTime(it.end) } ?: date.plusDays(1).atStartOfDay()
+            val (startDateTime, endDateTime) = getDateTimeRange(prisonCode, date, timeSlot)
 
             val externalActivities = externalMovementsApiClient.getExternalMovements(
               prisonCode,
@@ -293,5 +291,42 @@ class ScheduledEventService(
       earliestStartTime,
       latestStartTime,
     )
+  }
+
+  fun getExternalMovementsForMultiplePrisoners(
+    prisonCode: String,
+    prisonerNumbers: Set<String>,
+    date: LocalDate,
+    timeSlot: TimeSlot?,
+  ): Set<LocationEvents> = runBlocking {
+    val eventPriorities = withContext(Dispatchers.IO) { prisonRegimeService.getEventPrioritiesForPrison(prisonCode) }
+
+    val (startDateTime, endDateTime) = getDateTimeRange(prisonCode, date, timeSlot)
+
+    externalMovementsApiClient.getExternalMovements(prisonCode, prisonerNumbers, startDateTime, endDateTime)
+      .content
+      .toScheduledEvents(prisonCode, eventPriorities)
+      .takeIf { it.isNotEmpty() }
+      ?.let { events ->
+        setOf(
+          LocationEvents(
+            id = null,
+            dpsLocationId = null,
+            prisonCode = prisonCode,
+            code = "OUTSIDE",
+            description = "Outside",
+            events = events.toSet(),
+          ),
+        )
+      } ?: emptySet()
+  }
+
+  private fun getDateTimeRange(prisonCode: String, date: LocalDate, timeSlot: TimeSlot?): Pair<LocalDateTime, LocalDateTime> {
+    val timeRange = timeSlot?.let {
+      prisonRegimeService.getTimeRangeForPrisonAndTimeSlot(prisonCode, it, date.dayOfWeek)
+    }
+    val startDateTime = timeRange?.let { date.atTime(it.start) } ?: date.atStartOfDay()
+    val endDateTime = timeRange?.let { date.atTime(it.end) } ?: date.plusDays(1).atStartOfDay()
+    return startDateTime to endDateTime
   }
 }

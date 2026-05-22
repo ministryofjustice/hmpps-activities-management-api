@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocationEvents
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.LocationEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerScheduledEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentCategoryService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.InternalLocationService
@@ -250,6 +251,70 @@ class ScheduledEventController(
   ): Set<InternalLocationEvents> = internalLocationService.getLocationEvents(
     prisonCode,
     dpsLocationIds,
+    date,
+    timeSlot,
+  )
+
+  @PostMapping(
+    value = ["/prison/{prisonCode}/external-movements"],
+    consumes = [MediaType.APPLICATION_JSON_VALUE],
+    produces = [MediaType.APPLICATION_JSON_VALUE],
+  )
+  @ResponseBody
+  @Operation(
+    summary = "Get a list of external movements (TAPs) for a given prison code, list of prisoner numbers, date and an optional time slot",
+    description = """
+      Returns external movements fetched from the External Movements API for the given prison, prisoner numbers,
+      date and optional time slot. This endpoint supports the creation of movement lists.
+    """,
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Successful call - zero or more external movements found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            array = ArraySchema(schema = Schema(implementation = LocationEvents::class)),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Invalid request",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
+  fun getExternalMovementsForMultiplePrisoners(
+    @PathVariable("prisonCode")
+    @Parameter(description = "The 3-character prison code.")
+    prisonCode: String,
+    @RequestParam(value = "date", required = true)
+    @Parameter(description = "The exact date to return movements for (required) in format YYYY-MM-DD")
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+    date: LocalDate,
+    @RequestParam(value = "timeSlot", required = false)
+    @Parameter(description = "Time slot of the movements (optional). If supplied, one of AM, PM or ED.")
+    timeSlot: TimeSlot?,
+    @RequestBody(required = true)
+    @Parameter(description = "Set of prisoner numbers (required). Example ['G11234YI', 'B5234YI'].", required = true)
+    prisonerNumbers: Set<String>,
+  ): Set<LocationEvents> = scheduledEventService.getExternalMovementsForMultiplePrisoners(
+    prisonCode,
+    prisonerNumbers,
     date,
     timeSlot,
   )

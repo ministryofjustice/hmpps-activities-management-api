@@ -48,5 +48,5 @@ data class InternalLocationEvents(
   @Schema(
     description = "Collection of scheduled events due to take place at the internal location",
   )
-  var events: Set<ScheduledEvent>,
+  val events: Set<ScheduledEvent>,
 )
