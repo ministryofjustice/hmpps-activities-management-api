@@ -35,7 +35,7 @@ class RolloutIntegrationTest : IntegrationTestBase() {
 
   @Test
   fun `get prisons that are rolled out for users`() {
-    var prisonPlanList = webTestClient.getRolledOutPrisons()!!
+    val prisonPlanList = webTestClient.getRolledOutPrisons()!!
 
     assertThat(prisonPlanList).hasSize(5)
     with(prisonPlanList) {
@@ -51,14 +51,13 @@ class RolloutIntegrationTest : IntegrationTestBase() {
 
   @Test
   fun `get prisons that are rolled out and live for users`() {
-    var prisonPlanList = webTestClient.getLiveRolledOutPrisons()!!
+    val prisonPlanList = webTestClient.getLiveRolledOutPrisons()!!
 
     assertThat(prisonPlanList).hasSize(3)
     with(prisonPlanList) {
-      this.single { it.prisonCode == "RSI" && it.prisonLive }
-      this.single { it.prisonCode == "PVI" && it.prisonLive }
-      this.single { it.prisonCode == "MDI" && it.prisonLive }
-      this.single { it.prisonCode == "PVI" && it.externalActivitiesRolledOut }
+      this.single { it.prisonCode == "RSI" && it.prisonLive && !it.externalActivitiesRolledOut }
+      this.single { it.prisonCode == "PVI" && it.prisonLive && !it.externalActivitiesRolledOut }
+      this.single { it.prisonCode == "MDI" && it.prisonLive && it.externalActivitiesRolledOut }
     }
   }
 
