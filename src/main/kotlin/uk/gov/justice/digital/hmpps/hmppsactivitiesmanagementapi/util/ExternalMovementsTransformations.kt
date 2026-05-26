@@ -39,6 +39,7 @@ fun ExternalMovement.toScheduledEvent(prisonCode: String, priorities: EventPrior
   issuePayment = null,
   attendanceStatus = null,
   attendanceReasonCode = null,
+  status = status.description,
 )
 
 private fun ExternalMovement.transformedSummary(): String = when {

@@ -134,4 +134,7 @@ data class ScheduledEvent(
 
   @Schema(description = "Any prisoner specific comments supplied that relate to this event", example = "Please arrive 10 minutes early.")
   val prisonerComments: String? = null,
+
+  @Schema(description = "The status of an external scheduled event. Set to null for internal activities", example = "Scheduled")
+  val status: String? = null,
 )

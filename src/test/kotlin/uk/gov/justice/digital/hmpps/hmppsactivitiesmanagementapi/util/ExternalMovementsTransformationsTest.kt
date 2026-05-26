@@ -69,15 +69,16 @@ class ExternalMovementsTransformationsTest {
     assertThat(result.prisonCode).isEqualTo(prisonCode)
     assertThat(result.eventSource).isEqualTo("EXTERNAL_MOVEMENTS_API")
     assertThat(result.eventType).isEqualTo(EventType.ACTIVITY.name)
-    assertThat(result.categoryCode).isEqualTo("FB")
+    assertThat(result.categoryCode).isEqualTo(movement.description.code)
     assertThat(result.categoryDescription).isNull()
     assertThat(result.summary).isEqualTo("Accommodation-related ROTL")
     assertThat(result.outsidePrison).isTrue()
-    assertThat(result.prisonerNumber).isEqualTo("A1234AA")
+    assertThat(result.prisonerNumber).isEqualTo(movement.prisonerNumber)
     assertThat(result.date).isEqualTo(movement.start.toLocalDate())
     assertThat(result.startTime).isEqualTo(movement.start.toLocalTime())
     assertThat(result.endTime).isEqualTo(movement.end.toLocalTime())
     assertThat(result.priority).isEqualTo(EventType.ACTIVITY.defaultPriority)
+    assertThat(result.status).isEqualTo(movement.status.description)
   }
 
   @Test
