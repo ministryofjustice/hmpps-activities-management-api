@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
+import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -255,16 +256,15 @@ class ScheduledEventController(
     timeSlot,
   )
 
-  @PostMapping(
+  @GetMapping(
     value = ["/prison/{prisonCode}/external-movements"],
-    consumes = [MediaType.APPLICATION_JSON_VALUE],
     produces = [MediaType.APPLICATION_JSON_VALUE],
   )
   @ResponseBody
   @Operation(
-    summary = "Get a list of external movements (TAPs) for a given prison code, list of prisoner numbers, date and an optional time slot",
+    summary = "Get a list of external movements (TAPs) for a given prison code, date and an optional time slot",
     description = """
-      Returns external movements fetched from the External Movements API for the given prison, prisoner numbers,
+      Returns external movements fetched from the External Movements API for the given prison,
       date and optional time slot. This endpoint supports the creation of movement lists.
     """,
   )
@@ -298,7 +298,7 @@ class ScheduledEventController(
     ],
   )
   @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
-  fun getExternalMovementsForMultiplePrisoners(
+  fun getExternalMovements(
     @PathVariable("prisonCode")
     @Parameter(description = "The 3-character prison code.")
     prisonCode: String,
@@ -309,12 +309,8 @@ class ScheduledEventController(
     @RequestParam(value = "timeSlot", required = false)
     @Parameter(description = "Time slot of the movements (optional). If supplied, one of AM, PM or ED.")
     timeSlot: TimeSlot?,
-    @RequestBody(required = true)
-    @Parameter(description = "Set of prisoner numbers (required). Example ['G11234YI', 'B5234YI'].", required = true)
-    prisonerNumbers: Set<String>,
-  ): Set<LocationEvents> = scheduledEventService.getExternalMovementsForMultiplePrisoners(
+  ): Set<LocationEvents> = scheduledEventService.getExternalMovements(
     prisonCode,
-    prisonerNumbers,
     date,
     timeSlot,
   )

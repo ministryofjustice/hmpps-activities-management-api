@@ -13,7 +13,7 @@ class ExternalMovementsApiMockServer : MockServer(8095) {
 
   private val dateMapper = mapper.copy().disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
 
-  fun stubGetExternalMovements(prisonCode: String, prisonerNumbers: List<String>, start: LocalDateTime, end: LocalDateTime, response: ExternalMovementsResponse) {
+  fun stubGetExternalMovements(prisonCode: String, prisonerNumbers: List<String> = emptyList(), start: LocalDateTime, end: LocalDateTime, response: ExternalMovementsResponse) {
     stubFor(
       WireMock.post(WireMock.urlEqualTo("/search/prisons/$prisonCode/external-activities"))
         .withRequestBody(equalToJson(dateMapper.writeValueAsString(ExternalMovementsRequest(prisonerNumbers, start, end)), true, true))
@@ -26,7 +26,7 @@ class ExternalMovementsApiMockServer : MockServer(8095) {
     )
   }
 
-  fun stubGetExternalMovementsWithConnectionReset(prisonCode: String, prisonerNumbers: List<String>, start: LocalDateTime, end: LocalDateTime, response: ExternalMovementsResponse, numFails: Int = 1) {
+  fun stubGetExternalMovementsWithConnectionReset(prisonCode: String, prisonerNumbers: List<String> = emptyList(), start: LocalDateTime, end: LocalDateTime, response: ExternalMovementsResponse, numFails: Int = 1) {
     val url = "/search/prisons/$prisonCode/external-activities"
 
     for (i in 1..numFails) {
