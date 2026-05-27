@@ -298,7 +298,7 @@ class ScheduledEventController(
     ],
   )
   @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
-  fun getExternalMovementsForMovementList(
+  fun getExternalMovements(
     @PathVariable("prisonCode")
     @Parameter(description = "The 3-character prison code.")
     prisonCode: String,
@@ -309,7 +309,7 @@ class ScheduledEventController(
     @RequestParam(value = "timeSlot", required = false)
     @Parameter(description = "Time slot of the movements (optional). If supplied, one of AM, PM or ED.")
     timeSlot: TimeSlot?,
-  ): Set<LocationEvents> = scheduledEventService.getExternalMovementsForMovementList(
+  ): Set<LocationEvents> = scheduledEventService.getExternalMovements(
     prisonCode,
     date,
     timeSlot,

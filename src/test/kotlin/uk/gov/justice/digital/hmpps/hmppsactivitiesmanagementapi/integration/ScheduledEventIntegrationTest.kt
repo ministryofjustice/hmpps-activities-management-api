@@ -1266,10 +1266,9 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
 
       externalMovementsApiMockServer.stubGetExternalMovements(
         prisonCode,
-        emptyList(),
-        date.atStartOfDay(),
-        date.plusDays(1).atStartOfDay(),
-        ExternalMovementsResponse(content = listOf(externalMovement)),
+        start = date.atStartOfDay(),
+        end = date.plusDays(1).atStartOfDay(),
+        response = ExternalMovementsResponse(content = listOf(externalMovement)),
       )
 
       val result = webTestClient.getExternalMovements(prisonCode, date)
@@ -1297,10 +1296,9 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
     fun `returns empty set when no external movements`() {
       externalMovementsApiMockServer.stubGetExternalMovements(
         prisonCode,
-        emptyList(),
-        date.atStartOfDay(),
-        date.plusDays(1).atStartOfDay(),
-        ExternalMovementsResponse(content = emptyList()),
+        start = date.atStartOfDay(),
+        end = date.plusDays(1).atStartOfDay(),
+        response = ExternalMovementsResponse(content = emptyList()),
       )
 
       val result = webTestClient.getExternalMovements(prisonCode, date)

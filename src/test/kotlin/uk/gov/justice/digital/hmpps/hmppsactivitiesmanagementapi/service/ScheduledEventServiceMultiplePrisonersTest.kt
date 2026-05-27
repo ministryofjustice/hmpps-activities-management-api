@@ -1200,7 +1200,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
         } doReturn ExternalMovementsResponse(content = listOf(externalMovement))
       }
 
-      val result = service.getExternalMovementsForMovementList(prisonCode, today, null)
+      val result = service.getExternalMovements(prisonCode, today, null)
 
       with(result.single()) {
         assertThat(id).isNull()
@@ -1243,7 +1243,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
         } doReturn ExternalMovementsResponse(content = listOf(movement1, movement2))
       }
 
-      val externalMovements = service.getExternalMovementsForMovementList(prisonCode, today, null)
+      val externalMovements = service.getExternalMovements(prisonCode, today, null)
 
       with(externalMovements.single()) {
         assertThat(code).isEqualTo("OUTSIDE")
@@ -1263,7 +1263,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
         } doReturn ExternalMovementsResponse(content = emptyList())
       }
 
-      val externalMovements = service.getExternalMovementsForMovementList(prisonCode, today, null)
+      val externalMovements = service.getExternalMovements(prisonCode, today, null)
 
       assertThat(externalMovements).isEmpty()
     }
@@ -1281,7 +1281,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
         } doReturn ExternalMovementsResponse(content = listOf(amMovement))
       }
 
-      val externalMovements = service.getExternalMovementsForMovementList(prisonCode, today, TimeSlot.AM)
+      val externalMovements = service.getExternalMovements(prisonCode, today, TimeSlot.AM)
 
       assertThat(externalMovements.single().events.single().prisonerNumber).isEqualTo("G4793VF")
 
@@ -1308,7 +1308,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
         } doReturn ExternalMovementsResponse(content = listOf(pmMovement))
       }
 
-      val externalMovements = service.getExternalMovementsForMovementList(prisonCode, today, TimeSlot.PM)
+      val externalMovements = service.getExternalMovements(prisonCode, today, TimeSlot.PM)
 
       assertThat(externalMovements.single().events.single().prisonerNumber).isEqualTo("G4793VF")
 
@@ -1333,7 +1333,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
         } doReturn ExternalMovementsResponse(content = emptyList())
       }
 
-      val externalMovements = service.getExternalMovementsForMovementList(prisonCode, today, TimeSlot.ED)
+      val externalMovements = service.getExternalMovements(prisonCode, today, TimeSlot.ED)
 
       assertThat(externalMovements).isEmpty()
 
@@ -1355,7 +1355,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
         } doReturn ExternalMovementsResponse(content = emptyList())
       }
 
-      service.getExternalMovementsForMovementList(prisonCode, today, null)
+      service.getExternalMovements(prisonCode, today, null)
 
       verifyBlocking(externalMovementsApiClient) {
         getExternalMovements(

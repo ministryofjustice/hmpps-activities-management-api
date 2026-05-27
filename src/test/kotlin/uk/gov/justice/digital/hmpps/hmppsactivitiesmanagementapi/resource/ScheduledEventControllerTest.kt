@@ -442,7 +442,7 @@ class ScheduledEventControllerTest : ControllerTestBase() {
     val date = LocalDate.now()
     val result = emptySet<LocationEvents>()
 
-    whenever(scheduledEventService.getExternalMovementsForMovementList(prisonCode, date, null))
+    whenever(scheduledEventService.getExternalMovements(prisonCode, date, null))
       .thenReturn(result)
 
     val response = mockMvc.getExternalMovements(prisonCode, date, null)
@@ -457,13 +457,13 @@ class ScheduledEventControllerTest : ControllerTestBase() {
     val prisonCode = "MDI"
     val date = LocalDate.now()
 
-    whenever(scheduledEventService.getExternalMovementsForMovementList(prisonCode, date, TimeSlot.AM))
+    whenever(scheduledEventService.getExternalMovements(prisonCode, date, TimeSlot.AM))
       .thenReturn(emptySet())
 
     mockMvc.getExternalMovements(prisonCode, date, TimeSlot.AM)
       .andExpect { status { isOk() } }
 
-    verify(scheduledEventService).getExternalMovementsForMovementList(prisonCode, date, TimeSlot.AM)
+    verify(scheduledEventService).getExternalMovements(prisonCode, date, TimeSlot.AM)
   }
 
   @Test

@@ -21,7 +21,7 @@ class ExternalMovementsApiClient(
 ) {
   private val backoffSpec = retryApiService.getBackoffSpec(maxRetryAttempts, backoffMillis)
 
-  suspend fun getExternalMovements(prisonCode: String, prisonerNumbers: Collection<String>, start: LocalDateTime, end: LocalDateTime): ExternalMovementsResponse = externalMovementsApiWebClient.post()
+  suspend fun getExternalMovements(prisonCode: String, prisonerNumbers: Collection<String> = emptyList(), start: LocalDateTime, end: LocalDateTime): ExternalMovementsResponse = externalMovementsApiWebClient.post()
     .uri { uriBuilder: UriBuilder ->
       uriBuilder
         .path("/search/prisons/{prisonCode}/external-activities")
