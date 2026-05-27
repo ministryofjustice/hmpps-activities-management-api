@@ -1,14 +1,14 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.health
 
-import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.info.BuildProperties
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.IntegrationTestBase
 
-class InfoTest : IntegrationTestBase() {
+class InfoTest(
   @Autowired
-  private lateinit var buildProperties: BuildProperties
+  private val buildProperties: BuildProperties,
+) : IntegrationTestBase() {
 
   @Test
   fun `Info page is accessible`() {
@@ -26,8 +26,6 @@ class InfoTest : IntegrationTestBase() {
     webTestClient.get().uri("/info")
       .exchange()
       .expectStatus().isOk
-      .expectBody().jsonPath("build.version").value<String> {
-        assertThat(it).isEqualTo(buildProperties.version)
-      }
+      .expectBody().jsonPath("build.version").isEqualTo(buildProperties.version)
   }
 }

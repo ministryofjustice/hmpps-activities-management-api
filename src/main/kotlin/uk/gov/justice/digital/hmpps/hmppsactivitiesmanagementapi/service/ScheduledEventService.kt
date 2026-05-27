@@ -293,9 +293,8 @@ class ScheduledEventService(
     )
   }
 
-  fun getExternalMovementsForMultiplePrisoners(
+  fun getExternalMovementsForMovementList(
     prisonCode: String,
-    prisonerNumbers: Set<String>,
     date: LocalDate,
     timeSlot: TimeSlot?,
   ): Set<LocationEvents> = runBlocking {
@@ -303,7 +302,7 @@ class ScheduledEventService(
 
     val (startDateTime, endDateTime) = getDateTimeRange(prisonCode, date, timeSlot)
 
-    externalMovementsApiClient.getExternalMovements(prisonCode, prisonerNumbers, startDateTime, endDateTime)
+    externalMovementsApiClient.getExternalMovements(prisonCode, emptyList(), startDateTime, endDateTime)
       .content
       .toScheduledEvents(prisonCode, eventPriorities)
       .takeIf { it.isNotEmpty() }

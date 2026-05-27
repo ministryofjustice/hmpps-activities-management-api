@@ -437,16 +437,15 @@ class ScheduledEventControllerTest : ControllerTestBase() {
   }
 
   @Test
-  fun `getExternalMovementsForMultiplePrisoners - 200 response when no external movements found`() {
+  fun `getExternalMovementsForMovementList - 200 response when no external movements found`() {
     val prisonCode = "MDI"
     val date = LocalDate.now()
-    val prisonerNumbers = setOf("G4793VF")
     val result = emptySet<LocationEvents>()
 
-    whenever(scheduledEventService.getExternalMovementsForMultiplePrisoners(prisonCode, prisonerNumbers, date, null))
+    whenever(scheduledEventService.getExternalMovementsForMovementList(prisonCode, date, null))
       .thenReturn(result)
 
-    val response = mockMvc.getExternalMovements(prisonCode, prisonerNumbers, date, null)
+    val response = mockMvc.getExternalMovements(prisonCode, date, null)
       .andExpect { status { isOk() } }
       .andReturn().response
 
@@ -454,26 +453,23 @@ class ScheduledEventControllerTest : ControllerTestBase() {
   }
 
   @Test
-  fun `getExternalMovementsForMultiplePrisoners - 200 response with time slot`() {
+  fun `getExternalMovementsForMovementList - 200 response with time slot`() {
     val prisonCode = "MDI"
     val date = LocalDate.now()
-    val prisonerNumbers = setOf("G4793VF")
 
-    whenever(scheduledEventService.getExternalMovementsForMultiplePrisoners(prisonCode, prisonerNumbers, date, TimeSlot.AM))
+    whenever(scheduledEventService.getExternalMovementsForMovementList(prisonCode, date, TimeSlot.AM))
       .thenReturn(emptySet())
 
-    mockMvc.getExternalMovements(prisonCode, prisonerNumbers, date, TimeSlot.AM)
+    mockMvc.getExternalMovements(prisonCode, date, TimeSlot.AM)
       .andExpect { status { isOk() } }
 
-    verify(scheduledEventService).getExternalMovementsForMultiplePrisoners(prisonCode, prisonerNumbers, date, TimeSlot.AM)
+    verify(scheduledEventService).getExternalMovementsForMovementList(prisonCode, date, TimeSlot.AM)
   }
 
   @Test
-  fun `getExternalMovementsForMultiplePrisoners - 400 response when no date supplied`() {
-    mockMvc.post("/scheduled-events/prison/MDI/external-movements") {
+  fun `getExternalMovementsForMovementList - 400 response when no date supplied`() {
+    mockMvc.get("/scheduled-events/prison/MDI/external-movements") {
       accept = MediaType.APPLICATION_JSON
-      contentType = MediaType.APPLICATION_JSON
-      content = mapper.writeValueAsBytes(setOf("G4793VF"))
     }
       .andExpect { status { isBadRequest() } }
       .andExpect {
@@ -488,11 +484,9 @@ class ScheduledEventControllerTest : ControllerTestBase() {
   }
 
   @Test
-  fun `getExternalMovementsForMultiplePrisoners - 400 response when invalid date supplied`() {
-    mockMvc.post("/scheduled-events/prison/MDI/external-movements?date=invalid") {
+  fun `getExternalMovementsForMovementList - 400 response when invalid date supplied`() {
+    mockMvc.get("/scheduled-events/prison/MDI/external-movements?date=invalid") {
       accept = MediaType.APPLICATION_JSON
-      contentType = MediaType.APPLICATION_JSON
-      content = mapper.writeValueAsBytes(setOf("G4793VF"))
     }
       .andExpect { status { isBadRequest() } }
       .andExpect {
@@ -507,12 +501,10 @@ class ScheduledEventControllerTest : ControllerTestBase() {
   }
 
   @Test
-  fun `getExternalMovementsForMultiplePrisoners - 400 response when invalid time slot supplied`() {
+  fun `getExternalMovementsForMovementList - 400 response when invalid time slot supplied`() {
     val date = LocalDate.now()
-    mockMvc.post("/scheduled-events/prison/MDI/external-movements?date=$date&timeSlot=no") {
+    mockMvc.get("/scheduled-events/prison/MDI/external-movements?date=$date&timeSlot=no") {
       accept = MediaType.APPLICATION_JSON
-      contentType = MediaType.APPLICATION_JSON
-      content = mapper.writeValueAsBytes(setOf("G4793VF"))
     }
       .andExpect { status { isBadRequest() } }
       .andExpect {
@@ -574,14 +566,9 @@ class ScheduledEventControllerTest : ControllerTestBase() {
 
   private fun MockMvc.getExternalMovements(
     prisonCode: String,
-    prisonerNumbers: Set<String>,
     date: LocalDate,
     timeSlot: TimeSlot? = null,
-  ) = post("/scheduled-events/prison/$prisonCode/external-movements?date=$date" + (timeSlot?.let { "&timeSlot=$timeSlot" } ?: "")) {
+  ) = get("/scheduled-events/prison/$prisonCode/external-movements?date=$date" + (timeSlot?.let { "&timeSlot=$timeSlot" } ?: "")) {
     accept = MediaType.APPLICATION_JSON
-    contentType = MediaType.APPLICATION_JSON
-    content = mapper.writeValueAsBytes(
-      prisonerNumbers,
-    )
   }.andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
 }
