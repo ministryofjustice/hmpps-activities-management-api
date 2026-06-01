@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.tuple
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
@@ -197,6 +198,9 @@ class AttendanceIntegrationTest : LocalStackTestBase() {
     assertThat(attendanceList.filter { it.incentiveLevelWarningIssued == null }.map { it.attendanceId }).containsOnly(1, 2, 3, 4, 5, 6, 7)
     assertThat(attendanceList.filter { it.incentiveLevelWarningIssued == false }.map { it.attendanceId }).containsOnly(8)
     assertThat(attendanceList.filter { it.incentiveLevelWarningIssued == true }.map { it.attendanceId }).containsOnly(9)
+    assertThat(attendanceList)
+      .extracting("outsideWork", "paid")
+      .containsOnly(tuple(false, true))
   }
 
   @Sql(

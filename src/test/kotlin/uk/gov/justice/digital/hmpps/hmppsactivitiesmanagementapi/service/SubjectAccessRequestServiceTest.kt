@@ -127,6 +127,8 @@ class SubjectAccessRequestServiceTest {
     issuePayment = true,
     recordedTime = TimeSource.now(),
     attendanceRequired = true,
+    outsideWork = false,
+    paid = false,
     eventTier = null,
     incentiveLevelWarningIssued = false,
   )
@@ -149,6 +151,8 @@ class SubjectAccessRequestServiceTest {
     issuePayment = true,
     recordedTime = TimeSource.now(),
     attendanceRequired = true,
+    outsideWork = false,
+    paid = false,
     eventTier = null,
     incentiveLevelWarningIssued = true,
   )

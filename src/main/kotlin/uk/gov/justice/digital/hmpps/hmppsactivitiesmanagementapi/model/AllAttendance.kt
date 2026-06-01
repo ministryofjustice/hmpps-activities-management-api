@@ -72,6 +72,12 @@ data class AllAttendance(
   @Schema(description = "Is attendance required?", example = "true")
   val attendanceRequired: Boolean,
 
+  @Schema(description = "Determines whether the activity takes place outside of the prison", example = "true")
+  val outsideWork: Boolean,
+
+  @Schema(description = "Determines whether the activity is a paid activity", example = "true")
+  val paid: Boolean,
+
   @Schema(description = "event tier")
   val eventTier: EventTierType?,
 

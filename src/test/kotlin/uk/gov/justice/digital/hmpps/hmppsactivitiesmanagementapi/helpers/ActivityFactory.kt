@@ -456,6 +456,8 @@ fun attendanceList(): List<AllAttendance> = listOf(
     categoryName = "Education",
     recordedTime = null,
     attendanceRequired = true,
+    outsideWork = false,
+    paid = false,
     eventTier = null,
     incentiveLevelWarningIssued = false,
   ),
