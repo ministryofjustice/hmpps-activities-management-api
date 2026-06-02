@@ -18,7 +18,9 @@ SELECT att.attendance_id,
        si.start_time,
        si.end_time,
        att.incentive_level_warning_issued,
-       ar.description AS attendance_reason_description
+       ar.description AS attendance_reason_description,
+       act.outside_work,
+       act.paid
 FROM scheduled_instance si
          JOIN activity_schedule asch ON si.activity_schedule_id = asch.activity_schedule_id
          JOIN activity act ON asch.activity_id = act.activity_id
