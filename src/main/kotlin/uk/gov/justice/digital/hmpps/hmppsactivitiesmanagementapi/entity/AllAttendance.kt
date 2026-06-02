@@ -49,6 +49,10 @@ data class AllAttendance(
 
   val attendanceRequired: Boolean,
 
+  val outsideWork: Boolean,
+
+  val paid: Boolean,
+
   val eventTier: String?,
 
   var incentiveLevelWarningIssued: Boolean?,
@@ -70,6 +74,8 @@ data class AllAttendance(
     categoryName = categoryName,
     recordedTime = recordedTime,
     attendanceRequired = attendanceRequired,
+    outsideWork = outsideWork,
+    paid = paid,
     eventTier = eventTier?.let { EventTierType.valueOf(it) },
     incentiveLevelWarningIssued = incentiveLevelWarningIssued,
   )
