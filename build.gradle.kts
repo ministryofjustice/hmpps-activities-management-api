@@ -8,7 +8,7 @@ plugins {
   kotlin("plugin.jpa") version "2.4.0"
   jacoco
   id("org.openapi.generator") version "7.22.0"
-  id("io.sentry.jvm.gradle") version "6.9.0"
+  id("io.sentry.jvm.gradle") version "6.10.0"
 }
 
 configurations {
@@ -49,7 +49,7 @@ dependencies {
     }
   }
 
-  implementation("aws.sdk.kotlin:s3:1.6.89")
+  implementation("aws.sdk.kotlin:s3:1.6.90")
 
   // Other dependencies
   implementation("org.apache.commons:commons-text:1.15.0")
@@ -163,7 +163,7 @@ kotlin {
   }
 }
 jacoco {
-  toolVersion = "0.8.14"
+  toolVersion = "0.8.15"
 }
 
 tasks.register("integrationTest", Test::class) {
