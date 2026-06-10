@@ -25,7 +25,7 @@ dependencies {
   implementation("org.springframework.boot:spring-boot-starter-webflux")
   implementation("org.springframework.boot:spring-boot-starter-webclient")
   implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-  implementation("org.springframework.data:spring-data-envers:4.0.5")
+  implementation("org.springframework.data:spring-data-envers:4.1.0")
   implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:7.3.2")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.11.0")
@@ -43,13 +43,13 @@ dependencies {
   implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.3")
 
   // AWS
-  implementation("com.squareup.okhttp3:okhttp:5.3.2") {
+  implementation("com.squareup.okhttp3:okhttp:5.4.0") {
     version {
       strictly("5.0.0-alpha.14")
     }
   }
 
-  implementation("aws.sdk.kotlin:s3:1.6.90")
+  implementation("aws.sdk.kotlin:s3:1.6.92")
 
   // Other dependencies
   implementation("org.apache.commons:commons-text:1.15.0")
