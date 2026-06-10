@@ -7,7 +7,7 @@ plugins {
   kotlin("plugin.spring") version "2.4.0"
   kotlin("plugin.jpa") version "2.4.0"
   jacoco
-  id("org.openapi.generator") version "7.23.0"
+  id("org.openapi.generator") version "7.22.0"
   id("io.sentry.jvm.gradle") version "6.10.0"
 }
 
