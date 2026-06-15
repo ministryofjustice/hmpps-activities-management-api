@@ -43,6 +43,8 @@ class CaseNotesApiMockServer : MockServer(8444) {
         .withRequestBody(
           WireMock.equalToJson(
             mapper.writeValueAsString(NewCaseNote(prisonCode, type.name, subType.name, null, caseNote)),
+            true,
+            true,
           ),
         )
         .willReturn(

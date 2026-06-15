@@ -3438,15 +3438,18 @@
             "type": "boolean"
           },
           "closedBy": {
-            "type": "string"
+            "type": "string",
+            "nullable": true
           },
           "closedReason": {
-            "type": "string"
+            "type": "string",
+            "nullable": true
           },
           "closedAt": {
             "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$",
             "type": "string",
-            "example": "2021-07-05T10:35:17"
+            "example": "2021-07-05T10:35:17",
+            "nullable": true
           },
           "isOpen": {
             "type": "boolean"
@@ -3868,15 +3871,18 @@
             "type": "boolean"
           },
           "closedBy": {
-            "type": "string"
+            "type": "string",
+            "nullable": true
           },
           "closedReason": {
-            "type": "string"
+            "type": "string",
+            "nullable": true
           },
           "closedAt": {
             "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$",
             "type": "string",
-            "example": "2021-07-05T10:35:17"
+            "example": "2021-07-05T10:35:17",
+            "nullable": true
           },
           "otherPrisonerDetails": {
             "$ref": "#/components/schemas/OtherPrisonerDetails"
