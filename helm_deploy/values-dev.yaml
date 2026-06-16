@@ -32,6 +32,17 @@ generic-service:
     AWS_S3_AP_BUCKET: moj-reg-dev
     AWS_S3_AP_PROJECT: hmpps-activities-management-dev
     PRISONS_WITH_REGEX_LOCATION_CONFIGS: BCI,CDI,EYI,FNI,HEI,MDI,NHI,WNI,IWI,LHI,RNI,WLI,WEI,WRI,RSI
+    JAVA_TOOL_OPTIONS: "$(JAVA_PROXY_TOOL_OPTIONS) -XX:+ExitOnOutOfMemoryError -XX:MaxRAMPercentage=50.0"
+    
+  namespace_secrets:
+    hmpps-envoy-https-proxy-env:
+      HTTP_PROXY: "HTTP_PROXY"
+      HTTPS_PROXY: "HTTPS_PROXY"
+      NO_PROXY: "NO_PROXY"
+      http_proxy: "HTTP_PROXY"
+      https_proxy: "HTTPS_PROXY"
+      no_proxy: "NO_PROXY"
+      JAVA_PROXY_TOOL_OPTIONS: "JAVA_PROXY_TOOL_OPTIONS"
 
   resources:
     requests:
