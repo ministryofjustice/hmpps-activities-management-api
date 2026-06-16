@@ -42,7 +42,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
   val locationUuid: UUID = UUID.fromString("88888888-8888-8888-8888-888888888888")
 
   @BeforeEach
-  fun setupAppointmentStubs() {
+  fun setUp() {
     // Stubs used to find category and location descriptions for appointments
     prisonApiMockServer.stubGetLocationsForTypeUnrestricted(
       "MDI",
@@ -685,6 +685,58 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
 
     @Test
     @Sql("classpath:test_data/seed-activity-id-3.sql")
+    @Sql("classpath:test_data/seed-appointment-single-id-3.sql")
+    fun `get location events for single location with activities, appointments and visits - 200 success`() {
+      val date = LocalDate.of(2022, 10, 1)
+
+      prisonApiMockServer.stubScheduledVisitsForLocation(
+        prisonCode,
+        activityLocation1.locationId,
+        date,
+        null,
+        emptyList(),
+      )
+      manageAdjudicationsApiMockServer.stubHearingsForDate(
+        agencyId = prisonCode,
+        date = date,
+        body = mapper.writeValueAsString(HearingSummaryResponse(hearings = emptyList())),
+      )
+      nomisMappingApiMockServer.stubMappingsFromNomisIds(
+        listOf(
+          NomisDpsLocationMapping(dpsLocationId1, activityLocation1.locationId),
+        ),
+      )
+
+      nomisMappingApiMockServer.stubMappingsFromDpsIds(
+        listOf(
+          NomisDpsLocationMapping(dpsLocationId1, activityLocation1.locationId),
+        ),
+      )
+
+      locationsInsidePrisonApiMockServer.stubLocationFromDpsUuid(dpsLocationId1)
+
+      val result = webTestClient.getLocationEvents(prisonCode, activityDpsLocation1.id, date)!!
+
+      with(result) {
+        size isEqualTo 1
+        with(this.single { it.id == activityLocation1.locationId }) {
+          prisonCode isEqualTo prisonCode
+          code isEqualTo activityDpsLocation1.code
+          description isEqualTo activityDpsLocation1.localName
+          events.filter { it.scheduledInstanceId == 1L && it.eventType == "ACTIVITY" } hasSize 2
+        }
+      }
+    }
+
+    @Test
+    fun `get location events for single invalid location - 404 not found`() {
+      val date = LocalDate.of(2022, 10, 1)
+
+      webTestClient.getLocationEventsLocationDoesNotExist(prisonCode, activityDpsLocation1.id, date)
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-id-3.sql")
     @Sql("classpath:test_data/seed-activity-id-3-on-wing.sql")
     @Sql("classpath:test_data/seed-appointment-single-id-3.sql")
     fun `get locations ignores activities with location id and on-wing is true`() {
@@ -1112,7 +1164,44 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
       .expectBodyList<InternalLocationEvents>()
       .returnResult().responseBody
+
+    private fun WebTestClient.getLocationEvents(
+      prisonCode: String,
+      dpsLocationId: UUID,
+      date: LocalDate,
+      timeSlot: TimeSlot? = null,
+    ) = get()
+      .uri(
+        "/scheduled-events/prison/$prisonCode/location-events?dpsLocationId=$dpsLocationId&date=$date" + (
+          timeSlot?.let { "&timeSlot=$timeSlot" }
+            ?: ""
+          ),
+      )
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
+      .exchange()
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBodyList<InternalLocationEvents>()
+      .returnResult().responseBody
   }
+
+  fun WebTestClient.getLocationEventsLocationDoesNotExist(
+    prisonCode: String,
+    dpsLocationId: UUID,
+    date: LocalDate,
+    timeSlot: TimeSlot? = null,
+  ) = get()
+    .uri(
+      "/scheduled-events/prison/$prisonCode/location-events?dpsLocationId=$dpsLocationId&date=$date" + (
+        timeSlot?.let { "&timeSlot=$timeSlot" }
+          ?: ""
+        ),
+    )
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
+    .exchange()
+    .expectStatus().isNotFound
 
   private fun adjudicationsMock(
     agencyId: String,

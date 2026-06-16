@@ -92,6 +92,8 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
       status isEqualTo WaitingListStatus.PENDING
     }
 
+    stubPrisoners(listOf("ABCDEF"))
+
     val response = update(
       1,
       WaitingListApplicationUpdateRequest(
