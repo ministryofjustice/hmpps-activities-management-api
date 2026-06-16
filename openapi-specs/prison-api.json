@@ -30487,33 +30487,28 @@
           "parentLocationId": {
             "type": "integer",
             "description": "Identifier of this location's parent location.",
-            "format": "int64",
-            "nullable":  true
+            "format": "int64"
           },
           "currentOccupancy": {
             "type": "integer",
             "description": "Current occupancy of location.",
-            "format": "int32",
-            "nullable": true
+            "format": "int32"
           },
           "locationPrefix": {
             "type": "string",
-            "description": "Location prefix. Defines search prefix that will constrain search to this location and its subordinate locations.",
-            "nullable": true
+            "description": "Location prefix. Defines search prefix that will constrain search to this location and its subordinate locations."
           },
           "operationalCapacity": {
             "type": "integer",
             "description": "Operational capacity of the location.",
-            "format": "int32",
-            "nullable": true
+            "format": "int32"
           },
           "userDescription": {
             "type": "string",
             "description": "User-friendly location description."
           },
           "internalLocationCode": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           }
         },
         "description": "Location Details"

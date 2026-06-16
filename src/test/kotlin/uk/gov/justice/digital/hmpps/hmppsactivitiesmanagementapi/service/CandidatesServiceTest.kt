@@ -65,6 +65,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Wait
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.OffsetDateTime
 import java.util.*
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.nonassociation.OtherPrisonerDetails as OtherPrisonerDetailsDto
 
@@ -967,7 +968,7 @@ class CandidatesServiceTest {
               lastName = prisonerA1234AA.otherPrisonerDetails.lastName,
               cellLocation = prisonerA1234AA.otherPrisonerDetails.cellLocation,
             ),
-            whenUpdated = LocalDateTime.parse(prisonerA1234AA.whenUpdated),
+            whenUpdated = prisonerA1234AA.whenUpdated.toLocalDateTime(),
             comments = prisonerA1234AA.comment,
           ),
           NonAssociationDetails(
@@ -984,7 +985,7 @@ class CandidatesServiceTest {
               lastName = prisonerB3333BB.otherPrisonerDetails.lastName,
               cellLocation = prisonerB3333BB.otherPrisonerDetails.cellLocation,
             ),
-            whenUpdated = LocalDateTime.parse(prisonerB3333BB.whenUpdated),
+            whenUpdated = prisonerB3333BB.whenUpdated.toLocalDateTime(),
             comments = prisonerB3333BB.comment,
           ),
         ),
@@ -1002,8 +1003,8 @@ class CandidatesServiceTest {
     restrictionTypeDescription = "Landing",
     comment = "Bullying comment",
     authorisedBy = "ADMIN",
-    whenCreated = "2022-04-02T11:11:16",
-    whenUpdated = "2022-04-14T12:37:16",
+    whenCreated = OffsetDateTime.parse("2022-04-02T11:11:16Z"),
+    whenUpdated = OffsetDateTime.parse("2022-04-14T12:37:16Z"),
     updatedBy = "ADMIN",
     isClosed = false,
     isOpen = true,
