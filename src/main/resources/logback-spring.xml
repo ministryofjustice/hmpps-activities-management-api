@@ -40,6 +40,12 @@
         <appender-ref ref="consoleAppender"/>
     </logger>
 
+    <springProfile name="dev">
+        <logger name="software.amazon.awssdk" additivity="false" level="DEBUG">
+            <appender-ref ref="consoleAppender"/>
+        </logger>
+    </springProfile>
+
     <root level="INFO">
         <appender-ref ref="consoleAppender"/>
     </root>
