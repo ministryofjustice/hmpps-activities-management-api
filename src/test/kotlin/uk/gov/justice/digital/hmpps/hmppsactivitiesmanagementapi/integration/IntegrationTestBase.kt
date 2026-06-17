@@ -125,29 +125,29 @@ abstract class IntegrationTestBase {
       locationsInsidePrisonApiMockServer.stop()
       externalMovementsApiMockServer.stop()
     }
+  }
 
-    @BeforeEach
-    fun initMocks() {
-      prisonApiMockServer.resetAll()
-      prisonerSearchApiMockServer.resetAll()
-      incentivesApiMockServer.resetAll()
-      nomisMappingApiMockServer.resetAll()
-      locationsInsidePrisonApiMockServer.resetAll()
-      externalMovementsApiMockServer.resetAll()
-    }
+  @BeforeEach
+  fun initAllMockServices() {
+    prisonApiMockServer.resetAll()
+    prisonerSearchApiMockServer.resetAll()
+    incentivesApiMockServer.resetAll()
+    nomisMappingApiMockServer.resetAll()
+    locationsInsidePrisonApiMockServer.resetAll()
+    externalMovementsApiMockServer.resetAll()
+  }
 
-    @AfterEach
-    fun afterEach() {
-      prisonApiMockServer.resetAll()
-      prisonerSearchApiMockServer.resetAll()
-      nonAssociationsApiMockServer.resetAll()
-      caseNotesApiMockServer.resetAll()
-      incentivesApiMockServer.resetAll()
-      manageAdjudicationsApiMockServer.resetAll()
-      nomisMappingApiMockServer.resetAll()
-      locationsInsidePrisonApiMockServer.resetAll()
-      externalMovementsApiMockServer.resetAll()
-    }
+  @AfterEach
+  fun resetAllMockServices() {
+    prisonApiMockServer.resetAll()
+    prisonerSearchApiMockServer.resetAll()
+    nonAssociationsApiMockServer.resetAll()
+    caseNotesApiMockServer.resetAll()
+    incentivesApiMockServer.resetAll()
+    manageAdjudicationsApiMockServer.resetAll()
+    nomisMappingApiMockServer.resetAll()
+    locationsInsidePrisonApiMockServer.resetAll()
+    externalMovementsApiMockServer.resetAll()
   }
 
   internal fun setAuthorisationAsClient(

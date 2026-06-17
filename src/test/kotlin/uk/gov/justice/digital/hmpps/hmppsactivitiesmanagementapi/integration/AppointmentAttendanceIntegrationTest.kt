@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -439,6 +440,11 @@ class AppointmentAttendanceIntegrationTest : AppointmentsIntegrationTestBase() {
     val prisonerC3456DE = prisonerA1234BC.copy(prisonerNumber = "C3456DE")
     val prisonerXX1111X = prisonerA1234BC.copy(prisonerNumber = "XX1111X")
     val prisonerYY1111Y = prisonerA1234BC.copy(prisonerNumber = "YY1111Y")
+
+    @BeforeEach
+    fun beforeEach() {
+      stubForAttendanceSummaries(RISLEY_PRISON_CODE)
+    }
 
     @AfterEach
     fun afterEach() {

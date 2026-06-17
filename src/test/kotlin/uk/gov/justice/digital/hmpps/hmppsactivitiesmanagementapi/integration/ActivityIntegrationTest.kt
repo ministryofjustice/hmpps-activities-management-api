@@ -2187,6 +2187,8 @@ class ActivityIntegrationTest : LocalStackTestBase() {
       ),
     )
 
+    locationsInsidePrisonApiMockServer.stubLocationFromDpsUuid()
+
     val createdActivity = webTestClient.createActivity(newActivityRequest)!!
 
     val updatedActivity = webTestClient.updateActivity(

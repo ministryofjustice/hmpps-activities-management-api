@@ -686,6 +686,8 @@ class ActivityScheduleIntegrationTest : LocalStackTestBase() {
   )
   @Test
   fun `attempting to fetch candidates without specifying a caseload succeeds if admin role present`() {
+    prisonerSearchApiMockServer.stubGetAllPrisonersInPrison("PVI")
+
     webTestClient.get()
       .uri("/schedules/1/candidates")
       .accept(MediaType.APPLICATION_JSON)
