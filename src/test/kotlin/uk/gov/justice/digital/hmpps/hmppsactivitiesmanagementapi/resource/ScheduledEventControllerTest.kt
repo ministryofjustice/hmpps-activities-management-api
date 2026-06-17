@@ -324,7 +324,7 @@ class ScheduledEventControllerTest : ControllerTestBase() {
   }
 
   @Test
-  fun `getScheduledEventsForMultipleLocationsByDPSLocationsIds - 200 response when internal locations with events found`() {
+  fun `getScheduledEventsByDPSLocationIds - 200 response when internal locations with events found`() {
     val prisonCode = "MDI"
     val date = LocalDate.now()
     val timeSlot = TimeSlot.AM
@@ -333,7 +333,7 @@ class ScheduledEventControllerTest : ControllerTestBase() {
 
     whenever(internalLocationService.getLocationEvents(prisonCode, dpsLocationsIds, date, timeSlot)).thenReturn(locations)
 
-    val response = mockMvc.getScheduledEventsForMultipleLocationsByDPSLocationsIds(prisonCode, dpsLocationsIds, date, timeSlot)
+    val response = mockMvc.getScheduledEventsByDPSLocationIds(prisonCode, dpsLocationsIds, date, timeSlot)
       .andExpect { status { isOk() } }
       .andReturn().response
 
@@ -341,7 +341,7 @@ class ScheduledEventControllerTest : ControllerTestBase() {
   }
 
   @Test
-  fun `getScheduledEventsForMultipleLocationsByDPSLocationsIds - 200 response when no time slot supplied`() {
+  fun `getScheduledEventsByDPSLocationIds - 200 response when no time slot supplied`() {
     val prisonCode = "MDI"
     val date = LocalDate.now()
     val locations = setOf(internalLocationEvents())
@@ -349,7 +349,7 @@ class ScheduledEventControllerTest : ControllerTestBase() {
 
     whenever(internalLocationService.getLocationEvents(prisonCode, dpsLocationsIds, date, null)).thenReturn(locations)
 
-    val response = mockMvc.getScheduledEventsForMultipleLocationsByDPSLocationsIds(prisonCode, dpsLocationsIds, date, null)
+    val response = mockMvc.getScheduledEventsByDPSLocationIds(prisonCode, dpsLocationsIds, date, null)
       .andExpect { status { isOk() } }
       .andReturn().response
 
@@ -357,7 +357,38 @@ class ScheduledEventControllerTest : ControllerTestBase() {
   }
 
   @Test
-  fun `getScheduledEventsForMultipleLocationsByDPSLocationsIds - 400 response when no date supplied`() {
+  fun `getScheduledEventsByDPSLocationId - 200 response when internal location with events found`() {
+    val prisonCode = "MDI"
+    val date = LocalDate.now()
+    val timeSlot = TimeSlot.AM
+    val location = internalLocationEvents()
+
+    whenever(internalLocationService.getLocationEvents(prisonCode, location.dpsLocationId, date, timeSlot)).thenReturn(location)
+
+    val response = mockMvc.getScheduledEventsByDPSLocationId(prisonCode, location.dpsLocationId, date, timeSlot)
+      .andExpect { status { isOk() } }
+      .andReturn().response
+
+    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(location))
+  }
+
+  @Test
+  fun `getScheduledEventsByDPSLocationId - 200 response when no time slot supplied`() {
+    val prisonCode = "MDI"
+    val date = LocalDate.now()
+    val location = internalLocationEvents()
+
+    whenever(internalLocationService.getLocationEvents(prisonCode, location.dpsLocationId, date, null)).thenReturn(location)
+
+    val response = mockMvc.getScheduledEventsByDPSLocationId(prisonCode, location.dpsLocationId, date, null)
+      .andExpect { status { isOk() } }
+      .andReturn().response
+
+    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(location))
+  }
+
+  @Test
+  fun `getScheduledEventsByDPSLocationIds - 400 response when no date supplied`() {
     mockMvc.post("/scheduled-events/prison/MDI/location-events") {
       accept = MediaType.APPLICATION_JSON
       contentType = MediaType.APPLICATION_JSON
@@ -378,7 +409,7 @@ class ScheduledEventControllerTest : ControllerTestBase() {
   }
 
   @Test
-  fun `getScheduledEventsForMultipleLocationsByDPSLocationsIds - 400 response when invalid date supplied`() {
+  fun `getScheduledEventsByDPSLocationIds - 400 response when invalid date supplied`() {
     mockMvc.post("/scheduled-events/prison/MDI/location-events?date=invalid") {
       accept = MediaType.APPLICATION_JSON
       contentType = MediaType.APPLICATION_JSON
@@ -399,7 +430,7 @@ class ScheduledEventControllerTest : ControllerTestBase() {
   }
 
   @Test
-  fun `getScheduledEventsForMultipleLocationsByDPSLocationsIds - 400 response when invalid time slot supplied`() {
+  fun `getScheduledEventsByDPSLocationIds - 400 response when invalid time slot supplied`() {
     val date = LocalDate.now()
     mockMvc.post("/scheduled-events/prison/MDI/location-events?date=$date&timeSlot=no") {
       accept = MediaType.APPLICATION_JSON
@@ -421,14 +452,14 @@ class ScheduledEventControllerTest : ControllerTestBase() {
   }
 
   @Test
-  fun `getScheduledEventsForMultipleLocationsByDPSLocationsIds - 500 response when service throws exception`() {
+  fun `getScheduledEventsByDPSLocationIds - 500 response when service throws exception`() {
     val prisonCode = "MDI"
     val date = LocalDate.now()
     val dpsLocationsIds = setOf(UUID.randomUUID())
 
     whenever(internalLocationService.getLocationEvents(prisonCode, dpsLocationsIds, date, null)).thenThrow(RuntimeException("Error"))
 
-    val response = mockMvc.getScheduledEventsForMultipleLocationsByDPSLocationsIds(prisonCode, dpsLocationsIds, date, null)
+    val response = mockMvc.getScheduledEventsByDPSLocationIds(prisonCode, dpsLocationsIds, date, null)
       .andExpect { status { isInternalServerError() } }
       .andReturn().response
 
@@ -518,13 +549,6 @@ class ScheduledEventControllerTest : ControllerTestBase() {
     verifyNoInteractions(scheduledEventService)
   }
 
-  private fun MockMvc.getScheduledEventsForSinglePrisoner(
-    prisonCode: String,
-    prisonerNumber: String,
-    startDate: LocalDate,
-    endDate: LocalDate,
-  ) = get("/scheduled-events/prison/$prisonCode?prisonerNumber=$prisonerNumber&startDate=$startDate&endDate=$endDate")
-
   private fun MockMvc.getScheduledEventsForMultiplePrisoners(
     prisonCode: String,
     prisonerNumbers: Set<String>,
@@ -551,7 +575,7 @@ class ScheduledEventControllerTest : ControllerTestBase() {
     )
   }.andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
 
-  private fun MockMvc.getScheduledEventsForMultipleLocationsByDPSLocationsIds(
+  private fun MockMvc.getScheduledEventsByDPSLocationIds(
     prisonCode: String,
     dpsLocationIds: Set<UUID>,
     date: LocalDate,
@@ -562,6 +586,15 @@ class ScheduledEventControllerTest : ControllerTestBase() {
     content = mapper.writeValueAsBytes(
       dpsLocationIds,
     )
+  }.andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+
+  private fun MockMvc.getScheduledEventsByDPSLocationId(
+    prisonCode: String,
+    dpsLocationId: UUID,
+    date: LocalDate,
+    timeSlot: TimeSlot? = null,
+  ) = get("/scheduled-events/prison/$prisonCode/location-events?dpsLocationId=$dpsLocationId&date=$date" + (timeSlot?.let { "&timeSlot=$timeSlot" } ?: "")) {
+    accept = MediaType.APPLICATION_JSON
   }.andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
 
   private fun MockMvc.getExternalMovements(

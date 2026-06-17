@@ -194,6 +194,12 @@ class InternalLocationService(
     getLocationEvents(prisonCode, dpsLocationIds, date, timeSlot)
   }
 
+  fun getLocationEvents(prisonCode: String, dpsLocationId: UUID, date: LocalDate, timeSlot: TimeSlot?) = runBlocking {
+    locationsInsidePrisonAPIClient.getLocationById(dpsLocationId)
+    getLocationEvents(prisonCode, setOf(dpsLocationId), date, timeSlot).first()
+  }
+
+  @Deprecated("Will be removed in favour of getLocationEvents for one location")
   fun getLocationEvents(prisonCode: String, dpsLocationIds: Set<UUID>, date: LocalDate, timeSlot: TimeSlot?) = runBlocking {
     checkCaseloadAccess(prisonCode)
 

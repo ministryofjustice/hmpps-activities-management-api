@@ -88,8 +88,7 @@ class ScheduledEventController(
   )
   @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
   fun getScheduledEventsForMultiplePrisoners(
-    @PathVariable("prisonCode")
-    @Parameter(description = "The 3-character prison code.")
+    @PathVariable @Parameter(description = "The 3-character prison code.")
     prisonCode: String,
     @RequestParam(value = "date", required = true)
     @Parameter(description = "The exact date to return events for (required) in format YYYY-MM-DD")
@@ -165,8 +164,7 @@ class ScheduledEventController(
   @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
   @Deprecated(message = "Will be replaced by getScheduledEventsForMultipleLocationsByDPSLocationsIds")
   fun getScheduledEventsForMultipleLocations(
-    @PathVariable("prisonCode")
-    @Parameter(description = "The 3-character prison code.")
+    @PathVariable @Parameter(description = "The 3-character prison code.")
     prisonCode: String,
     @RequestParam(value = "date", required = true)
     @Parameter(description = "The exact date to return events for (required) in format YYYY-MM-DD")
@@ -185,6 +183,7 @@ class ScheduledEventController(
     timeSlot,
   )
 
+  @Deprecated("Use the GET /prison/{prisonCode}/location-events endpoint")
   @PostMapping(
     value = ["/prison/{prisonCode}/location-events"],
     consumes = [MediaType.APPLICATION_JSON_VALUE],
@@ -236,8 +235,7 @@ class ScheduledEventController(
   )
   @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
   fun getScheduledEventsForMultipleLocationsByDPSLocationsIds(
-    @PathVariable("prisonCode")
-    @Parameter(description = "The 3-character prison code.")
+    @PathVariable @Parameter(description = "The 3-character prison code.")
     prisonCode: String,
     @RequestParam(value = "date", required = true)
     @Parameter(description = "The exact date to return events for (required) in format YYYY-MM-DD")
@@ -255,6 +253,70 @@ class ScheduledEventController(
     date,
     timeSlot,
   )
+
+  @GetMapping(
+    value = ["/prison/{prisonCode}/location-events"],
+    produces = [MediaType.APPLICATION_JSON_VALUE],
+  )
+  @ResponseBody
+  @Operation(
+    summary = "Get a list of scheduled events for a DPS location, a date and optional time slot",
+    description = """
+      Returns scheduled events for the DPS location, date and optional time slot.
+      This endpoint only returns activities and appointments from the local database.
+      This endpoint supports the creation of movement lists.
+      Activities are only scheduled 60 days in advance. Appointments may be scheduled for any date in the future.
+    """,
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Successful call - zero or more scheduled events found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            array = ArraySchema(schema = Schema(implementation = InternalLocationEvents::class)),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Invalid request",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Requested resource not found",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
+  fun getScheduledEventsByDPSLocationsId(
+    @PathVariable @Parameter(description = "The 3-character prison code.")
+    prisonCode: String,
+    @RequestParam(value = "date", required = true)
+    @Parameter(description = "The exact date to return events for (required) in format YYYY-MM-DD")
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+    date: LocalDate,
+    @RequestParam(value = "dpsLocationId", required = true)
+    @Parameter(description = "The internal DPS Location UUID. Example b7602cc8-e769-4cbb-8194-62d8e655992a")
+    dpsLocationId: UUID,
+    @RequestParam(value = "timeSlot", required = false)
+    @Parameter(description = "Time slot of the events (optional). If supplied, one of AM, PM or ED.")
+    timeSlot: TimeSlot?,
+  ): InternalLocationEvents = internalLocationService.getLocationEvents(prisonCode, dpsLocationId, date, timeSlot)
 
   @GetMapping(
     value = ["/prison/{prisonCode}/external-movements"],
@@ -299,8 +361,7 @@ class ScheduledEventController(
   )
   @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
   fun getExternalMovements(
-    @PathVariable("prisonCode")
-    @Parameter(description = "The 3-character prison code.")
+    @PathVariable @Parameter(description = "The 3-character prison code.")
     prisonCode: String,
     @RequestParam(value = "date", required = true)
     @Parameter(description = "The exact date to return movements for (required) in format YYYY-MM-DD")

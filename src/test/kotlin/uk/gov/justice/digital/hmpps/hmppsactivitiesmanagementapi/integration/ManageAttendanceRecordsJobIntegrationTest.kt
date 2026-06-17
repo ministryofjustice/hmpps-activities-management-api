@@ -213,6 +213,14 @@ class ManageAttendanceRecordsJobIntegrationTest : LocalStackTestBase() {
       assertThat(instances()).hasSize(1)
     }
 
+    val prisonerNumbers = listOf("A22222A", "A11111A")
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
+      prisonerNumbers = prisonerNumbers,
+      prisoners = prisonerNumbers.map { prisonNumber ->
+        PrisonerSearchPrisonerFixture.instance(prisonerNumber = prisonNumber, prisonId = "PVI")
+      },
+    )
+
     waitForJobs({ webTestClient.manageAttendanceRecords() })
 
     val activityAfter = activityRepository.findById(5).orElseThrow()
