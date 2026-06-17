@@ -49,7 +49,7 @@ object InmateDetailFixture {
     middleName: String = "James",
     agencyId: String = "MDI",
     age: Int = 23,
-    facialImageId: Long? = 1111222,
+    facialImageId: Long? = 1112222,
     assignedLivingUnitId: Long? = 12345,
     religion: String? = "RELIGION",
     language: String? = "English",
