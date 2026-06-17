@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock
 
-import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
@@ -12,9 +11,7 @@ import com.github.tomakehurst.wiremock.http.HttpHeaders
 
 abstract class MockServer(port: Int) : WireMockServer(port) {
 
-  val mapper: ObjectMapper = jacksonObjectMapper()
-    .registerModule(JavaTimeModule())
-    .setDefaultPropertyInclusion(JsonInclude.Include.NON_NULL)
+  val mapper: ObjectMapper = jacksonObjectMapper().registerModule(JavaTimeModule())
 
   fun stubHealthPing(status: Int) {
     val stat = if (status == 200) "UP" else "DOWN"

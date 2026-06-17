@@ -18,6 +18,10 @@ fun internalLocation(
   prisonCode: String = "MDI",
   locationUsage: String = "PROG",
   userDescription: String? = "Education 1",
+  parentLocationId: Long? = 2L,
+  currentOccupancy: Int? = 2,
+  operationalCapacity: Int? = 10,
+  internalLocationCode: String? = "ED1-ED1",
 ) = Location(
   locationId = locationId,
   locationType = locationType,
@@ -26,6 +30,10 @@ fun internalLocation(
   locationUsage = locationUsage,
   locationPrefix = "$prisonCode-$description",
   userDescription = userDescription,
+  parentLocationId = parentLocationId,
+  currentOccupancy = currentOccupancy,
+  operationalCapacity = operationalCapacity,
+  internalLocationCode = internalLocationCode,
 )
 
 fun appointmentLocation(
@@ -33,6 +41,10 @@ fun appointmentLocation(
   prisonCode: String,
   description: String = "Test Appointment Location",
   userDescription: String = "Test Appointment Location User Description",
+  parentLocationId: Long? = 2L,
+  operationalCapacity: Int? = 10,
+  locationPrefix: String? = "cell1",
+  internalLocationCode: String? = "ED1-ED1",
 ) = Location(
   locationId = locationId,
   locationType = "APP",
@@ -41,6 +53,10 @@ fun appointmentLocation(
   agencyId = prisonCode,
   currentOccupancy = 2,
   userDescription = userDescription,
+  parentLocationId = parentLocationId,
+  operationalCapacity = operationalCapacity,
+  locationPrefix = locationPrefix,
+  internalLocationCode = internalLocationCode,
 )
 
 fun appointmentCategoryReferenceCode(code: String = "TEST", description: String = "Test Category") = ReferenceCode(
