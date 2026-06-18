@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonasso
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.model.PrisonerNonAssociation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.nonassociation.NonAssociationDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.nonassociation.OtherPrisonerDetails
+import java.time.LocalDateTime
 
 fun PrisonerNonAssociation.toModel(isAllocated: Boolean = true) = NonAssociationDetails(
   allocated = isAllocated,
@@ -20,6 +21,6 @@ fun PrisonerNonAssociation.toModel(isAllocated: Boolean = true) = NonAssociation
       cellLocation = this.cellLocation,
     )
   },
-  whenUpdated = this.whenUpdated.toLocalDateTime(),
+  whenUpdated = LocalDateTime.parse(this.whenUpdated),
   comments = this.comment,
 )

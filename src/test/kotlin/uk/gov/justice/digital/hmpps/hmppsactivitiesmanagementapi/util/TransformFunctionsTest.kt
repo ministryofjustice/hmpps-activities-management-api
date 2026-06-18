@@ -45,7 +45,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
-import java.time.OffsetDateTime
 import java.time.temporal.ChronoUnit
 import java.util.*
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity as ActivityEntity
@@ -680,8 +679,8 @@ class TransformFunctionsTest {
       restrictionTypeDescription = "Landing",
       comment = "Bullying",
       authorisedBy = "ADMIN",
-      whenCreated = OffsetDateTime.parse("2022-04-02T00:00:00Z"),
-      whenUpdated = OffsetDateTime.parse("2022-04-02T00:00:00Z"),
+      whenCreated = "2022-04-02T00:00:00",
+      whenUpdated = "2022-04-02T00:00:00",
       updatedBy = "ADMIN",
       isClosed = false,
       isOpen = true,
@@ -710,7 +709,7 @@ class TransformFunctionsTest {
           firstName = "Joseph",
           lastName = "Bloggs",
         ),
-        whenUpdated = nonAssociationDetail.whenUpdated.toLocalDateTime(),
+        whenUpdated = LocalDateTime.parse(nonAssociationDetail.whenUpdated),
         comments = nonAssociationDetail.comment,
       ),
     )
