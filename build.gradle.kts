@@ -8,7 +8,7 @@ plugins {
   kotlin("plugin.jpa") version "2.4.0"
   jacoco
   id("org.openapi.generator") version "7.23.0"
-  id("io.sentry.jvm.gradle") version "6.11.0"
+  id("io.sentry.jvm.gradle") version "6.12.0"
 }
 
 configurations {
@@ -37,7 +37,7 @@ dependencies {
   implementation("org.springframework.retry:spring-retry")
   implementation("org.springframework:spring-aspects")
 
-  implementation("io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations:2.28.1")
+  implementation("io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations:2.29.0")
 
   // OpenAPI
   implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.3")
@@ -49,7 +49,7 @@ dependencies {
     }
   }
 
-  implementation("aws.sdk.kotlin:s3:1.6.98")
+  implementation("aws.sdk.kotlin:s3:1.6.99")
 
   // Other dependencies
   implementation("org.apache.commons:commons-text:1.15.0")
