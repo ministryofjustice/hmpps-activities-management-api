@@ -200,7 +200,7 @@ class InternalLocationService(
   }
 
   @Deprecated("Will be removed in favour of getLocationEvents for one location")
-  fun getLocationEvents(prisonCode: String, dpsLocationIds: Set<UUID>, date: LocalDate, timeSlot: TimeSlot?) = runBlocking {
+  private fun getLocationEvents(prisonCode: String, dpsLocationIds: Set<UUID>, date: LocalDate, timeSlot: TimeSlot?) = runBlocking {
     checkCaseloadAccess(prisonCode)
 
     val prisonRegime = prisonRegimeService.getPrisonRegimesByDaysOfWeek(agencyId = prisonCode)

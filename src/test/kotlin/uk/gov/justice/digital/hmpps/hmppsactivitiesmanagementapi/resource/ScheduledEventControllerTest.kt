@@ -324,39 +324,6 @@ class ScheduledEventControllerTest : ControllerTestBase() {
   }
 
   @Test
-  fun `getScheduledEventsByDPSLocationIds - 200 response when internal locations with events found`() {
-    val prisonCode = "MDI"
-    val date = LocalDate.now()
-    val timeSlot = TimeSlot.AM
-    val locations = setOf(internalLocationEvents())
-    val dpsLocationsIds = locations.map { it.dpsLocationId }.toSet()
-
-    whenever(internalLocationService.getLocationEvents(prisonCode, dpsLocationsIds, date, timeSlot)).thenReturn(locations)
-
-    val response = mockMvc.getScheduledEventsByDPSLocationIds(prisonCode, dpsLocationsIds, date, timeSlot)
-      .andExpect { status { isOk() } }
-      .andReturn().response
-
-    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(locations))
-  }
-
-  @Test
-  fun `getScheduledEventsByDPSLocationIds - 200 response when no time slot supplied`() {
-    val prisonCode = "MDI"
-    val date = LocalDate.now()
-    val locations = setOf(internalLocationEvents())
-    val dpsLocationsIds = locations.map { it.dpsLocationId }.toSet()
-
-    whenever(internalLocationService.getLocationEvents(prisonCode, dpsLocationsIds, date, null)).thenReturn(locations)
-
-    val response = mockMvc.getScheduledEventsByDPSLocationIds(prisonCode, dpsLocationsIds, date, null)
-      .andExpect { status { isOk() } }
-      .andReturn().response
-
-    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(locations))
-  }
-
-  @Test
   fun `getScheduledEventsByDPSLocationId - 200 response when internal location with events found`() {
     val prisonCode = "MDI"
     val date = LocalDate.now()
@@ -388,14 +355,8 @@ class ScheduledEventControllerTest : ControllerTestBase() {
   }
 
   @Test
-  fun `getScheduledEventsByDPSLocationIds - 400 response when no date supplied`() {
-    mockMvc.post("/scheduled-events/prison/MDI/location-events") {
-      accept = MediaType.APPLICATION_JSON
-      contentType = MediaType.APPLICATION_JSON
-      content = mapper.writeValueAsBytes(
-        setOf(1),
-      )
-    }
+  fun `getScheduledEventsByDPSLocationId - 400 response when no date supplied`() {
+    mockMvc.get("/scheduled-events/prison/MDI/location-events?dpsLocationId=${UUID.randomUUID()}") { accept = MediaType.APPLICATION_JSON }
       .andExpect { status { isBadRequest() } }
       .andExpect {
         content {
@@ -409,13 +370,9 @@ class ScheduledEventControllerTest : ControllerTestBase() {
   }
 
   @Test
-  fun `getScheduledEventsByDPSLocationIds - 400 response when invalid date supplied`() {
-    mockMvc.post("/scheduled-events/prison/MDI/location-events?date=invalid") {
+  fun `getScheduledEventsByDPSLocationId - 400 response when invalid date supplied`() {
+    mockMvc.get("/scheduled-events/prison/MDI/location-events?dpsLocationId=${UUID.randomUUID()}&date=invalid") {
       accept = MediaType.APPLICATION_JSON
-      contentType = MediaType.APPLICATION_JSON
-      content = mapper.writeValueAsBytes(
-        setOf(1),
-      )
     }
       .andExpect { status { isBadRequest() } }
       .andExpect {
@@ -430,14 +387,9 @@ class ScheduledEventControllerTest : ControllerTestBase() {
   }
 
   @Test
-  fun `getScheduledEventsByDPSLocationIds - 400 response when invalid time slot supplied`() {
-    val date = LocalDate.now()
-    mockMvc.post("/scheduled-events/prison/MDI/location-events?date=$date&timeSlot=no") {
+  fun `getScheduledEventsByDPSLocationId - 400 response when invalid time slot supplied`() {
+    mockMvc.get("/scheduled-events/prison/MDI/location-events?dpsLocationId=${UUID.randomUUID()}&date=${LocalDate.now()}&timeSlot=no") {
       accept = MediaType.APPLICATION_JSON
-      contentType = MediaType.APPLICATION_JSON
-      content = mapper.writeValueAsBytes(
-        setOf(1),
-      )
     }
       .andExpect { status { isBadRequest() } }
       .andExpect {
@@ -452,14 +404,14 @@ class ScheduledEventControllerTest : ControllerTestBase() {
   }
 
   @Test
-  fun `getScheduledEventsByDPSLocationIds - 500 response when service throws exception`() {
+  fun `getScheduledEventsByDPSLocationId - 500 response when service throws exception`() {
     val prisonCode = "MDI"
     val date = LocalDate.now()
-    val dpsLocationsIds = setOf(UUID.randomUUID())
+    val dpsLocationId = UUID.randomUUID()
 
-    whenever(internalLocationService.getLocationEvents(prisonCode, dpsLocationsIds, date, null)).thenThrow(RuntimeException("Error"))
+    whenever(internalLocationService.getLocationEvents(prisonCode, dpsLocationId, date, null)).thenThrow(RuntimeException("Error"))
 
-    val response = mockMvc.getScheduledEventsByDPSLocationIds(prisonCode, dpsLocationsIds, date, null)
+    val response = mockMvc.getScheduledEventsByDPSLocationId(prisonCode, dpsLocationId, date, null)
       .andExpect { status { isInternalServerError() } }
       .andReturn().response
 
@@ -572,19 +524,6 @@ class ScheduledEventControllerTest : ControllerTestBase() {
     contentType = MediaType.APPLICATION_JSON
     content = mapper.writeValueAsBytes(
       internalLocationIds,
-    )
-  }.andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
-
-  private fun MockMvc.getScheduledEventsByDPSLocationIds(
-    prisonCode: String,
-    dpsLocationIds: Set<UUID>,
-    date: LocalDate,
-    timeSlot: TimeSlot? = null,
-  ) = post("/scheduled-events/prison/$prisonCode/location-events?date=$date" + (timeSlot?.let { "&timeSlot=$timeSlot" } ?: "")) {
-    accept = MediaType.APPLICATION_JSON
-    contentType = MediaType.APPLICATION_JSON
-    content = mapper.writeValueAsBytes(
-      dpsLocationIds,
     )
   }.andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
 
