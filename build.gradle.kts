@@ -108,7 +108,8 @@ val configValues = mapOf(
 val buildDirectory: Directory = layout.buildDirectory.get()
 
 tasks.register("buildPrisonApiModel", GenerateTask::class) {
-  generatorName.set("kotlin-spring")
+  generatorName.set("kotlin")
+  library.set("jvm-spring-webclient")
   inputSpec.set("openapi-specs/prison-api.json")
   outputDir.set("$buildDirectory/generated/prisonapi")
   modelPackage.set("uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model")
@@ -127,7 +128,8 @@ tasks.register("buildNonAssociationsApiModel", GenerateTask::class) {
 }
 
 tasks.register("buildIncentivesApiModel", GenerateTask::class) {
-  generatorName.set("kotlin-spring")
+  generatorName.set("kotlin")
+  library.set("jvm-spring-webclient")
   inputSpec.set("openapi-specs/incentives-api.json")
   outputDir.set("$buildDirectory/generated/incentivesapi")
   modelPackage.set("uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.incentivesapi.model")
@@ -137,6 +139,7 @@ tasks.register("buildIncentivesApiModel", GenerateTask::class) {
 
 tasks.register("buildLocationsInsidePrisonApiModel", GenerateTask::class) {
   generatorName.set("kotlin")
+  library.set("jvm-spring-webclient")
   inputSpec.set("openapi-specs/locations-inside-prison-api.json")
   outputDir.set("$buildDirectory/generated/locationsinsideprisonapi")
   modelPackage.set("uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.model")
