@@ -1,7 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import jakarta.persistence.EntityNotFoundException
-import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.BeforeEach
@@ -501,9 +500,7 @@ class CandidatesServiceTest {
     fun setUp() {
       nonAssociationsApiClient.stub {
         on {
-          runBlocking {
-            nonAssociationsApiClient.getNonAssociationsInvolving(anyString(), anyList())
-          }
+          nonAssociationsApiClient.getNonAssociationsInvolving(anyString(), anyList())
         } doReturn emptyList()
       }
     }
@@ -526,9 +523,7 @@ class CandidatesServiceTest {
 
       nonAssociationsApiClient.stub {
         on {
-          runBlocking {
-            nonAssociationsApiClient.getNonAssociationsInvolving("MDI", listOf("A1234BI", "A1234BC", "D3333DD"))
-          }
+          nonAssociationsApiClient.getNonAssociationsInvolving("MDI", listOf("A1234BI", "A1234BC", "D3333DD"))
         } doReturn listOf(nonAssociation1, nonAssociation2)
       }
 
@@ -588,9 +583,7 @@ class CandidatesServiceTest {
 
       nonAssociationsApiClient.stub {
         on {
-          runBlocking {
-            nonAssociationsApiClient.getNonAssociationsInvolving("MDI", listOf("A1234BC"))
-          }
+          nonAssociationsApiClient.getNonAssociationsInvolving("MDI", listOf("A1234BC"))
         } doReturn null
       }
 
@@ -858,9 +851,7 @@ class CandidatesServiceTest {
 
       nonAssociationsApiClient.stub {
         on {
-          runBlocking {
-            nonAssociationsApiClient.getNonAssociationsInvolving("MDI", listOf("A1234BC"))
-          }
+          nonAssociationsApiClient.getNonAssociationsInvolving("MDI", listOf("A1234BC"))
         } doReturn listOf(nonAssociation)
       }
 
@@ -967,7 +958,7 @@ class CandidatesServiceTest {
               lastName = prisonerA1234AA.otherPrisonerDetails.lastName,
               cellLocation = prisonerA1234AA.otherPrisonerDetails.cellLocation,
             ),
-            whenUpdated = LocalDateTime.parse(prisonerA1234AA.whenUpdated),
+            whenUpdated = prisonerA1234AA.whenUpdated,
             comments = prisonerA1234AA.comment,
           ),
           NonAssociationDetails(
@@ -984,7 +975,7 @@ class CandidatesServiceTest {
               lastName = prisonerB3333BB.otherPrisonerDetails.lastName,
               cellLocation = prisonerB3333BB.otherPrisonerDetails.cellLocation,
             ),
-            whenUpdated = LocalDateTime.parse(prisonerB3333BB.whenUpdated),
+            whenUpdated = prisonerB3333BB.whenUpdated,
             comments = prisonerB3333BB.comment,
           ),
         ),
@@ -1002,8 +993,8 @@ class CandidatesServiceTest {
     restrictionTypeDescription = "Landing",
     comment = "Bullying comment",
     authorisedBy = "ADMIN",
-    whenCreated = "2022-04-02T11:11:16",
-    whenUpdated = "2022-04-14T12:37:16",
+    whenCreated = LocalDateTime.parse("2022-04-02T11:11:16"),
+    whenUpdated = LocalDateTime.parse("2022-04-14T12:37:16"),
     updatedBy = "ADMIN",
     isClosed = false,
     isOpen = true,

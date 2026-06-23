@@ -3,12 +3,12 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
 
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "10.5.0"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "10.5.1"
   kotlin("plugin.spring") version "2.4.0"
   kotlin("plugin.jpa") version "2.4.0"
   jacoco
-  id("org.openapi.generator") version "7.22.0"
-  id("io.sentry.jvm.gradle") version "6.11.0"
+  id("org.openapi.generator") version "7.23.0"
+  id("io.sentry.jvm.gradle") version "6.12.0"
 }
 
 configurations {
@@ -37,7 +37,7 @@ dependencies {
   implementation("org.springframework.retry:spring-retry")
   implementation("org.springframework:spring-aspects")
 
-  implementation("io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations:2.28.1")
+  implementation("io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations:2.29.0")
 
   // OpenAPI
   implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.3")
@@ -49,7 +49,7 @@ dependencies {
     }
   }
 
-  implementation("aws.sdk.kotlin:s3:1.6.98")
+  implementation("aws.sdk.kotlin:s3:1.6.102")
 
   // Other dependencies
   implementation("org.apache.commons:commons-text:1.15.0")
@@ -108,7 +108,8 @@ val configValues = mapOf(
 val buildDirectory: Directory = layout.buildDirectory.get()
 
 tasks.register("buildPrisonApiModel", GenerateTask::class) {
-  generatorName.set("kotlin-spring")
+  generatorName.set("kotlin")
+  library.set("jvm-spring-webclient")
   inputSpec.set("openapi-specs/prison-api.json")
   outputDir.set("$buildDirectory/generated/prisonapi")
   modelPackage.set("uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model")
@@ -117,7 +118,8 @@ tasks.register("buildPrisonApiModel", GenerateTask::class) {
 }
 
 tasks.register("buildNonAssociationsApiModel", GenerateTask::class) {
-  generatorName.set("kotlin-spring")
+  generatorName.set("kotlin")
+  library.set("jvm-spring-webclient")
   inputSpec.set("openapi-specs/non-associations-api.json")
   outputDir.set("$buildDirectory/generated/nonassociations")
   modelPackage.set("uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.model")
@@ -126,7 +128,8 @@ tasks.register("buildNonAssociationsApiModel", GenerateTask::class) {
 }
 
 tasks.register("buildIncentivesApiModel", GenerateTask::class) {
-  generatorName.set("kotlin-spring")
+  generatorName.set("kotlin")
+  library.set("jvm-spring-webclient")
   inputSpec.set("openapi-specs/incentives-api.json")
   outputDir.set("$buildDirectory/generated/incentivesapi")
   modelPackage.set("uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.incentivesapi.model")
@@ -136,6 +139,7 @@ tasks.register("buildIncentivesApiModel", GenerateTask::class) {
 
 tasks.register("buildLocationsInsidePrisonApiModel", GenerateTask::class) {
   generatorName.set("kotlin")
+  library.set("jvm-spring-webclient")
   inputSpec.set("openapi-specs/locations-inside-prison-api.json")
   outputDir.set("$buildDirectory/generated/locationsinsideprisonapi")
   modelPackage.set("uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.model")
