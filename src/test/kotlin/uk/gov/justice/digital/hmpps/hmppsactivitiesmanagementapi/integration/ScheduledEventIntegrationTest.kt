@@ -1111,6 +1111,52 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
         .expectStatus().isUnauthorized
     }
 
+    @Test
+    fun `returns external movements as a single LocationEvents object`() {
+      val externalMovement = externalMovement()
+
+      externalMovementsApiMockServer.stubGetExternalMovements(
+        prisonCode,
+        start = date.atStartOfDay(),
+        end = date.plusDays(1).atStartOfDay(),
+        response = ExternalMovementsResponse(content = listOf(externalMovement)),
+      )
+
+      val result = webTestClient.getScheduledExternalMovements(prisonCode, date)
+
+      with(result) {
+        assertThat(id).isNull()
+        assertThat(dpsLocationId).isNull()
+        assertThat(this.prisonCode).isEqualTo("MDI")
+        assertThat(code).isEqualTo("OUTSIDE")
+        assertThat(description).isEqualTo("Outside")
+        with(events.single()) {
+          assertThat(prisonerNumber).isEqualTo(externalMovement.prisonerNumber)
+          assertThat(eventSource).isEqualTo("EXTERNAL_MOVEMENTS_API")
+          assertThat(outsidePrison).isTrue()
+          assertThat(categoryCode).isEqualTo(externalMovement.description.code)
+          assertThat(summary).isEqualTo("Accommodation-related ROTL")
+          assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
+          assertThat(endTime).isEqualTo(LocalTime.of(17, 0))
+          assertThat(status).isEqualTo(externalMovement.status.description)
+        }
+      }
+    }
+
+    @Test
+    fun `returns LocationEvents with empty events when no external movements found`() {
+      externalMovementsApiMockServer.stubGetExternalMovements(
+        prisonCode,
+        start = date.atStartOfDay(),
+        end = date.plusDays(1).atStartOfDay(),
+        response = ExternalMovementsResponse(content = emptyList()),
+      )
+
+      val result = webTestClient.getScheduledExternalMovements(prisonCode, date)
+
+      assertThat(result.events).isEmpty()
+    }
+
     private fun WebTestClient.getExternalMovements(
       prisonCode: String,
       date: LocalDate,
@@ -1126,6 +1172,23 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
       .expectBodyList<LocationEvents>()
+      .returnResult().responseBody!!
+
+    private fun WebTestClient.getScheduledExternalMovements(
+      prisonCode: String,
+      date: LocalDate,
+      timeSlot: TimeSlot? = null,
+    ) = get()
+      .uri(
+        "/scheduled-events/prison/$prisonCode/scheduled-external-movements?date=$date" +
+          (timeSlot?.let { "&timeSlot=$it" } ?: ""),
+      )
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
+      .exchange()
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(LocationEvents::class.java)
       .returnResult().responseBody!!
   }
 }
