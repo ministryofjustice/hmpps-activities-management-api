@@ -549,6 +549,103 @@ class ScheduledEventControllerTest : ControllerTestBase() {
     verifyNoInteractions(scheduledEventService)
   }
 
+  @Test
+  fun `getScheduledExternalMovements - 200 response when no external movements found`() {
+    val prisonCode = "MDI"
+    val date = LocalDate.now()
+    val result = LocationEvents(
+      id = null,
+      dpsLocationId = null,
+      prisonCode = prisonCode,
+      code = "OUTSIDE",
+      description = "Outside",
+      events = emptySet(),
+    )
+
+    whenever(scheduledEventService.getScheduledExternalMovements(prisonCode, date, null))
+      .thenReturn(result)
+
+    val response = mockMvc.getScheduledExternalMovements(prisonCode, date, null)
+      .andExpect { status { isOk() } }
+      .andReturn().response
+
+    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(result))
+  }
+
+  @Test
+  fun `getScheduledExternalMovements - 200 response with time slot`() {
+    val prisonCode = "MDI"
+    val date = LocalDate.now()
+    val result = LocationEvents(
+      id = null,
+      dpsLocationId = null,
+      prisonCode = prisonCode,
+      code = "OUTSIDE",
+      description = "Outside",
+      events = emptySet(),
+    )
+
+    whenever(scheduledEventService.getScheduledExternalMovements(prisonCode, date, TimeSlot.AM))
+      .thenReturn(result)
+
+    mockMvc.getScheduledExternalMovements(prisonCode, date, TimeSlot.AM)
+      .andExpect { status { isOk() } }
+
+    verify(scheduledEventService).getScheduledExternalMovements(prisonCode, date, TimeSlot.AM)
+  }
+
+  @Test
+  fun `getScheduledExternalMovements - 400 response when no date supplied`() {
+    mockMvc.get("/scheduled-events/prison/MDI/scheduled-external-movements") {
+      accept = MediaType.APPLICATION_JSON
+    }
+      .andExpect { status { isBadRequest() } }
+      .andExpect {
+        content {
+          jsonPath("$.userMessage") {
+            value("Required request parameter 'date' for method parameter type LocalDate is not present")
+          }
+        }
+      }
+
+    verifyNoInteractions(scheduledEventService)
+  }
+
+  @Test
+  fun `getScheduledExternalMovements - 400 response when invalid date supplied`() {
+    mockMvc.get("/scheduled-events/prison/MDI/scheduled-external-movements?date=invalid") {
+      accept = MediaType.APPLICATION_JSON
+    }
+      .andExpect { status { isBadRequest() } }
+      .andExpect {
+        content {
+          jsonPath("$.userMessage") {
+            value("Error converting 'date' (invalid): Method parameter 'date': Failed to convert value of type 'java.lang.String' to required type 'java.time.LocalDate'")
+          }
+        }
+      }
+
+    verifyNoInteractions(scheduledEventService)
+  }
+
+  @Test
+  fun `getScheduledExternalMovements - 400 response when invalid time slot supplied`() {
+    val date = LocalDate.now()
+    mockMvc.get("/scheduled-events/prison/MDI/scheduled-external-movements?date=$date&timeSlot=no") {
+      accept = MediaType.APPLICATION_JSON
+    }
+      .andExpect { status { isBadRequest() } }
+      .andExpect {
+        content {
+          jsonPath("$.userMessage") {
+            value("Error converting 'timeSlot' (no): Method parameter 'timeSlot': Failed to convert value of type 'java.lang.String' to required type 'uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot'")
+          }
+        }
+      }
+
+    verifyNoInteractions(scheduledEventService)
+  }
+
   private fun MockMvc.getScheduledEventsForMultiplePrisoners(
     prisonCode: String,
     prisonerNumbers: Set<String>,
@@ -602,6 +699,14 @@ class ScheduledEventControllerTest : ControllerTestBase() {
     date: LocalDate,
     timeSlot: TimeSlot? = null,
   ) = get("/scheduled-events/prison/$prisonCode/external-movements?date=$date" + (timeSlot?.let { "&timeSlot=$timeSlot" } ?: "")) {
+    accept = MediaType.APPLICATION_JSON
+  }.andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+
+  private fun MockMvc.getScheduledExternalMovements(
+    prisonCode: String,
+    date: LocalDate,
+    timeSlot: TimeSlot? = null,
+  ) = get("/scheduled-events/prison/$prisonCode/scheduled-external-movements?date=$date" + (timeSlot?.let { "&timeSlot=$timeSlot" } ?: "")) {
     accept = MediaType.APPLICATION_JSON
   }.andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
 }

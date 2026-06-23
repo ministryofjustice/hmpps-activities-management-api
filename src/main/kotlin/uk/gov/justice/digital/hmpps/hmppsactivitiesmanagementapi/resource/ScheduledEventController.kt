@@ -318,6 +318,7 @@ class ScheduledEventController(
     timeSlot: TimeSlot?,
   ): InternalLocationEvents = internalLocationService.getLocationEvents(prisonCode, dpsLocationId, date, timeSlot)
 
+  @Deprecated("Use the GET /prison/{prisonCode}/scheduled-external-movements endpoint that returns a single LocationEvents object")
   @GetMapping(
     value = ["/prison/{prisonCode}/external-movements"],
     produces = [MediaType.APPLICATION_JSON_VALUE],
@@ -375,4 +376,58 @@ class ScheduledEventController(
     date,
     timeSlot,
   )
+
+  @GetMapping(
+    value = ["/prison/{prisonCode}/scheduled-external-movements"],
+    produces = [MediaType.APPLICATION_JSON_VALUE],
+  )
+  @ResponseBody
+  @Operation(
+    summary = "Get external movements (TAPs) as a single LocationEvents object for a given prison code, date and an optional time slot",
+    description = """
+      Returns external movements fetched from the External Movements API for the given prison,
+      date and optional time slot as a single LocationEvents object. This endpoint supports the creation of movement lists.
+    """,
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Successful call - zero or more external movements found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = LocationEvents::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Invalid request",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
+  fun getScheduledExternalMovements(
+    @PathVariable @Parameter(description = "The 3-character prison code.")
+    prisonCode: String,
+    @RequestParam(value = "date", required = true)
+    @Parameter(description = "The exact date to return movements for (required) in format YYYY-MM-DD")
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+    date: LocalDate,
+    @RequestParam(value = "timeSlot", required = false)
+    @Parameter(description = "Time slot of the movements (optional). If supplied, one of AM, PM or ED.")
+    timeSlot: TimeSlot?,
+  ): LocationEvents = scheduledEventService.getScheduledExternalMovements(prisonCode, date, timeSlot)
 }

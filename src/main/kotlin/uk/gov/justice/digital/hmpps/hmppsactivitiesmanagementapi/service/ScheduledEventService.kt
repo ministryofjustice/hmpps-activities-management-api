@@ -320,6 +320,29 @@ class ScheduledEventService(
       } ?: emptySet()
   }
 
+  fun getScheduledExternalMovements(
+    prisonCode: String,
+    date: LocalDate,
+    timeSlot: TimeSlot?,
+  ): LocationEvents = runBlocking {
+    val eventPriorities = withContext(Dispatchers.IO) { prisonRegimeService.getEventPrioritiesForPrison(prisonCode) }
+
+    val (startDateTime, endDateTime) = getDateTimeRange(prisonCode, date, timeSlot)
+
+    val events = externalMovementsApiClient.getExternalMovements(prisonCode, start = startDateTime, end = endDateTime)
+      .content
+      .toScheduledEvents(prisonCode, eventPriorities)
+
+    LocationEvents(
+      id = null,
+      dpsLocationId = null,
+      prisonCode = prisonCode,
+      code = "OUTSIDE",
+      description = "Outside",
+      events = events.toSet(),
+    )
+  }
+
   private fun getDateTimeRange(prisonCode: String, date: LocalDate, timeSlot: TimeSlot?): Pair<LocalDateTime, LocalDateTime> {
     val timeRange = timeSlot?.let {
       prisonRegimeService.getTimeRangeForPrisonAndTimeSlot(prisonCode, it, date.dayOfWeek)
