@@ -1,6 +1,9 @@
 
-update appointment_attendee 
-set is_deleted = true
+update appointment_attendee
+set is_deleted = true,
+    removed_time = coalesce(removed_time, now()),
+    removal_reason_id = coalesce(removal_reason_id, 1),
+    removed_by = coalesce(removed_by, 'NOMIS')
 where appointment_attendee_id in (
 11837628,
 11837626,
@@ -47,4 +50,4 @@ where appointment_attendee_id in (
 15118634,
 15118631,
 15118633,
-15118632)
+15118632);
