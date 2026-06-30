@@ -49,18 +49,18 @@ dependencies {
     }
   }
 
-  implementation("aws.sdk.kotlin:s3:1.6.102")
+  implementation("aws.sdk.kotlin:s3:1.6.103")
 
   // Other dependencies
   implementation("org.apache.commons:commons-text:1.15.0")
 
   // Database dependencies
   runtimeOnly("org.flywaydb:flyway-database-postgresql")
-  runtimeOnly("org.postgresql:postgresql:42.7.11") // temp fix, will need unpinning - addresses CVE-2026-42198
+  runtimeOnly("org.postgresql:postgresql:42.7.12") // temp fix, will need unpinning - addresses CVE-2026-42198
 
   // Test dependencies
   testImplementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter-test:2.5.0")
-  testImplementation("uk.gov.justice.service.hmpps:hmpps-subject-access-request-test-support:2.5.0")
+  testImplementation("uk.gov.justice.service.hmpps:hmpps-subject-access-request-test-support:2.6.0")
   testImplementation("org.springframework.boot:spring-boot-starter-webflux-test")
   testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
   testImplementation("org.wiremock:wiremock-standalone:3.13.2")
