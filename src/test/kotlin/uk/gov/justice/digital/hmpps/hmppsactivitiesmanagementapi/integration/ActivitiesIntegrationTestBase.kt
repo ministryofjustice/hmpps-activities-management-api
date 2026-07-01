@@ -124,7 +124,6 @@ abstract class ActivitiesIntegrationTestBase : IntegrationTestBase() {
     .expectBody<Attendance>()
     .returnResult().responseBody
 
-
   fun WebTestClient.updateActivity(
     prisonCode: String,
     id: Long,

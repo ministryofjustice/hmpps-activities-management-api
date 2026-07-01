@@ -46,7 +46,6 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-
 class AllocationIntegrationTest : LocalStackTestBase() {
 
   @Autowired
@@ -899,15 +898,15 @@ class AllocationIntegrationTest : LocalStackTestBase() {
       prisonCode = RISLEY_PRISON_CODE,
       id = 2,
       activityUpdateRequest = ActivityUpdateRequest(
-        slots =listOf(
+        slots = listOf(
           Slot(
             weekNumber = 1,
             timeSlot = TimeSlot.AM,
             tuesday = true,
             daysOfWeek = setOf(DayOfWeek.TUESDAY),
-          )
-        )
-      )
+          ),
+        ),
+      ),
     )
 
     val exclusionsHistory2 = webTestClient.getExclusionsHistory(2)!!
