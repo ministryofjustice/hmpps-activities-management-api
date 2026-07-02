@@ -184,7 +184,7 @@ class ExclusionHistoryServiceTest {
     exclusionRevisionType: Int = ADDED,
     exclusionDaysOfWeekRevisionType: Int = ADDED,
     username: String = "USER1",
-    revisionDateTime: LocalDateTime? = LocalDateTime.parse("2026-06-25T10:15:30"),
+    revisionDateTime: LocalDateTime = LocalDateTime.parse("2026-06-25T10:15:30"),
   ): ExclusionHistoryAuditRow = object : ExclusionHistoryAuditRow {
     override val weekNumber = weekNumber
     override val timeSlot = timeSlot
@@ -204,7 +204,7 @@ internal fun exclusionRevision(
   revisionType: RevisionType = RevisionType.ADDED,
   revision: Long = 1,
   updatedBy: String = "USER1",
-  updatedDateTime: LocalDateTime? = LocalDateTime.parse("2026-06-25T10:15:30"),
+  updatedDateTime: LocalDateTime = LocalDateTime.parse("2026-06-25T10:15:30"),
 ) = ExclusionRevision(
   weekNumber = weekNumber,
   timeSlots = timeSlots,

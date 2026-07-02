@@ -18,17 +18,17 @@ data class ExclusionRevision(
   val dayOfWeek: DayOfWeek,
 
   @Schema(description = "The type of revision", example = "ADDED")
-  val revisionType: RevisionType? = null,
+  val revisionType: RevisionType,
 
   @Schema(description = "The revision number", example = "12345")
-  val revision: Long? = null,
+  val revision: Long,
 
   @Schema(description = "The username of the user that made the change", example = "BLOGGSJ")
-  val updatedBy: String? = null,
+  val updatedBy: String,
 
   @Schema(description = "The local date and time", example = "2026-06-25T10:15:30")
   @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
-  val updatedDateTime: LocalDateTime? = null,
+  val updatedDateTime: LocalDateTime,
 )
 
 enum class RevisionType { ADDED, REMOVED }

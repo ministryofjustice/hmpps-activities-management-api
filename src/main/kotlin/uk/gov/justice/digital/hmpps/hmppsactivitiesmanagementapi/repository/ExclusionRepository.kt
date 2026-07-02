@@ -17,7 +17,7 @@ interface ExclusionHistoryAuditRow {
   val exclusionRevisionType: Int
   val exclusionDaysOfWeekRevisionType: Int
   val username: String
-  val revisionDateTime: LocalDateTime?
+  val revisionDateTime: LocalDateTime
 }
 
 @Repository
