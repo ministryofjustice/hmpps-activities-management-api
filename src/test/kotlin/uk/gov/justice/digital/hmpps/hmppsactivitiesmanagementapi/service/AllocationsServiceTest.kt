@@ -4,6 +4,8 @@ import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.DisplayName
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentMatchers
 import org.mockito.MockitoAnnotations.openMocks
@@ -41,6 +43,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Allo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.PrisonPayBandRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.CaseloadAccessException
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelPrisonerAllocations
 import java.time.DayOfWeek
@@ -54,7 +57,8 @@ class AllocationsServiceTest {
   private val scheduleRepository: ActivityScheduleRepository = mock()
   private val outboundEventsService: OutboundEventsService = mock()
   private val manageAttendancesService: ManageAttendancesService = mock()
-  private val service: AllocationsService = AllocationsService(allocationRepository, prisonPayBandRepository, scheduleRepository, TransactionHandler(), outboundEventsService, manageAttendancesService)
+  private val exclusionHistoryService: ExclusionHistoryService = mock()
+  private val service: AllocationsService = AllocationsService(allocationRepository, prisonPayBandRepository, scheduleRepository, TransactionHandler(), outboundEventsService, manageAttendancesService, exclusionHistoryService)
   private val activeAllocation = activityEntity().schedules().first().allocations().first()
   private val allocationCaptor = argumentCaptor<Allocation>()
 
@@ -755,5 +759,40 @@ class AllocationsServiceTest {
 
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocationId)
     verify(manageAttendancesService).saveAttendances(newAttendances, allocation.activitySchedule.description)
+  }
+
+  @Nested
+  @DisplayName("Exclusions History")
+  inner class ExclusionsHistory {
+    @Test
+    fun `should throw exception if allocation id is not found`() {
+      whenever(allocationRepository.findById(any())).thenReturn(Optional.empty())
+
+      assertThatThrownBy { service.getExclusionsHistory(-99) }.isInstanceOf(EntityNotFoundException::class.java)
+        .hasMessage("Allocation -99 not found")
+    }
+
+    @Test
+    fun `should return exclusions history`() {
+      addCaseloadIdToRequestHeader("MDI")
+
+      val allocation = allocation()
+      val exclusionsHistory = listOf(exclusionRevision())
+
+      whenever(allocationRepository.findById(allocation.allocationId)).thenReturn(Optional.of(allocation))
+      whenever(exclusionHistoryService.findHistory(allocation)).thenReturn(exclusionsHistory)
+
+      assertThat(service.getExclusionsHistory(allocation.allocationId)).isEqualTo(exclusionsHistory)
+    }
+
+    @Test
+    fun `should throw caseload access exception if caseload id header does not match`() {
+      addCaseloadIdToRequestHeader("WRONG")
+      val allocation = allocation()
+
+      whenever(allocationRepository.findById(allocation.allocationId)).thenReturn(Optional.of(allocation))
+
+      assertThatThrownBy { service.getExclusionsHistory(allocation.allocationId) }.isInstanceOf(CaseloadAccessException::class.java)
+    }
   }
 }

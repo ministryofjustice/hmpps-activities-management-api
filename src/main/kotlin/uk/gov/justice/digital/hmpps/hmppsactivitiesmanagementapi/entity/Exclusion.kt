@@ -12,6 +12,8 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
+import org.hibernate.envers.Audited
+import org.hibernate.envers.RelationTargetAuditMode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.consolidateMatchingSlots
@@ -19,6 +21,7 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 
 @Entity
+@Audited
 @Table(name = "exclusion")
 data class Exclusion(
   @Id
@@ -27,6 +30,7 @@ data class Exclusion(
 
   @ManyToOne
   @JoinColumn(name = "allocation_id", nullable = false)
+  @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
   val allocation: Allocation,
 
   var startDate: LocalDate,
@@ -36,8 +40,7 @@ data class Exclusion(
   @Enumerated(EnumType.STRING)
   var timeSlot: TimeSlot,
 
-  @OneToMany(cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
-  @JoinColumn(name = "exclusion_id")
+  @OneToMany(mappedBy = "exclusion", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
   private var exclusionDaysOfWeek: MutableList<ExclusionDaysOfWeek> = mutableListOf(),
 
 ) {
@@ -59,7 +62,7 @@ data class Exclusion(
     this.exclusionDaysOfWeek.clear()
     this.exclusionDaysOfWeek.addAll(
       daysOfWeek.map {
-        ExclusionDaysOfWeek(dayOfWeek = it)
+        ExclusionDaysOfWeek(exclusion = this, dayOfWeek = it)
       },
     )
   }
@@ -92,10 +95,11 @@ data class Exclusion(
       weekNumber = weekNumber,
       startDate = startDate,
       timeSlot = timeSlot,
-      exclusionDaysOfWeek = daysOfWeek.map {
-        ExclusionDaysOfWeek(dayOfWeek = it)
-      }.toMutableList(),
-    )
+    ).also { exclusion ->
+      exclusion.exclusionDaysOfWeek = daysOfWeek.map {
+        ExclusionDaysOfWeek(exclusion = exclusion, dayOfWeek = it)
+      }.toMutableList()
+    }
   }
 }
 
