@@ -1057,61 +1057,6 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
     private val date = LocalDate.now()
 
     @Test
-    fun `returns external movements wrapped in LocationEvents`() {
-      val externalMovement = externalMovement()
-
-      externalMovementsApiMockServer.stubGetExternalMovements(
-        prisonCode,
-        start = date.atStartOfDay(),
-        end = date.plusDays(1).atStartOfDay(),
-        response = ExternalMovementsResponse(content = listOf(externalMovement)),
-      )
-
-      val result = webTestClient.getExternalMovements(prisonCode, date)
-
-      with(result.single()) {
-        assertThat(id).isNull()
-        assertThat(dpsLocationId).isNull()
-        assertThat(this.prisonCode).isEqualTo("MDI")
-        assertThat(code).isEqualTo("OUTSIDE")
-        assertThat(description).isEqualTo("Outside")
-        with(events.single()) {
-          assertThat(prisonerNumber).isEqualTo(externalMovement.prisonerNumber)
-          assertThat(eventSource).isEqualTo("EXTERNAL_MOVEMENTS_API")
-          assertThat(outsidePrison).isTrue()
-          assertThat(categoryCode).isEqualTo(externalMovement.description.code)
-          assertThat(summary).isEqualTo("Accommodation-related ROTL")
-          assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
-          assertThat(endTime).isEqualTo(LocalTime.of(17, 0))
-          assertThat(status).isEqualTo(externalMovement.status.description)
-        }
-      }
-    }
-
-    @Test
-    fun `returns empty set when no external movements`() {
-      externalMovementsApiMockServer.stubGetExternalMovements(
-        prisonCode,
-        start = date.atStartOfDay(),
-        end = date.plusDays(1).atStartOfDay(),
-        response = ExternalMovementsResponse(content = emptyList()),
-      )
-
-      val result = webTestClient.getExternalMovements(prisonCode, date)
-
-      assertThat(result).isEmpty()
-    }
-
-    @Test
-    fun `returns 401 when not authenticated`() {
-      webTestClient.get()
-        .uri("/scheduled-events/prison/$prisonCode/external-movements?date=$date")
-        .accept(MediaType.APPLICATION_JSON)
-        .exchange()
-        .expectStatus().isUnauthorized
-    }
-
-    @Test
     fun `returns external movements as a single LocationEvents object`() {
       val externalMovement = externalMovement()
 
@@ -1156,23 +1101,6 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
 
       assertThat(result.events).isEmpty()
     }
-
-    private fun WebTestClient.getExternalMovements(
-      prisonCode: String,
-      date: LocalDate,
-      timeSlot: TimeSlot? = null,
-    ) = get()
-      .uri(
-        "/scheduled-events/prison/$prisonCode/external-movements?date=$date" +
-          (timeSlot?.let { "&timeSlot=$it" } ?: ""),
-      )
-      .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
-      .exchange()
-      .expectStatus().isOk
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBodyList<LocationEvents>()
-      .returnResult().responseBody!!
 
     private fun WebTestClient.getScheduledExternalMovements(
       prisonCode: String,

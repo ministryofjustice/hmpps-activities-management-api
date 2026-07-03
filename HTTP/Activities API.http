@@ -13,7 +13,7 @@ Authorization: Bearer {{$auth.token("auth-token")}}
 ### Retrieve exclusions history for an allocation
 
 < {%
-    request.variables.set("allocationId", "20")
+    request.variables.set("allocationId", "8569")
 %}
 
 GET {{ baseUrl }}/allocations/id/{{ allocationId }}/exclusions/history
