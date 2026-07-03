@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ExclusionRevision
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AllocationUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.SuspendPrisonerRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.UnsuspendPrisonerRequest
@@ -175,8 +176,8 @@ class AllocationController(
   )
   @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_ADMIN')")
   fun update(
-    @PathVariable("allocationId") allocationId: Long,
-    @PathVariable("prisonCode") prisonCode: String,
+    @PathVariable allocationId: Long,
+    @PathVariable prisonCode: String,
     principal: Principal,
     @Valid
     @RequestBody
@@ -244,7 +245,7 @@ class AllocationController(
   @CaseloadHeader
   @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_ADMIN')")
   fun addToWaitingList(
-    @PathVariable("prisonCode") prisonCode: String,
+    @PathVariable prisonCode: String,
     principal: Principal,
     @Valid
     @RequestBody
@@ -293,7 +294,7 @@ class AllocationController(
   @CaseloadHeader
   @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_ADMIN')")
   fun suspend(
-    @PathVariable("prisonCode") prisonCode: String,
+    @PathVariable prisonCode: String,
     principal: Principal,
     @Valid
     @RequestBody
@@ -339,11 +340,52 @@ class AllocationController(
   @CaseloadHeader
   @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_ADMIN')")
   fun unsuspend(
-    @PathVariable("prisonCode") prisonCode: String,
+    @PathVariable prisonCode: String,
     principal: Principal,
     @Valid
     @RequestBody
     @Parameter(description = "The request with the suspension details", required = true)
     request: UnsuspendPrisonerRequest,
   ) = prisonerSuspensionsService.unsuspend(prisonCode, request, principal.name)
+
+  @GetMapping(value = ["/id/{allocationId}/exclusions/history"])
+  @ResponseBody
+  @Operation(
+    summary = "Get exclusions history by allocation id",
+    description = "Returns historical exclusion snapshots for the supplied allocation id.",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Exclusions history returned",
+        content = [
+          Content(
+            mediaType = "application/json",
+            array = ArraySchema(schema = Schema(implementation = ExclusionRevision::class)),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "The allocation for this ID was not found.",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  @CaseloadHeader
+  @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_ADMIN')")
+  fun getExclusionsHistoryByAllocationId(
+    @PathVariable("allocationId") allocationId: Long,
+  ): List<ExclusionRevision> = allocationsService.getExclusionsHistory(allocationId)
 }

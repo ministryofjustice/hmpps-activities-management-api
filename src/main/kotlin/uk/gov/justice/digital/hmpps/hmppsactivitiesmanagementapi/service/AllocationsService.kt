@@ -33,6 +33,7 @@ class AllocationsService(
   private val transactionHandler: TransactionHandler,
   private val outboundEventsService: OutboundEventsService,
   private val manageAttendancesService: ManageAttendancesService,
+  private val exclusionHistoryService: ExclusionHistoryService,
 ) {
   companion object {
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
@@ -162,6 +163,11 @@ class AllocationsService(
 
   @Transactional(propagation = Propagation.REQUIRED, noRollbackFor = [IllegalArgumentException::class])
   fun updateStartDateIgnoringValidationErrors(allocation: Allocation, startDate: LocalDate) = updateStartDate(allocation, startDate)
+
+  @Transactional(readOnly = true)
+  fun getExclusionsHistory(allocationId: Long) = allocationRepository.findOrThrowNotFound(allocationId)
+    .also { checkCaseloadAccess(it.activitySchedule.activity.prisonCode) }
+    .let { exclusionHistoryService.findHistory(it) }
 
   private fun updateStartDate(allocation: Allocation, startDate: LocalDate, scheduleInstanceId: Long? = null) {
     startDate.let { newStartDate ->

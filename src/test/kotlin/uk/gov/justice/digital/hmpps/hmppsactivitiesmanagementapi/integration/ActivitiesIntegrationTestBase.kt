@@ -2,16 +2,20 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.WebTestClient
+import org.springframework.test.web.reactive.server.expectBody
+import org.springframework.test.web.reactive.server.expectBodyList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityPayHistory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AdvanceAttendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AdvanceAttendanceCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivitySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CASELOAD_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_ACTIVITY_ADMIN
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_ACTIVITY_HUB
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 
 abstract class ActivitiesIntegrationTestBase : IntegrationTestBase() {
@@ -25,7 +29,7 @@ abstract class ActivitiesIntegrationTestBase : IntegrationTestBase() {
     .exchange()
     .expectStatus().isOk
     .expectHeader().contentType(MediaType.APPLICATION_JSON)
-    .expectBodyList(ActivityScheduleInstance::class.java)
+    .expectBodyList<ActivityScheduleInstance>()
     .returnResult().responseBody
 
   fun WebTestClient.getActivities(prisonCode: String, nameSearch: String? = null, excludeArchived: Boolean = true) = get()
@@ -40,7 +44,7 @@ abstract class ActivitiesIntegrationTestBase : IntegrationTestBase() {
     .exchange()
     .expectStatus().isOk
     .expectHeader().contentType(MediaType.APPLICATION_JSON)
-    .expectBodyList(ActivitySummary::class.java)
+    .expectBodyList<ActivitySummary>()
     .returnResult().responseBody
 
   fun WebTestClient.getActivityById(id: Long, caseLoadId: String = "PVI", includeScheduledInstances: Boolean? = true) = get()
@@ -56,7 +60,7 @@ abstract class ActivitiesIntegrationTestBase : IntegrationTestBase() {
     .exchange()
     .expectStatus().isOk
     .expectHeader().contentType(MediaType.APPLICATION_JSON)
-    .expectBody(Activity::class.java)
+    .expectBody<Activity>()
     .returnResult().responseBody!!
 
   fun WebTestClient.getActivityPayHistory(id: Long) = get()
@@ -66,7 +70,7 @@ abstract class ActivitiesIntegrationTestBase : IntegrationTestBase() {
     .exchange()
     .expectStatus().isOk
     .expectHeader().contentType(MediaType.APPLICATION_JSON)
-    .expectBodyList(ActivityPayHistory::class.java)
+    .expectBodyList<ActivityPayHistory>()
     .returnResult().responseBody!!
 
   fun WebTestClient.createAdvanceAttendance(request: AdvanceAttendanceCreateRequest, caseLoad: String? = "PVI") = post()
@@ -78,7 +82,7 @@ abstract class ActivitiesIntegrationTestBase : IntegrationTestBase() {
     .exchange()
     .expectStatus().isCreated
     .expectHeader().contentType(MediaType.APPLICATION_JSON)
-    .expectBody(AdvanceAttendance::class.java)
+    .expectBody<AdvanceAttendance>()
     .returnResult().responseBody
 
   fun WebTestClient.retrieveAdvanceAttendance(id: Long) = get()
@@ -89,7 +93,7 @@ abstract class ActivitiesIntegrationTestBase : IntegrationTestBase() {
     .exchange()
     .expectStatus().isOk
     .expectHeader().contentType(MediaType.APPLICATION_JSON)
-    .expectBody(AdvanceAttendance::class.java)
+    .expectBody<AdvanceAttendance>()
     .returnResult().responseBody
 
   fun WebTestClient.checkAdvanceAttendanceDoesNotExist(id: Long) = get()
@@ -108,7 +112,7 @@ abstract class ActivitiesIntegrationTestBase : IntegrationTestBase() {
     .exchange()
     .expectStatus().isOk
     .expectHeader().contentType(MediaType.APPLICATION_JSON)
-    .expectBody(Allocation::class.java)
+    .expectBody<Allocation>()
     .returnResult().responseBody
 
   fun WebTestClient.getAttendanceById(id: Long) = get()
@@ -117,6 +121,22 @@ abstract class ActivitiesIntegrationTestBase : IntegrationTestBase() {
     .exchange()
     .expectStatus().isOk
     .expectHeader().contentType(MediaType.APPLICATION_JSON)
-    .expectBody(Attendance::class.java)
+    .expectBody<Attendance>()
     .returnResult().responseBody
+
+  fun WebTestClient.updateActivity(
+    prisonCode: String,
+    id: Long,
+    activityUpdateRequest: ActivityUpdateRequest,
+  ) = patch()
+    .uri("/activities/$prisonCode/activityId/$id")
+    .bodyValue(activityUpdateRequest)
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisationAsUser(roles = listOf(ROLE_ACTIVITY_HUB)))
+    .header(CASELOAD_ID, prisonCode)
+    .exchange()
+    .expectStatus().isAccepted
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBody<Activity>()
+    .returnResult().responseBody!!
 }

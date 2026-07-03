@@ -6,6 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
+import org.springframework.test.web.reactive.server.expectBody
+import org.springframework.test.web.reactive.server.expectBodyList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.daysFromNow
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
@@ -14,6 +16,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingL
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.RISLEY_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
@@ -22,7 +25,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isNotEq
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.testPentonvillePayBandOne
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.testPentonvillePayBandTwo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ExclusionRevision
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RevisionType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AllocationUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.SuspendPrisonerRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.UnsuspendPrisonerRequest
@@ -712,6 +718,233 @@ class AllocationIntegrationTest : LocalStackTestBase() {
     )
   }
 
+  @Sql("classpath:test_data/allocation-with-exclusions-history.sql")
+  @Test
+  fun `should return exclusions history for exclusions changed through allocation`() {
+    // Create new Week 1, Monday and Tuesday, AM exclusions
+    webTestClient.updateAllocation(
+      RISLEY_PRISON_CODE,
+      1,
+      AllocationUpdateRequest(
+        exclusions = listOf(
+          Slot(
+            weekNumber = 1,
+            timeSlot = TimeSlot.AM,
+            monday = true,
+            tuesday = true,
+            daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY),
+          ),
+        ),
+      ),
+    )
+
+    val exclusionsHistory1 = webTestClient.getExclusionsHistory(1)!!
+
+    assertThat(exclusionsHistory1).hasSize(2)
+
+    with(exclusionsHistory1[0]) {
+      assertThat(weekNumber).isEqualTo(1)
+      assertThat(timeSlots).containsExactly(TimeSlot.AM)
+      assertThat(dayOfWeek).isEqualTo(DayOfWeek.MONDAY)
+      assertThat(revision).isNotNull()
+      assertThat(revisionType).isEqualTo(RevisionType.ADDED)
+      assertThat(updatedBy).isEqualTo("test-client")
+      assertThat(updatedDateTime).isNotNull()
+    }
+
+    with(exclusionsHistory1[1]) {
+      assertThat(weekNumber).isEqualTo(1)
+      assertThat(timeSlots).containsExactly(TimeSlot.AM)
+      assertThat(dayOfWeek).isEqualTo(DayOfWeek.TUESDAY)
+      assertThat(revision).isEqualTo(exclusionsHistory1[0].revision)
+      assertThat(revisionType).isEqualTo(RevisionType.ADDED)
+      assertThat(updatedBy).isEqualTo("test-client")
+      assertThat(updatedDateTime).isEqualTo(exclusionsHistory1[0].updatedDateTime)
+    }
+
+    // Remove Week 1 Monday, AM exclusion (implicit as not present in request)
+    // Keep Week 1 Tuesday, AM exclusion
+    // Create new Week 2, Thursday and Friday, PM exclusions
+    // Create new Week 2, Thursday, ED exclusion
+    webTestClient.updateAllocation(
+      RISLEY_PRISON_CODE,
+      1,
+      AllocationUpdateRequest(
+        exclusions = listOf(
+          Slot(
+            weekNumber = 2,
+            timeSlot = TimeSlot.PM,
+            thursday = true,
+            friday = true,
+            daysOfWeek = setOf(DayOfWeek.THURSDAY, DayOfWeek.FRIDAY),
+          ),
+          Slot(
+            weekNumber = 1,
+            timeSlot = TimeSlot.AM,
+            tuesday = true,
+            daysOfWeek = setOf(DayOfWeek.TUESDAY),
+          ),
+          Slot(
+            weekNumber = 2,
+            timeSlot = TimeSlot.ED,
+            thursday = true,
+            daysOfWeek = setOf(DayOfWeek.THURSDAY),
+          ),
+        ),
+      ),
+    )
+
+    val exclusionsHistory2 = webTestClient.getExclusionsHistory(1)!!
+
+    assertThat(exclusionsHistory2).hasSize(5)
+
+    with(exclusionsHistory2[0]) {
+      assertThat(weekNumber).isEqualTo(1)
+      assertThat(timeSlots).containsExactly(TimeSlot.AM)
+      assertThat(dayOfWeek).isEqualTo(DayOfWeek.MONDAY)
+      assertThat(revision).isGreaterThan(exclusionsHistory1[0].revision)
+      assertThat(revisionType).isEqualTo(RevisionType.REMOVED)
+      assertThat(updatedBy).isEqualTo("test-client")
+      assertThat(updatedDateTime).isAfterOrEqualTo(exclusionsHistory1[0].updatedDateTime)
+    }
+
+    with(exclusionsHistory2[1]) {
+      assertThat(weekNumber).isEqualTo(2)
+      assertThat(timeSlots).containsExactly(TimeSlot.PM, TimeSlot.ED)
+      assertThat(dayOfWeek).isEqualTo(DayOfWeek.THURSDAY)
+      assertThat(revision).isEqualTo(exclusionsHistory2[0].revision)
+      assertThat(revisionType).isEqualTo(RevisionType.ADDED)
+      assertThat(updatedBy).isEqualTo("test-client")
+      assertThat(updatedDateTime).isEqualTo(exclusionsHistory2[0].updatedDateTime)
+    }
+
+    with(exclusionsHistory2[2]) {
+      assertThat(weekNumber).isEqualTo(2)
+      assertThat(timeSlots).containsExactly(TimeSlot.PM)
+      assertThat(dayOfWeek).isEqualTo(DayOfWeek.FRIDAY)
+      assertThat(revision).isEqualTo(exclusionsHistory2[0].revision)
+      assertThat(revisionType).isEqualTo(RevisionType.ADDED)
+      assertThat(updatedBy).isEqualTo("test-client")
+      assertThat(updatedDateTime).isEqualTo(exclusionsHistory2[0].updatedDateTime)
+    }
+
+    with(exclusionsHistory2[3]) {
+      assertThat(weekNumber).isEqualTo(1)
+      assertThat(timeSlots).containsExactly(TimeSlot.AM)
+      assertThat(dayOfWeek).isEqualTo(DayOfWeek.MONDAY)
+      assertThat(revision).isEqualTo(exclusionsHistory1[0].revision)
+      assertThat(revisionType).isEqualTo(RevisionType.ADDED)
+      assertThat(updatedBy).isEqualTo("test-client")
+      assertThat(updatedDateTime).isEqualTo(exclusionsHistory1[0].updatedDateTime)
+    }
+
+    with(exclusionsHistory2[4]) {
+      assertThat(weekNumber).isEqualTo(1)
+      assertThat(timeSlots).containsExactly(TimeSlot.AM)
+      assertThat(dayOfWeek).isEqualTo(DayOfWeek.TUESDAY)
+      assertThat(revision).isEqualTo(exclusionsHistory1[0].revision)
+      assertThat(revisionType).isEqualTo(RevisionType.ADDED)
+      assertThat(updatedBy).isEqualTo("test-client")
+      assertThat(updatedDateTime).isEqualTo(exclusionsHistory1[0].updatedDateTime)
+    }
+  }
+
+  @Sql("classpath:test_data/allocation-with-exclusions-history.sql")
+  @Test
+  fun `should return exclusions history for exclusions changed through activity schedule change`() {
+    // Create new Monday and Tuesday, AM exclusions
+    webTestClient.updateAllocation(
+      RISLEY_PRISON_CODE,
+      2,
+      AllocationUpdateRequest(
+        exclusions = listOf(
+          Slot(
+            weekNumber = 1,
+            timeSlot = TimeSlot.AM,
+            monday = true,
+            tuesday = true,
+            daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY),
+          ),
+        ),
+      ),
+    )
+
+    val exclusionsHistory1 = webTestClient.getExclusionsHistory(2)!!
+
+    assertThat(exclusionsHistory1).hasSize(2)
+
+    with(exclusionsHistory1[0]) {
+      assertThat(weekNumber).isEqualTo(1)
+      assertThat(timeSlots).containsExactly(TimeSlot.AM)
+      assertThat(dayOfWeek).isEqualTo(DayOfWeek.MONDAY)
+      assertThat(revision).isNotNull()
+      assertThat(revisionType).isEqualTo(RevisionType.ADDED)
+      assertThat(updatedBy).isEqualTo("test-client")
+      assertThat(updatedDateTime).isNotNull()
+    }
+
+    with(exclusionsHistory1[1]) {
+      assertThat(weekNumber).isEqualTo(1)
+      assertThat(timeSlots).containsExactly(TimeSlot.AM)
+      assertThat(dayOfWeek).isEqualTo(DayOfWeek.TUESDAY)
+      assertThat(revision).isEqualTo(exclusionsHistory1[0].revision)
+      assertThat(revisionType).isEqualTo(RevisionType.ADDED)
+      assertThat(updatedBy).isEqualTo("test-client")
+      assertThat(updatedDateTime).isEqualTo(exclusionsHistory1[0].updatedDateTime)
+    }
+
+    // Update activity schedule to remove Tuesday AM but keep Monday AM
+    webTestClient.updateActivity(
+      prisonCode = RISLEY_PRISON_CODE,
+      id = 2,
+      activityUpdateRequest = ActivityUpdateRequest(
+        slots = listOf(
+          Slot(
+            weekNumber = 1,
+            timeSlot = TimeSlot.AM,
+            tuesday = true,
+            daysOfWeek = setOf(DayOfWeek.TUESDAY),
+          ),
+        ),
+      ),
+    )
+
+    val exclusionsHistory2 = webTestClient.getExclusionsHistory(2)!!
+
+    assertThat(exclusionsHistory2).hasSize(3)
+
+    // Monday AM exclusion is removed because Monday AM is no longer in the activity schedule
+    with(exclusionsHistory2[0]) {
+      assertThat(weekNumber).isEqualTo(1)
+      assertThat(timeSlots).containsExactly(TimeSlot.AM)
+      assertThat(dayOfWeek).isEqualTo(DayOfWeek.MONDAY)
+      assertThat(revision).isGreaterThan(exclusionsHistory1[0].revision)
+      assertThat(revisionType).isEqualTo(RevisionType.REMOVED)
+      assertThat(updatedBy).isEqualTo("test-client")
+      assertThat(updatedDateTime).isAfterOrEqualTo(exclusionsHistory1[0].updatedDateTime)
+    }
+
+    with(exclusionsHistory2[1]) {
+      assertThat(weekNumber).isEqualTo(1)
+      assertThat(timeSlots).containsExactly(TimeSlot.AM)
+      assertThat(dayOfWeek).isEqualTo(DayOfWeek.MONDAY)
+      assertThat(revision).isEqualTo(exclusionsHistory1[0].revision)
+      assertThat(revisionType).isEqualTo(RevisionType.ADDED)
+      assertThat(updatedBy).isEqualTo("test-client")
+      assertThat(updatedDateTime).isEqualTo(exclusionsHistory1[0].updatedDateTime)
+    }
+
+    with(exclusionsHistory2[2]) {
+      assertThat(weekNumber).isEqualTo(1)
+      assertThat(timeSlots).containsExactly(TimeSlot.AM)
+      assertThat(dayOfWeek).isEqualTo(DayOfWeek.TUESDAY)
+      assertThat(revision).isEqualTo(exclusionsHistory1[0].revision)
+      assertThat(revisionType).isEqualTo(RevisionType.ADDED)
+      assertThat(updatedBy).isEqualTo("test-client")
+      assertThat(updatedDateTime).isEqualTo(exclusionsHistory1[0].updatedDateTime)
+    }
+  }
+
   private fun WebTestClient.updateAllocation(
     prisonCode: String,
     allocationId: Long,
@@ -725,7 +958,7 @@ class AllocationIntegrationTest : LocalStackTestBase() {
     .exchange()
     .expectStatus().isAccepted
     .expectHeader().contentType(MediaType.APPLICATION_JSON)
-    .expectBody(Allocation::class.java)
+    .expectBody<Allocation>()
     .returnResult().responseBody!!
 
   private fun WebTestClient.suspendAllocation(
@@ -773,6 +1006,16 @@ class AllocationIntegrationTest : LocalStackTestBase() {
     .exchange()
     .expectStatus().isOk
     .expectHeader().contentType(MediaType.APPLICATION_JSON)
-    .expectBody(Allocation::class.java)
+    .expectBody<Allocation>()
+    .returnResult().responseBody
+
+  private fun WebTestClient.getExclusionsHistory(allocationId: Long) = get()
+    .uri("/allocations/id/$allocationId/exclusions/history")
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisationAsClient(roles = listOf(ROLE_ACTIVITY_HUB)))
+    .exchange()
+    .expectStatus().isOk
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBodyList<ExclusionRevision>()
     .returnResult().responseBody
 }
