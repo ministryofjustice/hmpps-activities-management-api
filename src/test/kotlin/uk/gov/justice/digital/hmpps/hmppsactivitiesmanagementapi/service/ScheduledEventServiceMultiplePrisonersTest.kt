@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
-import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.groups.Tuple
 import org.junit.jupiter.api.BeforeEach
@@ -56,7 +55,7 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
-import java.util.UUID
+import java.util.*
 
 /*
  Tests for the ScheduledEventService focussing on the multiple prisoner methods and responses.
@@ -157,68 +156,56 @@ class ScheduledEventServiceMultiplePrisonersTest {
 
     prisonApiClient.stub {
       on {
-        runBlocking {
-          getScheduledActivitiesForPrisonerNumbersAsync(
-            prisonCode,
-            prisonerNumbers,
-            date,
-            timeSlot,
-          )
-        }
+        getScheduledActivitiesForPrisonerNumbersAsync(
+          prisonCode,
+          prisonerNumbers,
+          date,
+          timeSlot,
+        )
       } doReturn activities
 
       on {
-        runBlocking {
-          getScheduledAppointmentsForPrisonerNumbersAsync(
-            prisonCode,
-            prisonerNumbers,
-            date,
-            timeSlot,
-          )
-        }
+        getScheduledAppointmentsForPrisonerNumbersAsync(
+          prisonCode,
+          prisonerNumbers,
+          date,
+          timeSlot,
+        )
       } doReturn appointments
 
       on {
-        runBlocking {
-          getScheduledVisitsForPrisonerNumbersAsync(
-            prisonCode,
-            prisonerNumbers,
-            date,
-            timeSlot,
-          )
-        }
+        getScheduledVisitsForPrisonerNumbersAsync(
+          prisonCode,
+          prisonerNumbers,
+          date,
+          timeSlot,
+        )
       } doReturn visits
 
       on {
-        runBlocking {
-          getScheduledCourtEventsForPrisonerNumbersAsync(
-            prisonCode,
-            prisonerNumbers,
-            date,
-            timeSlot,
-          )
-        }
+        getScheduledCourtEventsForPrisonerNumbersAsync(
+          prisonCode,
+          prisonerNumbers,
+          date,
+          timeSlot,
+        )
       } doReturn courtEvents
 
       on {
-        runBlocking {
-          getExternalTransfersOnDateAsync(
-            prisonCode,
-            prisonerNumbers,
-            date,
-          )
-        }
+        getExternalTransfersOnDateAsync(
+          prisonCode,
+          prisonerNumbers,
+          date,
+        )
       } doReturn transferEvents
 
       on {
-        runBlocking {
-          manageAdjudicationsApiFacade.getAdjudicationHearings(
-            prisonCode,
-            date,
-            date,
-            prisonerNumbers,
-          )
-        }
+        manageAdjudicationsApiFacade.getAdjudicationHearings(
+          prisonCode,
+          date,
+          date,
+          prisonerNumbers,
+        )
       } doReturn adjudications.map {
         HearingsResponse(
           prisonerNumber = it.offenderNo,
@@ -233,9 +220,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
       }
 
       on {
-        runBlocking {
-          prisonApiClient.getEventLocationsForPrison(any())
-        }
+        prisonApiClient.getEventLocationsForPrison(any())
       } doReturn emptyMap()
     }
 
@@ -1188,186 +1173,6 @@ class ScheduledEventServiceMultiplePrisonersTest {
     fun beforeEach() {
       whenever(prisonRegimeService.getEventPrioritiesForPrison(prisonCode))
         .thenReturn(EventPriorities(EventType.entries.associateWith { listOf(Priority(it.defaultPriority)) }))
-    }
-
-    @Test
-    fun `returns external movements wrapped in LocationEvents`() {
-      val externalMovement = externalMovement(prisonerNumber = "G4793VF")
-
-      externalMovementsApiClient.stub {
-        on {
-          getExternalMovements(any(), any(), any(), any())
-        } doReturn ExternalMovementsResponse(content = listOf(externalMovement))
-      }
-
-      val result = service.getExternalMovements(prisonCode, today, null)
-
-      with(result.single()) {
-        assertThat(id).isNull()
-        assertThat(dpsLocationId).isNull()
-        assertThat(prisonCode).isEqualTo("MDI")
-        assertThat(code).isEqualTo("OUTSIDE")
-        assertThat(description).isEqualTo("Outside")
-        with(events.single()) {
-          assertThat(prisonerNumber).isEqualTo(externalMovement.prisonerNumber)
-          assertThat(eventSource).isEqualTo("EXTERNAL_MOVEMENTS_API")
-          assertThat(outsidePrison).isTrue()
-          assertThat(categoryDescription).isNull()
-          assertThat(categoryCode).isEqualTo(externalMovement.description.code)
-          assertThat(summary).isEqualTo("Accommodation-related ROTL")
-          assertThat(date).isEqualTo(today)
-          assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
-          assertThat(endTime).isEqualTo(LocalTime.of(17, 0))
-          assertThat(status).isEqualTo(externalMovement.status.description)
-        }
-      }
-    }
-
-    @Test
-    fun `groups multiple external movements under one outside location`() {
-      val movement1 = externalMovement(
-        prisonerNumber = "G4793VF",
-        start = today.atTime(9, 0),
-        end = today.atTime(11, 0),
-      )
-
-      val movement2 = externalMovement(
-        prisonerNumber = "A1234AA",
-        start = today.atTime(13, 0),
-        end = today.atTime(15, 0),
-      )
-
-      externalMovementsApiClient.stub {
-        on {
-          getExternalMovements(any(), any(), any(), any())
-        } doReturn ExternalMovementsResponse(content = listOf(movement1, movement2))
-      }
-
-      val externalMovements = service.getExternalMovements(prisonCode, today, null)
-
-      with(externalMovements.single()) {
-        assertThat(code).isEqualTo("OUTSIDE")
-        assertThat(description).isEqualTo("Outside")
-        assertThat(events).hasSize(2)
-
-        assertThat(events.map { it.prisonerNumber })
-          .containsExactlyInAnyOrder("G4793VF", "A1234AA")
-      }
-    }
-
-    @Test
-    fun `returns empty set when no external movements found`() {
-      externalMovementsApiClient.stub {
-        on {
-          getExternalMovements(any(), any(), any(), any())
-        } doReturn ExternalMovementsResponse(content = emptyList())
-      }
-
-      val externalMovements = service.getExternalMovements(prisonCode, today, null)
-
-      assertThat(externalMovements).isEmpty()
-    }
-
-    @Test
-    fun `external movements are requested with AM time slot boundaries when provided`() {
-      whenever(prisonRegimeService.getTimeRangeForPrisonAndTimeSlot(prisonCode, TimeSlot.AM, today.dayOfWeek))
-        .thenReturn(LocalTimeRange(LocalTime.of(8, 0), LocalTime.of(12, 0)))
-
-      val amMovement = externalMovement(prisonerNumber = "G4793VF", start = today.atTime(9, 0), end = today.atTime(11, 0))
-
-      externalMovementsApiClient.stub {
-        on {
-          getExternalMovements(any(), any(), any(), any())
-        } doReturn ExternalMovementsResponse(content = listOf(amMovement))
-      }
-
-      val externalMovements = service.getExternalMovements(prisonCode, today, TimeSlot.AM)
-
-      assertThat(externalMovements.single().events.single().prisonerNumber).isEqualTo("G4793VF")
-
-      verifyBlocking(externalMovementsApiClient) {
-        getExternalMovements(
-          prisonCode,
-          emptyList(),
-          today.atTime(8, 0),
-          today.atTime(12, 0),
-        )
-      }
-    }
-
-    @Test
-    fun `external movements are requested with PM time slot boundaries when provided`() {
-      whenever(prisonRegimeService.getTimeRangeForPrisonAndTimeSlot(prisonCode, TimeSlot.PM, today.dayOfWeek))
-        .thenReturn(LocalTimeRange(LocalTime.of(12, 0), LocalTime.of(17, 0)))
-
-      val pmMovement = externalMovement(prisonerNumber = "G4793VF", start = today.atTime(14, 0), end = today.atTime(16, 0))
-
-      externalMovementsApiClient.stub {
-        on {
-          getExternalMovements(any(), any(), any(), any())
-        } doReturn ExternalMovementsResponse(content = listOf(pmMovement))
-      }
-
-      val externalMovements = service.getExternalMovements(prisonCode, today, TimeSlot.PM)
-
-      assertThat(externalMovements.single().events.single().prisonerNumber).isEqualTo("G4793VF")
-
-      verifyBlocking(externalMovementsApiClient) {
-        getExternalMovements(
-          prisonCode,
-          emptyList(),
-          today.atTime(12, 0),
-          today.atTime(17, 0),
-        )
-      }
-    }
-
-    @Test
-    fun `external movements are requested with ED time slot boundaries when provided`() {
-      whenever(prisonRegimeService.getTimeRangeForPrisonAndTimeSlot(prisonCode, TimeSlot.ED, today.dayOfWeek))
-        .thenReturn(LocalTimeRange(LocalTime.of(17, 0), LocalTime.of(21, 30)))
-
-      externalMovementsApiClient.stub {
-        on {
-          getExternalMovements(any(), any(), any(), any())
-        } doReturn ExternalMovementsResponse(content = emptyList())
-      }
-
-      val externalMovements = service.getExternalMovements(prisonCode, today, TimeSlot.ED)
-
-      assertThat(externalMovements).isEmpty()
-
-      verifyBlocking(externalMovementsApiClient) {
-        getExternalMovements(
-          prisonCode,
-          emptyList(),
-          today.atTime(17, 0),
-          today.atTime(21, 30),
-        )
-      }
-    }
-
-    @Test
-    fun `uses full day range when no time slot provided and does not lookup time range`() {
-      externalMovementsApiClient.stub {
-        on {
-          getExternalMovements(any(), any(), any(), any())
-        } doReturn ExternalMovementsResponse(content = emptyList())
-      }
-
-      service.getExternalMovements(prisonCode, today, null)
-
-      verifyBlocking(externalMovementsApiClient) {
-        getExternalMovements(
-          prisonCode,
-          emptyList(),
-          today.atStartOfDay(),
-          today.plusDays(1).atStartOfDay(),
-        )
-      }
-
-      verify(prisonRegimeService, never())
-        .getTimeRangeForPrisonAndTimeSlot(any(), any(), any())
     }
 
     @Test
