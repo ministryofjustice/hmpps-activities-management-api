@@ -51,7 +51,6 @@ DB_SSL_MODE=prefer
 DB_USER=activities-management
 DPR_PASSWORD=dpr_password
 DPR_USER=dpr_user
-FEATURE_CANCEL_INSTANCE_PRIORITY_CHANGE_ENABLED=true
 ```
 
 - You **must** escape any '\$' characters with '\\$'
