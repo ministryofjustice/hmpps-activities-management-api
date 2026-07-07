@@ -49,14 +49,14 @@ dependencies {
     }
   }
 
-  implementation("aws.sdk.kotlin:s3:1.6.106")
+  implementation("aws.sdk.kotlin:s3:1.6.107")
 
   // Other dependencies
   implementation("org.apache.commons:commons-text:1.15.0")
 
   // Database dependencies
   runtimeOnly("org.flywaydb:flyway-database-postgresql")
-  runtimeOnly("org.postgresql:postgresql:42.7.12") // temp fix, will need unpinning - addresses CVE-2026-42198
+  runtimeOnly("org.postgresql:postgresql:42.7.13") // temp fix, will need unpinning - addresses CVE-2026-42198
 
   // Test dependencies
   testImplementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter-test:2.5.0")
