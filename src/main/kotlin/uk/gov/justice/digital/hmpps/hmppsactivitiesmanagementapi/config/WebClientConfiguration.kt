@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.http.HttpHeaders
-import org.springframework.http.client.reactive.ReactorClientHttpConnector
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientProvider
@@ -14,11 +13,11 @@ import org.springframework.web.reactive.function.client.ClientRequest
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction
 import org.springframework.web.reactive.function.client.ExchangeFunction
 import org.springframework.web.reactive.function.client.WebClient
-import reactor.netty.http.client.HttpClient
 import uk.gov.justice.hmpps.kotlin.auth.AuthAwareAuthenticationToken
 import uk.gov.justice.hmpps.kotlin.auth.authorisedWebClient
 import uk.gov.justice.hmpps.kotlin.auth.healthWebClient
 import uk.gov.justice.hmpps.kotlin.auth.oAuth2AuthorizedClientProvider
+import uk.gov.justice.hmpps.kotlin.auth.unauthenticatedWebClient
 import java.time.Duration
 
 @Configuration
@@ -98,7 +97,8 @@ class WebClientConfiguration(
     .also { log.info("WEB CLIENT CONFIG: creating prisoner search api app web client") }
 
   @Bean
-  fun bankHolidayApiWebClient(): WebClient = WebClient.builder().baseUrl(bankHolidayApiUrl).timeout(apiTimeout).build()
+  fun bankHolidayApiWebClient(builder: WebClient.Builder) = builder
+    .unauthenticatedWebClient(bankHolidayApiUrl, apiTimeout)
     .also { log.info("WEB CLIENT CONFIG: bank holiday api web client") }
 
   @Bean
@@ -139,5 +139,4 @@ class WebClientConfiguration(
     )
   }
 
-  private fun WebClient.Builder.timeout(duration: Duration) = this.clientConnector(ReactorClientHttpConnector(HttpClient.create().responseTimeout(duration)))
 }
