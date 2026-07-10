@@ -3,7 +3,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
 
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "10.5.6"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "10.5.7"
   kotlin("plugin.spring") version "2.4.0"
   kotlin("plugin.jpa") version "2.4.0"
   jacoco
@@ -49,7 +49,7 @@ dependencies {
     }
   }
 
-  implementation("aws.sdk.kotlin:s3:1.8.0")
+  implementation("aws.sdk.kotlin:s3:1.8.3")
 
   // Other dependencies
   implementation("org.apache.commons:commons-text:1.15.0")
