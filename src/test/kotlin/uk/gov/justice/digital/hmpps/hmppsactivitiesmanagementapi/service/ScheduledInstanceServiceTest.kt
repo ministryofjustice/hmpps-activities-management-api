@@ -11,11 +11,8 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.mockito.ArgumentMatchers.anyList
-import org.mockito.kotlin.any
-import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
-import org.mockito.kotlin.stub
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
@@ -23,8 +20,6 @@ import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.Feature
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.FeatureSwitches
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.trackEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
@@ -65,7 +60,6 @@ class ScheduledInstanceServiceTest {
   private val attendanceReasonRepository: AttendanceReasonRepository = mock()
   private val outboundEventsService: OutboundEventsService = mock()
   private val telemetryClient: TelemetryClient = mock()
-  private val featureSwitches: FeatureSwitches = mock { on { isEnabled(any<Feature>(), any()) } doReturn false }
   private val service = ScheduledInstanceService(
     repository,
     attendanceReasonRepository,
@@ -74,7 +68,6 @@ class ScheduledInstanceServiceTest {
     outboundEventsService,
     TransactionHandler(),
     telemetryClient,
-    featureSwitches,
   )
 
   @Nested
@@ -635,76 +628,7 @@ class ScheduledInstanceServiceTest {
     }
 
     @Test
-    @Deprecated("Remove when toggle FEATURE_CANCEL_INSTANCE_PRIORITY_CHANGE_ENABLED is removed")
-    fun `cancels the scheduled instances and their attendances - success - old`() {
-      service.cancelScheduledInstances(
-        ScheduleInstancesCancelRequest(
-          scheduleInstanceIds = listOf(instance1!!.scheduledInstanceId, instance2!!.scheduledInstanceId),
-          reason = "Staff unavailable",
-          username = "USER1",
-          comment = "Resume tomorrow",
-          issuePayment = true,
-        ),
-      )
-
-      with(instance1!!) {
-        assertThat(cancelled).isTrue
-        assertThat(cancelledTime).isNotNull
-        assertThat(cancelledBy).isEqualTo("USER1")
-        assertThat(comment).isEqualTo("Resume tomorrow")
-
-        attendances.forEach {
-          assertThat(it.status()).isEqualTo(AttendanceStatus.COMPLETED)
-          assertThat(it.attendanceReason?.code).isEqualTo(AttendanceReasonEnum.CANCELLED)
-          assertThat(it.comment).isEqualTo("Staff unavailable")
-          assertThat(it.recordedBy).isEqualTo("USER1")
-          assertThat(it.recordedTime).isNotNull
-          assertThat(it.issuePayment).isTrue
-        }
-
-        verify(telemetryClient).trackEvent(
-          TelemetryEvent.RECORD_ATTENDANCE.value,
-          attendances.first().toTelemetryPropertiesMap(),
-        )
-        verify(outboundEventsService).send(
-          OutboundEvent.PRISONER_ATTENDANCE_AMENDED,
-          attendances.first().attendanceId,
-        )
-      }
-
-      with(instance2!!) {
-        assertThat(cancelled).isTrue
-        assertThat(cancelledTime).isNotNull
-        assertThat(cancelledBy).isEqualTo("USER1")
-        assertThat(comment).isEqualTo("Resume tomorrow")
-
-        attendances.forEach {
-          assertThat(it.status()).isEqualTo(AttendanceStatus.COMPLETED)
-          assertThat(it.attendanceReason?.code).isEqualTo(AttendanceReasonEnum.CANCELLED)
-          assertThat(it.comment).isEqualTo("Staff unavailable")
-          assertThat(it.recordedBy).isEqualTo("USER1")
-          assertThat(it.recordedTime).isNotNull
-          assertThat(it.issuePayment).isFalse
-        }
-
-        verify(telemetryClient).trackEvent(
-          TelemetryEvent.RECORD_ATTENDANCE.value,
-          attendances.first().toTelemetryPropertiesMap(),
-        )
-        verify(outboundEventsService).send(
-          OutboundEvent.PRISONER_ATTENDANCE_AMENDED,
-          attendances.first().attendanceId,
-        )
-      }
-
-      verify(outboundEventsService, times(2))
-        .send(OutboundEvent.ACTIVITY_SCHEDULED_INSTANCE_AMENDED, instance1!!.scheduledInstanceId)
-    }
-
-    @Test
     fun `cancels the scheduled instances and their attendances - success`() {
-      featureSwitches.stub { on { isEnabled(Feature.CANCEL_INSTANCE_PRIORITY_CHANGE_ENABLED) } doReturn true }
-
       service.cancelScheduledInstances(
         ScheduleInstancesCancelRequest(
           scheduleInstanceIds = listOf(instance1!!.scheduledInstanceId, instance2!!.scheduledInstanceId),
@@ -767,30 +691,6 @@ class ScheduledInstanceServiceTest {
 
       verify(outboundEventsService, times(2))
         .send(OutboundEvent.ACTIVITY_SCHEDULED_INSTANCE_AMENDED, instance1!!.scheduledInstanceId)
-    }
-
-    @Test
-    @Deprecated("Remove when toggle FEATURE_CANCEL_INSTANCE_PRIORITY_CHANGE_ENABLED is removed")
-    fun `will not cancel any instances if one instance is already cancelled - failed - old`() {
-      instance1!!.cancelled = true
-
-      assertThatThrownBy {
-        service.cancelScheduledInstances(
-          ScheduleInstancesCancelRequest(
-            scheduleInstanceIds = listOf(instance1!!.scheduledInstanceId, instance2!!.scheduledInstanceId),
-            reason = "Staff unavailable",
-            username = "USER1",
-            comment = "Resume tomorrow",
-            issuePayment = true,
-          ),
-        )
-      }
-        .isInstanceOf(IllegalArgumentException::class.java)
-        .hasMessage("${instance1!!.activitySchedule.description} (${instance1!!.timeSlot}) has already been cancelled")
-
-      verifyNoInteractions(telemetryClient)
-      verifyNoInteractions(outboundEventsService)
-      verify(repository, never()).saveAllAndFlush(anyList())
     }
 
     @Test
@@ -798,8 +698,6 @@ class ScheduledInstanceServiceTest {
       instance1!!.cancelled = true
 
       assertThatThrownBy {
-        featureSwitches.stub { on { isEnabled(Feature.CANCEL_INSTANCE_PRIORITY_CHANGE_ENABLED) } doReturn true }
-
         service.cancelScheduledInstances(
           ScheduleInstancesCancelRequest(
             scheduleInstanceIds = listOf(instance1!!.scheduledInstanceId, instance2!!.scheduledInstanceId),
@@ -834,15 +732,40 @@ class ScheduledInstanceServiceTest {
       val instance1 = schedule1.addInstance(sessionDate = today, slot = schedule1.slots().first()).copy(scheduledInstanceId = 1, cancelled = true)
       val instance2 = schedule2.addInstance(sessionDate = today, slot = schedule2.slots().first()).copy(scheduledInstanceId = 2, cancelled = true)
 
-      instance1.attendances.add(Attendance(attendanceId = 111, scheduledInstance = instance1, prisonerNumber = "A1111AA", status = AttendanceStatus.COMPLETED, recordedTime = LocalDateTime.now()))
-      instance2.attendances.add(Attendance(attendanceId = 222, scheduledInstance = instance1, prisonerNumber = "B1111BB", status = AttendanceStatus.COMPLETED, recordedTime = LocalDateTime.now()))
-      instance2.attendances.add(Attendance(attendanceId = 333, scheduledInstance = instance1, prisonerNumber = "C1111CC", status = AttendanceStatus.COMPLETED, recordedTime = LocalDateTime.now()))
+      val attendance = Attendance(
+        attendanceId = 111,
+        scheduledInstance = instance1,
+        prisonerNumber = "A1111AA",
+        status = AttendanceStatus.COMPLETED,
+        recordedTime = LocalDateTime.now(),
+        attendanceReason = attendanceReason(AttendanceReasonEnum.CANCELLED),
+      )
+
+      instance1.attendances.add(attendance)
+      instance2.attendances.add(attendance.copy(attendanceId = 222, prisonerNumber = "B1111BB"))
+      instance2.attendances.add(attendance.copy(attendanceId = 333, prisonerNumber = "C1111CC"))
 
       whenever(repository.findByIds(listOf(instance1.scheduledInstanceId, instance2.scheduledInstanceId))).thenReturn(listOf(instance1, instance2))
+
+      assertThat(instance1.cancelled).isTrue
+      assertThat(instance2.cancelled).isTrue
+
+      assertThat(listOf(instance1, instance2).flatMap { it.attendances })
+        .allSatisfy {
+          assertThat(it.attendanceReason).isEqualTo(attendanceReason(AttendanceReasonEnum.CANCELLED))
+          assertThat(it.status()).isEqualTo(AttendanceStatus.COMPLETED)
+        }
 
       service.uncancelScheduledInstances(ScheduleInstancesUncancelRequest(scheduleInstanceIds = listOf(instance1.scheduledInstanceId, instance2.scheduledInstanceId)))
 
       assertThat(instance1.cancelled).isFalse
+      assertThat(instance2.cancelled).isFalse
+
+      assertThat(listOf(instance1, instance2).flatMap { it.attendances })
+        .allSatisfy {
+          assertThat(it.attendanceReason).isNull()
+          assertThat(it.status()).isEqualTo(AttendanceStatus.WAITING)
+        }
 
       verify(repository).saveAllAndFlush(listOf(instance1, instance2))
 

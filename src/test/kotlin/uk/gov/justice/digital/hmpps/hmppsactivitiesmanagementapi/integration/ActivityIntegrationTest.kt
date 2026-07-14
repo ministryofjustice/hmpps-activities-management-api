@@ -15,6 +15,8 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
+import org.springframework.test.web.reactive.server.expectBody
+import org.springframework.test.web.reactive.server.expectBodyList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
@@ -1251,7 +1253,7 @@ class ActivityIntegrationTest : LocalStackTestBase() {
     .exchange()
     .expectStatus().isOk
     .expectHeader().contentType(MediaType.APPLICATION_JSON)
-    .expectBodyList(ActivityScheduleLite::class.java)
+    .expectBodyList<ActivityScheduleLite>()
     .returnResult().responseBody
 
   private fun WebTestClient.createActivity(
@@ -1265,24 +1267,8 @@ class ActivityIntegrationTest : LocalStackTestBase() {
     .exchange()
     .expectStatus().isCreated
     .expectHeader().contentType(MediaType.APPLICATION_JSON)
-    .expectBody(Activity::class.java)
+    .expectBody<Activity>()
     .returnResult().responseBody
-
-  private fun WebTestClient.updateActivity(
-    prisonCode: String,
-    id: Long,
-    activityUpdateRequest: ActivityUpdateRequest,
-  ) = patch()
-    .uri("/activities/$prisonCode/activityId/$id")
-    .bodyValue(activityUpdateRequest)
-    .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisationAsUser(roles = listOf(ROLE_ACTIVITY_HUB)))
-    .header(CASELOAD_ID, prisonCode)
-    .exchange()
-    .expectStatus().isAccepted
-    .expectHeader().contentType(MediaType.APPLICATION_JSON)
-    .expectBody(Activity::class.java)
-    .returnResult().responseBody!!
 
   private fun WebTestClient.updateActivityExpectingError(
     prisonCode: String,
@@ -1297,7 +1283,7 @@ class ActivityIntegrationTest : LocalStackTestBase() {
     .exchange()
     .expectStatus().is4xxClientError
     .expectHeader().contentType(MediaType.APPLICATION_JSON)
-    .expectBody(ErrorResponse::class.java)
+    .expectBody<ErrorResponse>()
     .returnResult().responseBody!!
 
   private fun Activity.schedule(description: String) = schedules.schedule(description)

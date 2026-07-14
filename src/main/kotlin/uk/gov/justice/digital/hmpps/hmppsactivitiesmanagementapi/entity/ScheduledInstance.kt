@@ -102,7 +102,6 @@ data class ScheduledInstance(
     cancelComment: String?,
     cancellationReason: AttendanceReason,
     issuePayment: Boolean? = null,
-    useNewPriorityRules: Boolean = false,
   ): List<Attendance> {
     require(!cancelled) { "${activitySchedule.description} ($timeSlot) has already been cancelled" }
 
@@ -117,22 +116,16 @@ data class ScheduledInstance(
     comment = cancelComment
     cancelledIssuePayment = issuePayment
 
-    if (useNewPriorityRules) {
-      return attendances
-        .filter { it.hasReason(AttendanceReasonEnum.ATTENDED) || it.attendanceReason == null }
-        .onEach {
-          it.cancel(
-            reason = cancellationReason,
-            cancelledReason = reason,
-            cancelledBy = by,
-            issuePayment = issuePayment,
-          )
-        }
-    }
-
     return attendances
-      .filterNot { it.hasReason(AttendanceReasonEnum.SUSPENDED, AttendanceReasonEnum.AUTO_SUSPENDED) }
-      .onEach { it.cancel(reason = cancellationReason, cancelledReason = reason, cancelledBy = by, issuePayment = issuePayment) }
+      .filter { it.hasReason(AttendanceReasonEnum.ATTENDED) || it.attendanceReason == null }
+      .onEach {
+        it.cancel(
+          reason = cancellationReason,
+          cancelledReason = reason,
+          cancelledBy = by,
+          issuePayment = issuePayment,
+        )
+      }
   }
 
   /**
@@ -171,7 +164,7 @@ data class ScheduledInstance(
    * This will not uncancel suspended attendances. If you wish to uncancel a suspended attendance then you must uncancel the
    * attendance directly. Returns the attendances that have been uncancelled.
    */
-  fun uncancelSessionAndAttendances(useNewPriorityRules: Boolean = false): List<Attendance> {
+  fun uncancelSessionAndAttendances(): List<Attendance> {
     require(sessionDate >= LocalDate.now()) {
       "Cannot uncancel scheduled instance [$scheduledInstanceId] because it is in the past"
     }
@@ -184,14 +177,8 @@ data class ScheduledInstance(
     cancelledTime = null
     cancelledIssuePayment = null
 
-    if (useNewPriorityRules) {
-      return attendances
-        .filter { it.hasReason(AttendanceReasonEnum.CANCELLED) }
-        .onEach(Attendance::uncancel)
-    }
-
     return attendances
-      .filterNot { it.hasReason(AttendanceReasonEnum.SUSPENDED, AttendanceReasonEnum.AUTO_SUSPENDED) }
+      .filter { it.hasReason(AttendanceReasonEnum.CANCELLED) }
       .onEach(Attendance::uncancel)
   }
 

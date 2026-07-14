@@ -28,6 +28,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.W
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AllocationsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSuspensionsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.WaitingListService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.exclusionRevision
 import uk.gov.justice.hmpps.test.kotlin.auth.WithMockAuthUser
 import java.time.LocalDate
 
@@ -285,6 +286,52 @@ class AllocationControllerTest : ControllerTestBase() {
           header(CASELOAD_ID, "MDI")
         }.andExpect { status { isOk() } }
       }
+    }
+  }
+
+  @Nested
+  @DisplayName("Get exclusions history")
+  inner class ExclusionsHistoryTests {
+    @Test
+    @WithMockAuthUser(roles = ["ACTIVITY_HUB"])
+    fun `should return exclusions history (ROLE_ACTIVITY_HUB) - 200`() {
+      val exclusionHistory = listOf(exclusionRevision())
+
+      whenever(allocationsService.getExclusionsHistory(123)).thenReturn(exclusionHistory)
+
+      val response = mockMvc.get("/allocations/id/123/exclusions/history")
+        .andExpect { status { isOk() } }
+        .andReturn().response
+
+      assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(exclusionHistory))
+    }
+
+    @Test
+    @WithMockAuthUser(roles = ["ACTIVITY_ADMIN"])
+    fun `should return exclusions history (ROLE_ACTIVITY_ADMIN) - 200`() {
+      val exclusionHistory = listOf(exclusionRevision())
+
+      whenever(allocationsService.getExclusionsHistory(123)).thenReturn(exclusionHistory)
+
+      val response = mockMvc.get("/allocations/id/123/exclusions/history")
+        .andExpect { status { isOk() } }
+        .andReturn().response
+
+      assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(exclusionHistory))
+    }
+
+    @Test
+    @WithMockAuthUser(roles = ["PRISON"])
+    fun `should be forbidden - 403`() {
+      mockMvc.get("/allocations/id/123/exclusions/history").andExpect { status { isForbidden() } }
+    }
+
+    @Test
+    @WithMockAuthUser(roles = ["ACTIVITY_ADMIN"])
+    fun `allocation id not found`() {
+      whenever(allocationsService.getExclusionsHistory(123)).thenThrow(EntityNotFoundException("not found"))
+
+      mockMvc.get("/allocations/id/123/exclusions/history").andExpect { status { isNotFound() } }
     }
   }
 

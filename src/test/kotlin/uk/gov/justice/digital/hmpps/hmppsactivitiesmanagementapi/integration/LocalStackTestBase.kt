@@ -44,7 +44,6 @@ import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
   properties = [
     "feature.audit.service.hmpps.enabled=true",
     "feature.audit.service.local.enabled=true",
-    "feature.cancel.instance.priority.change.enabled=true",
     "feature.event.activities.activity-schedule.amended=true",
     "feature.event.activities.activity-schedule.created=true",
     "feature.event.activities.prisoner.allocated=true",

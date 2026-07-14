@@ -420,88 +420,6 @@ class ScheduledEventControllerTest : ControllerTestBase() {
   }
 
   @Test
-  fun `getExternalMovementsForMovementList - 200 response when no external movements found`() {
-    val prisonCode = "MDI"
-    val date = LocalDate.now()
-    val result = emptySet<LocationEvents>()
-
-    whenever(scheduledEventService.getExternalMovements(prisonCode, date, null))
-      .thenReturn(result)
-
-    val response = mockMvc.getExternalMovements(prisonCode, date, null)
-      .andExpect { status { isOk() } }
-      .andReturn().response
-
-    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(result))
-  }
-
-  @Test
-  fun `getExternalMovementsForMovementList - 200 response with time slot`() {
-    val prisonCode = "MDI"
-    val date = LocalDate.now()
-
-    whenever(scheduledEventService.getExternalMovements(prisonCode, date, TimeSlot.AM))
-      .thenReturn(emptySet())
-
-    mockMvc.getExternalMovements(prisonCode, date, TimeSlot.AM)
-      .andExpect { status { isOk() } }
-
-    verify(scheduledEventService).getExternalMovements(prisonCode, date, TimeSlot.AM)
-  }
-
-  @Test
-  fun `getExternalMovementsForMovementList - 400 response when no date supplied`() {
-    mockMvc.get("/scheduled-events/prison/MDI/external-movements") {
-      accept = MediaType.APPLICATION_JSON
-    }
-      .andExpect { status { isBadRequest() } }
-      .andExpect {
-        content {
-          jsonPath("$.userMessage") {
-            value("Required request parameter 'date' for method parameter type LocalDate is not present")
-          }
-        }
-      }
-
-    verifyNoInteractions(scheduledEventService)
-  }
-
-  @Test
-  fun `getExternalMovementsForMovementList - 400 response when invalid date supplied`() {
-    mockMvc.get("/scheduled-events/prison/MDI/external-movements?date=invalid") {
-      accept = MediaType.APPLICATION_JSON
-    }
-      .andExpect { status { isBadRequest() } }
-      .andExpect {
-        content {
-          jsonPath("$.userMessage") {
-            value("Error converting 'date' (invalid): Method parameter 'date': Failed to convert value of type 'java.lang.String' to required type 'java.time.LocalDate'")
-          }
-        }
-      }
-
-    verifyNoInteractions(scheduledEventService)
-  }
-
-  @Test
-  fun `getExternalMovementsForMovementList - 400 response when invalid time slot supplied`() {
-    val date = LocalDate.now()
-    mockMvc.get("/scheduled-events/prison/MDI/external-movements?date=$date&timeSlot=no") {
-      accept = MediaType.APPLICATION_JSON
-    }
-      .andExpect { status { isBadRequest() } }
-      .andExpect {
-        content {
-          jsonPath("$.userMessage") {
-            value("Error converting 'timeSlot' (no): Method parameter 'timeSlot': Failed to convert value of type 'java.lang.String' to required type 'uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot'")
-          }
-        }
-      }
-
-    verifyNoInteractions(scheduledEventService)
-  }
-
-  @Test
   fun `getScheduledExternalMovements - 200 response when no external movements found`() {
     val prisonCode = "MDI"
     val date = LocalDate.now()
@@ -630,14 +548,6 @@ class ScheduledEventControllerTest : ControllerTestBase() {
     date: LocalDate,
     timeSlot: TimeSlot? = null,
   ) = get("/scheduled-events/prison/$prisonCode/location-events?dpsLocationId=$dpsLocationId&date=$date" + (timeSlot?.let { "&timeSlot=$timeSlot" } ?: "")) {
-    accept = MediaType.APPLICATION_JSON
-  }.andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
-
-  private fun MockMvc.getExternalMovements(
-    prisonCode: String,
-    date: LocalDate,
-    timeSlot: TimeSlot? = null,
-  ) = get("/scheduled-events/prison/$prisonCode/external-movements?date=$date" + (timeSlot?.let { "&timeSlot=$timeSlot" } ?: "")) {
     accept = MediaType.APPLICATION_JSON
   }.andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
 
