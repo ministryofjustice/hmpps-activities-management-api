@@ -46,6 +46,12 @@ data class EventReview(
     example = "ACTIVITY_SUSPENDED",
   )
   val eventDescription: EventDescription? = null,
+
+  @Schema(
+    description = "The current allocations for the prisoner",
+    example = "KITCHENS AM",
+  )
+  val currentAllocations: List<String> = emptyList(),
 )
 
 enum class EventDescription {

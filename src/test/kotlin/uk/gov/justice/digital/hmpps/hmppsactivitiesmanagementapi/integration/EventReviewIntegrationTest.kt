@@ -210,6 +210,82 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
     }
   }
 
+  @Sql("classpath:test_data/event-review-with-allocations-data.sql")
+  @Test
+  fun `should return current allocations for prisoners with active allocations`() {
+    val result = webTestClient.getEvents(prisonerNumber = "A1234AA")
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(EventReviewSearchResults::class.java)
+      .returnResult().responseBody
+
+    assertThat(result).isNotNull
+
+    with(result!!) {
+      assertThat(content).hasSize(1)
+      assertThat(content.first().prisonerNumber).isEqualTo("A1234AA")
+      assertThat(content.first().currentAllocations).containsExactlyInAnyOrder("KITCHEN AM", "GYM PM")
+    }
+  }
+
+  @Sql("classpath:test_data/event-review-with-allocations-data.sql")
+  @Test
+  fun `should return single allocation for prisoner with one active allocation`() {
+    val result = webTestClient.getEvents(prisonerNumber = "G1234DX")
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(EventReviewSearchResults::class.java)
+      .returnResult().responseBody
+
+    assertThat(result).isNotNull
+
+    with(result!!) {
+      assertThat(content).hasSize(1)
+      assertThat(content.first().prisonerNumber).isEqualTo("G1234DX")
+      assertThat(content.first().currentAllocations).containsExactly("KITCHEN AM")
+    }
+  }
+
+  @Sql("classpath:test_data/event-review-with-allocations-data.sql")
+  @Test
+  fun `should return empty allocations for prisoner with no active allocations`() {
+    val result = webTestClient.getEvents(prisonerNumber = "G1234DD")
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(EventReviewSearchResults::class.java)
+      .returnResult().responseBody
+
+    assertThat(result).isNotNull
+
+    with(result!!) {
+      assertThat(content).hasSize(1)
+      assertThat(content.first().prisonerNumber).isEqualTo("G1234DD")
+      assertThat(content.first().currentAllocations).isEmpty()
+    }
+  }
+
+  @Sql("classpath:test_data/event-review-with-allocations-data.sql")
+  @Test
+  fun `should return active allocations for multiple prisoners`() {
+    val result = webTestClient.getEvents()
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(EventReviewSearchResults::class.java)
+      .returnResult().responseBody
+
+    assertThat(result).isNotNull
+
+    with(result!!) {
+      assertThat(content).hasSize(3)
+      assertThat(content[0].prisonerNumber).isEqualTo("A1234AA")
+      assertThat(content[0].currentAllocations).containsExactlyInAnyOrder("KITCHEN AM", "GYM PM")
+      assertThat(content[1].prisonerNumber).isEqualTo("G1234DX")
+      assertThat(content[1].currentAllocations).containsExactlyInAnyOrder("KITCHEN AM")
+      assertThat(content[2].prisonerNumber).isEqualTo("G1234DD")
+      assertThat(content[2].currentAllocations).isEmpty()
+    }
+  }
+
   private fun WebTestClient.getEvents(
     date: LocalDate = LocalDate.of(2023, 5, 10),
     prisonCode: String? = "MDI",

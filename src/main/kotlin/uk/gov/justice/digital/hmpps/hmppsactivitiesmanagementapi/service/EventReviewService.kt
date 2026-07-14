@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.EventAcknowledgeRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.EventReviewSearchRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventReviewRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventReviewSearchSpecification
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ACKNOWLEDGED_BY_PROPERTY_KEY
@@ -27,6 +28,7 @@ class EventReviewService(
   private val eventReviewRepository: EventReviewRepository,
   private val eventReviewSearchSpecification: EventReviewSearchSpecification,
   private val telemetryClient: TelemetryClient,
+  private val allocationRepository: AllocationRepository,
 ) {
   fun getFilteredEvents(
     page: Int,
@@ -61,8 +63,22 @@ class EventReviewService(
 
     val results = eventReviewRepository.findAll(spec, pageable)
 
+    val prisonerNumbers = results.content.mapNotNull { it.prisonerNumber }.distinct()
+
+    val allocationsByPrisoner = allocationRepository
+      .findByPrisonCodeAndPrisonerNumbers(request.prisonCode, prisonerNumbers)
+      .groupBy { it.prisonerNumber }
+
+    val resultWithAllocations = results.map { event ->
+      transform(event).copy(
+        currentAllocations = allocationsByPrisoner[event.prisonerNumber]
+          ?.map { it.activitySchedule.activity.summary }
+          ?: emptyList(),
+      )
+    }.toList()
+
     return PageImpl(
-      results.map { transform(it) }.toList(),
+      resultWithAllocations,
       pageable,
       results.totalElements,
     )
