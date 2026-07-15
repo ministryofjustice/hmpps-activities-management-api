@@ -8,6 +8,7 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.EventAcknowledgeRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.EventReviewSearchRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
@@ -67,6 +68,7 @@ class EventReviewService(
 
     val allocationsByPrisoner = allocationRepository
       .findByPrisonCodeAndPrisonerNumbers(request.prisonCode, prisonerNumbers)
+      .filter { !it.status(PrisonerStatus.ENDED) }
       .groupBy { it.prisonerNumber }
 
     val resultWithAllocations = results.map { event ->
