@@ -21,6 +21,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.NUMBE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.LocalDateTime
+import kotlin.collections.emptyMap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventReview as ModelEventReview
 
 @Service
@@ -66,10 +67,14 @@ class EventReviewService(
 
     val prisonerNumbers = results.content.mapNotNull { it.prisonerNumber }.distinct()
 
-    val allocationsByPrisoner = allocationRepository
-      .findByPrisonCodeAndPrisonerNumbers(request.prisonCode, prisonerNumbers)
-      .filter { !it.status(PrisonerStatus.ENDED) }
-      .groupBy { it.prisonerNumber }
+    val allocationsByPrisoner = if (prisonerNumbers.isEmpty()) {
+      emptyMap()
+    } else {
+      allocationRepository
+        .findByPrisonCodeAndPrisonerNumbers(request.prisonCode, prisonerNumbers)
+        .filter { !it.status(PrisonerStatus.ENDED) }
+        .groupBy { it.prisonerNumber }
+    }
 
     val resultWithActiveAllocations = results.map { event ->
       transform(event).copy(
