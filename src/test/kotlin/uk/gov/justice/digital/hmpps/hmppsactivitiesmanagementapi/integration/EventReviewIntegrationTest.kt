@@ -224,7 +224,7 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
     with(result!!) {
       assertThat(content).hasSize(1)
       assertThat(content.first().prisonerNumber).isEqualTo("A1234AA")
-      assertThat(content.first().currentAllocations).containsExactlyInAnyOrder("KITCHEN AM", "GYM PM")
+      assertThat(content.first().activeAllocations).containsExactlyInAnyOrder("KITCHEN AM", "GYM PM")
     }
   }
 
@@ -242,7 +242,7 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
     with(result!!) {
       assertThat(content).hasSize(1)
       assertThat(content.first().prisonerNumber).isEqualTo("G1234DX")
-      assertThat(content.first().currentAllocations).containsExactly("KITCHEN AM")
+      assertThat(content.first().activeAllocations).containsExactly("KITCHEN AM")
     }
   }
 
@@ -260,7 +260,7 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
     with(result!!) {
       assertThat(content).hasSize(1)
       assertThat(content.first().prisonerNumber).isEqualTo("G1234DD")
-      assertThat(content.first().currentAllocations).isEmpty()
+      assertThat(content.first().activeAllocations).isEmpty()
     }
   }
 
@@ -278,13 +278,13 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
     with(result!!) {
       assertThat(content).hasSize(4)
       assertThat(content[0].prisonerNumber).isEqualTo("A1234AA")
-      assertThat(content[0].currentAllocations).containsExactlyInAnyOrder("KITCHEN AM", "GYM PM")
+      assertThat(content[0].activeAllocations).containsExactlyInAnyOrder("KITCHEN AM", "GYM PM")
       assertThat(content[1].prisonerNumber).isEqualTo("G1234DX")
-      assertThat(content[1].currentAllocations).containsExactlyInAnyOrder("KITCHEN AM")
+      assertThat(content[1].activeAllocations).containsExactlyInAnyOrder("KITCHEN AM")
       assertThat(content[2].prisonerNumber).isEqualTo("G1234DD")
-      assertThat(content[2].currentAllocations).isEmpty()
+      assertThat(content[2].activeAllocations).isEmpty()
       assertThat(content[3].prisonerNumber).isEqualTo("A1234AC")
-      assertThat(content[3].currentAllocations).containsExactlyInAnyOrder("GYM PM")
+      assertThat(content[3].activeAllocations).containsExactlyInAnyOrder("GYM PM")
     }
   }
 
@@ -303,7 +303,7 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
       assertThat(content).hasSize(1)
       assertThat(content[0].prisonerNumber).isEqualTo("A1234AC")
       // Has two allocations, where KITCHEN AM has ENDED and GYM PM is ACTIVE so only returns GYM PM
-      assertThat(content[0].currentAllocations).containsExactly("GYM PM")
+      assertThat(content[0].activeAllocations).containsExactly("GYM PM")
     }
   }
 

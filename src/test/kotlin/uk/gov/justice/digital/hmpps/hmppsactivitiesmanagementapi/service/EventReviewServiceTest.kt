@@ -166,8 +166,8 @@ class EventReviewServiceTest {
     val result = eventReviewService.getFilteredEvents(page, size, sortDirection, searchSpec)
 
     assertThat(result.totalElements).isEqualTo(2)
-    assertThat(result.content[0].currentAllocations).containsExactly("KITCHEN AM")
-    assertThat(result.content[1].currentAllocations).isEmpty()
+    assertThat(result.content[0].activeAllocations).containsExactly("KITCHEN AM")
+    assertThat(result.content[1].activeAllocations).isEmpty()
   }
 
   @Test
@@ -193,7 +193,7 @@ class EventReviewServiceTest {
     val result = eventReviewService.getFilteredEvents(page, size, sortDirection, searchSpec)
 
     assertThat(result.totalElements).isEqualTo(1)
-    assertThat(result.content[0].currentAllocations).isEmpty()
+    assertThat(result.content[0].activeAllocations).isEmpty()
   }
 
   @Test
@@ -225,7 +225,7 @@ class EventReviewServiceTest {
     val result = eventReviewService.getFilteredEvents(page, size, sortDirection, searchSpec)
 
     assertThat(result.totalElements).isEqualTo(1)
-    assertThat(result.content[0].currentAllocations).containsExactlyInAnyOrder("KITCHEN AM", "GYM PM")
+    assertThat(result.content[0].activeAllocations).containsExactlyInAnyOrder("KITCHEN AM", "GYM PM")
   }
 
   @Test
@@ -262,9 +262,9 @@ class EventReviewServiceTest {
 
     assertThat(result.totalElements).isEqualTo(2)
     assertThat(result.content[0].prisonerNumber.isEqualTo("A1234AA"))
-    assertThat(result.content[0].currentAllocations).containsExactly("KITCHEN AM")
+    assertThat(result.content[0].activeAllocations).containsExactly("KITCHEN AM")
     assertThat(result.content[1].prisonerNumber.isEqualTo("A1111BB"))
-    assertThat(result.content[1].currentAllocations).containsExactly("GYM PM")
+    assertThat(result.content[1].activeAllocations).containsExactly("GYM PM")
   }
 
   @Test

@@ -71,16 +71,16 @@ class EventReviewService(
       .filter { !it.status(PrisonerStatus.ENDED) }
       .groupBy { it.prisonerNumber }
 
-    val resultWithAllocations = results.map { event ->
+    val resultWithActiveAllocations = results.map { event ->
       transform(event).copy(
-        currentAllocations = allocationsByPrisoner[event.prisonerNumber]
+        activeAllocations = allocationsByPrisoner[event.prisonerNumber]
           ?.map { it.activitySchedule.activity.summary }
           ?: emptyList(),
       )
     }.toList()
 
     return PageImpl(
-      resultWithAllocations,
+      resultWithActiveAllocations,
       pageable,
       results.totalElements,
     )

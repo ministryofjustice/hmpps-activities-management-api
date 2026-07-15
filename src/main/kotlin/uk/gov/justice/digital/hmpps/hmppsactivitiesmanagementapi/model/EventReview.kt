@@ -51,7 +51,7 @@ data class EventReview(
     description = "The current allocations for the prisoner",
     example = "[\"KITCHEN AM\", \"GYM PM\"]",
   )
-  val currentAllocations: List<String> = emptyList(),
+  val activeAllocations: List<String> = emptyList(),
 )
 
 enum class EventDescription {
