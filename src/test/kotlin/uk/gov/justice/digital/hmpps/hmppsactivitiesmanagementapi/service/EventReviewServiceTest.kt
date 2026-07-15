@@ -14,9 +14,13 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.domain.Specification
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventReview
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventReviewDescription
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventDescription
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.EventAcknowledgeRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.EventReviewSearchRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventReviewRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventReviewSearchSpecification
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.FakeSecurityContext
@@ -29,7 +33,8 @@ class EventReviewServiceTest {
   private val eventReviewRepository = mock<EventReviewRepository>()
   private val eventReviewSearchSpecification: EventReviewSearchSpecification = spy()
   private val telemetryClient: TelemetryClient = mock()
-  private val eventReviewService = EventReviewService(eventReviewRepository, eventReviewSearchSpecification, telemetryClient)
+  private val allocationRepository = mock<AllocationRepository>()
+  private val eventReviewService = EventReviewService(eventReviewRepository, eventReviewSearchSpecification, telemetryClient, allocationRepository)
 
   @Test
   fun `returns rows based on a search specification`() {
@@ -132,6 +137,134 @@ class EventReviewServiceTest {
         ),
       ),
     )
+  }
+
+  @Test
+  fun `returns current allocations for each event review`() {
+    val page = 0
+    val size = 10
+    val sortDirection = "ascending"
+    val prisonCode = "MDI"
+    val date = LocalDate.now()
+    val eventTime = LocalDateTime.now()
+
+    val repositoryResult = PageImpl(
+      listOf(
+        EventReview(1, "service", "x.y.z", eventTime, prisonCode, "A1234AA", 1, "XYZ"),
+        EventReview(2, "service", "x.y.z", eventTime, prisonCode, "G1234FX", 2, "XYZ"),
+      ),
+    )
+
+    whenever(eventReviewRepository.findAll(any<Specification<EventReview>>(), any<Pageable>())).thenReturn(repositoryResult)
+
+    val kitchenAllocation = activitySchedule(activityEntity(summary = "KITCHEN AM", prisonCode = prisonCode), noExclusions = true).allocations().first()
+
+    whenever(allocationRepository.findByPrisonCodeAndPrisonerNumbers(prisonCode, listOf("A1234AA", "G1234FX")))
+      .thenReturn(listOf(kitchenAllocation))
+
+    val searchSpec = EventReviewSearchRequest(prisonCode = prisonCode, eventDate = date, acknowledgedEvents = true)
+    val result = eventReviewService.getFilteredEvents(page, size, sortDirection, searchSpec)
+
+    assertThat(result.totalElements).isEqualTo(2)
+    assertThat(result.content[0].activeAllocations).containsExactly("KITCHEN AM")
+    assertThat(result.content[1].activeAllocations).isEmpty()
+  }
+
+  @Test
+  fun `returns empty allocations when prisoner has no active allocations`() {
+    val page = 0
+    val size = 10
+    val sortDirection = "ascending"
+    val prisonCode = "MDI"
+    val date = LocalDate.now()
+    val eventTime = LocalDateTime.now()
+
+    val repositoryResult = PageImpl(
+      listOf(
+        EventReview(1, "service", "x.y.z", eventTime, prisonCode, "G1234FF", 1, "XYZ"),
+      ),
+    )
+
+    whenever(eventReviewRepository.findAll(any<Specification<EventReview>>(), any<Pageable>())).thenReturn(repositoryResult)
+    whenever(allocationRepository.findByPrisonCodeAndPrisonerNumbers(any(), any()))
+      .thenReturn(emptyList())
+
+    val searchSpec = EventReviewSearchRequest(prisonCode = prisonCode, eventDate = date, acknowledgedEvents = true)
+    val result = eventReviewService.getFilteredEvents(page, size, sortDirection, searchSpec)
+
+    assertThat(result.totalElements).isEqualTo(1)
+    assertThat(result.content[0].activeAllocations).isEmpty()
+  }
+
+  @Test
+  fun `returns multiple allocations for the same prisoner`() {
+    val page = 0
+    val size = 10
+    val sortDirection = "ascending"
+    val prisonCode = "MDI"
+    val date = LocalDate.now()
+    val eventTime = LocalDateTime.now()
+
+    val repositoryResult = PageImpl(
+      listOf(
+        EventReview(1, "service", "x.y.z", eventTime, prisonCode, "A1234AA", 1, "XYZ"),
+      ),
+    )
+
+    whenever(eventReviewRepository.findAll(any<Specification<EventReview>>(), any<Pageable>())).thenReturn(repositoryResult)
+
+    val kitchenAllocation = activitySchedule(activityEntity(summary = "KITCHEN AM", prisonCode = prisonCode), noExclusions = true)
+      .allocations().first()
+    val gymAllocation = activitySchedule(activityEntity(summary = "GYM PM", activityId = 2L, prisonCode = prisonCode), noExclusions = true)
+      .allocations().first()
+
+    whenever(allocationRepository.findByPrisonCodeAndPrisonerNumbers(prisonCode, listOf("A1234AA")))
+      .thenReturn(listOf(kitchenAllocation, gymAllocation))
+
+    val searchSpec = EventReviewSearchRequest(prisonCode = prisonCode, eventDate = date, acknowledgedEvents = true)
+    val result = eventReviewService.getFilteredEvents(page, size, sortDirection, searchSpec)
+
+    assertThat(result.totalElements).isEqualTo(1)
+    assertThat(result.content[0].activeAllocations).containsExactlyInAnyOrder("KITCHEN AM", "GYM PM")
+  }
+
+  @Test
+  fun `returns allocations for multiple prisoners`() {
+    val page = 0
+    val size = 10
+    val sortDirection = "ascending"
+    val prisonCode = "MDI"
+    val date = LocalDate.now()
+    val eventTime = LocalDateTime.now()
+
+    val repositoryResult = PageImpl(
+      listOf(
+        EventReview(1, "service", "x.y.z", eventTime, prisonCode, "A1234AA", 1, "XYZ"),
+        EventReview(2, "service", "x.y.z", eventTime, prisonCode, "A1111BB", 2, "XYZ"),
+      ),
+    )
+
+    whenever(eventReviewRepository.findAll(any<Specification<EventReview>>(), any<Pageable>())).thenReturn(repositoryResult)
+
+    // A1234AA allocated to KITCHEN AM
+    val kitchenSchedule = activitySchedule(activityEntity(summary = "KITCHEN AM", prisonCode = prisonCode), noExclusions = true)
+    val kitchenAllocation = kitchenSchedule.allocations().first()
+
+    // A1111BB allocated to GYM PM (ActivityFactory with exclusions adds A1111BB)
+    val gymSchedule = activitySchedule(activityEntity(summary = "GYM PM", activityId = 2L, prisonCode = prisonCode))
+    val gymAllocation = gymSchedule.allocations().last()
+
+    whenever(allocationRepository.findByPrisonCodeAndPrisonerNumbers(any(), any()))
+      .thenReturn(listOf(kitchenAllocation, gymAllocation))
+
+    val searchSpec = EventReviewSearchRequest(prisonCode = prisonCode, eventDate = date, acknowledgedEvents = true)
+    val result = eventReviewService.getFilteredEvents(page, size, sortDirection, searchSpec)
+
+    assertThat(result.totalElements).isEqualTo(2)
+    assertThat(result.content[0].prisonerNumber.isEqualTo("A1234AA"))
+    assertThat(result.content[0].activeAllocations).containsExactly("KITCHEN AM")
+    assertThat(result.content[1].prisonerNumber.isEqualTo("A1111BB"))
+    assertThat(result.content[1].activeAllocations).containsExactly("GYM PM")
   }
 
   @Test
