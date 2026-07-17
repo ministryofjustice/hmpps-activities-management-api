@@ -34,13 +34,12 @@ generic-service:
     PRISONS_WITH_REGEX_LOCATION_CONFIGS: BCI,CDI,EYI,FNI,HEI,MDI,NHI,WNI,IWI,LHI,RNI,WLI,WEI,WRI,RSI
     JAVA_TOOL_OPTIONS: "$(JAVA_PROXY_TOOL_OPTIONS) -XX:+ExitOnOutOfMemoryError -XX:MaxRAMPercentage=50.0"
     APPLICATIONINSIGHTS_STATSBEAT_DISABLED: "true"
-    NO_PROXY: "$(NO_PROXY),.s3.eu-west-2.amazonaws.com"
+    NO_PROXY: "127.0.0.1,localhost,.svc,.cluster.local,.s3.eu-west-2.amazonaws.com"
 
   namespace_secrets:
     hmpps-envoy-https-proxy-env:
       HTTP_PROXY: "HTTP_PROXY"
       HTTPS_PROXY: "HTTPS_PROXY"
-      NO_PROXY: "NO_PROXY"
       JAVA_PROXY_TOOL_OPTIONS: "JAVA_PROXY_TOOL_OPTIONS"
 
   resources:
