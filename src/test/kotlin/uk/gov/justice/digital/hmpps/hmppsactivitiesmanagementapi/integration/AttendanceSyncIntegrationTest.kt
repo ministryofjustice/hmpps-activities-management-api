@@ -232,4 +232,75 @@ class AttendanceSyncIntegrationTest : IntegrationTestBase() {
       .exchange()
       .expectStatus().isBadRequest
   }
+
+  @Sql(
+    "classpath:test_data/seed-attendance-sync-duplicate-allocations.sql",
+  )
+  @Test
+  fun `should return single attendance sync when prisoner has multiple overlapping allocations preferring active allocation`() {
+    val attendanceSync =
+      webTestClient.get()
+        .uri("/synchronisation/attendance/1")
+        .accept(MediaType.APPLICATION_JSON)
+        .headers(setAuthorisationAsClient(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .exchange()
+        .expectStatus().isOk
+        .expectHeader().contentType(MediaType.APPLICATION_JSON)
+        .expectBody(AttendanceSync::class.java)
+        .returnResult().responseBody!!
+
+    with(attendanceSync) {
+      assertThat(attendanceId).isEqualTo(1)
+      assertThat(prisonerNumber).isEqualTo("A11111A")
+      assertThat(bookingId).isEqualTo(90001)
+    }
+
+    val attendanceSync2 =
+      webTestClient.get()
+        .uri("/synchronisation/attendance/2")
+        .accept(MediaType.APPLICATION_JSON)
+        .headers(setAuthorisationAsClient(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody(AttendanceSync::class.java)
+        .returnResult().responseBody!!
+
+    with(attendanceSync2) {
+      assertThat(attendanceId).isEqualTo(2)
+      assertThat(prisonerNumber).isEqualTo("A22222A")
+      assertThat(bookingId).isEqualTo(90002)
+    }
+
+    val attendanceSync3 =
+      webTestClient.get()
+        .uri("/synchronisation/attendance/3")
+        .accept(MediaType.APPLICATION_JSON)
+        .headers(setAuthorisationAsClient(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody(AttendanceSync::class.java)
+        .returnResult().responseBody!!
+
+    with(attendanceSync3) {
+      assertThat(attendanceId).isEqualTo(3)
+      assertThat(prisonerNumber).isEqualTo("A33333A")
+      assertThat(bookingId).isEqualTo(90003)
+    }
+
+    val attendanceSync4 =
+      webTestClient.get()
+        .uri("/synchronisation/attendance/4")
+        .accept(MediaType.APPLICATION_JSON)
+        .headers(setAuthorisationAsClient(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody(AttendanceSync::class.java)
+        .returnResult().responseBody!!
+
+    with(attendanceSync4) {
+      assertThat(attendanceId).isEqualTo(4)
+      assertThat(prisonerNumber).isEqualTo("A44444A")
+      assertThat(bookingId).isEqualTo(90004)
+    }
+  }
 }
