@@ -1,5 +1,6 @@
 CREATE OR REPLACE VIEW v_attendance_sync AS
-select a.attendance_id,
+select DISTINCT ON (a.attendance_id)
+       a.attendance_id,
        a.scheduled_instance_id,
        si.activity_schedule_id,
        si.session_date,
@@ -24,4 +25,5 @@ from attendance a
                                a.prisoner_number = a2.prisoner_number and
                                si.session_date >= a2.start_date and
                                (a2.end_date is null or si.session_date <= a2.end_date)
-         left join attendance_reason ar on a.attendance_reason_id = ar.attendance_reason_id;
+         left join attendance_reason ar on a.attendance_reason_id = ar.attendance_reason_id
+ORDER BY a.attendance_id, a2.end_date DESC NULLS FIRST;
