@@ -30,4 +30,5 @@ fun dpsLocation(
   isResidential = false,
   localName = localName,
   locked = false,
+  inactiveStatus = null,
 )

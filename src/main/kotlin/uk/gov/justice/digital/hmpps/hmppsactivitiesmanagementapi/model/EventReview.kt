@@ -46,6 +46,12 @@ data class EventReview(
     example = "ACTIVITY_SUSPENDED",
   )
   val eventDescription: EventDescription? = null,
+
+  @Schema(
+    description = "The current allocations for the prisoner",
+    example = "[\"KITCHEN AM\", \"GYM PM\"]",
+  )
+  val activeAllocations: List<String> = emptyList(),
 )
 
 enum class EventDescription {
@@ -62,7 +68,7 @@ enum class EventDescription {
   @Schema(
     description = "A released prisoner",
   )
-  @Deprecated(message = "A realeased prisoner. Superseeded by PERMANENT_RELEASE and TEMPORARY_RELEASE")
+  @Deprecated(message = "A released prisoner. Superseded by PERMANENT_RELEASE and TEMPORARY_RELEASE")
   RELEASED,
 
   @Schema(

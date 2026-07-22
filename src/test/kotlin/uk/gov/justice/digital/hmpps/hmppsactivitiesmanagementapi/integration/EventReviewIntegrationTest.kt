@@ -210,6 +210,103 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
     }
   }
 
+  @Sql("classpath:test_data/event-review-with-allocations-data.sql")
+  @Test
+  fun `should return current allocations for prisoner with active allocations`() {
+    val result = webTestClient.getEvents(prisonerNumber = "A1234AA")
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(EventReviewSearchResults::class.java)
+      .returnResult().responseBody
+
+    assertThat(result).isNotNull
+
+    with(result!!) {
+      assertThat(content).hasSize(1)
+      assertThat(content.first().prisonerNumber).isEqualTo("A1234AA")
+      assertThat(content.first().activeAllocations).containsExactlyInAnyOrder("KITCHEN AM", "GYM PM")
+    }
+  }
+
+  @Sql("classpath:test_data/event-review-with-allocations-data.sql")
+  @Test
+  fun `should return single allocation for prisoner with one active allocation`() {
+    val result = webTestClient.getEvents(prisonerNumber = "G1234DX")
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(EventReviewSearchResults::class.java)
+      .returnResult().responseBody
+
+    assertThat(result).isNotNull
+
+    with(result!!) {
+      assertThat(content).hasSize(1)
+      assertThat(content.first().prisonerNumber).isEqualTo("G1234DX")
+      assertThat(content.first().activeAllocations).containsExactly("KITCHEN AM")
+    }
+  }
+
+  @Sql("classpath:test_data/event-review-with-allocations-data.sql")
+  @Test
+  fun `should return empty allocations for prisoner with no active allocations`() {
+    val result = webTestClient.getEvents(prisonerNumber = "G1234DD")
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(EventReviewSearchResults::class.java)
+      .returnResult().responseBody
+
+    assertThat(result).isNotNull
+
+    with(result!!) {
+      assertThat(content).hasSize(1)
+      assertThat(content.first().prisonerNumber).isEqualTo("G1234DD")
+      assertThat(content.first().activeAllocations).isEmpty()
+    }
+  }
+
+  @Sql("classpath:test_data/event-review-with-allocations-data.sql")
+  @Test
+  fun `should return active allocations for multiple prisoners`() {
+    val result = webTestClient.getEvents()
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(EventReviewSearchResults::class.java)
+      .returnResult().responseBody
+
+    assertThat(result).isNotNull
+
+    with(result!!) {
+      assertThat(content).hasSize(4)
+      assertThat(content[0].prisonerNumber).isEqualTo("A1234AA")
+      assertThat(content[0].activeAllocations).containsExactlyInAnyOrder("KITCHEN AM", "GYM PM")
+      assertThat(content[1].prisonerNumber).isEqualTo("G1234DX")
+      assertThat(content[1].activeAllocations).containsExactlyInAnyOrder("KITCHEN AM")
+      assertThat(content[2].prisonerNumber).isEqualTo("G1234DD")
+      assertThat(content[2].activeAllocations).isEmpty()
+      assertThat(content[3].prisonerNumber).isEqualTo("A1234AC")
+      assertThat(content[3].activeAllocations).containsExactlyInAnyOrder("GYM PM")
+    }
+  }
+
+  @Sql("classpath:test_data/event-review-with-allocations-data.sql")
+  @Test
+  fun `should not return allocations that have ended for a prisoner`() {
+    val result = webTestClient.getEvents(prisonerNumber = "A1234AC")
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(EventReviewSearchResults::class.java)
+      .returnResult().responseBody
+
+    assertThat(result).isNotNull
+
+    with(result!!) {
+      assertThat(content).hasSize(1)
+      assertThat(content[0].prisonerNumber).isEqualTo("A1234AC")
+      // Has two allocations, where KITCHEN AM has ENDED and GYM PM is ACTIVE so only returns GYM PM
+      assertThat(content[0].activeAllocations).containsExactly("GYM PM")
+    }
+  }
+
   private fun WebTestClient.getEvents(
     date: LocalDate = LocalDate.of(2023, 5, 10),
     prisonCode: String? = "MDI",
