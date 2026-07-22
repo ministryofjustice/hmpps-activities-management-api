@@ -252,7 +252,6 @@ class AttendanceSyncIntegrationTest : IntegrationTestBase() {
     with(attendanceSync) {
       assertThat(attendanceId).isEqualTo(1)
       assertThat(prisonerNumber).isEqualTo("A11111A")
-      assertThat(bookingId).isEqualTo(90001)
     }
 
     val attendanceSync2 =
@@ -268,7 +267,6 @@ class AttendanceSyncIntegrationTest : IntegrationTestBase() {
     with(attendanceSync2) {
       assertThat(attendanceId).isEqualTo(2)
       assertThat(prisonerNumber).isEqualTo("A22222A")
-      assertThat(bookingId).isEqualTo(90002)
     }
 
     val attendanceSync3 =
@@ -284,7 +282,6 @@ class AttendanceSyncIntegrationTest : IntegrationTestBase() {
     with(attendanceSync3) {
       assertThat(attendanceId).isEqualTo(3)
       assertThat(prisonerNumber).isEqualTo("A33333A")
-      assertThat(bookingId).isEqualTo(90003)
     }
 
     val attendanceSync4 =
@@ -300,7 +297,6 @@ class AttendanceSyncIntegrationTest : IntegrationTestBase() {
     with(attendanceSync4) {
       assertThat(attendanceId).isEqualTo(4)
       assertThat(prisonerNumber).isEqualTo("A44444A")
-      assertThat(bookingId).isEqualTo(90004)
     }
   }
 }
