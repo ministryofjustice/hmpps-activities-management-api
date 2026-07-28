@@ -90,7 +90,7 @@ class ExclusionHistoryService(private val exclusionRepository: ExclusionReposito
     private val DELETED_REVISION_TYPE = EnversRevisionType.DEL.ordinal
 
     private val EXCLUSION_HISTORY_ORDERING =
-      compareByDescending<ExclusionRevision> { it.revision }
+      compareByDescending<ExclusionRevision> { it.updatedDateTime }
         .thenBy { it.weekNumber }
         .thenBy { it.dayOfWeek }
   }
