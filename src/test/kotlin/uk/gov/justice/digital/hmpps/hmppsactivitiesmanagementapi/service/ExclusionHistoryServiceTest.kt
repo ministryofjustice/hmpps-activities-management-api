@@ -54,8 +54,9 @@ class ExclusionHistoryServiceTest {
     val addedTuesdayPM = auditRow(dayOfWeek = TUESDAY, timeSlot = PM)
 
     // revision 2
-    val addedWednesdayED = auditRow(revision = 2, weekNumber = 2, username = "SMITHJ", dayOfWeek = WEDNESDAY, timeSlot = ED)
-    val addedTuesdayAM = auditRow(revision = 2, weekNumber = 2, username = "SMITHJ", dayOfWeek = TUESDAY)
+    val revision2DateTime = LocalDateTime.parse("2026-06-26T10:15:30")
+    val addedWednesdayED = auditRow(revision = 2, weekNumber = 2, username = "SMITHJ", dayOfWeek = WEDNESDAY, timeSlot = ED, revisionDateTime = revision2DateTime)
+    val addedTuesdayAM = auditRow(revision = 2, weekNumber = 2, username = "SMITHJ", dayOfWeek = TUESDAY, revisionDateTime = revision2DateTime)
 
     // revision 3
     val revision3DateTime = LocalDateTime.parse("2026-06-30T12:00:01")
@@ -78,8 +79,8 @@ class ExclusionHistoryServiceTest {
 
     assertThat(history).containsExactly(
       exclusionRevision(revision = 3, dayOfWeek = THURSDAY, timeSlots = listOf(AM, PM), updatedDateTime = revision3DateTime),
-      exclusionRevision(revision = 2, weekNumber = 2, dayOfWeek = TUESDAY, updatedBy = "SMITHJ"),
-      exclusionRevision(revision = 2, weekNumber = 2, dayOfWeek = WEDNESDAY, timeSlots = listOf(ED), updatedBy = "SMITHJ"),
+      exclusionRevision(revision = 2, weekNumber = 2, dayOfWeek = TUESDAY, updatedBy = "SMITHJ", updatedDateTime = revision2DateTime),
+      exclusionRevision(revision = 2, weekNumber = 2, dayOfWeek = WEDNESDAY, timeSlots = listOf(ED), updatedBy = "SMITHJ", updatedDateTime = revision2DateTime),
       exclusionRevision(dayOfWeek = TUESDAY, revisionType = REMOVED),
       exclusionRevision(dayOfWeek = TUESDAY, timeSlots = listOf(PM)),
     )
@@ -350,6 +351,42 @@ class ExclusionHistoryServiceTest {
         exclusionRevision(weekNumber = 2, dayOfWeek = THURSDAY),
       )
     }
+
+    @Test
+    fun `should sort by revision date time when newer revision has a lower number due to multi-instance sequence allocation`() {
+      // Simulates a multi-pod deployment where Pod B pre-allocated higher revision numbers
+      // Pod B handled the first request (rev 51), then Pod A handled the next request (rev 6)
+      val olderDateTime = LocalDateTime.parse("2026-06-25T10:00:00")
+      val newerDateTime = LocalDateTime.parse("2026-06-26T14:00:00")
+
+      val olderRevisionHigherNumber = auditRow(
+        revision = 51,
+        dayOfWeek = MONDAY,
+        exclusionRevisionType = ADDED,
+        exclusionDaysOfWeekRevisionType = ADDED,
+        username = "USER1",
+        revisionDateTime = olderDateTime,
+      )
+
+      val newerRevisionLowerNumber = auditRow(
+        revision = 6,
+        dayOfWeek = TUESDAY,
+        exclusionRevisionType = MODIFIED,
+        exclusionDaysOfWeekRevisionType = ADDED,
+        username = "USER2",
+        revisionDateTime = newerDateTime,
+      )
+
+      every { exclusionRepository.findHistoryByAllocationId(ALLOCATION_ID) } returns
+        listOf(olderRevisionHigherNumber, newerRevisionLowerNumber)
+
+      val history = exclusionHistoryService.findHistory(allocation)
+
+      assertThat(history).containsExactly(
+        exclusionRevision(revision = 6, dayOfWeek = TUESDAY, updatedBy = "USER2", updatedDateTime = newerDateTime),
+        exclusionRevision(revision = 51, dayOfWeek = MONDAY, updatedBy = "USER1", updatedDateTime = olderDateTime),
+      )
+    }
   }
 
   /**
@@ -363,9 +400,10 @@ class ExclusionHistoryServiceTest {
     fun `should exclude any changes where the exclusion was removed and added back in the same revision`() {
       val removedMondayAM = auditRow(exclusionRevisionType = MODIFIED, exclusionDaysOfWeekRevisionType = DELETED)
       val addedMondayAM = auditRow()
-      val addedExclusionMondayAM = auditRow(revision = 2)
-      val addedExclusionMondayPM = auditRow(revision = 2, timeSlot = PM)
-      val addedExclusionTuesdayAM = auditRow(revision = 2, dayOfWeek = TUESDAY)
+      val revision2DateTime = LocalDateTime.parse("2026-06-26T10:15:30")
+      val addedExclusionMondayAM = auditRow(revision = 2, revisionDateTime = revision2DateTime)
+      val addedExclusionMondayPM = auditRow(revision = 2, timeSlot = PM, revisionDateTime = revision2DateTime)
+      val addedExclusionTuesdayAM = auditRow(revision = 2, dayOfWeek = TUESDAY, revisionDateTime = revision2DateTime)
 
       every { exclusionRepository.findHistoryByAllocationId(ALLOCATION_ID) } returns
         listOf(removedMondayAM, addedExclusionMondayAM, addedMondayAM, addedExclusionTuesdayAM, addedExclusionMondayPM)
@@ -373,8 +411,8 @@ class ExclusionHistoryServiceTest {
       val history = exclusionHistoryService.findHistory(allocation)
 
       assertThat(history).containsExactly(
-        exclusionRevision(revision = 2, timeSlots = listOf(AM, PM)),
-        exclusionRevision(revision = 2, dayOfWeek = TUESDAY),
+        exclusionRevision(revision = 2, timeSlots = listOf(AM, PM), updatedDateTime = revision2DateTime),
+        exclusionRevision(revision = 2, dayOfWeek = TUESDAY, updatedDateTime = revision2DateTime),
       )
     }
 
@@ -382,17 +420,18 @@ class ExclusionHistoryServiceTest {
     fun `should include any changes where the exclusion was removed and added in a different revision`() {
       val removedMondayAM = auditRow(exclusionRevisionType = MODIFIED, exclusionDaysOfWeekRevisionType = DELETED)
       val removedMondayPM = auditRow(timeSlot = PM, exclusionRevisionType = DELETED, exclusionDaysOfWeekRevisionType = DELETED)
-      val addedMondayAM = auditRow(revision = 2)
-      val addedMondayPM = auditRow(revision = 2, timeSlot = PM)
-      val addedTuesdayAM = auditRow(revision = 2, dayOfWeek = TUESDAY)
+      val revision2DateTime = LocalDateTime.parse("2026-06-26T10:15:30")
+      val addedMondayAM = auditRow(revision = 2, revisionDateTime = revision2DateTime)
+      val addedMondayPM = auditRow(revision = 2, timeSlot = PM, revisionDateTime = revision2DateTime)
+      val addedTuesdayAM = auditRow(revision = 2, dayOfWeek = TUESDAY, revisionDateTime = revision2DateTime)
 
       every { exclusionRepository.findHistoryByAllocationId(ALLOCATION_ID) } returns listOf(removedMondayAM, removedMondayPM, addedMondayAM, addedTuesdayAM, addedMondayPM)
 
       val history = exclusionHistoryService.findHistory(allocation)
 
       assertThat(history).containsExactly(
-        exclusionRevision(revision = 2, timeSlots = listOf(AM, PM)),
-        exclusionRevision(revision = 2, dayOfWeek = TUESDAY),
+        exclusionRevision(revision = 2, timeSlots = listOf(AM, PM), updatedDateTime = revision2DateTime),
+        exclusionRevision(revision = 2, dayOfWeek = TUESDAY, updatedDateTime = revision2DateTime),
         exclusionRevision(revisionType = REMOVED, timeSlots = listOf(AM, PM)),
       )
     }
