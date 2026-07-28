@@ -878,7 +878,7 @@ class AllocationIntegrationTest : LocalStackTestBase() {
       assertThat(dayOfWeek).isEqualTo(DayOfWeek.MONDAY)
       assertThat(revisionType).isEqualTo(RevisionType.ADDED)
       assertThat(updatedBy).isEqualTo("test-client")
-      assertThat(updatedDateTime).isEqualTo(exclusionsHistory1[0].updatedDateTime)
+      assertThat(updatedDateTime).isNotNull()
     }
 
     // Session 2: Add Week 1 Tuesday AM exclusion (keeping Week 1 Monday)
@@ -919,7 +919,7 @@ class AllocationIntegrationTest : LocalStackTestBase() {
       assertThat(revision).isEqualTo(exclusionsHistory1[0].revision)
       assertThat(revisionType).isEqualTo(RevisionType.ADDED)
       assertThat(updatedBy).isEqualTo("test-client")
-      assertThat(updatedDateTime).isEqualTo(exclusionsHistory2[1].updatedDateTime)
+      assertThat(updatedDateTime).isEqualTo(exclusionsHistory1[0].updatedDateTime)
     }
 
     // Session 3: Add Week 2 Thursday PM exclusion (keeping Week 1 Monday and Tuesday)
@@ -963,6 +963,7 @@ class AllocationIntegrationTest : LocalStackTestBase() {
       assertThat(dayOfWeek).isEqualTo(DayOfWeek.TUESDAY)
       assertThat(revision).isEqualTo(exclusionsHistory2[0].revision)
       assertThat(revisionType).isEqualTo(RevisionType.ADDED)
+      assertThat(updatedDateTime).isEqualTo(exclusionsHistory2[0].updatedDateTime)
     }
 
     with(exclusionsHistory3[2]) {
@@ -971,6 +972,7 @@ class AllocationIntegrationTest : LocalStackTestBase() {
       assertThat(dayOfWeek).isEqualTo(DayOfWeek.MONDAY)
       assertThat(revision).isEqualTo(exclusionsHistory1[0].revision)
       assertThat(revisionType).isEqualTo(RevisionType.ADDED)
+      assertThat(updatedDateTime).isEqualTo(exclusionsHistory1[0].updatedDateTime)
     }
 
     // Session 4: Add Week 2 Friday AM exclusion (keeping everything else)
@@ -1012,6 +1014,7 @@ class AllocationIntegrationTest : LocalStackTestBase() {
       assertThat(dayOfWeek).isEqualTo(DayOfWeek.FRIDAY)
       assertThat(revision).isGreaterThan(exclusionsHistory3[0].revision)
       assertThat(revisionType).isEqualTo(RevisionType.ADDED)
+      assertThat(updatedDateTime).isNotNull()
     }
 
     with(exclusionsHistory4[1]) {
@@ -1020,6 +1023,7 @@ class AllocationIntegrationTest : LocalStackTestBase() {
       assertThat(dayOfWeek).isEqualTo(DayOfWeek.THURSDAY)
       assertThat(revision).isEqualTo(exclusionsHistory3[0].revision)
       assertThat(revisionType).isEqualTo(RevisionType.ADDED)
+      assertThat(updatedDateTime).isEqualTo(exclusionsHistory3[0].updatedDateTime)
     }
 
     with(exclusionsHistory4[2]) {
@@ -1028,6 +1032,7 @@ class AllocationIntegrationTest : LocalStackTestBase() {
       assertThat(dayOfWeek).isEqualTo(DayOfWeek.TUESDAY)
       assertThat(revision).isEqualTo(exclusionsHistory2[0].revision)
       assertThat(revisionType).isEqualTo(RevisionType.ADDED)
+      assertThat(updatedDateTime).isEqualTo(exclusionsHistory2[0].updatedDateTime)
     }
 
     with(exclusionsHistory4[3]) {
@@ -1036,6 +1041,7 @@ class AllocationIntegrationTest : LocalStackTestBase() {
       assertThat(dayOfWeek).isEqualTo(DayOfWeek.MONDAY)
       assertThat(revision).isEqualTo(exclusionsHistory1[0].revision)
       assertThat(revisionType).isEqualTo(RevisionType.ADDED)
+      assertThat(updatedDateTime).isEqualTo(exclusionsHistory1[0].updatedDateTime)
     }
   }
 
@@ -1073,7 +1079,7 @@ class AllocationIntegrationTest : LocalStackTestBase() {
       assertThat(dayOfWeek).isEqualTo(DayOfWeek.MONDAY)
       assertThat(revisionType).isEqualTo(RevisionType.ADDED)
       assertThat(updatedBy).isEqualTo("test-client")
-      assertThat(updatedDateTime).isEqualTo(exclusionsHistory1[0].updatedDateTime)
+      assertThat(updatedDateTime).isNotNull()
     }
 
     with(exclusionsHistory1[1]) {
@@ -1081,7 +1087,7 @@ class AllocationIntegrationTest : LocalStackTestBase() {
       assertThat(dayOfWeek).isEqualTo(DayOfWeek.THURSDAY)
       assertThat(revisionType).isEqualTo(RevisionType.ADDED)
       assertThat(updatedBy).isEqualTo("test-client")
-      assertThat(updatedDateTime).isEqualTo(exclusionsHistory1[1].updatedDateTime)
+      assertThat(updatedDateTime).isNotNull()
     }
 
     // Session 2: Remove Week 2 Thursday PM, add Week 1 Tuesday AM (keeping Week 1 Monday AM)
@@ -1128,6 +1134,7 @@ class AllocationIntegrationTest : LocalStackTestBase() {
       assertThat(dayOfWeek).isEqualTo(DayOfWeek.MONDAY)
       assertThat(revision).isEqualTo(exclusionsHistory1[0].revision)
       assertThat(revisionType).isEqualTo(RevisionType.ADDED)
+      assertThat(updatedDateTime).isEqualTo(exclusionsHistory1[0].updatedDateTime)
     }
 
     with(exclusionsHistory2[3]) {
@@ -1135,6 +1142,7 @@ class AllocationIntegrationTest : LocalStackTestBase() {
       assertThat(dayOfWeek).isEqualTo(DayOfWeek.THURSDAY)
       assertThat(revision).isEqualTo(exclusionsHistory1[0].revision)
       assertThat(revisionType).isEqualTo(RevisionType.ADDED)
+      assertThat(updatedDateTime).isEqualTo(exclusionsHistory1[1].updatedDateTime)
     }
 
     // Session 3: Add Week 2 Friday ED (keeping Week 1 Monday AM and Tuesday AM)
