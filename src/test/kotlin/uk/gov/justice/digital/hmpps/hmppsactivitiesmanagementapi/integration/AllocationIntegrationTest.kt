@@ -851,6 +851,341 @@ class AllocationIntegrationTest : LocalStackTestBase() {
 
   @Sql("classpath:test_data/allocation-with-exclusions-history.sql")
   @Test
+  fun `should return ADDED revision type when exclusions are added in separate sessions across a two week schedule`() {
+    // Session 1: Add Week 1 Monday AM exclusion
+    webTestClient.updateAllocation(
+      RISLEY_PRISON_CODE,
+      1,
+      AllocationUpdateRequest(
+        exclusions = listOf(
+          Slot(
+            weekNumber = 1,
+            timeSlot = TimeSlot.AM,
+            monday = true,
+            daysOfWeek = setOf(DayOfWeek.MONDAY),
+          ),
+        ),
+      ),
+    )
+
+    val exclusionsHistory1 = webTestClient.getExclusionsHistory(1)!!
+
+    assertThat(exclusionsHistory1).hasSize(1)
+
+    with(exclusionsHistory1[0]) {
+      assertThat(weekNumber).isEqualTo(1)
+      assertThat(timeSlots).containsExactly(TimeSlot.AM)
+      assertThat(dayOfWeek).isEqualTo(DayOfWeek.MONDAY)
+      assertThat(revisionType).isEqualTo(RevisionType.ADDED)
+      assertThat(updatedBy).isEqualTo("test-client")
+      assertThat(updatedDateTime).isNotNull()
+    }
+
+    // Session 2: Add Week 1 Tuesday AM exclusion (keeping Week 1 Monday)
+    webTestClient.updateAllocation(
+      RISLEY_PRISON_CODE,
+      1,
+      AllocationUpdateRequest(
+        exclusions = listOf(
+          Slot(
+            weekNumber = 1,
+            timeSlot = TimeSlot.AM,
+            monday = true,
+            tuesday = true,
+            daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY),
+          ),
+        ),
+      ),
+    )
+
+    val exclusionsHistory2 = webTestClient.getExclusionsHistory(1)!!
+
+    assertThat(exclusionsHistory2).hasSize(2)
+
+    with(exclusionsHistory2[0]) {
+      assertThat(weekNumber).isEqualTo(1)
+      assertThat(timeSlots).containsExactly(TimeSlot.AM)
+      assertThat(dayOfWeek).isEqualTo(DayOfWeek.TUESDAY)
+      assertThat(revision).isGreaterThan(exclusionsHistory1[0].revision)
+      assertThat(revisionType).isEqualTo(RevisionType.ADDED)
+      assertThat(updatedBy).isEqualTo("test-client")
+      assertThat(updatedDateTime).isEqualTo(exclusionsHistory2[0].updatedDateTime)
+    }
+
+    with(exclusionsHistory2[1]) {
+      assertThat(weekNumber).isEqualTo(1)
+      assertThat(timeSlots).containsExactly(TimeSlot.AM)
+      assertThat(dayOfWeek).isEqualTo(DayOfWeek.MONDAY)
+      assertThat(revision).isEqualTo(exclusionsHistory1[0].revision)
+      assertThat(revisionType).isEqualTo(RevisionType.ADDED)
+      assertThat(updatedBy).isEqualTo("test-client")
+      assertThat(updatedDateTime).isEqualTo(exclusionsHistory1[0].updatedDateTime)
+    }
+
+    // Session 3: Add Week 2 Thursday PM exclusion (keeping Week 1 Monday and Tuesday)
+    webTestClient.updateAllocation(
+      RISLEY_PRISON_CODE,
+      1,
+      AllocationUpdateRequest(
+        exclusions = listOf(
+          Slot(
+            weekNumber = 1,
+            timeSlot = TimeSlot.AM,
+            monday = true,
+            tuesday = true,
+            daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY),
+          ),
+          Slot(
+            weekNumber = 2,
+            timeSlot = TimeSlot.PM,
+            thursday = true,
+            daysOfWeek = setOf(DayOfWeek.THURSDAY),
+          ),
+        ),
+      ),
+    )
+
+    val exclusionsHistory3 = webTestClient.getExclusionsHistory(1)!!
+
+    assertThat(exclusionsHistory3).hasSize(3)
+
+    with(exclusionsHistory3[0]) {
+      assertThat(weekNumber).isEqualTo(2)
+      assertThat(timeSlots).containsExactly(TimeSlot.PM)
+      assertThat(dayOfWeek).isEqualTo(DayOfWeek.THURSDAY)
+      assertThat(revision).isGreaterThan(exclusionsHistory2[0].revision)
+      assertThat(revisionType).isEqualTo(RevisionType.ADDED)
+    }
+
+    with(exclusionsHistory3[1]) {
+      assertThat(weekNumber).isEqualTo(1)
+      assertThat(timeSlots).containsExactly(TimeSlot.AM)
+      assertThat(dayOfWeek).isEqualTo(DayOfWeek.TUESDAY)
+      assertThat(revision).isEqualTo(exclusionsHistory2[0].revision)
+      assertThat(revisionType).isEqualTo(RevisionType.ADDED)
+      assertThat(updatedDateTime).isEqualTo(exclusionsHistory2[0].updatedDateTime)
+    }
+
+    with(exclusionsHistory3[2]) {
+      assertThat(weekNumber).isEqualTo(1)
+      assertThat(timeSlots).containsExactly(TimeSlot.AM)
+      assertThat(dayOfWeek).isEqualTo(DayOfWeek.MONDAY)
+      assertThat(revision).isEqualTo(exclusionsHistory1[0].revision)
+      assertThat(revisionType).isEqualTo(RevisionType.ADDED)
+      assertThat(updatedDateTime).isEqualTo(exclusionsHistory1[0].updatedDateTime)
+    }
+
+    // Session 4: Add Week 2 Friday AM exclusion (keeping everything else)
+    webTestClient.updateAllocation(
+      RISLEY_PRISON_CODE,
+      1,
+      AllocationUpdateRequest(
+        exclusions = listOf(
+          Slot(
+            weekNumber = 1,
+            timeSlot = TimeSlot.AM,
+            monday = true,
+            tuesday = true,
+            daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY),
+          ),
+          Slot(
+            weekNumber = 2,
+            timeSlot = TimeSlot.PM,
+            thursday = true,
+            daysOfWeek = setOf(DayOfWeek.THURSDAY),
+          ),
+          Slot(
+            weekNumber = 2,
+            timeSlot = TimeSlot.AM,
+            friday = true,
+            daysOfWeek = setOf(DayOfWeek.FRIDAY),
+          ),
+        ),
+      ),
+    )
+
+    val exclusionsHistory4 = webTestClient.getExclusionsHistory(1)!!
+
+    assertThat(exclusionsHistory4).hasSize(4)
+
+    with(exclusionsHistory4[0]) {
+      assertThat(weekNumber).isEqualTo(2)
+      assertThat(timeSlots).containsExactly(TimeSlot.AM)
+      assertThat(dayOfWeek).isEqualTo(DayOfWeek.FRIDAY)
+      assertThat(revision).isGreaterThan(exclusionsHistory3[0].revision)
+      assertThat(revisionType).isEqualTo(RevisionType.ADDED)
+      assertThat(updatedDateTime).isNotNull()
+    }
+
+    with(exclusionsHistory4[1]) {
+      assertThat(weekNumber).isEqualTo(2)
+      assertThat(timeSlots).containsExactly(TimeSlot.PM)
+      assertThat(dayOfWeek).isEqualTo(DayOfWeek.THURSDAY)
+      assertThat(revision).isEqualTo(exclusionsHistory3[0].revision)
+      assertThat(revisionType).isEqualTo(RevisionType.ADDED)
+      assertThat(updatedDateTime).isEqualTo(exclusionsHistory3[0].updatedDateTime)
+    }
+
+    with(exclusionsHistory4[2]) {
+      assertThat(weekNumber).isEqualTo(1)
+      assertThat(timeSlots).containsExactly(TimeSlot.AM)
+      assertThat(dayOfWeek).isEqualTo(DayOfWeek.TUESDAY)
+      assertThat(revision).isEqualTo(exclusionsHistory2[0].revision)
+      assertThat(revisionType).isEqualTo(RevisionType.ADDED)
+      assertThat(updatedDateTime).isEqualTo(exclusionsHistory2[0].updatedDateTime)
+    }
+
+    with(exclusionsHistory4[3]) {
+      assertThat(weekNumber).isEqualTo(1)
+      assertThat(timeSlots).containsExactly(TimeSlot.AM)
+      assertThat(dayOfWeek).isEqualTo(DayOfWeek.MONDAY)
+      assertThat(revision).isEqualTo(exclusionsHistory1[0].revision)
+      assertThat(revisionType).isEqualTo(RevisionType.ADDED)
+      assertThat(updatedDateTime).isEqualTo(exclusionsHistory1[0].updatedDateTime)
+    }
+  }
+
+  @Sql("classpath:test_data/allocation-with-exclusions-history.sql")
+  @Test
+  fun `should return correct revision types for adds and removes across separate sessions with two week schedule`() {
+    // Session 1: Add Week 1 Monday AM and Week 2 Thursday PM exclusions
+    webTestClient.updateAllocation(
+      RISLEY_PRISON_CODE,
+      1,
+      AllocationUpdateRequest(
+        exclusions = listOf(
+          Slot(
+            weekNumber = 1,
+            timeSlot = TimeSlot.AM,
+            monday = true,
+            daysOfWeek = setOf(DayOfWeek.MONDAY),
+          ),
+          Slot(
+            weekNumber = 2,
+            timeSlot = TimeSlot.PM,
+            thursday = true,
+            daysOfWeek = setOf(DayOfWeek.THURSDAY),
+          ),
+        ),
+      ),
+    )
+
+    val exclusionsHistory1 = webTestClient.getExclusionsHistory(1)!!
+
+    assertThat(exclusionsHistory1).hasSize(2)
+
+    with(exclusionsHistory1[0]) {
+      assertThat(weekNumber).isEqualTo(1)
+      assertThat(dayOfWeek).isEqualTo(DayOfWeek.MONDAY)
+      assertThat(revisionType).isEqualTo(RevisionType.ADDED)
+      assertThat(updatedBy).isEqualTo("test-client")
+      assertThat(updatedDateTime).isNotNull()
+    }
+
+    with(exclusionsHistory1[1]) {
+      assertThat(weekNumber).isEqualTo(2)
+      assertThat(dayOfWeek).isEqualTo(DayOfWeek.THURSDAY)
+      assertThat(revisionType).isEqualTo(RevisionType.ADDED)
+      assertThat(updatedBy).isEqualTo("test-client")
+      assertThat(updatedDateTime).isNotNull()
+    }
+
+    // Session 2: Remove Week 2 Thursday PM, add Week 1 Tuesday AM (keeping Week 1 Monday AM)
+    webTestClient.updateAllocation(
+      RISLEY_PRISON_CODE,
+      1,
+      AllocationUpdateRequest(
+        exclusions = listOf(
+          Slot(
+            weekNumber = 1,
+            timeSlot = TimeSlot.AM,
+            monday = true,
+            tuesday = true,
+            daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY),
+          ),
+        ),
+      ),
+    )
+
+    val exclusionsHistory2 = webTestClient.getExclusionsHistory(1)!!
+
+    assertThat(exclusionsHistory2).hasSize(4)
+
+    // Latest revision: Tuesday AM added and Thursday PM removed
+    with(exclusionsHistory2[0]) {
+      assertThat(weekNumber).isEqualTo(1)
+      assertThat(timeSlots).containsExactly(TimeSlot.AM)
+      assertThat(dayOfWeek).isEqualTo(DayOfWeek.TUESDAY)
+      assertThat(revision).isGreaterThan(exclusionsHistory1[0].revision)
+      assertThat(revisionType).isEqualTo(RevisionType.ADDED)
+    }
+
+    with(exclusionsHistory2[1]) {
+      assertThat(weekNumber).isEqualTo(2)
+      assertThat(timeSlots).containsExactly(TimeSlot.PM)
+      assertThat(dayOfWeek).isEqualTo(DayOfWeek.THURSDAY)
+      assertThat(revision).isGreaterThan(exclusionsHistory1[0].revision)
+      assertThat(revisionType).isEqualTo(RevisionType.REMOVED)
+    }
+
+    // Original revision: Monday AM and Thursday PM added
+    with(exclusionsHistory2[2]) {
+      assertThat(weekNumber).isEqualTo(1)
+      assertThat(dayOfWeek).isEqualTo(DayOfWeek.MONDAY)
+      assertThat(revision).isEqualTo(exclusionsHistory1[0].revision)
+      assertThat(revisionType).isEqualTo(RevisionType.ADDED)
+      assertThat(updatedDateTime).isEqualTo(exclusionsHistory1[0].updatedDateTime)
+    }
+
+    with(exclusionsHistory2[3]) {
+      assertThat(weekNumber).isEqualTo(2)
+      assertThat(dayOfWeek).isEqualTo(DayOfWeek.THURSDAY)
+      assertThat(revision).isEqualTo(exclusionsHistory1[0].revision)
+      assertThat(revisionType).isEqualTo(RevisionType.ADDED)
+      assertThat(updatedDateTime).isEqualTo(exclusionsHistory1[1].updatedDateTime)
+    }
+
+    // Session 3: Add Week 2 Friday ED (keeping Week 1 Monday AM and Tuesday AM)
+    webTestClient.updateAllocation(
+      RISLEY_PRISON_CODE,
+      1,
+      AllocationUpdateRequest(
+        exclusions = listOf(
+          Slot(
+            weekNumber = 1,
+            timeSlot = TimeSlot.AM,
+            monday = true,
+            tuesday = true,
+            daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY),
+          ),
+          Slot(
+            weekNumber = 2,
+            timeSlot = TimeSlot.ED,
+            friday = true,
+            daysOfWeek = setOf(DayOfWeek.FRIDAY),
+          ),
+        ),
+      ),
+    )
+
+    val exclusionsHistory3 = webTestClient.getExclusionsHistory(1)!!
+
+    assertThat(exclusionsHistory3).hasSize(5)
+
+    // Latest revision: Friday ED added
+    with(exclusionsHistory3[0]) {
+      assertThat(weekNumber).isEqualTo(2)
+      assertThat(timeSlots).containsExactly(TimeSlot.ED)
+      assertThat(dayOfWeek).isEqualTo(DayOfWeek.FRIDAY)
+      assertThat(revision).isGreaterThan(exclusionsHistory2[0].revision)
+      assertThat(revisionType).isEqualTo(RevisionType.ADDED)
+      assertThat(updatedBy).isEqualTo("test-client")
+      assertThat(updatedDateTime).isAfterOrEqualTo(exclusionsHistory2[0].updatedDateTime)
+    }
+  }
+
+  @Sql("classpath:test_data/allocation-with-exclusions-history.sql")
+  @Test
   fun `should return exclusions history for exclusions changed through activity schedule change`() {
     // Create new Monday and Tuesday, AM exclusions
     webTestClient.updateAllocation(

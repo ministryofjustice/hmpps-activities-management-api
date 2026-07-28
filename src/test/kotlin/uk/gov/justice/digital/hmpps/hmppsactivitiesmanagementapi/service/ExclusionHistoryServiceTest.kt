@@ -85,6 +85,273 @@ class ExclusionHistoryServiceTest {
     )
   }
 
+  @Nested
+  @DisplayName("Adding exclusions across separate sessions")
+  inner class AddingExclusionsAcrossSessions {
+    @Test
+    fun `should return ADDED revision type when adding exclusions in separate sessions`() {
+      // Session 1: Add Monday AM exclusion - exclusion entity is new (ADDED)
+      val session1MondayAM = auditRow(
+        dayOfWeek = MONDAY,
+        exclusionRevisionType = ADDED,
+        exclusionDaysOfWeekRevisionType = ADDED,
+      )
+
+      // Session 2: Add Tuesday AM exclusion - exclusion entity already exists so is MODIFIED, but day is ADDED
+      val session2TuesdayAM = auditRow(
+        revision = 2,
+        dayOfWeek = TUESDAY,
+        exclusionRevisionType = MODIFIED,
+        exclusionDaysOfWeekRevisionType = ADDED,
+        username = "USER2",
+        revisionDateTime = LocalDateTime.parse("2026-06-26T11:00:00"),
+      )
+
+      every { exclusionRepository.findHistoryByAllocationId(ALLOCATION_ID) } returns
+        listOf(session1MondayAM, session2TuesdayAM)
+
+      val history = exclusionHistoryService.findHistory(allocation)
+
+      assertThat(history).containsExactly(
+        exclusionRevision(revision = 2, dayOfWeek = TUESDAY, updatedBy = "USER2", updatedDateTime = LocalDateTime.parse("2026-06-26T11:00:00")),
+        exclusionRevision(dayOfWeek = MONDAY),
+      )
+
+      // Both should be ADDED
+      assertThat(history).allMatch { it.revisionType == RevisionType.ADDED }
+    }
+
+    @Test
+    fun `should return ADDED revision type when adding multiple exclusions across three sessions`() {
+      // Session 1: Add Monday AM
+      val session1MondayAM = auditRow(
+        dayOfWeek = MONDAY,
+        exclusionRevisionType = ADDED,
+        exclusionDaysOfWeekRevisionType = ADDED,
+      )
+
+      // Session 2: Add Tuesday AM - exclusion entity is MODIFIED
+      val session2TuesdayAM = auditRow(
+        revision = 2,
+        dayOfWeek = TUESDAY,
+        exclusionRevisionType = MODIFIED,
+        exclusionDaysOfWeekRevisionType = ADDED,
+        username = "USER2",
+        revisionDateTime = LocalDateTime.parse("2026-06-26T11:00:00"),
+      )
+
+      // Session 3: Add Wednesday PM - exclusion entity is MODIFIED
+      val session3WednesdayPM = auditRow(
+        revision = 3,
+        dayOfWeek = WEDNESDAY,
+        timeSlot = PM,
+        exclusionRevisionType = MODIFIED,
+        exclusionDaysOfWeekRevisionType = ADDED,
+        username = "USER3",
+        revisionDateTime = LocalDateTime.parse("2026-06-27T14:00:00"),
+      )
+
+      every { exclusionRepository.findHistoryByAllocationId(ALLOCATION_ID) } returns
+        listOf(session1MondayAM, session2TuesdayAM, session3WednesdayPM)
+
+      val history = exclusionHistoryService.findHistory(allocation)
+
+      assertThat(history).containsExactly(
+        exclusionRevision(revision = 3, dayOfWeek = WEDNESDAY, timeSlots = listOf(PM), updatedBy = "USER3", updatedDateTime = LocalDateTime.parse("2026-06-27T14:00:00")),
+        exclusionRevision(revision = 2, dayOfWeek = TUESDAY, updatedBy = "USER2", updatedDateTime = LocalDateTime.parse("2026-06-26T11:00:00")),
+        exclusionRevision(dayOfWeek = MONDAY),
+      )
+
+      // All should be ADDED
+      assertThat(history).allMatch { it.revisionType == RevisionType.ADDED }
+    }
+
+    @Test
+    fun `should return ADDED revision type when adding exclusions across weeks in separate sessions`() {
+      // Session 1: Add Week 1 Monday AM
+      val session1Week1MondayAM = auditRow(
+        weekNumber = 1,
+        dayOfWeek = MONDAY,
+        exclusionRevisionType = ADDED,
+        exclusionDaysOfWeekRevisionType = ADDED,
+      )
+
+      // Session 2: Add Week 2 Thursday AM - exclusion entity is MODIFIED
+      val session2Week2ThursdayAM = auditRow(
+        revision = 2,
+        weekNumber = 2,
+        dayOfWeek = THURSDAY,
+        exclusionRevisionType = MODIFIED,
+        exclusionDaysOfWeekRevisionType = ADDED,
+        username = "USER2",
+        revisionDateTime = LocalDateTime.parse("2026-06-26T11:00:00"),
+      )
+
+      // Session 3: Add Week 1 Tuesday PM - exclusion entity is MODIFIED
+      val session3Week1TuesdayPM = auditRow(
+        revision = 3,
+        weekNumber = 1,
+        dayOfWeek = TUESDAY,
+        timeSlot = PM,
+        exclusionRevisionType = MODIFIED,
+        exclusionDaysOfWeekRevisionType = ADDED,
+        username = "USER3",
+        revisionDateTime = LocalDateTime.parse("2026-06-27T14:00:00"),
+      )
+
+      every { exclusionRepository.findHistoryByAllocationId(ALLOCATION_ID) } returns
+        listOf(session1Week1MondayAM, session2Week2ThursdayAM, session3Week1TuesdayPM)
+
+      val history = exclusionHistoryService.findHistory(allocation)
+
+      assertThat(history).containsExactly(
+        exclusionRevision(revision = 3, weekNumber = 1, dayOfWeek = TUESDAY, timeSlots = listOf(PM), updatedBy = "USER3", updatedDateTime = LocalDateTime.parse("2026-06-27T14:00:00")),
+        exclusionRevision(revision = 2, weekNumber = 2, dayOfWeek = THURSDAY, updatedBy = "USER2", updatedDateTime = LocalDateTime.parse("2026-06-26T11:00:00")),
+        exclusionRevision(weekNumber = 1, dayOfWeek = MONDAY),
+      )
+
+      // All should be ADDED
+      assertThat(history).allMatch { it.revisionType == RevisionType.ADDED }
+    }
+
+    @Test
+    fun `should return REMOVED revision type when removing exclusion from existing exclusions in a later session`() {
+      // Session 1: Add Monday AM and Tuesday AM
+      val session1MondayAM = auditRow(
+        dayOfWeek = MONDAY,
+        exclusionRevisionType = ADDED,
+        exclusionDaysOfWeekRevisionType = ADDED,
+      )
+      val session1TuesdayAM = auditRow(
+        dayOfWeek = TUESDAY,
+        exclusionRevisionType = ADDED,
+        exclusionDaysOfWeekRevisionType = ADDED,
+      )
+
+      // Session 2: Remove Tuesday AM - exclusion entity is MODIFIED, day is DELETED
+      val session2RemovedTuesdayAM = auditRow(
+        revision = 2,
+        dayOfWeek = TUESDAY,
+        exclusionRevisionType = MODIFIED,
+        exclusionDaysOfWeekRevisionType = DELETED,
+        username = "USER2",
+        revisionDateTime = LocalDateTime.parse("2026-06-26T11:00:00"),
+      )
+
+      every { exclusionRepository.findHistoryByAllocationId(ALLOCATION_ID) } returns
+        listOf(session1MondayAM, session1TuesdayAM, session2RemovedTuesdayAM)
+
+      val history = exclusionHistoryService.findHistory(allocation)
+
+      assertThat(history).containsExactly(
+        exclusionRevision(revision = 2, dayOfWeek = TUESDAY, revisionType = REMOVED, updatedBy = "USER2", updatedDateTime = LocalDateTime.parse("2026-06-26T11:00:00")),
+        exclusionRevision(dayOfWeek = MONDAY),
+        exclusionRevision(dayOfWeek = TUESDAY),
+      )
+    }
+
+    @Test
+    fun `should return correct revision types for a mix of adds and removes across sessions`() {
+      // Session 1: Add Monday AM
+      val session1MondayAM = auditRow(
+        dayOfWeek = MONDAY,
+        exclusionRevisionType = ADDED,
+        exclusionDaysOfWeekRevisionType = ADDED,
+      )
+
+      // Session 2: Add Tuesday AM - exclusion entity is MODIFIED, day is ADDED
+      val session2TuesdayAM = auditRow(
+        revision = 2,
+        dayOfWeek = TUESDAY,
+        exclusionRevisionType = MODIFIED,
+        exclusionDaysOfWeekRevisionType = ADDED,
+        username = "USER2",
+        revisionDateTime = LocalDateTime.parse("2026-06-26T11:00:00"),
+      )
+
+      // Session 3: Remove Monday AM and add Wednesday PM - exclusion entity is MODIFIED
+      val session3RemovedMondayAM = auditRow(
+        revision = 3,
+        dayOfWeek = MONDAY,
+        exclusionRevisionType = MODIFIED,
+        exclusionDaysOfWeekRevisionType = DELETED,
+        username = "USER3",
+        revisionDateTime = LocalDateTime.parse("2026-06-27T14:00:00"),
+      )
+      val session3AddedWednesdayPM = auditRow(
+        revision = 3,
+        dayOfWeek = WEDNESDAY,
+        timeSlot = PM,
+        exclusionRevisionType = MODIFIED,
+        exclusionDaysOfWeekRevisionType = ADDED,
+        username = "USER3",
+        revisionDateTime = LocalDateTime.parse("2026-06-27T14:00:00"),
+      )
+
+      every { exclusionRepository.findHistoryByAllocationId(ALLOCATION_ID) } returns
+        listOf(session1MondayAM, session2TuesdayAM, session3RemovedMondayAM, session3AddedWednesdayPM)
+
+      val history = exclusionHistoryService.findHistory(allocation)
+
+      assertThat(history).containsExactly(
+        exclusionRevision(revision = 3, dayOfWeek = MONDAY, revisionType = REMOVED, updatedBy = "USER3", updatedDateTime = LocalDateTime.parse("2026-06-27T14:00:00")),
+        exclusionRevision(revision = 3, dayOfWeek = WEDNESDAY, timeSlots = listOf(PM), updatedBy = "USER3", updatedDateTime = LocalDateTime.parse("2026-06-27T14:00:00")),
+        exclusionRevision(revision = 2, dayOfWeek = TUESDAY, updatedBy = "USER2", updatedDateTime = LocalDateTime.parse("2026-06-26T11:00:00")),
+        exclusionRevision(dayOfWeek = MONDAY),
+      )
+    }
+
+    @Test
+    fun `should return correct revision types for adds and removes across weeks in separate sessions`() {
+      // Session 1: Add Week 1 Monday AM and Week 2 Thursday AM
+      val session1Week1MondayAM = auditRow(
+        weekNumber = 1,
+        dayOfWeek = MONDAY,
+        exclusionRevisionType = ADDED,
+        exclusionDaysOfWeekRevisionType = ADDED,
+      )
+      val session1Week2ThursdayAM = auditRow(
+        weekNumber = 2,
+        dayOfWeek = THURSDAY,
+        exclusionRevisionType = ADDED,
+        exclusionDaysOfWeekRevisionType = ADDED,
+      )
+
+      // Session 2: Remove Week 2 Thursday AM, add Week 1 Tuesday PM - exclusion entity is MODIFIED
+      val session2RemovedWeek2ThursdayAM = auditRow(
+        revision = 2,
+        weekNumber = 2,
+        dayOfWeek = THURSDAY,
+        exclusionRevisionType = MODIFIED,
+        exclusionDaysOfWeekRevisionType = DELETED,
+        username = "USER2",
+        revisionDateTime = LocalDateTime.parse("2026-06-26T11:00:00"),
+      )
+      val session2AddedWeek1TuesdayPM = auditRow(
+        revision = 2,
+        weekNumber = 1,
+        dayOfWeek = TUESDAY,
+        timeSlot = PM,
+        exclusionRevisionType = MODIFIED,
+        exclusionDaysOfWeekRevisionType = ADDED,
+        username = "USER2",
+        revisionDateTime = LocalDateTime.parse("2026-06-26T11:00:00"),
+      )
+
+      every { exclusionRepository.findHistoryByAllocationId(ALLOCATION_ID) } returns
+        listOf(session1Week1MondayAM, session1Week2ThursdayAM, session2RemovedWeek2ThursdayAM, session2AddedWeek1TuesdayPM)
+
+      val history = exclusionHistoryService.findHistory(allocation)
+
+      assertThat(history).containsExactly(
+        exclusionRevision(revision = 2, weekNumber = 1, dayOfWeek = TUESDAY, timeSlots = listOf(PM), updatedBy = "USER2", updatedDateTime = LocalDateTime.parse("2026-06-26T11:00:00")),
+        exclusionRevision(revision = 2, weekNumber = 2, dayOfWeek = THURSDAY, revisionType = REMOVED, updatedBy = "USER2", updatedDateTime = LocalDateTime.parse("2026-06-26T11:00:00")),
+        exclusionRevision(weekNumber = 1, dayOfWeek = MONDAY),
+        exclusionRevision(weekNumber = 2, dayOfWeek = THURSDAY),
+      )
+    }
+  }
+
   /**
    * An ignored change is only where an exclusion is removed and then added back in the same revision,
    * in which case both revisions are ignored.

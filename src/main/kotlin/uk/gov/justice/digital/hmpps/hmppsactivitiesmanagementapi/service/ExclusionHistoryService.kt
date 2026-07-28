@@ -53,7 +53,7 @@ class ExclusionHistoryService(private val exclusionRepository: ExclusionReposito
   private fun List<ExclusionHistoryAuditRow>.wasRemovedAndReAddedInSameRevision(): Boolean = any { it.exclusionDaysOfWeekRevisionType == DELETED_REVISION_TYPE } &&
     any { it.exclusionDaysOfWeekRevisionType == ADDED_REVISION_TYPE }
 
-  private fun ExclusionHistoryAuditRow.toRevisionType(): RevisionType = if (exclusionRevisionType == ADDED_REVISION_TYPE) RevisionType.ADDED else RevisionType.REMOVED
+  private fun ExclusionHistoryAuditRow.toRevisionType(): RevisionType = if (exclusionDaysOfWeekRevisionType == ADDED_REVISION_TYPE) RevisionType.ADDED else RevisionType.REMOVED
 
   private val ExclusionHistoryAuditRow.slotRevisionKey
     get() = ExclusionSlotRevisionKey(
