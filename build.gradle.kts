@@ -40,7 +40,7 @@ dependencies {
   implementation("io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations:2.30.0")
 
   // OpenAPI
-  implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.3")
+  implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.0")
 
   // AWS
   implementation("com.squareup.okhttp3:okhttp:5.4.0") {
@@ -49,7 +49,7 @@ dependencies {
     }
   }
 
-  implementation("aws.sdk.kotlin:s3:1.8.19")
+  implementation("aws.sdk.kotlin:s3:1.8.21")
 
   // Other dependencies
   implementation("org.apache.commons:commons-text:1.15.0")
@@ -60,7 +60,7 @@ dependencies {
 
   // Test dependencies
   testImplementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter-test:3.0.0")
-  testImplementation("uk.gov.justice.service.hmpps:hmpps-subject-access-request-test-support:2.6.2")
+  testImplementation("uk.gov.justice.service.hmpps:hmpps-subject-access-request-test-support:2.7.0")
   testImplementation("org.springframework.boot:spring-boot-starter-webflux-test")
   testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
   testImplementation("org.wiremock:wiremock-standalone:3.13.2")
@@ -79,7 +79,7 @@ dependencies {
   testImplementation("org.awaitility:awaitility-kotlin")
   testImplementation("org.skyscreamer:jsonassert")
   testImplementation("io.mockk:mockk:1.14.11")
-  testImplementation("io.swagger.parser.v3:swagger-parser:2.1.45") {
+  testImplementation("io.swagger.parser.v3:swagger-parser:2.1.46") {
     exclude(group = "io.swagger.core.v3")
   }
 }
