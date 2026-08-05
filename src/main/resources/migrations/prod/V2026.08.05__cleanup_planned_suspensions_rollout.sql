@@ -20,6 +20,6 @@ BEGIN
 				updated_rows
 			);
 	END IF;
-END
+END;
 $$;
 
