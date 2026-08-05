@@ -21,4 +21,4 @@ BEGIN
 			);
 	END IF;
 END;
-
+$$;
