@@ -69,6 +69,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonP
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonPayBandsLowMediumHigh
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.read
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rotlCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.runEveryDayOfWeek
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
@@ -648,6 +649,60 @@ class ActivityServiceTest {
   }
 
   @Test
+  fun `createActivity - outside work activities must use ROTL category`() {
+    val activityCreateRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-1.json")
+      .copy(startDate = TimeSource.tomorrow(), categoryId = 1, outsideWork = true)
+
+    whenever(activityCategoryRepository.findById(1))
+      .thenReturn(Optional.of(activityCategory("SAA_EDUCATION")))
+    whenever(eventTierRepository.findByCode("TIER_2")).thenReturn(eventTier())
+    whenever(eventOrganiserRepository.findByCode("PRISON_STAFF")).thenReturn(eventOrganiser())
+    whenever(eligibilityRuleRepository.findById(eligibilityRuleOver21.eligibilityRuleId)).thenReturn(
+      Optional.of(
+        eligibilityRuleOver21,
+      ),
+    )
+    whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(prisonPayBandsLowMediumHigh())
+    whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
+    whenever(prisonApiClient.getStudyArea("ENGLA")).thenReturn(Mono.just(studyArea))
+    whenever(activityRepository.saveAndFlush(any<ActivityEntity>())).thenAnswer { invocation ->
+      invocation.getArgument(0, ActivityEntity::class.java)
+    }
+
+    assertThatThrownBy {
+      service().createActivity(activityCreateRequest, "SCH_ACTIVITY")
+    }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Outside work activities must use the Outside Work (SAA_ROTL) category")
+  }
+
+  @Test
+  fun `createActivity - ROTL category requires outside work to be true`() {
+    val activityCreateRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-1.json")
+      .copy(startDate = TimeSource.tomorrow(), categoryId = 10, outsideWork = false)
+
+    whenever(activityCategoryRepository.findById(10))
+      .thenReturn(Optional.of(rotlCategory))
+    whenever(eventTierRepository.findByCode("TIER_2")).thenReturn(eventTier())
+    whenever(eventOrganiserRepository.findByCode("PRISON_STAFF")).thenReturn(eventOrganiser())
+    whenever(eligibilityRuleRepository.findById(eligibilityRuleOver21.eligibilityRuleId)).thenReturn(
+      Optional.of(eligibilityRuleOver21),
+    )
+    whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(prisonPayBandsLowMediumHigh())
+    whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
+    whenever(prisonApiClient.getStudyArea("ENGLA")).thenReturn(Mono.just(studyArea))
+    whenever(activityRepository.saveAndFlush(any<ActivityEntity>())).thenAnswer { invocation ->
+      invocation.getArgument(0, ActivityEntity::class.java)
+    }
+
+    assertThatThrownBy {
+      service().createActivity(activityCreateRequest, "SCH_ACTIVITY")
+    }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Outside Work (SAA_ROTL) category activities must have outside_work flag set as true")
+  }
+
+  @Test
   fun `getActivityPayHistory throws entity not found exception for unknown activity ID`() {
     whenever(activityRepository.findById(1)).thenReturn(Optional.empty())
 
@@ -953,9 +1008,10 @@ class ActivityServiceTest {
         offWing = false,
         outsideWork = true,
         dpsLocationId = null,
+        categoryId = 10,
       )
 
-    whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.of(activityCategory()))
+    whenever(activityCategoryRepository.findById(10)).thenReturn(Optional.of(rotlCategory))
     whenever(eventTierRepository.findByCode("TIER_1")).thenReturn(eventTier())
     whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(prisonPayBandsLowMediumHigh())
     whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
@@ -1020,9 +1076,10 @@ class ActivityServiceTest {
         onWing = onWing,
         offWing = offWing,
         dpsLocationId = null,
+        categoryId = 10,
       )
 
-    whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.of(activityCategory()))
+    whenever(activityCategoryRepository.findById(10)).thenReturn(Optional.of(rotlCategory))
     whenever(eventTierRepository.findByCode("TIER_1")).thenReturn(eventTier())
     whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(prisonPayBandsLowMediumHigh())
     whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
@@ -1052,9 +1109,10 @@ class ActivityServiceTest {
         onWing = false,
         offWing = false,
         dpsLocationId = dpsLocationId,
+        categoryId = 10,
       )
 
-    whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.of(activityCategory()))
+    whenever(activityCategoryRepository.findById(10)).thenReturn(Optional.of(rotlCategory))
     whenever(eventTierRepository.findByCode("TIER_1")).thenReturn(eventTier())
     whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(prisonPayBandsLowMediumHigh())
     whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))

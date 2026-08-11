@@ -158,6 +158,10 @@ class ActivityService(
 
       if (category.isNotInWork() && !tier.isFoundation()) throw IllegalArgumentException("Activity category NOT IN WORK must be a Foundation Tier")
 
+      if (request.outsideWork && !category.isOutsideWork()) throw IllegalArgumentException("Outside work activities must use the Outside Work (SAA_ROTL) category")
+
+      if (category.isOutsideWork() && !request.outsideWork) throw IllegalArgumentException("Outside Work (SAA_ROTL) category activities must have outside_work flag set as true")
+
       val organiser = request.organiserCode?.let { eventOrganiserRepository.findByCodeOrThrowIllegalArgument(it) }
       val eligibilityRules = request.eligibilityRuleIds.map { eligibilityRuleRepository.findOrThrowIllegalArgument(it) }
       val prisonPayBands = prisonPayBandRepository.findByPrisonCode(request.prisonCode)
