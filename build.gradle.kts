@@ -49,7 +49,7 @@ dependencies {
     }
   }
 
-  implementation("aws.sdk.kotlin:s3:1.8.26")
+  implementation("aws.sdk.kotlin:s3:1.8.27")
 
   // Other dependencies
   implementation("org.apache.commons:commons-text:1.15.0")
@@ -71,8 +71,8 @@ dependencies {
   testImplementation("io.jsonwebtoken:jjwt-jackson:0.13.0")
   testImplementation("org.mockito.kotlin:mockito-kotlin:6.3.0") // temp, fix version to prevent dependency clash between sar test support lib and hmpps kotlin plugin
   testImplementation("org.mockito:mockito-inline:5.2.0")
-  testImplementation("net.javacrumbs.json-unit:json-unit:6.0.1")
-  testImplementation("net.javacrumbs.json-unit:json-unit-assertj:6.0.1")
+  testImplementation("net.javacrumbs.json-unit:json-unit:6.1.0")
+  testImplementation("net.javacrumbs.json-unit:json-unit-assertj:6.1.0")
   testImplementation("net.javacrumbs.json-unit:json-unit-json-path:5.1.2")
   testImplementation("org.springframework.security:spring-security-test")
   testImplementation("org.springframework.boot:spring-boot-starter-test")
