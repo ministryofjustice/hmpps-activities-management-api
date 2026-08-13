@@ -158,9 +158,9 @@ class ActivityService(
 
       if (category.isNotInWork() && !tier.isFoundation()) throw IllegalArgumentException("Activity category NOT IN WORK must be a Foundation Tier")
 
-      if (request.outsideWork && !category.isOutsideWork()) throw IllegalArgumentException("Outside work activities must use the Outside Work (SAA_ROTL) category")
-
-      if (category.isOutsideWork() && !request.outsideWork) throw IllegalArgumentException("Outside Work (SAA_ROTL) category activities must have outside_work flag set as true")
+      require(request.outsideWork == category.isOutsideWork()) {
+        "Outside work activities must use the Outside activity (SAA_ROTL) category"
+      }
 
       val organiser = request.organiserCode?.let { eventOrganiserRepository.findByCodeOrThrowIllegalArgument(it) }
       val eligibilityRules = request.eligibilityRuleIds.map { eligibilityRuleRepository.findOrThrowIllegalArgument(it) }
@@ -532,11 +532,7 @@ class ActivityService(
       val newCategory = activityCategoryRepository.findOrThrowIllegalArgument(this)
 
       require(activity.outsideWork == newCategory.isOutsideWork()) {
-        if (activity.outsideWork) {
-          "Activity category cannot be updated to ${newCategory.name} for an external activity"
-        } else {
-          "Outside Work (SAA_ROTL) category activities must have outside_work flag set as true"
-        }
+        "Outside work activities must use the Outside activity (SAA_ROTL) category"
       }
 
       activity.activityCategory = newCategory

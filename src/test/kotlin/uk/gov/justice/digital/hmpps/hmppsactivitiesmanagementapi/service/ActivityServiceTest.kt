@@ -673,7 +673,7 @@ class ActivityServiceTest {
       service().createActivity(activityCreateRequest, "SCH_ACTIVITY")
     }
       .isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Outside work activities must use the Outside Work (SAA_ROTL) category")
+      .hasMessage("Outside work activities must use the Outside activity (SAA_ROTL) category")
   }
 
   @Test
@@ -699,7 +699,7 @@ class ActivityServiceTest {
       service().createActivity(activityCreateRequest, "SCH_ACTIVITY")
     }
       .isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Outside Work (SAA_ROTL) category activities must have outside_work flag set as true")
+      .hasMessage("Outside work activities must use the Outside activity (SAA_ROTL) category")
   }
 
   @Test
@@ -3660,7 +3660,7 @@ class ActivityServiceTest {
         service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(categoryId = 100), "TEST")
       }
         .isInstanceOf(IllegalArgumentException::class.java)
-        .hasMessage("Activity category cannot be updated to $categoryName for an external activity")
+        .hasMessage("Outside work activities must use the Outside activity (SAA_ROTL) category")
 
       verify(activityCategoryRepository).findById(100)
       verify(activityRepository, never()).saveAndFlush(any())
@@ -3699,7 +3699,7 @@ class ActivityServiceTest {
         service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(categoryId = 10), "TEST")
       }
         .isInstanceOf(IllegalArgumentException::class.java)
-        .hasMessage("Outside Work (SAA_ROTL) category activities must have outside_work flag set as true")
+        .hasMessage("Outside work activities must use the Outside activity (SAA_ROTL) category")
 
       verify(activityCategoryRepository).findById(10)
       verify(activityRepository, never()).saveAndFlush(any())

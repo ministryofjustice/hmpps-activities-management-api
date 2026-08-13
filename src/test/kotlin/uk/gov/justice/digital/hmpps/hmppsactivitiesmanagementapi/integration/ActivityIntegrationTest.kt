@@ -2091,12 +2091,12 @@ class ActivityIntegrationTest : LocalStackTestBase() {
 
     with(error) {
       assertThat(status).isEqualTo(400)
-      assertThat(developerMessage).isEqualTo("Outside Work (SAA_ROTL) category activities must have outside_work flag set as true")
-      assertThat(userMessage).isEqualTo("Exception: Outside Work (SAA_ROTL) category activities must have outside_work flag set as true")
+      assertThat(developerMessage).isEqualTo("Outside work activities must use the Outside activity (SAA_ROTL) category")
+      assertThat(userMessage).isEqualTo("Exception: Outside work activities must use the Outside activity (SAA_ROTL) category")
     }
   }
 
-  @ParameterizedTest
+  @ParameterizedTest(name = "category {0} - {1}")
   @CsvSource(
     "1, Education",
     "2, Industries",
@@ -2142,8 +2142,8 @@ class ActivityIntegrationTest : LocalStackTestBase() {
 
     with(error) {
       assertThat(status).isEqualTo(400)
-      assertThat(developerMessage).isEqualTo("Activity category cannot be updated to $categoryName for an external activity")
-      assertThat(userMessage).isEqualTo("Exception: Activity category cannot be updated to $categoryName for an external activity")
+      assertThat(developerMessage).isEqualTo("Outside work activities must use the Outside activity (SAA_ROTL) category")
+      assertThat(userMessage).isEqualTo("Exception: Outside work activities must use the Outside activity (SAA_ROTL) category")
     }
   }
 
