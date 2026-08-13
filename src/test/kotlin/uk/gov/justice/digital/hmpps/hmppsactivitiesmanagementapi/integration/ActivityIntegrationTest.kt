@@ -2059,10 +2059,7 @@ class ActivityIntegrationTest : LocalStackTestBase() {
     }
   }
 
-  @ParameterizedTest
-  @CsvSource(
-    "8, Not in work",
-  )
+  @Test
   fun `updateActivity - activity category cannot be updated to ROTL for a non-external activity`() {
     val newActivityRequest = activityCreateRequest(
       educationLevel = prisonApiMockServer.stubGetReferenceCode(
@@ -2101,15 +2098,15 @@ class ActivityIntegrationTest : LocalStackTestBase() {
 
   @ParameterizedTest
   @CsvSource(
-    "1, SAA_EDUCATION, Education",
-    "2, SAA_INDUSTRIES, Industries",
-    "3, SAA_PRISON_JOBS, Prison jobs",
-    "4, SAA_GYM_SPORTS_FITNESS, 'Gym, sport, fitness'",
-    "5, SAA_INDUCTION, Induction",
-    "6, SAA_INTERVENTIONS, Intervention programmes",
-    "7, SAA_FAITH_SPIRITUALITY, Faith and spirituality",
-    "8, SAA_NOT_IN_WORK, Not in work",
-    "9, SAA_OTHER, Other",
+    "1, Education",
+    "2, Industries",
+    "3, Prison jobs",
+    "4, 'Gym, sport, fitness'",
+    "5, Induction",
+    "6, Intervention programmes",
+    "7, Faith and spirituality",
+    "8, Not in work",
+    "9, Other",
   )
   fun `updateActivity - activity category cannot be updated to a non ROTL category for an external activity `(
     categoryId: Long,

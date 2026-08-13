@@ -15,7 +15,7 @@ values (1, 'SAA_EDUCATION', 'Education', 'Such as classes in English, maths, con
        (7, 'SAA_FAITH_SPIRITUALITY', 'Faith and spirituality', 'Such as chapel, prayer meetings or meditation'),
        (8, 'SAA_NOT_IN_WORK', 'Not in work', 'Such as unemployed, retired, long-term sick, or on remand'),
        (9, 'SAA_OTHER', 'Other', 'Select if the activity you’re creating doesn’t fit any other category'),
-       (10, 'SAA_ROTL', 'Outside Activity', 'Temporary absence or ROTL for outside work');
+       (10, 'SAA_ROTL', 'Outside activity', 'Temporary absence or ROTL for outside work');
 
 --
 -- Tiers
