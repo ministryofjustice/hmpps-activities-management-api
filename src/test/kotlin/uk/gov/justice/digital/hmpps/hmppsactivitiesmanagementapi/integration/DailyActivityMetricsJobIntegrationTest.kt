@@ -24,7 +24,7 @@ class DailyActivityMetricsJobIntegrationTest : IntegrationTestBase() {
       .expectStatus().isCreated
 
     await untilAsserted {
-      verify(telemetryClient, times(81)).trackEvent(eq(TelemetryEvent.ACTIVITIES_DAILY_STATS.value), any(), any())
+      verify(telemetryClient, times(90)).trackEvent(eq(TelemetryEvent.ACTIVITIES_DAILY_STATS.value), any(), any())
     }
   }
 }

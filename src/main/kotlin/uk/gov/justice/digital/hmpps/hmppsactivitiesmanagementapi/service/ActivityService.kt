@@ -531,8 +531,12 @@ class ActivityService(
     request.categoryId?.apply {
       val newCategory = activityCategoryRepository.findOrThrowIllegalArgument(this)
 
-      require(!(activity.outsideWork && (newCategory.isNotInWork() || newCategory.isInduction()))) {
-        "Activity category cannot be updated to ${newCategory.name} for an external activity"
+      require(activity.outsideWork == newCategory.isOutsideWork()) {
+        if (activity.outsideWork) {
+          "Activity category cannot be updated to ${newCategory.name} for an external activity"
+        } else {
+          "Outside Work (SAA_ROTL) category activities must have outside_work flag set as true"
+        }
       }
 
       activity.activityCategory = newCategory

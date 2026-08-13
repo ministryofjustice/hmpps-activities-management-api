@@ -473,6 +473,7 @@ class ActivityIntegrationTest : LocalStackTestBase() {
       offWing = false,
       outsideWork = true,
       dpsLocationId = null,
+      categoryId = 10,
     )
 
     val activity = webTestClient.createActivity(newActivityRequest)
@@ -2060,10 +2061,57 @@ class ActivityIntegrationTest : LocalStackTestBase() {
 
   @ParameterizedTest
   @CsvSource(
-    "5, Induction",
     "8, Not in work",
   )
-  fun `updateActivity - activity category cannot be updated to Induction or Not in work for an external activity`(
+  fun `updateActivity - activity category cannot be updated to ROTL for a non-external activity`() {
+    val newActivityRequest = activityCreateRequest(
+      educationLevel = prisonApiMockServer.stubGetReferenceCode(
+        "EDU_LEVEL",
+        "1",
+        "prisonapi/education-level-code-1.json",
+      ),
+      studyArea = prisonApiMockServer.stubGetReferenceCode(
+        "STUDY_AREA",
+        "ENGLA",
+        "prisonapi/study-area-code-ENGLA.json",
+      ),
+    ).copy(
+      inCell = false,
+      onWing = true,
+      offWing = false,
+      outsideWork = false,
+      dpsLocationId = null,
+      categoryId = 1,
+    )
+
+    val createdActivity = webTestClient.createActivity(newActivityRequest)!!
+
+    val error = webTestClient.updateActivityExpectingError(
+      MOORLAND_PRISON_CODE,
+      createdActivity.id,
+      ActivityUpdateRequest(categoryId = 10),
+    )
+
+    with(error) {
+      assertThat(status).isEqualTo(400)
+      assertThat(developerMessage).isEqualTo("Outside Work (SAA_ROTL) category activities must have outside_work flag set as true")
+      assertThat(userMessage).isEqualTo("Exception: Outside Work (SAA_ROTL) category activities must have outside_work flag set as true")
+    }
+  }
+
+  @ParameterizedTest
+  @CsvSource(
+    "1, SAA_EDUCATION, Education",
+    "2, SAA_INDUSTRIES, Industries",
+    "3, SAA_PRISON_JOBS, Prison jobs",
+    "4, SAA_GYM_SPORTS_FITNESS, 'Gym, sport, fitness'",
+    "5, SAA_INDUCTION, Induction",
+    "6, SAA_INTERVENTIONS, Intervention programmes",
+    "7, SAA_FAITH_SPIRITUALITY, Faith and spirituality",
+    "8, SAA_NOT_IN_WORK, Not in work",
+    "9, SAA_OTHER, Other",
+  )
+  fun `updateActivity - activity category cannot be updated to a non ROTL category for an external activity `(
     categoryId: Long,
     categoryName: String,
   ) {
@@ -2084,6 +2132,7 @@ class ActivityIntegrationTest : LocalStackTestBase() {
       offWing = false,
       outsideWork = true,
       dpsLocationId = null,
+      categoryId = 10,
     )
 
     val createdActivity = webTestClient.createActivity(newActivityRequest)!!
@@ -2098,96 +2147,6 @@ class ActivityIntegrationTest : LocalStackTestBase() {
       assertThat(status).isEqualTo(400)
       assertThat(developerMessage).isEqualTo("Activity category cannot be updated to $categoryName for an external activity")
       assertThat(userMessage).isEqualTo("Exception: Activity category cannot be updated to $categoryName for an external activity")
-    }
-  }
-
-  @ParameterizedTest
-  @CsvSource(
-    "1, SAA_EDUCATION, Education",
-    "2, SAA_INDUSTRIES, Industries",
-    "3, SAA_PRISON_JOBS, Prison jobs",
-    "4, SAA_GYM_SPORTS_FITNESS, 'Gym, sport, fitness'",
-    "6, SAA_INTERVENTIONS, Intervention programmes",
-    "7, SAA_FAITH_SPIRITUALITY, Faith and spirituality",
-    "9, SAA_OTHER, Other",
-  )
-  fun `updateActivity - activity category can be updated to a non-restricted category for an external activity`(
-    categoryId: Long,
-    categoryCode: String,
-    categoryName: String,
-  ) {
-    val newActivityRequest = activityCreateRequest(
-      educationLevel = prisonApiMockServer.stubGetReferenceCode(
-        "EDU_LEVEL",
-        "1",
-        "prisonapi/education-level-code-1.json",
-      ),
-      studyArea = prisonApiMockServer.stubGetReferenceCode(
-        "STUDY_AREA",
-        "ENGLA",
-        "prisonapi/study-area-code-ENGLA.json",
-      ),
-    ).copy(
-      inCell = false,
-      onWing = false,
-      offWing = false,
-      outsideWork = true,
-      dpsLocationId = null,
-    )
-
-    val createdActivity = webTestClient.createActivity(newActivityRequest)!!
-
-    val updatedActivity = webTestClient.updateActivity(
-      MOORLAND_PRISON_CODE,
-      createdActivity.id,
-      ActivityUpdateRequest(categoryId = categoryId),
-    )
-
-    with(updatedActivity) {
-      assertThat(category.id).isEqualTo(categoryId)
-      assertThat(category.code).isEqualTo(categoryCode)
-      assertThat(category.name).isEqualTo(categoryName)
-    }
-  }
-
-  @ParameterizedTest
-  @CsvSource(
-    "5, SAA_INDUCTION, Induction",
-    "8, SAA_NOT_IN_WORK, Not in work",
-  )
-  fun `updateActivity - activity category can be updated to Not in Work and Induction for a non-external activity`(
-    categoryId: Long,
-    categoryCode: String,
-    categoryName: String,
-  ) {
-    val newActivityRequest = activityCreateRequest(
-      educationLevel = prisonApiMockServer.stubGetReferenceCode(
-        "EDU_LEVEL",
-        "1",
-        "prisonapi/education-level-code-1.json",
-      ),
-      studyArea = prisonApiMockServer.stubGetReferenceCode(
-        "STUDY_AREA",
-        "ENGLA",
-        "prisonapi/study-area-code-ENGLA.json",
-      ),
-    )
-
-    locationsInsidePrisonApiMockServer.stubLocationFromDpsUuid()
-
-    val createdActivity = webTestClient.createActivity(newActivityRequest)!!
-
-    val updatedActivity = webTestClient.updateActivity(
-      MOORLAND_PRISON_CODE,
-      createdActivity.id,
-      ActivityUpdateRequest(categoryId = categoryId),
-    )
-
-    with(updatedActivity) {
-      assertThat(category.id).isEqualTo(categoryId)
-      assertThat(category.code).isEqualTo(categoryCode)
-      assertThat(category.name).isEqualTo(categoryName)
-      assertThat(outsideWork).isFalse
     }
   }
 
@@ -2210,6 +2169,7 @@ class ActivityIntegrationTest : LocalStackTestBase() {
       offWing = false,
       outsideWork = true,
       dpsLocationId = null,
+      categoryId = 10,
     )
 
     val createdActivity = webTestClient.createActivity(newActivityRequest)!!
@@ -2259,6 +2219,7 @@ class ActivityIntegrationTest : LocalStackTestBase() {
       offWing = false,
       outsideWork = true,
       dpsLocationId = null,
+      categoryId = 10,
     )
 
     val createdActivity = webTestClient.createActivity(newActivityRequest)!!
@@ -2295,6 +2256,7 @@ class ActivityIntegrationTest : LocalStackTestBase() {
       offWing = false,
       outsideWork = true,
       dpsLocationId = null,
+      categoryId = 10,
     )
 
     val createdActivity = webTestClient.createActivity(newActivityRequest)!!
@@ -2312,6 +2274,7 @@ class ActivityIntegrationTest : LocalStackTestBase() {
       assertThat(onWing).isFalse
       assertThat(offWing).isFalse
       assertThat(schedules[0].internalLocation).isNull()
+      assertThat(category.code).isEqualTo("SAA_ROTL")
     }
   }
 
@@ -2332,6 +2295,7 @@ class ActivityIntegrationTest : LocalStackTestBase() {
     ).copy(
       outsideWork = true,
       dpsLocationId = null,
+      categoryId = 10,
     )
 
     val createdActivity = webTestClient.createActivity(newActivityRequest)!!
@@ -2376,6 +2340,7 @@ class ActivityIntegrationTest : LocalStackTestBase() {
     ).copy(
       outsideWork = true,
       dpsLocationId = null,
+      categoryId = 10,
     )
 
     val createdActivity = webTestClient.createActivity(newActivityRequest)!!
@@ -2419,6 +2384,7 @@ class ActivityIntegrationTest : LocalStackTestBase() {
     ).copy(
       outsideWork = true,
       dpsLocationId = null,
+      categoryId = 10,
     )
 
     val createdActivity = webTestClient.createActivity(newActivityRequest)!!
@@ -2453,6 +2419,7 @@ class ActivityIntegrationTest : LocalStackTestBase() {
     ).copy(
       outsideWork = true,
       dpsLocationId = null,
+      categoryId = 10,
     )
 
     val createdActivity = webTestClient.createActivity(newActivityRequest)!!

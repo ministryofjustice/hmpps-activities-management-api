@@ -33,6 +33,8 @@ class ActivityCategoryIntegrationTest : IntegrationTestBase() {
     )
   }
 
+//  TODO: add outsideWorkCategory as part of removeOutsideWorkFilter
+
   private fun WebTestClient.getActivityCategories() = get()
     .uri("/activity-categories")
     .accept(MediaType.APPLICATION_JSON)

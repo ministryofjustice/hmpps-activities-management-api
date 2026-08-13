@@ -36,8 +36,6 @@ data class ActivityCategory(
 
   fun isNotInWork() = code == "SAA_NOT_IN_WORK"
 
-  fun isInduction() = code == "SAA_INDUCTION"
-
   fun isOutsideWork() = code == "SAA_ROTL"
 
   fun toModel() = ModelActivityCategory(

@@ -3641,8 +3641,9 @@ class ActivityServiceTest {
     @CsvSource(
       "SAA_NOT_IN_WORK, Not in work, Not in work",
       "SAA_INDUCTION, Induction, Induction",
+      "SAA_PRISON_JOBS, Prison jobs, Prison jobs",
     )
-    fun `activity category cannot be updated to restricted categories for an external activity`(
+    fun `activity category cannot be updated to a non ROTL category for an external activity`(
       categoryCode: String,
       categoryName: String,
       categoryDescription: String,
@@ -3666,80 +3667,43 @@ class ActivityServiceTest {
       verifyNoInteractions(manageAttendancesService)
     }
 
-    @ParameterizedTest
-    @CsvSource(
-      "SAA_EDUCATION, Education, Education",
-      "SAA_INDUSTRIES, Industries, Industries",
-      "SAA_PRISON_JOBS, Prison jobs, Prison Jobs",
-    )
-    fun `activity category can be updated to non-restricted categories for an external activity`(
-      categoryCode: String,
-      categoryName: String,
-      categoryDescription: String,
-    ) {
-      val allowedActivityCategory = ActivityCategory(
-        activityCategoryId = 100,
-        code = categoryCode,
-        name = categoryName,
-        description = categoryDescription,
-      )
-
-      whenever(activityCategoryRepository.findById(100)).thenReturn(Optional.of(allowedActivityCategory))
+    @Test
+    fun `activity category can be updated to ROTL category for an external activity`() {
+      whenever(activityCategoryRepository.findById(10)).thenReturn(Optional.of(rotlCategory))
       whenever(prisonPayBandRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh())
       whenever(activityRepository.saveAndFlush(any<ActivityEntity>())).thenReturn(externalActivity)
 
-      service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(categoryId = 100), "TEST")
+      service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(categoryId = 10), "TEST")
 
-      verify(activityCategoryRepository).findById(100)
+      verify(activityCategoryRepository).findById(10)
       verify(activityRepository).saveAndFlush(activityCaptor.capture())
       verifyNoInteractions(manageAttendancesService)
 
       with(activityCaptor.firstValue.activityCategory) {
-        assertThat(activityCategoryId).isEqualTo(100)
-        assertThat(code).isEqualTo(categoryCode)
-        assertThat(name).isEqualTo(categoryName)
-        assertThat(description).isEqualTo(categoryDescription)
+        assertThat(code).isEqualTo(rotlCategory.code)
+        assertThat(name).isEqualTo(rotlCategory.name)
       }
     }
 
-    @ParameterizedTest
-    @CsvSource(
-      "SAA_NOT_IN_WORK, Not in work, Not in work",
-      "SAA_INDUCTION, Induction, Induction",
-    )
-    fun `activity category can be updated to restricted categories for a non-external activity`(
-      categoryCode: String,
-      categoryName: String,
-      categoryDescription: String,
-    ) {
+    @Test
+    fun `activity category cannot be updated to ROTL for a non-external activity`() {
       val nonExternalActivity = activityEntity(noPayBands = true, outsideWork = false, noSchedules = true).also {
         it.addSchedule(activitySchedule(it, activityScheduleId = it.activityId, noAllocations = true))
       }
       whenever(
         activityRepository.findByActivityIdAndPrisonCodeWithFilters(1, MOORLAND_PRISON_CODE, LocalDate.now()),
       ).thenReturn(nonExternalActivity)
+      whenever(activityCategoryRepository.findById(10)).thenReturn(Optional.of(rotlCategory))
 
-      val newActivityCategory = ActivityCategory(
-        activityCategoryId = 100,
-        code = categoryCode,
-        name = categoryName,
-        description = categoryDescription,
-      )
-      whenever(activityCategoryRepository.findById(100)).thenReturn(Optional.of(newActivityCategory))
-      whenever(prisonPayBandRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh())
-      whenever(activityRepository.saveAndFlush(any<ActivityEntity>())).thenReturn(nonExternalActivity)
-
-      service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(categoryId = 100), "TEST")
-
-      verify(activityCategoryRepository).findById(100)
-      verify(activityRepository).saveAndFlush(activityCaptor.capture())
-      verifyNoInteractions(manageAttendancesService)
-
-      with(activityCaptor.firstValue.activityCategory) {
-        assertThat(code).isEqualTo(categoryCode)
-        assertThat(name).isEqualTo(categoryName)
-        assertThat(description).isEqualTo(categoryDescription)
+      assertThatThrownBy {
+        service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(categoryId = 10), "TEST")
       }
+        .isInstanceOf(IllegalArgumentException::class.java)
+        .hasMessage("Outside Work (SAA_ROTL) category activities must have outside_work flag set as true")
+
+      verify(activityCategoryRepository).findById(10)
+      verify(activityRepository, never()).saveAndFlush(any())
+      verifyNoInteractions(manageAttendancesService)
     }
 
     @ParameterizedTest

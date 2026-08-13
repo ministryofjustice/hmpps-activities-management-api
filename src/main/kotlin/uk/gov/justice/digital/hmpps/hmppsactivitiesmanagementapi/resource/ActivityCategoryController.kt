@@ -46,5 +46,9 @@ class ActivityCategoryController(private val activityCategoryRepository: Activit
   @GetMapping
   @ResponseBody
   @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN', 'NOMIS_ACTIVITIES')")
-  fun getCategories(): List<ActivityCategory> = activityCategoryRepository.findAll().toModel()
+  fun getCategories(): List<ActivityCategory> = activityCategoryRepository.findAll()
+    .filterNot { it.code == "SAA_ROTL" }
+    .toModel()
 }
+
+// TODO: removeOutsideWorkFilter
