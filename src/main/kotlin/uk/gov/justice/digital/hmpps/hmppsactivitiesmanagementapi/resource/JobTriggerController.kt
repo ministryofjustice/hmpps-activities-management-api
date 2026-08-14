@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ActivitiesFixRotlCategoryJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ActivityMetricsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.AppointmentMetricsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CreateScheduledInstancesJob
@@ -36,6 +37,7 @@ class JobTriggerController(
   private val clock: Clock,
   private val purposefulActivityReportsJob: PurposefulActivityReportsJob,
   private val fixLocationsJob: FixLocationsJob,
+  private val activitiesFixRotlCategoryJob: ActivitiesFixRotlCategoryJob,
 ) {
 
   @PostMapping(value = ["/create-scheduled-instances"])
@@ -144,6 +146,24 @@ class JobTriggerController(
     fixLocationsJob.execute()
 
     return "Fix locations job triggered"
+  }
+
+  @PostMapping(value = ["/activities-fix-rotl-category"])
+  @Operation(
+    summary = "Trigger the job to fix the activity category and location flags for outside work (ROTL) activities",
+    description = """
+      Temporary data fix job. Updates any Activity where outside_work is true so that its category is set to the
+      ROTL (SAA_ROTL) category and its on_wing, off_wing and in_cell flags are set to false.
+
+      Can only be accessed from within the ingress. Requests from elsewhere will result in a 401 response code.
+    """,
+  )
+  @ResponseBody
+  @ResponseStatus(HttpStatus.ACCEPTED)
+  fun triggerActivitiesFixRotlCategoryJob(): String {
+    activitiesFixRotlCategoryJob.execute()
+
+    return "Activities fix ROTL category job triggered"
   }
 
   @PostMapping(value = ["/purposeful-activity-reports"])

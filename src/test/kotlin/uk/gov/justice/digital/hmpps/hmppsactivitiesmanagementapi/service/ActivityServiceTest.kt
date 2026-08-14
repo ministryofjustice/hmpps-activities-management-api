@@ -3733,6 +3733,10 @@ class ActivityServiceTest {
 
     @Test
     fun `activity location with all flags false and no dpsLocationId is allowed for an external activity`() {
+      externalActivity.inCell = true
+      externalActivity.onWing = true
+      externalActivity.offWing = true
+
       whenever(prisonPayBandRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh())
       whenever(activityRepository.saveAndFlush(any<ActivityEntity>())).thenReturn(externalActivity)
 
@@ -3745,6 +3749,9 @@ class ActivityServiceTest {
 
       verify(activityRepository).saveAndFlush(any())
       assertThat(result).isNotNull
+      assertThat(externalActivity.inCell).isFalse
+      assertThat(externalActivity.onWing).isFalse
+      assertThat(externalActivity.offWing).isFalse
       verifyNoInteractions(locationService)
     }
 

@@ -689,6 +689,11 @@ class ActivityService(
       require(request.dpsLocationId == null && request.inCell != true && request.onWing != true && request.offWing != true) {
         "Activity location cannot be updated for an external activity"
       }
+
+      request.inCell?.apply { activity.inCell = this }
+      request.onWing?.apply { activity.onWing = this }
+      request.offWing?.apply { activity.offWing = this }
+
       return
     }
 
