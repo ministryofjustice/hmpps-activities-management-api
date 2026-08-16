@@ -8,7 +8,7 @@ plugins {
   kotlin("plugin.jpa") version "2.4.10"
   jacoco
   id("org.openapi.generator") version "7.24.0"
-  id("io.sentry.jvm.gradle") version "6.18.0"
+  id("io.sentry.jvm.gradle") version "6.19.0"
 }
 
 configurations {
@@ -43,13 +43,13 @@ dependencies {
   implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.0")
 
   // AWS
-  implementation("com.squareup.okhttp3:okhttp:5.4.0") {
+  implementation("com.squareup.okhttp3:okhttp:5.5.0") {
     version {
       strictly("5.0.0-alpha.14")
     }
   }
 
-  implementation("aws.sdk.kotlin:s3:1.8.29")
+  implementation("aws.sdk.kotlin:s3:1.8.31")
 
   // Other dependencies
   implementation("org.apache.commons:commons-text:1.15.0")
@@ -71,8 +71,8 @@ dependencies {
   testImplementation("io.jsonwebtoken:jjwt-jackson:0.13.0")
   testImplementation("org.mockito.kotlin:mockito-kotlin:6.3.0") // temp, fix version to prevent dependency clash between sar test support lib and hmpps kotlin plugin
   testImplementation("org.mockito:mockito-inline:5.2.0")
-  testImplementation("net.javacrumbs.json-unit:json-unit:6.1.0")
-  testImplementation("net.javacrumbs.json-unit:json-unit-assertj:6.1.0")
+  testImplementation("net.javacrumbs.json-unit:json-unit:6.2.0")
+  testImplementation("net.javacrumbs.json-unit:json-unit-assertj:6.2.0")
   testImplementation("net.javacrumbs.json-unit:json-unit-json-path:5.1.2")
   testImplementation("org.springframework.security:spring-security-test")
   testImplementation("org.springframework.boot:spring-boot-starter-test")
