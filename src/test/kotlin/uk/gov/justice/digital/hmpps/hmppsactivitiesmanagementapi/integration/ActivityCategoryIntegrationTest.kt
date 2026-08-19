@@ -12,6 +12,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.tes
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.interventionsCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.notInWorkCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.otherCategory
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.outsideWorkCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.prisonJobsCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
@@ -33,10 +34,34 @@ class ActivityCategoryIntegrationTest : IntegrationTestBase() {
     )
   }
 
-//  TODO: add outsideWorkCategory as part of removeOutsideWorkFilter
-
   private fun WebTestClient.getActivityCategories() = get()
     .uri("/activity-categories")
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
+    .exchange()
+    .expectStatus().isOk
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBodyList(ActivityCategory::class.java)
+    .returnResult().responseBody
+
+  @Test
+  fun `get list of activity categories including ROTL when requested`() {
+    assertThat(webTestClient.getActivityCategoriesWithRotl()!!).containsExactlyInAnyOrder(
+      educationCategory,
+      industriesCategory,
+      prisonJobsCategory,
+      gymSportsFitnessCategory,
+      inductionCategory,
+      interventionsCategory,
+      faithAndSpiritualityCategory,
+      notInWorkCategory,
+      otherCategory,
+      outsideWorkCategory,
+    )
+  }
+
+  private fun WebTestClient.getActivityCategoriesWithRotl() = get()
+    .uri("/activity-categories?includeRotl=true")
     .accept(MediaType.APPLICATION_JSON)
     .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
     .exchange()
