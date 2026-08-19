@@ -12,6 +12,7 @@ import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.get
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityCategory
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rotlCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.ActivityCategoryRepository
 import uk.gov.justice.hmpps.test.kotlin.auth.WithMockAuthUser
@@ -35,6 +36,32 @@ class ActivityCategoryControllerTest : ControllerTestBase() {
     )
 
     whenever(activityCategoryRepository.findAll()).thenReturn(listOf(activityCategory()))
+
+    // TODO: removeOutsideWorkFilter
+
+    val response = mockMvc
+      .get("/activity-categories")
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andExpect { status { isOk() } }
+      .andReturn().response
+
+    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(expectedModel))
+
+    verify(activityCategoryRepository).findAll()
+  }
+
+  @Test
+  fun `200 response when get activity categories excludes SAA_ROTL`() {
+    val expectedModel = listOf(
+      ActivityCategory(
+        id = 1,
+        code = "category code",
+        name = "category name",
+        description = "category description",
+      ),
+    )
+
+    whenever(activityCategoryRepository.findAll()).thenReturn(listOf(activityCategory(), rotlCategory))
 
     val response = mockMvc
       .get("/activity-categories")
