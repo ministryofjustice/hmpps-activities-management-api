@@ -150,10 +150,11 @@ class JobTriggerController(
 
   @PostMapping(value = ["/activities-fix-rotl-category"])
   @Operation(
-    summary = "Trigger the job to fix the activity category and location flags for outside work (ROTL) activities",
+    summary = "Trigger the job to fix the activity category, location flags and schedule locations for outside work (ROTL) activities",
     description = """
       Temporary data fix job. Updates any Activity where outside_work is true so that its category is set to the
-      ROTL (SAA_ROTL) category and its on_wing, off_wing and in_cell flags are set to false.
+      ROTL (SAA_ROTL) category, its on_wing, off_wing and in_cell flags are set to false, and all related
+      activity_schedule location fields are cleared.
 
       Can only be accessed from within the ingress. Requests from elsewhere will result in a 401 response code.
     """,

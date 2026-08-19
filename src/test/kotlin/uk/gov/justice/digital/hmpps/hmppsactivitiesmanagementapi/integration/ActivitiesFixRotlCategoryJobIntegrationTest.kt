@@ -18,7 +18,7 @@ class ActivitiesFixRotlCategoryJobIntegrationTest : LocalStackTestBase() {
 
   @Sql("classpath:test_data/seed-activities-fix-rotl-category-job.sql")
   @Test
-  fun `after running the job outside work activities have their category and location flags fixed`() {
+  fun `after running the job outside work activities have their category and location flags fixed, including the corresponding schedule locations cleared`() {
     webTestClient.fixRotlCategory()
 
     await untilAsserted {
@@ -29,6 +29,13 @@ class ActivitiesFixRotlCategoryJobIntegrationTest : LocalStackTestBase() {
         assertThat(inCell).isFalse
         assertThat(updatedBy).isEqualTo("activities-management-admin-1")
         assertThat(updatedTime).isNotNull
+        assertThat(schedules()).hasSize(2)
+        assertThat(schedules()).allSatisfy {
+          assertThat(it.internalLocationId).isNull()
+          assertThat(it.internalLocationCode).isNull()
+          assertThat(it.internalLocationDescription).isNull()
+          assertThat(it.dpsLocationId).isNull()
+        }
       }
 
       with(activityRepository.findById(402).orElseThrow()) {
@@ -38,6 +45,13 @@ class ActivitiesFixRotlCategoryJobIntegrationTest : LocalStackTestBase() {
         assertThat(inCell).isFalse
         assertThat(updatedBy).isEqualTo("activities-management-admin-1")
         assertThat(updatedTime).isNotNull
+        assertThat(schedules()).hasSize(2)
+        assertThat(schedules()).allSatisfy {
+          assertThat(it.internalLocationId).isNull()
+          assertThat(it.internalLocationCode).isNull()
+          assertThat(it.internalLocationDescription).isNull()
+          assertThat(it.dpsLocationId).isNull()
+        }
       }
     }
 
@@ -48,7 +62,9 @@ class ActivitiesFixRotlCategoryJobIntegrationTest : LocalStackTestBase() {
     // Confirm the SQS sync events were triggered for both activities
     validateOutboundEvents(
       ExpectedOutboundEvent(ACTIVITY_SCHEDULE_UPDATED, 401),
+      ExpectedOutboundEvent(ACTIVITY_SCHEDULE_UPDATED, 411),
       ExpectedOutboundEvent(ACTIVITY_SCHEDULE_UPDATED, 402),
+      ExpectedOutboundEvent(ACTIVITY_SCHEDULE_UPDATED, 412),
     )
   }
 

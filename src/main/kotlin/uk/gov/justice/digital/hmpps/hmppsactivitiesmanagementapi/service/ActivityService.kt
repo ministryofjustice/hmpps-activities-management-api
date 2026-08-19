@@ -694,6 +694,10 @@ class ActivityService(
         "Activity location cannot be updated for an external activity"
       }
 
+      activity.schedules().forEach {
+        it.removeLocationDetails()
+      }
+
       request.inCell?.apply { activity.inCell = this }
       request.onWing?.apply { activity.onWing = this }
       request.offWing?.apply { activity.offWing = this }

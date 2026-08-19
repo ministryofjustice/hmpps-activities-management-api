@@ -101,4 +101,18 @@ class ActivitiesFixRotlCategoryServiceTest {
 
     verify(activityService, never()).updateActivity(any(), any(), any(), any(), any())
   }
+
+  @Test
+  fun `throws and makes no changes if the number of activities to fix exceeds the safety limit`() {
+    val activities = (1..176).map { activityEntity(activityId = it.toLong(), outsideWork = true, noSchedules = true) }
+
+    whenever(activityCategoryRepository.findByCode("SAA_ROTL")) doReturn rotlCategory
+    whenever(activityRepository.findOutsideWorkActivitiesNeedingRotlFix()) doReturn activities
+
+    assertThatThrownBy { service.fixCategoriesAndLocations() }
+      .isInstanceOf(IllegalStateException::class.java)
+      .hasMessage("Aborting: found 176 activities needing the ROTL fix, which exceeds the safety limit of ${ActivitiesFixRotlCategoryService.MAX_ACTIVITIES_TO_FIX}. No changes have been made.")
+
+    verify(activityService, never()).updateActivity(any(), any(), any(), any(), any())
+  }
 }
