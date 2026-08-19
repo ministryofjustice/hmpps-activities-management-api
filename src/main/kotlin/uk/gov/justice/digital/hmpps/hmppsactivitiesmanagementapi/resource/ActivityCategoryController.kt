@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
@@ -10,6 +11,7 @@ import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
@@ -24,6 +26,7 @@ class ActivityCategoryController(private val activityCategoryRepository: Activit
   @Operation(
     summary = "Get the list of top-level activity categories",
   )
+  @Parameter(name = "includeRotl", description = "Include the SAA_ROTL (outside activity) category in the response", example = "false", required = false)
   @ApiResponses(
     value = [
       ApiResponse(
@@ -46,5 +49,7 @@ class ActivityCategoryController(private val activityCategoryRepository: Activit
   @GetMapping
   @ResponseBody
   @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN', 'NOMIS_ACTIVITIES')")
-  fun getCategories(): List<ActivityCategory> = activityCategoryRepository.findAll().toModel()
+  fun getCategories(@RequestParam(required = false) includeRotl: Boolean = false): List<ActivityCategory> = activityCategoryRepository.findAll()
+    .filterNot { it.code == "SAA_ROTL" && !includeRotl }
+    .toModel()
 }

@@ -11,3 +11,4 @@ val interventionsCategory = ActivityCategory(id = 6, code = "SAA_INTERVENTIONS",
 val faithAndSpiritualityCategory = ActivityCategory(id = 7, code = "SAA_FAITH_SPIRITUALITY", name = "Faith and spirituality", description = "Such as chapel, prayer meetings or meditation")
 val notInWorkCategory = ActivityCategory(id = 8, code = "SAA_NOT_IN_WORK", name = "Not in work", description = "Such as unemployed, retired, long-term sick, or on remand")
 val otherCategory = ActivityCategory(id = 9, code = "SAA_OTHER", name = "Other", description = "Select if the activity you’re creating doesn’t fit any other category")
+val outsideWorkCategory = ActivityCategory(id = 10, code = "SAA_ROTL", name = "Outside activity", description = "Temporary absence or ROTL for outside work")

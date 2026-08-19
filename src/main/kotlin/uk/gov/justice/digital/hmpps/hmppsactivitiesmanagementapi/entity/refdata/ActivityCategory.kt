@@ -17,6 +17,7 @@ enum class ActivityCategoryCode {
   SAA_FAITH_SPIRITUALITY,
   SAA_NOT_IN_WORK,
   SAA_OTHER,
+  SAA_ROTL,
 }
 
 @Entity
@@ -35,7 +36,7 @@ data class ActivityCategory(
 
   fun isNotInWork() = code == "SAA_NOT_IN_WORK"
 
-  fun isInduction() = code == "SAA_INDUCTION"
+  fun isOutsideWork() = code == "SAA_ROTL"
 
   fun toModel() = ModelActivityCategory(
     id = activityCategoryId,
