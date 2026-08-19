@@ -37,8 +37,6 @@ class ActivityCategoryControllerTest : ControllerTestBase() {
 
     whenever(activityCategoryRepository.findAll()).thenReturn(listOf(activityCategory()))
 
-    // TODO: removeOutsideWorkFilter
-
     val response = mockMvc
       .get("/activity-categories")
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
@@ -51,7 +49,7 @@ class ActivityCategoryControllerTest : ControllerTestBase() {
   }
 
   @Test
-  fun `200 response when get activity categories excludes SAA_ROTL`() {
+  fun `200 response when get activity categories with includeRotl=true includes SAA_ROTL`() {
     val expectedModel = listOf(
       ActivityCategory(
         id = 1,
@@ -59,12 +57,18 @@ class ActivityCategoryControllerTest : ControllerTestBase() {
         name = "category name",
         description = "category description",
       ),
+      ActivityCategory(
+        id = 10,
+        code = "SAA_ROTL",
+        name = "Outside activity",
+        description = "Temporary absence or ROTL for outside work",
+      ),
     )
 
     whenever(activityCategoryRepository.findAll()).thenReturn(listOf(activityCategory(), rotlCategory))
 
     val response = mockMvc
-      .get("/activity-categories")
+      .get("/activity-categories?includeRotl=true")
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
       .andExpect { status { isOk() } }
       .andReturn().response
