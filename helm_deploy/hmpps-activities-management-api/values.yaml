@@ -145,5 +145,8 @@ cron:
   attendanceRecords: "0 4 * * *"
   purposefulActivityReports: "30 1 * * 2"
   fixActivityLocations: "30 4 * * *"
+  fixActivityRotlCategory:
+    enabled: false
+    schedule: "45 4 * * *"
 
 

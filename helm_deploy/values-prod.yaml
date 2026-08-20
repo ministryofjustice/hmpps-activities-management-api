@@ -62,8 +62,3 @@ generic-prometheus-alerts:
   sqsAlertsOldestThreshold: 10
   sqsAlertsTotalMessagesThreshold: 1
 
-  # Temporary values for fixing rotl category times
-  cron:
-    fixActivityRotlCategory:
-      enabled: false
-      schedule: "45 4 * * *"
