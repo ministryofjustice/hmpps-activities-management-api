@@ -1,9 +1,10 @@
+{{- if .Values.cron.fixActivityRotlCategory.enabled }}
 apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: activities-fix-rotl-category
 spec:
-  schedule:  "{{ .Values.cron.fixActivityRotlCategory }}"
+  schedule:  "{{ .Values.cron.fixActivityRotlCategory.schedule }}"
   concurrencyPolicy: Replace
   failedJobsHistoryLimit: 5
   startingDeadlineSeconds: 43200
@@ -23,3 +24,4 @@ spec:
                 - /bin/sh
                 - -c
                 - curl --fail --retry 2 -XPOST http://hmpps-activities-management-api/job/activities-fix-rotl-category
+{{- end }}

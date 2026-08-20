@@ -64,3 +64,6 @@ cron:
   createScheduledInstances: "0 7 * * *"
   attendanceRecords: "15 7 * * *"
   purposefulActivityReports: "30 8 * * 2"
+  fixActivityRotlCategory:
+    enabled: true
+    schedule: "15 9 * * *"

@@ -61,3 +61,9 @@ generic-prometheus-alerts:
     - "activities-and-appointments-prod-hmpps_activities_management_jobs_dlq"
   sqsAlertsOldestThreshold: 10
   sqsAlertsTotalMessagesThreshold: 1
+
+  # Temporary values for fixing rotl category times
+  cron:
+    fixActivityRotlCategory:
+      enabled: false
+      schedule: "45 4 * * *"
