@@ -25,7 +25,7 @@ dependencies {
   implementation("org.springframework.boot:spring-boot-starter-webflux")
   implementation("org.springframework.boot:spring-boot-starter-webclient")
   implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-  implementation("org.springframework.data:spring-data-envers:4.1.0")
+  implementation("org.springframework.data:spring-data-envers:4.1.1")
   implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:7.4.0")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.11.0")
@@ -49,7 +49,7 @@ dependencies {
     }
   }
 
-  implementation("aws.sdk.kotlin:s3:1.8.33")
+  implementation("aws.sdk.kotlin:s3:1.8.34")
 
   // Other dependencies
   implementation("org.apache.commons:commons-text:1.15.0")
