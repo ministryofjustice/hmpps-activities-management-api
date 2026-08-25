@@ -396,7 +396,11 @@ class ActivityService(
         ?: throw EntityNotFoundException("Activity $activityId not found.")
       val updatedAllocationIds = mutableSetOf<Long>()
 
-      require(activity.state(ActivityState.ARCHIVED).not()) {
+//      TODO: remove as part of cleanup for rotl category job
+      require(
+        activity.state(ActivityState.ARCHIVED).not() ||
+          (activity.outsideWork && updatedBy == "activities-management-admin-1"),
+      ) {
         "Activity cannot be updated because it is now archived."
       }
 
