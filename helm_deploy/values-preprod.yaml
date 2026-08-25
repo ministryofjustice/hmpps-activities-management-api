@@ -59,4 +59,4 @@ generic-prometheus-alerts:
 cron:
   fixActivityRotlCategory:
     enabled: true
-    schedule: "15 9 * * *"
+    schedule: "45 13 * * *"
