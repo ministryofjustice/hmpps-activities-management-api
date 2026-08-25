@@ -3755,6 +3755,17 @@ class ActivityServiceTest {
 
     @Test
     fun `activity location with all flags false and no dpsLocationId is allowed for an external activity`() {
+      externalActivity.inCell = true
+      externalActivity.onWing = true
+      externalActivity.offWing = true
+      externalActivity.addSchedule(activitySchedule(externalActivity, activityScheduleId = 2, description = "schedule description 2", noAllocations = true))
+      externalActivity.schedules().forEachIndexed { index, schedule ->
+        schedule.internalLocationId = index + 1
+        schedule.internalLocationCode = "LOC-${index + 1}"
+        schedule.internalLocationDescription = "Location ${index + 1}"
+        schedule.dpsLocationId = UUID.fromString("00000000-0000-0000-0000-00000000000${index + 1}")
+      }
+
       whenever(prisonPayBandRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh())
       whenever(activityRepository.saveAndFlush(any<ActivityEntity>())).thenReturn(externalActivity)
 
@@ -3767,6 +3778,16 @@ class ActivityServiceTest {
 
       verify(activityRepository).saveAndFlush(any())
       assertThat(result).isNotNull
+      assertThat(externalActivity.inCell).isFalse
+      assertThat(externalActivity.onWing).isFalse
+      assertThat(externalActivity.offWing).isFalse
+      assertThat(externalActivity.schedules()).hasSize(2)
+      assertThat(externalActivity.schedules()).allSatisfy {
+        assertThat(it.internalLocationId).isNull()
+        assertThat(it.internalLocationCode).isNull()
+        assertThat(it.internalLocationDescription).isNull()
+        assertThat(it.dpsLocationId).isNull()
+      }
       verifyNoInteractions(locationService)
     }
 

@@ -49,4 +49,14 @@ interface ActivityRepository :
     @Param("fromDate") fromDate: LocalDate,
     @Param("toDate") toDate: LocalDate,
   ): List<ActivityBasic>
+
+  @Query(
+    value =
+    """
+    SELECT a FROM Activity a
+    WHERE a.outsideWork = true
+    AND (a.onWing = true OR a.offWing = true OR a.inCell = true OR a.activityCategory.code <> 'SAA_ROTL')
+    """,
+  )
+  fun findOutsideWorkActivitiesNeedingRotlFix(): List<Activity>
 }
