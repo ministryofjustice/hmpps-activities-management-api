@@ -15,7 +15,6 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.post
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ActivitiesFixRotlCategoryJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ActivityMetricsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.AppointmentMetricsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CreateScheduledInstancesJob
@@ -53,9 +52,6 @@ class JobTriggerControllerTest : ControllerTestBase() {
 
   @MockitoBean
   private lateinit var fixLocationsJob: FixLocationsJob
-
-  @MockitoBean
-  private lateinit var activitiesFixRotlCategoryJob: ActivitiesFixRotlCategoryJob
 
   @MockitoBean
   private lateinit var clock: Clock
@@ -186,16 +182,6 @@ class JobTriggerControllerTest : ControllerTestBase() {
     assertThat(response.contentAsString).isEqualTo("Appointments metrics job triggered")
 
     verify(appointmentsMetricsJob).execute()
-  }
-
-  @Test
-  fun `202 response when activities fix ROTL category job triggered`() {
-    val response = mockMvc.triggerJob(jobName = "activities-fix-rotl-category")
-      .andExpect { status { isAccepted() } }.andReturn().response
-
-    assertThat(response.contentAsString).isEqualTo("Activities fix ROTL category job triggered")
-
-    verify(activitiesFixRotlCategoryJob).execute()
   }
 
   private fun MockMvc.triggerJob(jobName: String) = post("/job/$jobName") {
