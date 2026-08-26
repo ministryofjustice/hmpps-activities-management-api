@@ -396,11 +396,7 @@ class ActivityService(
         ?: throw EntityNotFoundException("Activity $activityId not found.")
       val updatedAllocationIds = mutableSetOf<Long>()
 
-//      TODO: remove as part of cleanup for rotl category job
-      require(
-        activity.state(ActivityState.ARCHIVED).not() ||
-          (activity.outsideWork && updatedBy == "activities-management-admin-1"),
-      ) {
+      require(activity.state(ActivityState.ARCHIVED).not()) {
         "Activity cannot be updated because it is now archived."
       }
 
@@ -697,15 +693,6 @@ class ActivityService(
       require(request.dpsLocationId == null && request.inCell != true && request.onWing != true && request.offWing != true) {
         "Activity location cannot be updated for an external activity"
       }
-
-      activity.schedules().forEach {
-        it.removeLocationDetails()
-      }
-
-      request.inCell?.apply { activity.inCell = this }
-      request.onWing?.apply { activity.onWing = this }
-      request.offWing?.apply { activity.offWing = this }
-
       return
     }
 

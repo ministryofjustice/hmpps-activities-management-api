@@ -5,6 +5,4 @@ import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.ActivityCategory
 
 @Repository
-interface ActivityCategoryRepository : JpaRepository<ActivityCategory, Long> {
-  fun findByCode(code: String): ActivityCategory?
-}
+interface ActivityCategoryRepository : JpaRepository<ActivityCategory, Long>
