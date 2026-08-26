@@ -146,7 +146,7 @@ cron:
   purposefulActivityReports: "30 1 * * 2"
   fixActivityLocations: "30 4 * * *"
   fixActivityRotlCategory:
-    enabled: false
+    enabled: true
     schedule: "45 4 * * *"
 
 

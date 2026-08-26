@@ -2005,6 +2005,33 @@ class ActivityServiceTest {
   }
 
   @Test
+  fun `updateActivity - allow archived external activity to be updated by activities-management-admin-1`() {
+    val activity = activityEntity(
+      startDate = TimeSource.yesterday().minusDays(1),
+      endDate = TimeSource.yesterday(),
+      outsideWork = true,
+    )
+
+    whenever(
+      activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+        1,
+        MOORLAND_PRISON_CODE,
+        LocalDate.now(),
+      ),
+    ).thenReturn(activity)
+
+    service().updateActivity(
+      MOORLAND_PRISON_CODE,
+      1,
+      ActivityUpdateRequest(endDate = TimeSource.tomorrow()),
+      "activities-management-admin-1",
+    )
+
+    verify(activityRepository).saveAndFlush(activityCaptor.capture())
+    verifyNoInteractions(manageAttendancesService)
+  }
+
+  @Test
   fun `updateActivity - fails if activity not found`() {
     whenever(activityRepository.findByActivityIdAndPrisonCode(1, MOORLAND_PRISON_CODE)).thenReturn(null)
 

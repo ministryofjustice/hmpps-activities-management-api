@@ -66,4 +66,4 @@ cron:
   purposefulActivityReports: "30 8 * * 2"
   fixActivityRotlCategory:
     enabled: true
-    schedule: "45 11 * * *"
+    schedule: "15 13 * * *"
