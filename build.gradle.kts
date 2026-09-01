@@ -8,7 +8,7 @@ plugins {
   kotlin("plugin.jpa") version "2.4.10"
   jacoco
   id("org.openapi.generator") version "7.25.0"
-  id("io.sentry.jvm.gradle") version "6.19.0"
+  id("io.sentry.jvm.gradle") version "6.20.0"
 }
 
 configurations {
@@ -49,7 +49,7 @@ dependencies {
     }
   }
 
-  implementation("aws.sdk.kotlin:s3:1.8.39")
+  implementation("aws.sdk.kotlin:s3:1.8.43")
 
   // Other dependencies
   implementation("org.apache.commons:commons-text:1.15.0")
@@ -79,7 +79,7 @@ dependencies {
   testImplementation("org.awaitility:awaitility-kotlin")
   testImplementation("org.skyscreamer:jsonassert")
   testImplementation("io.mockk:mockk:1.14.11")
-  testImplementation("io.swagger.parser.v3:swagger-parser:2.1.47") {
+  testImplementation("io.swagger.parser.v3:swagger-parser:2.1.48") {
     exclude(group = "io.swagger.core.v3")
   }
 }
