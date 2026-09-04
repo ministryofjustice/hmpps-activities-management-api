@@ -1,5 +1,8 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -20,6 +23,7 @@ import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleChangeImpact
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
@@ -36,8 +40,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.mediumPayBand
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduleLastChanged
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduleSession
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AllocationUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleChangeImpactRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.PrisonPayBandRepository
@@ -48,6 +55,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloa
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelPrisonerAllocations
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 import java.util.*
 
@@ -58,7 +66,19 @@ class AllocationsServiceTest {
   private val outboundEventsService: OutboundEventsService = mock()
   private val manageAttendancesService: ManageAttendancesService = mock()
   private val exclusionHistoryService: ExclusionHistoryService = mock()
-  private val service: AllocationsService = AllocationsService(allocationRepository, prisonPayBandRepository, scheduleRepository, TransactionHandler(), outboundEventsService, manageAttendancesService, exclusionHistoryService)
+  private val activityScheduleChangeImpactRepository: ActivityScheduleChangeImpactRepository = mock()
+  private val objectMapper: ObjectMapper = jacksonObjectMapper().registerModule(JavaTimeModule())
+  private val service: AllocationsService = AllocationsService(
+    allocationRepository,
+    prisonPayBandRepository,
+    scheduleRepository,
+    TransactionHandler(),
+    outboundEventsService,
+    manageAttendancesService,
+    exclusionHistoryService,
+    activityScheduleChangeImpactRepository,
+    objectMapper,
+  )
   private val activeAllocation = activityEntity().schedules().first().allocations().first()
   private val allocationCaptor = argumentCaptor<Allocation>()
 
@@ -104,6 +124,103 @@ class AllocationsServiceTest {
     whenever(allocationRepository.findById(expected.allocationId)).thenReturn(Optional.of(expected))
 
     assertThat(service.getAllocationById(expected.allocationId)).isEqualTo(expected.toModel())
+  }
+
+  @Test
+  fun `transformed allocation includes scheduleLastChanged when an activity schedule change impact exists`() {
+    val expected = allocation()
+    val addedSessionsJson = """[{"weekNumber":1,"timeSlot":"AM","dayOfWeek":"TUESDAY"}]"""
+    val changeImpact = ActivityScheduleChangeImpact(
+      activityId = expected.activitySchedule.activity.activityId,
+      activityScheduleId = expected.activitySchedule.activityScheduleId,
+      allocationId = expected.allocationId,
+      prisonerNumber = expected.prisonerNumber,
+      changedAt = LocalDateTime.of(2024, 6, 1, 9, 0),
+      changedBy = "Mrs Blogs",
+      addedSessionsJson = addedSessionsJson,
+      removedSessionsJson = null,
+    )
+
+    addCaseloadIdToRequestHeader("MDI")
+    whenever(scheduleRepository.findById(expected.activitySchedule.activityScheduleId)).thenReturn(Optional.of(expected.activitySchedule))
+    whenever(allocationRepository.findById(expected.allocationId)).thenReturn(Optional.of(expected))
+    whenever(activityScheduleChangeImpactRepository.findByAllocationIdOrderByChangedAtDesc(expected.allocationId)).thenReturn(listOf(changeImpact))
+
+    val result = service.getAllocationById(expected.allocationId)
+
+    assertThat(result.scheduleLastChanged).containsExactly(
+      ScheduleLastChanged(
+        weekNumber = 1,
+        changedAt = LocalDateTime.of(2024, 6, 1, 9, 0),
+        changedBy = "Mrs Blogs",
+        addedSessions = listOf(ScheduleSession(1, TimeSlot.AM, DayOfWeek.TUESDAY)),
+        removedSessions = emptyList(),
+      ),
+    )
+  }
+
+  @Test
+  fun `transformed allocation includes scheduleLastChanged for each week that has an impact recorded via a separate request`() {
+    val expected = allocation()
+
+    // Week 1 changed via one request, week 2 changed later via a separate request - two separate rows.
+    val week1Impact = ActivityScheduleChangeImpact(
+      activityId = expected.activitySchedule.activity.activityId,
+      activityScheduleId = expected.activitySchedule.activityScheduleId,
+      allocationId = expected.allocationId,
+      prisonerNumber = expected.prisonerNumber,
+      changedAt = LocalDateTime.of(2024, 6, 1, 9, 0),
+      changedBy = "Mr Blogs",
+      addedSessionsJson = null,
+      removedSessionsJson = """[{"weekNumber":1,"timeSlot":"AM","dayOfWeek":"MONDAY"}]""",
+    )
+    val week2Impact = ActivityScheduleChangeImpact(
+      activityId = expected.activitySchedule.activity.activityId,
+      activityScheduleId = expected.activitySchedule.activityScheduleId,
+      allocationId = expected.allocationId,
+      prisonerNumber = expected.prisonerNumber,
+      changedAt = LocalDateTime.of(2024, 6, 2, 10, 30),
+      changedBy = "Mrs Blogs",
+      addedSessionsJson = """[{"weekNumber":2,"timeSlot":"PM","dayOfWeek":"TUESDAY"}]""",
+      removedSessionsJson = null,
+    )
+
+    addCaseloadIdToRequestHeader("MDI")
+    whenever(scheduleRepository.findById(expected.activitySchedule.activityScheduleId)).thenReturn(Optional.of(expected.activitySchedule))
+    whenever(allocationRepository.findById(expected.allocationId)).thenReturn(Optional.of(expected))
+    // Repository returns newest first.
+    whenever(activityScheduleChangeImpactRepository.findByAllocationIdOrderByChangedAtDesc(expected.allocationId)).thenReturn(listOf(week2Impact, week1Impact))
+
+    val result = service.getAllocationById(expected.allocationId)
+
+    assertThat(result.scheduleLastChanged).containsExactly(
+      ScheduleLastChanged(
+        weekNumber = 1,
+        changedAt = LocalDateTime.of(2024, 6, 1, 9, 0),
+        changedBy = "Mr Blogs",
+        addedSessions = emptyList(),
+        removedSessions = listOf(ScheduleSession(1, TimeSlot.AM, DayOfWeek.MONDAY)),
+      ),
+      ScheduleLastChanged(
+        weekNumber = 2,
+        changedAt = LocalDateTime.of(2024, 6, 2, 10, 30),
+        changedBy = "Mrs Blogs",
+        addedSessions = listOf(ScheduleSession(2, TimeSlot.PM, DayOfWeek.TUESDAY)),
+        removedSessions = emptyList(),
+      ),
+    )
+  }
+
+  @Test
+  fun `transformed allocation has empty scheduleLastChanged when no activity schedule change impact exists`() {
+    val expected = allocation()
+
+    addCaseloadIdToRequestHeader("MDI")
+    whenever(scheduleRepository.findById(expected.activitySchedule.activityScheduleId)).thenReturn(Optional.of(expected.activitySchedule))
+    whenever(allocationRepository.findById(expected.allocationId)).thenReturn(Optional.of(expected))
+    whenever(activityScheduleChangeImpactRepository.findByAllocationIdOrderByChangedAtDesc(expected.allocationId)).thenReturn(emptyList())
+
+    assertThat(service.getAllocationById(expected.allocationId).scheduleLastChanged).isEmpty()
   }
 
   @Test

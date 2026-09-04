@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.microsoft.applicationinsights.TelemetryClient
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
@@ -32,6 +33,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.JobsSqsServ
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.PrisonCodeJobEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrisonPlan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleChangeImpactRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
@@ -55,6 +57,8 @@ class ManageScheduledInstancesServiceTest {
   private val jobsSqsService: JobsSqsService = mock()
   private val jobService: JobService = mock()
   private val manageAttendancesService: ManageAttendancesService = mock()
+  private val activityScheduleChangeImpactRepository: ActivityScheduleChangeImpactRepository = mock()
+  private val objectMapper: ObjectMapper = mock()
 
   private val activityServiceTest: ActivityService = ActivityService(
     activityRepository = activityRepository,
@@ -77,6 +81,8 @@ class ManageScheduledInstancesServiceTest {
     allocationsService = mock(),
     locationService = locationService,
     manageAttendancesService = manageAttendancesService,
+    activityScheduleChangeImpactRepository = activityScheduleChangeImpactRepository,
+    objectMapper = objectMapper,
   )
 
   private val transactionHandler = CreateInstanceTransactionHandler(activityScheduleRepository, activityServiceTest, Clock.systemDefaultZone())

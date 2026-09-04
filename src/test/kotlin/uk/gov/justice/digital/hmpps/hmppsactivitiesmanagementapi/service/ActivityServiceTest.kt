@@ -33,6 +33,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleChangeImpact
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
@@ -77,6 +78,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.A
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityPayHistoryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleChangeImpactRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivitySummaryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.ActivityCategoryRepository
@@ -133,6 +135,7 @@ class ActivityServiceTest {
   private val locationService: LocationService = mock()
   private val allocationsService: AllocationsService = mock()
   private val manageAttendancesService: ManageAttendancesService = mock()
+  private val activityScheduleChangeImpactRepository: ActivityScheduleChangeImpactRepository = mock()
 
   private val educationLevel = ReferenceCode(
     domain = "EDU_LEVEL",
@@ -189,6 +192,8 @@ class ActivityServiceTest {
     locationService,
     allocationsService,
     manageAttendancesService,
+    activityScheduleChangeImpactRepository,
+    mapper,
     daysInAdvance,
   )
 
@@ -2721,6 +2726,459 @@ class ActivityServiceTest {
 
     verify(outboundEventsService, never()).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 0L)
     verifyNoInteractions(manageAttendancesService)
+  }
+
+  @Nested
+  inner class ScheduleLastChangedImpact {
+
+    private fun buildActivityWithAllocation(
+      allocationStartDate: LocalDate = LocalDate.now().minusDays(10),
+      initialSlotDaysOfWeek: Set<DayOfWeek> = setOf(DayOfWeek.TUESDAY),
+      initialSlotTimeSlot: TimeSlot = TimeSlot.AM,
+      initialSlotTimes: Pair<LocalTime, LocalTime> = LocalTime.of(9, 0) to LocalTime.of(12, 0),
+    ): ActivityEntity {
+      val activity = activityEntity(
+        startDate = allocationStartDate,
+        noSchedules = true,
+      ).also {
+        whenever(
+          activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+            it.activityId,
+            it.prisonCode,
+            LocalDate.now(),
+          ),
+        ) doReturn (it)
+      }
+
+      activity.addSchedule(
+        activitySchedule(
+          activity,
+          scheduleWeeks = 1,
+          noSlots = true,
+          noInstances = true,
+          noAllocations = true,
+        ),
+      ).apply {
+        // Existing session - present both before and after every update below.
+        addSlot(
+          weekNumber = 1,
+          slotTimes = initialSlotTimes,
+          daysOfWeek = initialSlotDaysOfWeek,
+          initialSlotTimeSlot,
+        )
+        allocatePrisoner(
+          prisonerNumber = "A1111BB".toPrisonerNumber(),
+          bookingId = 20002,
+          payBand = lowPayBand,
+          allocatedBy = "Mr Blogs",
+          startDate = allocationStartDate,
+        )
+      }
+
+      return activity
+    }
+
+    private fun tuesdayAmSlot() = Slot(
+      weekNumber = 1,
+      timeSlot = TimeSlot.AM,
+      monday = false,
+      tuesday = true,
+      wednesday = false,
+      thursday = false,
+      friday = false,
+      saturday = false,
+      sunday = false,
+    )
+
+    private fun tuesdayAndMondayAmSlot() = Slot(
+      weekNumber = 1,
+      timeSlot = TimeSlot.AM,
+      monday = true,
+      tuesday = true,
+      wednesday = false,
+      thursday = false,
+      friday = false,
+      saturday = false,
+      sunday = false,
+    )
+
+    @Test
+    fun `adding Monday AM and prisoner is not excluded records a schedule change impact`() {
+      val activity = buildActivityWithAllocation()
+      val schedule = activity.schedules().first()
+      val allocation = schedule.allocations().first()
+
+      // Add Monday AM alongside the existing Tuesday AM session - no exclusions exist.
+      service().updateActivity(
+        activity.prisonCode,
+        activity.activityId,
+        ActivityUpdateRequest(slots = listOf(tuesdayAndMondayAmSlot())),
+        updatedBy = "TEST",
+      )
+
+      val captor = argumentCaptor<List<ActivityScheduleChangeImpact>>()
+      verify(activityScheduleChangeImpactRepository).saveAll(captor.capture())
+
+      with(captor.firstValue.single()) {
+        assertThat(allocationId).isEqualTo(allocation.allocationId)
+        assertThat(activityScheduleId).isEqualTo(schedule.activityScheduleId)
+        // Only Monday AM is genuinely new - Tuesday AM already existed before this update, so it must not appear as added.
+        assertThat(addedSessionsJson).contains("MONDAY").doesNotContain("TUESDAY")
+        assertThat(removedSessionsJson).isNull()
+      }
+    }
+
+    @Test
+    fun `removing Monday AM whilst the prisoner is attending records a schedule change impact`() {
+      val activity = buildActivityWithAllocation()
+      val schedule = activity.schedules().first()
+
+      // Start with both Monday AM and Tuesday AM, prisoner has no exclusions.
+      service().updateActivity(
+        activity.prisonCode,
+        activity.activityId,
+        ActivityUpdateRequest(slots = listOf(tuesdayAndMondayAmSlot())),
+        updatedBy = "TEST",
+      )
+      val allocation = schedule.allocations().first()
+
+      // Now remove Monday AM, leaving just Tuesday AM.
+      service().updateActivity(
+        activity.prisonCode,
+        activity.activityId,
+        ActivityUpdateRequest(slots = listOf(tuesdayAmSlot())),
+        updatedBy = "TEST",
+      )
+
+      val captor = argumentCaptor<List<ActivityScheduleChangeImpact>>()
+      verify(activityScheduleChangeImpactRepository, times(2)).saveAll(captor.capture())
+
+      with(captor.secondValue.single()) {
+        assertThat(allocationId).isEqualTo(allocation.allocationId)
+        assertThat(removedSessionsJson).contains("MONDAY")
+        assertThat(addedSessionsJson).isNull()
+      }
+    }
+
+    @Test
+    fun `removing Monday AM whilst the prisoner is already excluded from it does not record a schedule change impact`() {
+      val activity = buildActivityWithAllocation()
+      val schedule = activity.schedules().first()
+
+      // Start with both Monday AM and Tuesday AM.
+      service().updateActivity(
+        activity.prisonCode,
+        activity.activityId,
+        ActivityUpdateRequest(slots = listOf(tuesdayAndMondayAmSlot())),
+        updatedBy = "TEST",
+      )
+      val allocation = schedule.allocations().first()
+
+      // Prisoner is excluded from Monday AM before it is removed - i.e. they were not attending it.
+      allocation.updateExclusion(
+        exclusionSlot = Slot(
+          weekNumber = 1,
+          timeSlot = TimeSlot.AM,
+          monday = true,
+          tuesday = false,
+          wednesday = false,
+          thursday = false,
+          friday = false,
+          saturday = false,
+          sunday = false,
+        ),
+        startDate = LocalDate.now(),
+      )
+
+      // Now remove Monday AM, leaving just Tuesday AM.
+      service().updateActivity(
+        activity.prisonCode,
+        activity.activityId,
+        ActivityUpdateRequest(slots = listOf(tuesdayAmSlot())),
+        updatedBy = "TEST",
+      )
+
+      val captor = argumentCaptor<List<ActivityScheduleChangeImpact>>()
+      // saveAll is only invoked when there is something to save - the first update (adding Monday AM,
+      // no exclusions) produces one impact row; the second update (removing an already-excluded Monday AM)
+      // must not produce a second invocation at all as the prisoner is already excluded from Monday AM.
+      verify(activityScheduleChangeImpactRepository, times(1)).saveAll(captor.capture())
+      assertThat(captor.firstValue).hasSize(1)
+      with(captor.firstValue.single()) {
+        assertThat(allocationId).isEqualTo(allocation.allocationId)
+        assertThat(addedSessionsJson).contains("MONDAY")
+        assertThat(addedSessionsJson).doesNotContain("TUESDAY")
+        assertThat(removedSessionsJson).isNull()
+      }
+    }
+
+    @Test
+    fun `swapping a session the prisoner is excluded from for a new session only records the added session`() {
+      // Existing session - Tuesday PM - which will be swapped for Tuesday AM below.
+      val activity = buildActivityWithAllocation(
+        initialSlotDaysOfWeek = setOf(DayOfWeek.TUESDAY),
+        initialSlotTimeSlot = TimeSlot.PM,
+        initialSlotTimes = LocalTime.of(13, 0) to LocalTime.of(16, 0),
+      )
+      val schedule = activity.schedules().first()
+      val allocation = schedule.allocations().first()
+
+      // Prisoner is excluded from Tuesday PM before it is removed - i.e. they were not attending it.
+      allocation.updateExclusion(
+        exclusionSlot = Slot(
+          weekNumber = 1,
+          timeSlot = TimeSlot.PM,
+          tuesday = true,
+          daysOfWeek = setOf(DayOfWeek.TUESDAY),
+        ),
+        startDate = LocalDate.now(),
+      )
+
+      // Remove Tuesday PM (excluded, so not actually attended) and add Tuesday AM (not excluded).
+      service().updateActivity(
+        activity.prisonCode,
+        activity.activityId,
+        ActivityUpdateRequest(slots = listOf(tuesdayAmSlot())),
+        updatedBy = "TEST",
+      )
+
+      val captor = argumentCaptor<List<ActivityScheduleChangeImpact>>()
+      verify(activityScheduleChangeImpactRepository).saveAll(captor.capture())
+
+      with(captor.firstValue.single()) {
+        assertThat(allocationId).isEqualTo(allocation.allocationId)
+        assertThat(addedSessionsJson).contains("AM")
+        assertThat(removedSessionsJson).isNull()
+      }
+    }
+
+    @Test
+    fun `activity schedule change before allocation start date still records the impact`() {
+      // Impacts are recorded for any non-ended allocation (including allocations that haven't started yet)
+      // AllocationsService.getScheduleLastChanged always shows the latest impact for the allocation.
+      val allocationStartDate = LocalDate.now().plusDays(5)
+      val activity = buildActivityWithAllocation(allocationStartDate = allocationStartDate)
+
+      service().updateActivity(
+        activity.prisonCode,
+        activity.activityId,
+        ActivityUpdateRequest(slots = listOf(tuesdayAndMondayAmSlot())),
+        updatedBy = "TEST",
+      )
+
+      verify(activityScheduleChangeImpactRepository).saveAll(anyList<ActivityScheduleChangeImpact>())
+    }
+
+    private fun buildTwoWeekActivityWithAllocation(
+      allocationStartDate: LocalDate = LocalDate.now().minusDays(10),
+    ): ActivityEntity {
+      val activity = activityEntity(
+        startDate = allocationStartDate,
+        noSchedules = true,
+      ).also {
+        whenever(
+          activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+            it.activityId,
+            it.prisonCode,
+            LocalDate.now(),
+          ),
+        ) doReturn (it)
+      }
+
+      activity.addSchedule(
+        activitySchedule(
+          activity,
+          scheduleWeeks = 2,
+          noSlots = true,
+          noInstances = true,
+          noAllocations = true,
+        ),
+      ).apply {
+        // Existing sessions - week 1 Tuesday AM, week 2 Wednesday AM - present both before and after every update below.
+        addSlot(
+          weekNumber = 1,
+          slotTimes = LocalTime.of(9, 0) to LocalTime.of(12, 0),
+          daysOfWeek = setOf(DayOfWeek.TUESDAY),
+          TimeSlot.AM,
+        )
+        addSlot(
+          weekNumber = 2,
+          slotTimes = LocalTime.of(9, 0) to LocalTime.of(12, 0),
+          daysOfWeek = setOf(DayOfWeek.WEDNESDAY),
+          TimeSlot.AM,
+        )
+        allocatePrisoner(
+          prisonerNumber = "A1111BB".toPrisonerNumber(),
+          bookingId = 20002,
+          payBand = lowPayBand,
+          allocatedBy = "Mr Blogs",
+          startDate = allocationStartDate,
+        )
+      }
+
+      return activity
+    }
+
+    @Test
+    fun `a single request that changes both weeks of a two-week schedule tags each session with its own week number`() {
+      // The current UI always submits separate per-week requests (separate "Update Week 1"/"Update Week 2" buttons),
+      // but nothing at the API/schema level prevents a single request from containing slots for both weeks. Since
+      // AllocationsService.getScheduleLastChanged relies entirely on the weekNumber embedded in each session to
+      // group changes by week, this test guards against that tagging ever being wrong for a combined request,
+      // regardless of how a caller chooses to shape it.
+      val activity = buildTwoWeekActivityWithAllocation()
+      val schedule = activity.schedules().first()
+      val allocation = schedule.allocations().first()
+
+      // Add Monday AM alongside the existing Tuesday AM (week 1), and Thursday AM alongside the existing Wednesday AM (week 2) - in one request.
+      service().updateActivity(
+        activity.prisonCode,
+        activity.activityId,
+        ActivityUpdateRequest(
+          slots = listOf(
+            Slot(weekNumber = 1, timeSlot = TimeSlot.AM, monday = true, tuesday = true, daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY)),
+            Slot(weekNumber = 2, timeSlot = TimeSlot.AM, wednesday = true, thursday = true, daysOfWeek = setOf(DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY)),
+          ),
+        ),
+        updatedBy = "TEST",
+      )
+
+      val captor = argumentCaptor<List<ActivityScheduleChangeImpact>>()
+      verify(activityScheduleChangeImpactRepository).saveAll(captor.capture())
+
+      // Both weeks' additions are recorded on the single row produced by this one request, each tagged with its own week number.
+      with(captor.firstValue.single()) {
+        assertThat(allocationId).isEqualTo(allocation.allocationId)
+        assertThat(removedSessionsJson).isNull()
+        assertThat(addedSessionsJson).contains(""""weekNumber":1""").contains(""""dayOfWeek":"MONDAY"""")
+        assertThat(addedSessionsJson).contains(""""weekNumber":2""").contains(""""dayOfWeek":"THURSDAY"""")
+      }
+    }
+
+    @Test
+    fun `separate update requests for each week of a two-week schedule each record their own row tagged with their own week number`() {
+      // Matches the actual UI flow - separate "Update Week 1"/"Update Week 2" buttons each submit their own PATCH
+      // request. Note that removeSlots()/addSlots() replace the schedule's entire slot set, so every request must
+      // still carry the full slot list (both weeks) - only the content of the week being edited actually changes.
+      val activity = buildTwoWeekActivityWithAllocation()
+      val schedule = activity.schedules().first()
+      val allocation = schedule.allocations().first()
+
+      // "Update Week 1" - add Monday AM alongside the existing Tuesday AM in week 1; week 2 is resubmitted unchanged.
+      service().updateActivity(
+        activity.prisonCode,
+        activity.activityId,
+        ActivityUpdateRequest(
+          slots = listOf(
+            Slot(weekNumber = 1, timeSlot = TimeSlot.AM, monday = true, tuesday = true, daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY)),
+            Slot(weekNumber = 2, timeSlot = TimeSlot.AM, wednesday = true, daysOfWeek = setOf(DayOfWeek.WEDNESDAY)),
+          ),
+        ),
+        updatedBy = "TEST",
+      )
+
+      // "Update Week 2" - separately, add Thursday AM alongside the existing Wednesday AM in week 2; week 1 is resubmitted unchanged (now including Monday AM from above).
+      service().updateActivity(
+        activity.prisonCode,
+        activity.activityId,
+        ActivityUpdateRequest(
+          slots = listOf(
+            Slot(weekNumber = 1, timeSlot = TimeSlot.AM, monday = true, tuesday = true, daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY)),
+            Slot(weekNumber = 2, timeSlot = TimeSlot.AM, wednesday = true, thursday = true, daysOfWeek = setOf(DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY)),
+          ),
+        ),
+        updatedBy = "TEST",
+      )
+
+      val captor = argumentCaptor<List<ActivityScheduleChangeImpact>>()
+      verify(activityScheduleChangeImpactRepository, times(2)).saveAll(captor.capture())
+
+      with(captor.firstValue.single()) {
+        assertThat(allocationId).isEqualTo(allocation.allocationId)
+        assertThat(removedSessionsJson).isNull()
+        assertThat(addedSessionsJson).contains(""""weekNumber":1""").contains(""""dayOfWeek":"MONDAY"""")
+        assertThat(addedSessionsJson).doesNotContain(""""weekNumber":2""")
+      }
+      with(captor.secondValue.single()) {
+        assertThat(allocationId).isEqualTo(allocation.allocationId)
+        assertThat(removedSessionsJson).isNull()
+        assertThat(addedSessionsJson).contains(""""weekNumber":2""").contains(""""dayOfWeek":"THURSDAY"""")
+        assertThat(addedSessionsJson).doesNotContain(""""weekNumber":1""")
+      }
+    }
+
+    @Test
+    fun `changing only week 2 of a two-week schedule does not record any impact for week 1`() {
+      val activity = buildTwoWeekActivityWithAllocation()
+      val schedule = activity.schedules().first()
+      val allocation = schedule.allocations().first()
+
+      // Only add Thursday AM alongside the existing Wednesday AM in week 2 - week 1 is resubmitted unchanged.
+      service().updateActivity(
+        activity.prisonCode,
+        activity.activityId,
+        ActivityUpdateRequest(
+          slots = listOf(
+            Slot(weekNumber = 1, timeSlot = TimeSlot.AM, tuesday = true, daysOfWeek = setOf(DayOfWeek.TUESDAY)),
+            Slot(weekNumber = 2, timeSlot = TimeSlot.AM, wednesday = true, thursday = true, daysOfWeek = setOf(DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY)),
+          ),
+        ),
+        updatedBy = "TEST",
+      )
+
+      val captor = argumentCaptor<List<ActivityScheduleChangeImpact>>()
+      verify(activityScheduleChangeImpactRepository).saveAll(captor.capture())
+
+      with(captor.firstValue.single()) {
+        assertThat(allocationId).isEqualTo(allocation.allocationId)
+        assertThat(removedSessionsJson).isNull()
+        assertThat(addedSessionsJson).contains(""""weekNumber":2""").contains(""""dayOfWeek":"THURSDAY"""")
+        assertThat(addedSessionsJson).doesNotContain(""""weekNumber":1""")
+      }
+    }
+
+    @Test
+    fun `swapping a session in week 2 that the prisoner is excluded from only records the added session for that week`() {
+      val activity = buildTwoWeekActivityWithAllocation()
+      val schedule = activity.schedules().first()
+      val allocation = schedule.allocations().first()
+
+      // Prisoner is excluded from week 2 Wednesday AM before it is removed - i.e. they were not attending it.
+      allocation.updateExclusion(
+        exclusionSlot = Slot(
+          weekNumber = 2,
+          timeSlot = TimeSlot.AM,
+          wednesday = true,
+          daysOfWeek = setOf(DayOfWeek.WEDNESDAY),
+        ),
+        startDate = LocalDate.now(),
+      )
+
+      // "Update Week 2" - swap week 2 Wednesday AM (excluded, so not actually attended) for Thursday AM (not excluded); week 1 is resubmitted unchanged.
+      service().updateActivity(
+        activity.prisonCode,
+        activity.activityId,
+        ActivityUpdateRequest(
+          slots = listOf(
+            Slot(weekNumber = 1, timeSlot = TimeSlot.AM, tuesday = true, daysOfWeek = setOf(DayOfWeek.TUESDAY)),
+            Slot(weekNumber = 2, timeSlot = TimeSlot.AM, thursday = true, daysOfWeek = setOf(DayOfWeek.THURSDAY)),
+          ),
+        ),
+        updatedBy = "TEST",
+      )
+
+      val captor = argumentCaptor<List<ActivityScheduleChangeImpact>>()
+      verify(activityScheduleChangeImpactRepository).saveAll(captor.capture())
+
+      // The excluded week 2 Wednesday AM removal is not attributable to this allocation, so only the week 2
+      // Thursday AM addition is recorded - week 1 (untouched) contributes nothing.
+      with(captor.firstValue.single()) {
+        assertThat(allocationId).isEqualTo(allocation.allocationId)
+        assertThat(removedSessionsJson).isNull()
+        assertThat(addedSessionsJson).contains(""""weekNumber":2""").contains(""""dayOfWeek":"THURSDAY"""")
+        assertThat(addedSessionsJson).doesNotContain(""""weekNumber":1""")
+      }
+    }
   }
 
   @Nested

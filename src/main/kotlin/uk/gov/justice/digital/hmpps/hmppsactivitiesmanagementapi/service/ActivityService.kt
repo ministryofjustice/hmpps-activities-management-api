@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.microsoft.applicationinsights.TelemetryClient
 import jakarta.persistence.EntityNotFoundException
 import jakarta.validation.ValidationException
@@ -15,6 +16,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.containsAny
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleChangeImpact
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
@@ -25,6 +27,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModelLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduleSession
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityMinimumEducationLevelCreateRequest
@@ -32,6 +35,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.A
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityPayHistoryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleChangeImpactRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivitySummaryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowIllegalArgument
@@ -89,6 +93,8 @@ class ActivityService(
   private val locationService: LocationService,
   private val allocationsService: AllocationsService,
   private val manageAttendancesService: ManageAttendancesService,
+  private val activityScheduleChangeImpactRepository: ActivityScheduleChangeImpactRepository,
+  private val objectMapper: ObjectMapper,
   @Value("\${online.create-scheduled-instances.days-in-advance}") private val daysInAdvance: Long = 14L,
 ) {
   companion object {
@@ -415,7 +421,7 @@ class ActivityService(
       applyPayUpdate(request, activity).let { updatedAllocationIds.addAll(it) }
       applyPayHistoryUpdate(request, activity)
       applyScheduleWeeksUpdate(request, activity)
-      applySlotsUpdate(request, activity).let { updatedAllocationIds.addAll(it) }
+      applySlotsUpdate(request, activity, updatedBy).let { updatedAllocationIds.addAll(it) }
 
       if (activity.paid && !activity.attendanceRequired) {
         throw IllegalArgumentException("Activity '$activityId' cannot be paid as attendance is not required.")
@@ -900,23 +906,61 @@ class ActivityService(
   private fun applySlotsUpdate(
     request: ActivityUpdateRequest,
     activity: Activity,
+    updatedBy: String,
   ): AllocationIds {
     val updatedAllocationIds = mutableSetOf<Long>()
     request.slots?.let { slots ->
       require(slots.isNotEmpty()) { "Must have at least 1 active slot across the schedule" }
+
+      val changedAt = LocalDateTime.now()
+
       activity.schedules().forEach { schedule ->
         schedule.usePrisonRegimeTime = slots.all { s -> s.customStartTime == null && s.customEndTime == null }
+
+        val oldSessions = schedule.scheduleSessions()
         schedule.removeSlots()
         schedule.addSlots(slots)
+        val newSessions = schedule.scheduleSessions()
+
+        val addedSessions = newSessions - oldSessions
+        val removedSessions = oldSessions - newSessions
+
         val activeAllocations = schedule.allocations(excludeEnded = true)
+        val changeImpacts = mutableListOf<ActivityScheduleChangeImpact>()
+
         // this has been disabled in lieu of review around exclusions and two week activities
         //   if (schedule.scheduleWeeks == 1) {
         activeAllocations.forEach { allocation ->
+          // Determine impact using the exclusion state as it stands before the sync below mutates it,
+          // otherwise a session this allocation was attending would look "not excluded" only because the
+          // sync has already removed/ended the now-defunct exclusion. Filter down to only the sessions that
+          // are actually relevant to this allocation - e.g. a session added/removed that the prisoner is
+          // excluded from should not appear in their impact record.
+          val allocationAddedSessions = addedSessions.filter { !allocation.isExcludedFromSession(it.weekNumber, it.timeSlot, it.dayOfWeek) }.toSet()
+          val allocationRemovedSessions = removedSessions.filter { !allocation.isExcludedFromSession(it.weekNumber, it.timeSlot, it.dayOfWeek) }.toSet()
+
           allocation.syncExclusionsWithScheduleSlots(schedule.slots())?.let { updatedAllocationIds.add(it) }
+
+          if (allocationAddedSessions.isNotEmpty() || allocationRemovedSessions.isNotEmpty()) {
+            changeImpacts += ActivityScheduleChangeImpact(
+              activityId = activity.activityId,
+              activityScheduleId = schedule.activityScheduleId,
+              allocationId = allocation.allocationId,
+              prisonerNumber = allocation.prisonerNumber,
+              changedAt = changedAt,
+              changedBy = updatedBy,
+              addedSessionsJson = allocationAddedSessions.toJsonOrNull(),
+              removedSessionsJson = allocationRemovedSessions.toJsonOrNull(),
+            )
+          }
         }
         //  }
+
+        if (changeImpacts.isNotEmpty()) activityScheduleChangeImpactRepository.saveAll(changeImpacts)
       }
     }
     return updatedAllocationIds
   }
+
+  private fun Set<ScheduleSession>.toJsonOrNull(): String? = takeIf { it.isNotEmpty() }?.let { objectMapper.writeValueAsString(it) }
 }

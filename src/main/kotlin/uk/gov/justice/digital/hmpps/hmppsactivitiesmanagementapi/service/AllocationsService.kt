@@ -1,5 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import jakarta.persistence.EntityNotFoundException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -11,7 +13,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocati
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ExclusionsFilter
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduleLastChanged
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduleSession
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AllocationUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleChangeImpactRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowIllegalArgument
@@ -22,6 +27,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelPrisonerAllocations
 import java.time.LocalDate
+import java.time.LocalDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation as ModelAllocation
 
 @Service
@@ -34,6 +40,8 @@ class AllocationsService(
   private val outboundEventsService: OutboundEventsService,
   private val manageAttendancesService: ManageAttendancesService,
   private val exclusionHistoryService: ExclusionHistoryService,
+  private val activityScheduleChangeImpactRepository: ActivityScheduleChangeImpactRepository,
+  private val objectMapper: ObjectMapper,
 ) {
   companion object {
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
@@ -45,12 +53,53 @@ class AllocationsService(
     .toModelPrisonerAllocations()
 
   fun getAllocationById(id: Long): ModelAllocation {
-    val allocation = allocationRepository.findOrThrowNotFound(id).toModel()
+    val allocationEntity = allocationRepository.findOrThrowNotFound(id)
+    val allocation = allocationEntity.toModel()
     val schedule = scheduleRepository.findOrThrowNotFound(allocation.scheduleId)
     checkCaseloadAccess(schedule.activity.prisonCode)
 
-    return allocation
+    return allocation.copy(scheduleLastChanged = getScheduleLastChanged(allocationEntity.allocationId))
   }
+
+  private fun getScheduleLastChanged(allocationId: Long): List<ScheduleLastChanged> {
+    val scheduleChangeImpactHistory = activityScheduleChangeImpactRepository
+      .findByAllocationIdOrderByChangedAtDesc(allocationId)
+      .map { impact ->
+        ScheduleChangeImpactHistory(
+          changedAt = impact.changedAt,
+          changedBy = impact.changedBy,
+          addedSessions = impact.addedSessionsJson?.let { objectMapper.readValue<List<ScheduleSession>>(it) } ?: emptyList(),
+          removedSessions = impact.removedSessionsJson?.let { objectMapper.readValue<List<ScheduleSession>>(it) } ?: emptyList(),
+        )
+      }
+
+    // Activities can have either a one-week or two-week schedule. Each activity is amended independently (e.g. via separate update requests for each week).
+    // For a one-week schedule activity, the latest recorded impact is returned.
+    // For a two-week schedule activity, the latest recorded impact for each week is returned.
+
+    val weekNumbers = scheduleChangeImpactHistory
+      .flatMap { it.addedSessions + it.removedSessions }
+      .map(ScheduleSession::weekNumber)
+      .toSortedSet()
+
+    return weekNumbers.map { weekNumber ->
+      val latestForWeek = scheduleChangeImpactHistory.first { it.addedSessions.any { s -> s.weekNumber == weekNumber } || it.removedSessions.any { s -> s.weekNumber == weekNumber } }
+      ScheduleLastChanged(
+        weekNumber = weekNumber,
+        changedAt = latestForWeek.changedAt,
+        changedBy = latestForWeek.changedBy,
+        addedSessions = latestForWeek.addedSessions.filter { it.weekNumber == weekNumber },
+        removedSessions = latestForWeek.removedSessions.filter { it.weekNumber == weekNumber },
+      )
+    }
+  }
+
+  private data class ScheduleChangeImpactHistory(
+    val changedAt: LocalDateTime,
+    val changedBy: String,
+    val addedSessions: List<ScheduleSession>,
+    val removedSessions: List<ScheduleSession>,
+  )
 
   @Transactional
   fun updateAllocation(allocationId: Long, request: AllocationUpdateRequest, prisonCode: String, updatedBy: String): ModelAllocation {
