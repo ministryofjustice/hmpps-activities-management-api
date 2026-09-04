@@ -89,6 +89,9 @@ data class Allocation(
   )
   val exclusions: List<Slot>,
 
+  @Schema(description = "Details of the most recent activity schedule amendment that actually affected this allocation. For a schedule spanning multiple weeks, contains one entry per week that has an amendment - e.g. up to 2 entries for a bi-weekly schedule.")
+  val scheduleLastChanged: List<ScheduleLastChanged> = emptyList(),
+
   @Schema(description = "The name of the prisoner. Included only if includePrisonerSummary = true")
   @Deprecated(message = "Superseded by prisonerFirstName and prisonerLastName")
   var prisonerName: String? = null,

@@ -27,6 +27,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.tes
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ExclusionRevision
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RevisionType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduleSession
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AllocationUpdateRequest
@@ -1277,6 +1278,235 @@ class AllocationIntegrationTest : LocalStackTestBase() {
       assertThat(revisionType).isEqualTo(RevisionType.ADDED)
       assertThat(updatedBy).isEqualTo("test-client")
       assertThat(updatedDateTime).isEqualTo(exclusionsHistory1[0].updatedDateTime)
+    }
+  }
+
+  @Sql("classpath:test_data/allocation-with-exclusions-history.sql")
+  @Test
+  fun `should include scheduleLastChanged when an activity schedule change adds a session the prisoner will attend`() {
+    assertThat(webTestClient.getAllocationBy(2)!!.scheduleLastChanged).isEmpty()
+
+    // Add Wednesday AM alongside the existing Monday and Tuesday AM sessions. Prisoner has no exclusions so they will attend it.
+    webTestClient.updateActivity(
+      prisonCode = RISLEY_PRISON_CODE,
+      id = 2,
+      activityUpdateRequest = ActivityUpdateRequest(
+        slots = listOf(
+          Slot(
+            weekNumber = 1,
+            timeSlot = TimeSlot.AM,
+            monday = true,
+            tuesday = true,
+            wednesday = true,
+            daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY),
+          ),
+        ),
+      ),
+    )
+
+    with(webTestClient.getAllocationBy(2)!!.scheduleLastChanged.single()) {
+      assertThat(weekNumber).isEqualTo(1)
+      assertThat(changedBy).isEqualTo("test-client")
+      assertThat(changedAt).isNotNull()
+      assertThat(addedSessions).containsExactly(ScheduleSession(1, TimeSlot.AM, DayOfWeek.WEDNESDAY))
+      assertThat(removedSessions).isEmpty()
+    }
+  }
+
+  @Sql("classpath:test_data/allocation-with-exclusions-history.sql")
+  @Test
+  fun `should include scheduleLastChanged when an activity schedule change removes a session the prisoner was attending`() {
+    assertThat(webTestClient.getAllocationBy(2)!!.scheduleLastChanged).isEmpty()
+
+    // Remove Monday AM, leaving Tuesday AM. Prisoner has no exclusions so they were attending Monday AM.
+    webTestClient.updateActivity(
+      prisonCode = RISLEY_PRISON_CODE,
+      id = 2,
+      activityUpdateRequest = ActivityUpdateRequest(
+        slots = listOf(
+          Slot(
+            weekNumber = 1,
+            timeSlot = TimeSlot.AM,
+            tuesday = true,
+            daysOfWeek = setOf(DayOfWeek.TUESDAY),
+          ),
+        ),
+      ),
+    )
+
+    with(webTestClient.getAllocationBy(2)!!.scheduleLastChanged.single()) {
+      assertThat(weekNumber).isEqualTo(1)
+      assertThat(changedBy).isEqualTo("test-client")
+      assertThat(changedAt).isNotNull()
+      assertThat(addedSessions).isEmpty()
+      assertThat(removedSessions).containsExactly(ScheduleSession(1, TimeSlot.AM, DayOfWeek.MONDAY))
+    }
+  }
+
+  @Sql("classpath:test_data/allocation-with-exclusions-history.sql")
+  @Test
+  fun `should not include scheduleLastChanged when the prisoner was already excluded from the removed session`() {
+    // Prisoner is excluded from Monday AM before it is removed - i.e. they were not attending it.
+    webTestClient.updateAllocation(
+      RISLEY_PRISON_CODE,
+      2,
+      AllocationUpdateRequest(
+        exclusions = listOf(
+          Slot(
+            weekNumber = 1,
+            timeSlot = TimeSlot.AM,
+            monday = true,
+            daysOfWeek = setOf(DayOfWeek.MONDAY),
+          ),
+        ),
+      ),
+    )
+
+    // Remove Monday AM, leaving Tuesday AM.
+    webTestClient.updateActivity(
+      prisonCode = RISLEY_PRISON_CODE,
+      id = 2,
+      activityUpdateRequest = ActivityUpdateRequest(
+        slots = listOf(
+          Slot(
+            weekNumber = 1,
+            timeSlot = TimeSlot.AM,
+            tuesday = true,
+            daysOfWeek = setOf(DayOfWeek.TUESDAY),
+          ),
+        ),
+      ),
+    )
+
+    assertThat(webTestClient.getAllocationBy(2)!!.scheduleLastChanged).isEmpty()
+  }
+
+  @Sql("classpath:test_data/allocation-starting-in-future-for-schedule-last-changed.sql")
+  @Test
+  fun `should include scheduleLastChanged when the activity change occurs before the allocation start date`() {
+    // Add Tuesday AM alongside the existing Monday AM session - the allocation has not started yet, but
+    // schedule changes are always shown regardless of the allocation's start date.
+    webTestClient.updateActivity(
+      prisonCode = RISLEY_PRISON_CODE,
+      id = 1,
+      activityUpdateRequest = ActivityUpdateRequest(
+        slots = listOf(
+          Slot(
+            weekNumber = 1,
+            timeSlot = TimeSlot.AM,
+            monday = true,
+            tuesday = true,
+            daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY),
+          ),
+        ),
+      ),
+    )
+
+    with(webTestClient.getAllocationBy(1)!!.scheduleLastChanged.single()) {
+      assertThat(weekNumber).isEqualTo(1)
+      assertThat(changedBy).isEqualTo("test-client")
+      assertThat(changedAt).isNotNull()
+      assertThat(addedSessions).containsExactly(ScheduleSession(1, TimeSlot.AM, DayOfWeek.TUESDAY))
+      assertThat(removedSessions).isEmpty()
+    }
+  }
+
+  @Sql("classpath:test_data/allocation-with-exclusions-history.sql")
+  @Test
+  fun `should include scheduleLastChanged for each week that has an impact when a 2-week schedule is changed via separate requests`() {
+    // Week 1 has Monday and Tuesday AM. Add a second week with its own Monday AM session via a separate update.
+    webTestClient.updateActivity(
+      prisonCode = RISLEY_PRISON_CODE,
+      id = 2,
+      activityUpdateRequest = ActivityUpdateRequest(
+        scheduleWeeks = 2,
+        slots = listOf(
+          Slot(weekNumber = 1, timeSlot = TimeSlot.AM, monday = true, tuesday = true, daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY)),
+          Slot(weekNumber = 2, timeSlot = TimeSlot.AM, monday = true, daysOfWeek = setOf(DayOfWeek.MONDAY)),
+        ),
+      ),
+    )
+
+    // Now, in a separate request, remove Monday AM from week 1 - leaving Tuesday AM in week 1 and Monday AM in week 2 untouched.
+    webTestClient.updateActivity(
+      prisonCode = RISLEY_PRISON_CODE,
+      id = 2,
+      activityUpdateRequest = ActivityUpdateRequest(
+        slots = listOf(
+          Slot(weekNumber = 1, timeSlot = TimeSlot.AM, tuesday = true, daysOfWeek = setOf(DayOfWeek.TUESDAY)),
+          Slot(weekNumber = 2, timeSlot = TimeSlot.AM, monday = true, daysOfWeek = setOf(DayOfWeek.MONDAY)),
+        ),
+      ),
+    )
+
+    val scheduleLastChanged = webTestClient.getAllocationBy(2)!!.scheduleLastChanged
+    assertThat(scheduleLastChanged).hasSize(2)
+
+    with(scheduleLastChanged.single { it.weekNumber == 1 }) {
+      assertThat(changedBy).isEqualTo("test-client")
+      assertThat(addedSessions).isEmpty()
+      assertThat(removedSessions).containsExactly(ScheduleSession(1, TimeSlot.AM, DayOfWeek.MONDAY))
+    }
+    with(scheduleLastChanged.single { it.weekNumber == 2 }) {
+      assertThat(changedBy).isEqualTo("test-client")
+      assertThat(addedSessions).containsExactly(ScheduleSession(2, TimeSlot.AM, DayOfWeek.MONDAY))
+      assertThat(removedSessions).isEmpty()
+    }
+  }
+
+  @Sql("classpath:test_data/allocation-with-exclusions-history.sql")
+  @Test
+  fun `should not include an excluded session removal in scheduleLastChanged for its week, while a genuine change to the other week is still recorded`() {
+    // Set up a 2-week schedule - week 1 keeps its existing Tuesday AM, week 2 gets a new Wednesday AM session.
+    webTestClient.updateActivity(
+      prisonCode = RISLEY_PRISON_CODE,
+      id = 2,
+      activityUpdateRequest = ActivityUpdateRequest(
+        scheduleWeeks = 2,
+        slots = listOf(
+          Slot(weekNumber = 1, timeSlot = TimeSlot.AM, tuesday = true, daysOfWeek = setOf(DayOfWeek.TUESDAY)),
+          Slot(weekNumber = 2, timeSlot = TimeSlot.AM, wednesday = true, daysOfWeek = setOf(DayOfWeek.WEDNESDAY)),
+        ),
+      ),
+    )
+
+    // Prisoner is excluded from week 2 Wednesday AM before it is removed - i.e. they were not attending it.
+    webTestClient.updateAllocation(
+      RISLEY_PRISON_CODE,
+      2,
+      AllocationUpdateRequest(
+        exclusions = listOf(
+          Slot(weekNumber = 2, timeSlot = TimeSlot.AM, wednesday = true, daysOfWeek = setOf(DayOfWeek.WEDNESDAY)),
+        ),
+      ),
+    )
+
+    // Add Monday AM to week 1 (a genuine, non-excluded change) and, in the same request, swap week 2's
+    // Wednesday AM (excluded, so not actually attended) for Thursday AM (not excluded).
+    webTestClient.updateActivity(
+      prisonCode = RISLEY_PRISON_CODE,
+      id = 2,
+      activityUpdateRequest = ActivityUpdateRequest(
+        slots = listOf(
+          Slot(weekNumber = 1, timeSlot = TimeSlot.AM, monday = true, tuesday = true, daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY)),
+          Slot(weekNumber = 2, timeSlot = TimeSlot.AM, thursday = true, daysOfWeek = setOf(DayOfWeek.THURSDAY)),
+        ),
+      ),
+    )
+
+    val scheduleLastChanged = webTestClient.getAllocationBy(2)!!.scheduleLastChanged
+    assertThat(scheduleLastChanged).hasSize(2)
+
+    with(scheduleLastChanged.single { it.weekNumber == 1 }) {
+      assertThat(changedBy).isEqualTo("test-client")
+      assertThat(addedSessions).containsExactly(ScheduleSession(1, TimeSlot.AM, DayOfWeek.MONDAY))
+      assertThat(removedSessions).isEmpty()
+    }
+    with(scheduleLastChanged.single { it.weekNumber == 2 }) {
+      assertThat(changedBy).isEqualTo("test-client")
+      // Wednesday AM removal is not surfaced - the prisoner was already excluded from it, so they were never attending it.
+      assertThat(addedSessions).containsExactly(ScheduleSession(2, TimeSlot.AM, DayOfWeek.THURSDAY))
+      assertThat(removedSessions).isEmpty()
     }
   }
 
