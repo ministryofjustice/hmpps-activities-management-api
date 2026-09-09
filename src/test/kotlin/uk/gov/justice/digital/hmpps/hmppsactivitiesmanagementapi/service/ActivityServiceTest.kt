@@ -3020,12 +3020,10 @@ class ActivityServiceTest {
     }
 
     @Test
-    fun `a single request that changes both weeks of a two-week schedule tags each session with its own week number`() {
+    fun `a single request that changes both weeks of a two-week schedule records a separate row per affected week`() {
       // The current UI always submits separate per-week requests (separate "Update Week 1"/"Update Week 2" buttons),
-      // but nothing at the API/schema level prevents a single request from containing slots for both weeks. Since
-      // AllocationsService.getScheduleLastChanged relies entirely on the weekNumber embedded in each session to
-      // group changes by week, this test guards against that tagging ever being wrong for a combined request,
-      // regardless of how a caller chooses to shape it.
+      // but nothing at the API/schema level prevents a single request from containing slots for both weeks. This
+      // test guards against that ever producing a combined row - each affected week must get its own row
       val activity = buildTwoWeekActivityWithAllocation()
       val schedule = activity.schedules().first()
       val allocation = schedule.allocations().first()
@@ -3046,12 +3044,17 @@ class ActivityServiceTest {
       val captor = argumentCaptor<List<ActivityScheduleChangeImpact>>()
       verify(activityScheduleChangeImpactRepository).saveAll(captor.capture())
 
-      // Both weeks' additions are recorded on the single row produced by this one request, each tagged with its own week number.
-      with(captor.firstValue.single()) {
+      // Each week's addition is recorded on its own row, tagged with its own week number.
+      assertThat(captor.firstValue).hasSize(2)
+      with(captor.firstValue.single { it.weekNumber == 1 }) {
         assertThat(allocationId).isEqualTo(allocation.allocationId)
         assertThat(removedSessionsJson).isNull()
-        assertThat(addedSessionsJson).contains(""""weekNumber":1""").contains(""""dayOfWeek":"MONDAY"""")
-        assertThat(addedSessionsJson).contains(""""weekNumber":2""").contains(""""dayOfWeek":"THURSDAY"""")
+        assertThat(addedSessionsJson).contains(""""dayOfWeek":"MONDAY"""").doesNotContain("THURSDAY")
+      }
+      with(captor.firstValue.single { it.weekNumber == 2 }) {
+        assertThat(allocationId).isEqualTo(allocation.allocationId)
+        assertThat(removedSessionsJson).isNull()
+        assertThat(addedSessionsJson).contains(""""dayOfWeek":"THURSDAY"""").doesNotContain("MONDAY")
       }
     }
 
@@ -3095,15 +3098,89 @@ class ActivityServiceTest {
 
       with(captor.firstValue.single()) {
         assertThat(allocationId).isEqualTo(allocation.allocationId)
+        assertThat(weekNumber).isEqualTo(1)
         assertThat(removedSessionsJson).isNull()
-        assertThat(addedSessionsJson).contains(""""weekNumber":1""").contains(""""dayOfWeek":"MONDAY"""")
-        assertThat(addedSessionsJson).doesNotContain(""""weekNumber":2""")
+        assertThat(addedSessionsJson).contains(""""dayOfWeek":"MONDAY"""")
       }
       with(captor.secondValue.single()) {
         assertThat(allocationId).isEqualTo(allocation.allocationId)
+        assertThat(weekNumber).isEqualTo(2)
         assertThat(removedSessionsJson).isNull()
-        assertThat(addedSessionsJson).contains(""""weekNumber":2""").contains(""""dayOfWeek":"THURSDAY"""")
-        assertThat(addedSessionsJson).doesNotContain(""""weekNumber":1""")
+        assertThat(addedSessionsJson).contains(""""dayOfWeek":"THURSDAY"""")
+      }
+    }
+
+    @Test
+    fun `KNOWN NOMIS CONSTRAINT - adding a session for same day and same slot to a week for which exclusion exists in other week`() {
+      // This documents a side effect of the Nomis cross-week exclusion constraint in
+      // Allocation.syncExclusionsWithScheduleSlots(). Nomis cannot represent an exclusion that only applies to one week
+      // when the same day/time-slot also runs in another week, so any exclusion sharing that day-of-week and time-slot gets ended/removed as soon as the other week's session
+      // is added. If a later, unrelated request then removes the original session, the removal is recorded as a genuine schedule change impact
+      // as the exclusion was removed when a same day + slot was added to another week.
+      val activity = buildTwoWeekActivityWithAllocation()
+      val schedule = activity.schedules().first()
+      val allocation = schedule.allocations().first()
+
+      // Step 1: add week 1 Monday AM (alongside the existing Tuesday AM) so there is a session to exclude from.
+      service().updateActivity(
+        activity.prisonCode,
+        activity.activityId,
+        ActivityUpdateRequest(
+          slots = listOf(
+            Slot(weekNumber = 1, timeSlot = TimeSlot.AM, monday = true, tuesday = true, daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY)),
+            Slot(weekNumber = 2, timeSlot = TimeSlot.AM, wednesday = true, daysOfWeek = setOf(DayOfWeek.WEDNESDAY)),
+          ),
+        ),
+        updatedBy = "TEST",
+      )
+
+      // Step 2: exclude the prisoner from week 1 Monday AM - they are not attending it.
+      allocation.updateExclusion(
+        exclusionSlot = Slot(weekNumber = 1, timeSlot = TimeSlot.AM, monday = true, daysOfWeek = setOf(DayOfWeek.MONDAY)),
+        startDate = LocalDate.now(),
+      )
+      assertThat(allocation.isExcludedFromSession(1, TimeSlot.AM, DayOfWeek.MONDAY)).isTrue()
+
+      // Step 3: add week 2 Monday AM (alongside the existing Wednesday AM) - week 1 is resubmitted unchanged.
+      // This should only be a week 2 impact. This ends the week 1 Monday AM exclusion set up in step 2
+      // because Nomis cannot support an exclusion on a day/time-slot that also runs in another week.
+      service().updateActivity(
+        activity.prisonCode,
+        activity.activityId,
+        ActivityUpdateRequest(
+          slots = listOf(
+            Slot(weekNumber = 1, timeSlot = TimeSlot.AM, monday = true, tuesday = true, daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY)),
+            Slot(weekNumber = 2, timeSlot = TimeSlot.AM, monday = true, wednesday = true, daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY)),
+          ),
+        ),
+        updatedBy = "TEST",
+      )
+
+      // The week 1 Monday AM exclusion has been silently cleared as a side effect of the week 2 change above.
+      assertThat(allocation.isExcludedFromSession(1, TimeSlot.AM, DayOfWeek.MONDAY)).isFalse()
+
+      // Step 4: remove week 1 Monday AM (leaving just Tuesday AM) in a separate request.
+      service().updateActivity(
+        activity.prisonCode,
+        activity.activityId,
+        ActivityUpdateRequest(
+          slots = listOf(
+            Slot(weekNumber = 1, timeSlot = TimeSlot.AM, tuesday = true, daysOfWeek = setOf(DayOfWeek.TUESDAY)),
+            Slot(weekNumber = 2, timeSlot = TimeSlot.AM, monday = true, wednesday = true, daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY)),
+          ),
+        ),
+        updatedBy = "TEST",
+      )
+
+      val captor = argumentCaptor<List<ActivityScheduleChangeImpact>>()
+      verify(activityScheduleChangeImpactRepository, times(3)).saveAll(captor.capture())
+
+      // The final request records a week 1 impact for the Monday AM removal as the exclusion was removed when we added Mon AM to week 2.
+      with(captor.thirdValue.single()) {
+        assertThat(allocationId).isEqualTo(allocation.allocationId)
+        assertThat(weekNumber).isEqualTo(1)
+        assertThat(addedSessionsJson).isNull()
+        assertThat(removedSessionsJson).contains(""""dayOfWeek":"MONDAY"""")
       }
     }
 
@@ -3131,9 +3208,9 @@ class ActivityServiceTest {
 
       with(captor.firstValue.single()) {
         assertThat(allocationId).isEqualTo(allocation.allocationId)
+        assertThat(weekNumber).isEqualTo(2)
         assertThat(removedSessionsJson).isNull()
-        assertThat(addedSessionsJson).contains(""""weekNumber":2""").contains(""""dayOfWeek":"THURSDAY"""")
-        assertThat(addedSessionsJson).doesNotContain(""""weekNumber":1""")
+        assertThat(addedSessionsJson).contains(""""dayOfWeek":"THURSDAY"""")
       }
     }
 
@@ -3174,9 +3251,9 @@ class ActivityServiceTest {
       // Thursday AM addition is recorded - week 1 (untouched) contributes nothing.
       with(captor.firstValue.single()) {
         assertThat(allocationId).isEqualTo(allocation.allocationId)
+        assertThat(weekNumber).isEqualTo(2)
         assertThat(removedSessionsJson).isNull()
-        assertThat(addedSessionsJson).contains(""""weekNumber":2""").contains(""""dayOfWeek":"THURSDAY"""")
-        assertThat(addedSessionsJson).doesNotContain(""""weekNumber":1""")
+        assertThat(addedSessionsJson).contains(""""dayOfWeek":"THURSDAY"""")
       }
     }
   }

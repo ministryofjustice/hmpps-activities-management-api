@@ -14,7 +14,9 @@ import java.time.LocalDateTime
  * prisoner was attending). Only affected allocations get a row - see ActivityService.applySlotsUpdate().
  *
  * The added/removed sessions are stored as JSON since they simply describe what changed for display
- * purposes and are not queried on.
+ * purposes and are not queried on. A single amendment affecting both weeks of a two-week schedule produces
+ * one row per affected week so that the latest impact per week can
+ * be queried directly via weekNumber without scanning the full history.
  */
 @Entity
 @Table(name = "activity_schedule_change_impact")
@@ -30,6 +32,8 @@ class ActivityScheduleChangeImpact(
   val allocationId: Long,
 
   val prisonerNumber: String,
+
+  val weekNumber: Int,
 
   val changedAt: LocalDateTime,
 

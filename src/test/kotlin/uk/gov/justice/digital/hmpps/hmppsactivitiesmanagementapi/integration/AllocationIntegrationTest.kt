@@ -1510,6 +1510,54 @@ class AllocationIntegrationTest : LocalStackTestBase() {
     }
   }
 
+  @Sql("classpath:test_data/allocation-with-exclusions-history.sql")
+  @Test
+  fun `should only return the latest scheduleLastChanged for a week after several amendments to that week`() {
+    // Allocation 2's schedule (1-week) starts with Monday and Tuesday AM. Three separate amendments are made
+    // to the same week - only the impact from the most recent one should ever be returned, regardless of how
+    // much history has built up for that week.
+    webTestClient.updateActivity(
+      prisonCode = RISLEY_PRISON_CODE,
+      id = 2,
+      activityUpdateRequest = ActivityUpdateRequest(
+        slots = listOf(
+          Slot(weekNumber = 1, timeSlot = TimeSlot.AM, monday = true, tuesday = true, wednesday = true, daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY)),
+        ),
+      ),
+    )
+
+    webTestClient.updateActivity(
+      prisonCode = RISLEY_PRISON_CODE,
+      id = 2,
+      activityUpdateRequest = ActivityUpdateRequest(
+        slots = listOf(
+          Slot(weekNumber = 1, timeSlot = TimeSlot.AM, tuesday = true, wednesday = true, daysOfWeek = setOf(DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY)),
+        ),
+      ),
+    )
+
+    webTestClient.updateActivity(
+      prisonCode = RISLEY_PRISON_CODE,
+      id = 2,
+      activityUpdateRequest = ActivityUpdateRequest(
+        slots = listOf(
+          Slot(weekNumber = 1, timeSlot = TimeSlot.AM, tuesday = true, wednesday = true, thursday = true, daysOfWeek = setOf(DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY)),
+        ),
+      ),
+    )
+
+    val scheduleLastChanged = webTestClient.getAllocationBy(2)!!.scheduleLastChanged
+    assertThat(scheduleLastChanged).hasSize(1)
+
+    // Only the third (most recent) amendment's impact is returned - the first two amendments' impacts are discarded.
+    with(scheduleLastChanged.single()) {
+      assertThat(weekNumber).isEqualTo(1)
+      assertThat(changedBy).isEqualTo("test-client")
+      assertThat(addedSessions).containsExactly(ScheduleSession(1, TimeSlot.AM, DayOfWeek.THURSDAY))
+      assertThat(removedSessions).isEmpty()
+    }
+  }
+
   private fun WebTestClient.updateAllocation(
     prisonCode: String,
     allocationId: Long,

@@ -27,7 +27,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelPrisonerAllocations
 import java.time.LocalDate
-import java.time.LocalDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation as ModelAllocation
 
 @Service
@@ -61,45 +60,17 @@ class AllocationsService(
     return allocation.copy(scheduleLastChanged = getScheduleLastChanged(allocationEntity.allocationId))
   }
 
-  private fun getScheduleLastChanged(allocationId: Long): List<ScheduleLastChanged> {
-    val scheduleChangeImpactHistory = activityScheduleChangeImpactRepository
-      .findByAllocationIdOrderByChangedAtDesc(allocationId)
-      .map { impact ->
-        ScheduleChangeImpactHistory(
-          changedAt = impact.changedAt,
-          changedBy = impact.changedBy,
-          addedSessions = impact.addedSessionsJson?.let { objectMapper.readValue<List<ScheduleSession>>(it) } ?: emptyList(),
-          removedSessions = impact.removedSessionsJson?.let { objectMapper.readValue<List<ScheduleSession>>(it) } ?: emptyList(),
-        )
-      }
-
-    // Activities can have either a one-week or two-week schedule. Each activity is amended independently (e.g. via separate update requests for each week).
-    // For a one-week schedule activity, the latest recorded impact is returned.
-    // For a two-week schedule activity, the latest recorded impact for each week is returned.
-
-    val weekNumbers = scheduleChangeImpactHistory
-      .flatMap { it.addedSessions + it.removedSessions }
-      .map(ScheduleSession::weekNumber)
-      .toSortedSet()
-
-    return weekNumbers.map { weekNumber ->
-      val latestForWeek = scheduleChangeImpactHistory.first { it.addedSessions.any { s -> s.weekNumber == weekNumber } || it.removedSessions.any { s -> s.weekNumber == weekNumber } }
+  private fun getScheduleLastChanged(allocationId: Long): List<ScheduleLastChanged> = activityScheduleChangeImpactRepository
+    .findLatestImpactPerWeekByAllocationId(allocationId)
+    .map { impact ->
       ScheduleLastChanged(
-        weekNumber = weekNumber,
-        changedAt = latestForWeek.changedAt,
-        changedBy = latestForWeek.changedBy,
-        addedSessions = latestForWeek.addedSessions.filter { it.weekNumber == weekNumber },
-        removedSessions = latestForWeek.removedSessions.filter { it.weekNumber == weekNumber },
+        weekNumber = impact.weekNumber,
+        changedAt = impact.changedAt,
+        changedBy = impact.changedBy,
+        addedSessions = impact.addedSessionsJson?.let { objectMapper.readValue<List<ScheduleSession>>(it) } ?: emptyList(),
+        removedSessions = impact.removedSessionsJson?.let { objectMapper.readValue<List<ScheduleSession>>(it) } ?: emptyList(),
       )
     }
-  }
-
-  private data class ScheduleChangeImpactHistory(
-    val changedAt: LocalDateTime,
-    val changedBy: String,
-    val addedSessions: List<ScheduleSession>,
-    val removedSessions: List<ScheduleSession>,
-  )
 
   @Transactional
   fun updateAllocation(allocationId: Long, request: AllocationUpdateRequest, prisonCode: String, updatedBy: String): ModelAllocation {

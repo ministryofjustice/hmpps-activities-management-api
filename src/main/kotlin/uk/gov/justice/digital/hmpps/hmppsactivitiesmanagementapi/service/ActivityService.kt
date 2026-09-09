@@ -941,16 +941,22 @@ class ActivityService(
 
           allocation.syncExclusionsWithScheduleSlots(schedule.slots())?.let { updatedAllocationIds.add(it) }
 
-          if (allocationAddedSessions.isNotEmpty() || allocationRemovedSessions.isNotEmpty()) {
+          // One row is written per affected week (rather than a single row spanning all weeks) so that the
+          // latest impact for each week of a two-week schedule can be queried directly - see
+          // ActivityScheduleChangeImpactRepository.findLatestImpactPerWeekByAllocationId().
+          val affectedWeekNumbers = (allocationAddedSessions + allocationRemovedSessions).map { it.weekNumber }.toSortedSet()
+
+          affectedWeekNumbers.forEach { weekNumber ->
             changeImpacts += ActivityScheduleChangeImpact(
               activityId = activity.activityId,
               activityScheduleId = schedule.activityScheduleId,
               allocationId = allocation.allocationId,
               prisonerNumber = allocation.prisonerNumber,
+              weekNumber = weekNumber,
               changedAt = changedAt,
               changedBy = updatedBy,
-              addedSessionsJson = allocationAddedSessions.toJsonOrNull(),
-              removedSessionsJson = allocationRemovedSessions.toJsonOrNull(),
+              addedSessionsJson = allocationAddedSessions.filter { it.weekNumber == weekNumber }.toSet().toJsonOrNull(),
+              removedSessionsJson = allocationRemovedSessions.filter { it.weekNumber == weekNumber }.toSet().toJsonOrNull(),
             )
           }
         }
@@ -962,5 +968,15 @@ class ActivityService(
     return updatedAllocationIds
   }
 
-  private fun Set<ScheduleSession>.toJsonOrNull(): String? = takeIf { it.isNotEmpty() }?.let { objectMapper.writeValueAsString(it) }
+  private fun Set<ScheduleSession>.toJsonOrNull(): String? = takeIf { isNotEmpty() }?.let { sessions ->
+    objectMapper.writeValueAsString(
+      sessions.sortedWith(
+        compareBy<ScheduleSession>(
+          { it.weekNumber },
+          { it.dayOfWeek },
+          { it.timeSlot },
+        ),
+      ),
+    )
+  }
 }

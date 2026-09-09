@@ -135,6 +135,7 @@ class AllocationsServiceTest {
       activityScheduleId = expected.activitySchedule.activityScheduleId,
       allocationId = expected.allocationId,
       prisonerNumber = expected.prisonerNumber,
+      weekNumber = 1,
       changedAt = LocalDateTime.of(2024, 6, 1, 9, 0),
       changedBy = "Mrs Blogs",
       addedSessionsJson = addedSessionsJson,
@@ -144,7 +145,7 @@ class AllocationsServiceTest {
     addCaseloadIdToRequestHeader("MDI")
     whenever(scheduleRepository.findById(expected.activitySchedule.activityScheduleId)).thenReturn(Optional.of(expected.activitySchedule))
     whenever(allocationRepository.findById(expected.allocationId)).thenReturn(Optional.of(expected))
-    whenever(activityScheduleChangeImpactRepository.findByAllocationIdOrderByChangedAtDesc(expected.allocationId)).thenReturn(listOf(changeImpact))
+    whenever(activityScheduleChangeImpactRepository.findLatestImpactPerWeekByAllocationId(expected.allocationId)).thenReturn(listOf(changeImpact))
 
     val result = service.getAllocationById(expected.allocationId)
 
@@ -160,15 +161,17 @@ class AllocationsServiceTest {
   }
 
   @Test
-  fun `transformed allocation includes scheduleLastChanged for each week that has an impact recorded via a separate request`() {
+  fun `transformed allocation includes scheduleLastChanged for each week returned by the repository`() {
     val expected = allocation()
 
-    // Week 1 changed via one request, week 2 changed later via a separate request - two separate rows.
+    // The repository (findLatestImpactPerWeekByAllocationId) is responsible for returning only the latest impact
+    // row per week - this test just verifies the service maps each row straight through unchanged.
     val week1Impact = ActivityScheduleChangeImpact(
       activityId = expected.activitySchedule.activity.activityId,
       activityScheduleId = expected.activitySchedule.activityScheduleId,
       allocationId = expected.allocationId,
       prisonerNumber = expected.prisonerNumber,
+      weekNumber = 1,
       changedAt = LocalDateTime.of(2024, 6, 1, 9, 0),
       changedBy = "Mr Blogs",
       addedSessionsJson = null,
@@ -179,6 +182,7 @@ class AllocationsServiceTest {
       activityScheduleId = expected.activitySchedule.activityScheduleId,
       allocationId = expected.allocationId,
       prisonerNumber = expected.prisonerNumber,
+      weekNumber = 2,
       changedAt = LocalDateTime.of(2024, 6, 2, 10, 30),
       changedBy = "Mrs Blogs",
       addedSessionsJson = """[{"weekNumber":2,"timeSlot":"PM","dayOfWeek":"TUESDAY"}]""",
@@ -188,8 +192,7 @@ class AllocationsServiceTest {
     addCaseloadIdToRequestHeader("MDI")
     whenever(scheduleRepository.findById(expected.activitySchedule.activityScheduleId)).thenReturn(Optional.of(expected.activitySchedule))
     whenever(allocationRepository.findById(expected.allocationId)).thenReturn(Optional.of(expected))
-    // Repository returns newest first.
-    whenever(activityScheduleChangeImpactRepository.findByAllocationIdOrderByChangedAtDesc(expected.allocationId)).thenReturn(listOf(week2Impact, week1Impact))
+    whenever(activityScheduleChangeImpactRepository.findLatestImpactPerWeekByAllocationId(expected.allocationId)).thenReturn(listOf(week1Impact, week2Impact))
 
     val result = service.getAllocationById(expected.allocationId)
 
@@ -218,7 +221,7 @@ class AllocationsServiceTest {
     addCaseloadIdToRequestHeader("MDI")
     whenever(scheduleRepository.findById(expected.activitySchedule.activityScheduleId)).thenReturn(Optional.of(expected.activitySchedule))
     whenever(allocationRepository.findById(expected.allocationId)).thenReturn(Optional.of(expected))
-    whenever(activityScheduleChangeImpactRepository.findByAllocationIdOrderByChangedAtDesc(expected.allocationId)).thenReturn(emptyList())
+    whenever(activityScheduleChangeImpactRepository.findLatestImpactPerWeekByAllocationId(expected.allocationId)).thenReturn(emptyList())
 
     assertThat(service.getAllocationById(expected.allocationId).scheduleLastChanged).isEmpty()
   }
