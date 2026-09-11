@@ -1304,7 +1304,7 @@ class AllocationIntegrationTest : LocalStackTestBase() {
       ),
     )
 
-    with(webTestClient.getAllocationBy(2)!!.scheduleLastChanged.single()) {
+    with(webTestClient.getAllocationBy(2)!!.scheduleLastChanged!!.single()) {
       assertThat(weekNumber).isEqualTo(1)
       assertThat(changedBy).isEqualTo("test-client")
       assertThat(changedAt).isNotNull()
@@ -1334,7 +1334,7 @@ class AllocationIntegrationTest : LocalStackTestBase() {
       ),
     )
 
-    with(webTestClient.getAllocationBy(2)!!.scheduleLastChanged.single()) {
+    with(webTestClient.getAllocationBy(2)!!.scheduleLastChanged!!.single()) {
       assertThat(weekNumber).isEqualTo(1)
       assertThat(changedBy).isEqualTo("test-client")
       assertThat(changedAt).isNotNull()
@@ -1402,7 +1402,7 @@ class AllocationIntegrationTest : LocalStackTestBase() {
       ),
     )
 
-    with(webTestClient.getAllocationBy(1)!!.scheduleLastChanged.single()) {
+    with(webTestClient.getAllocationBy(1)!!.scheduleLastChanged!!.single()) {
       assertThat(weekNumber).isEqualTo(1)
       assertThat(changedBy).isEqualTo("test-client")
       assertThat(changedAt).isNotNull()
@@ -1439,7 +1439,7 @@ class AllocationIntegrationTest : LocalStackTestBase() {
       ),
     )
 
-    val scheduleLastChanged = webTestClient.getAllocationBy(2)!!.scheduleLastChanged
+    val scheduleLastChanged = webTestClient.getAllocationBy(2)!!.scheduleLastChanged!!
     assertThat(scheduleLastChanged).hasSize(2)
 
     with(scheduleLastChanged.single { it.weekNumber == 1 }) {
@@ -1494,7 +1494,7 @@ class AllocationIntegrationTest : LocalStackTestBase() {
       ),
     )
 
-    val scheduleLastChanged = webTestClient.getAllocationBy(2)!!.scheduleLastChanged
+    val scheduleLastChanged = webTestClient.getAllocationBy(2)!!.scheduleLastChanged!!
     assertThat(scheduleLastChanged).hasSize(2)
 
     with(scheduleLastChanged.single { it.weekNumber == 1 }) {
@@ -1546,7 +1546,7 @@ class AllocationIntegrationTest : LocalStackTestBase() {
       ),
     )
 
-    val scheduleLastChanged = webTestClient.getAllocationBy(2)!!.scheduleLastChanged
+    val scheduleLastChanged = webTestClient.getAllocationBy(2)!!.scheduleLastChanged!!
     assertThat(scheduleLastChanged).hasSize(1)
 
     // Only the third (most recent) amendment's impact is returned - the first two amendments' impacts are discarded.
