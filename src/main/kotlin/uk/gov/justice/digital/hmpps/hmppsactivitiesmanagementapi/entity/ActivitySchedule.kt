@@ -23,6 +23,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySuitabilityCriteria
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduleSession
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -135,6 +136,10 @@ data class ActivitySchedule(
 
   @Deprecated(" used in one place now syncExclusionsWithScheduleSlots, ideally remove this / make private once sync code resolved")
   fun slots() = slots.toList()
+
+  fun scheduleSessions(): Set<ScheduleSession> = slots.flatMap { slot ->
+    slot.getDaysOfWeek().map { day -> ScheduleSession(slot.weekNumber, slot.timeSlot, day) }
+  }.toSet()
 
   fun noMatchingSlots(exclusion: Slot): Boolean = slots().matchingSlots(daysOfWeek = exclusion.daysOfWeek, weekNumber = exclusion.weekNumber, timeSlot = exclusion.timeSlot).not()
 

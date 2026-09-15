@@ -10,4 +10,5 @@ enum class EventCategory {
   NOT_IN_WORK,
   OTHER,
   PRISON_JOBS,
+  ROTL,
 }
