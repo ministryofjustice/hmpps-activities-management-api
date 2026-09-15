@@ -1,0 +1,2 @@
+grant pg_read_all_data  to digital_prison_reporting;
+revoke rds_superuser from digital_prison_reporting;
