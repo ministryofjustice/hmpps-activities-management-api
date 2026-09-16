@@ -63,9 +63,10 @@ data class PrisonerReleasedEvent(val additionalInformation: ReleaseInformation) 
   override fun prisonCode() = additionalInformation.prisonId
   override fun prisonerNumber() = additionalInformation.nomsNumber
   override fun eventType() = InboundEventType.PRISONER_RELEASED.eventType
-  override fun eventMessage() = "Prisoner released"
+  override fun eventMessage() = additionalInformation.reason
   fun isTemporary() = listOf("TEMPORARY_ABSENCE_RELEASE", "SENT_TO_COURT").contains(additionalInformation.reason)
   fun isPermanent() = listOf("RELEASED", "RELEASED_TO_HOSPITAL").contains(additionalInformation.reason)
+  fun isTransferred() = additionalInformation.reason == "TRANSFERRED"
 }
 
 data class ReleaseInformation(val nomsNumber: String, val reason: String, val prisonId: String)
@@ -75,7 +76,7 @@ data class PrisonerReceivedEvent(val additionalInformation: ReceivedInformation)
   fun prisonCode() = additionalInformation.prisonId
   override fun prisonerNumber() = additionalInformation.nomsNumber
   override fun eventType() = InboundEventType.PRISONER_RECEIVED.eventType
-  override fun eventMessage() = "Prisoner received"
+  override fun eventMessage() = additionalInformation.reason
 }
 
 data class ReceivedInformation(val nomsNumber: String, val reason: String, val prisonId: String)
@@ -88,7 +89,7 @@ data class OffenderMergedEvent(val additionalInformation: MergeInformation) :
   override fun prisonerNumber() = additionalInformation.nomsNumber
   fun removedPrisonerNumber() = additionalInformation.removedNomsNumber
   override fun eventType() = InboundEventType.OFFENDER_MERGED.eventType
-  override fun eventMessage() = "Prisoner merged from '${this.removedPrisonerNumber()}' to '${this.prisonerNumber()}'"
+  override fun eventMessage() = "From '${this.removedPrisonerNumber()}' to '${this.prisonerNumber()}'"
 }
 
 data class MergeInformation(val nomsNumber: String, val removedNomsNumber: String)
@@ -137,6 +138,8 @@ data class PrisonerUpdatedEvent(val additionalInformation: PrisonerUpdatedInform
     }
   }
 
+  fun isCellMove() = additionalInformation.categoriesChanged.contains("LOCATION")
+
   override fun isMeaningful() = eventMessage() != null
 }
 
@@ -149,7 +152,7 @@ data class NonAssociationsChangedEvent(val additionalInformation: NonAssociation
   EventOfInterest {
   override fun prisonerNumber() = additionalInformation.nomsNumber
   override fun eventType() = InboundEventType.NON_ASSOCIATIONS.eventType
-  override fun eventMessage() = "Non-associations changed"
+  override fun eventMessage() = "New non-association"
   fun bookingId() = additionalInformation.bookingId
 }
 
@@ -209,8 +212,26 @@ data class AlertsUpdatedEvent(val additionalInformation: AlertsUpdatedInformatio
 
   override fun eventType() = InboundEventType.ALERTS_UPDATED.eventType
 
-  override fun eventMessage() = "Alerts updated"
+  override fun isMeaningful() = hasAlertsAdded() || hasAlertsRemoved()
+
+  fun hasAlertsAdded() = additionalInformation.alertsAdded.isNotEmpty()
+
+  fun hasAlertsRemoved() = additionalInformation.alertsRemoved.isNotEmpty()
+
+  override fun eventMessage(): String = listOfNotNull(
+    "Alert added: ${additionalInformation.alertsAdded.sorted().joinToString(", ")}".takeIf { hasAlertsAdded() },
+    "Alert closed: ${additionalInformation.alertsRemoved.sorted().joinToString(", ")}".takeIf { hasAlertsRemoved() },
+  ).joinToString("; ")
 }
+
+/*
+ Case                    eventData
+ Added only          Alert added: A1, A2
+ Closed only         Alert closed: R1, R2
+ Both                Alert added: A1, A2; Alert closed: R1, R2
+ */
+
+// {"added":["A1","A2"],"removed":["R1","R2"]}
 
 data class AlertsUpdatedInformation(
   val nomsNumber: String,

@@ -25,6 +25,18 @@ fun prisonerReceivedFromTemporaryAbsence(
   ),
 )
 
+fun prisonerReceivedEvent(
+  prisonCode: String = PENTONVILLE_PRISON_CODE,
+  prisonerNumber: String = "XXXXXX",
+  reason: String = "NEW_ADMISSION",
+) = PrisonerReceivedEvent(
+  ReceivedInformation(
+    prisonerNumber,
+    reason,
+    prisonCode,
+  ),
+)
+
 fun prisonerUpdatedEvent(prisonerNumber: String = "XXXXXX", categoriesChanged: List<String> = listOf<String>("LOCATION")) = PrisonerUpdatedEvent(
   PrisonerUpdatedInformation(
     nomsNumber = prisonerNumber,

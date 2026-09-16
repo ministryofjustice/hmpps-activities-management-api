@@ -68,16 +68,45 @@ enum class EventDescription {
   @Schema(
     description = "A released prisoner",
   )
-  @Deprecated(message = "A released prisoner. Superseded by PERMANENT_RELEASE and TEMPORARY_RELEASE")
   RELEASED,
 
   @Schema(
-    description = "A permanently released prisoner",
+    description = "An alert has been added",
   )
-  PERMANENT_RELEASE,
+  ALERT_ADDED,
 
   @Schema(
-    description = "A temporarily released prisoner",
+    description = "An alert has been removed",
   )
-  TEMPORARY_RELEASE,
+  ALERT_CLOSED,
+
+  @Schema(
+    description = "Alerts have been added and removed",
+  )
+  ALERTS_ADDED_AND_CLOSED,
+
+  @Schema(
+    description = "A prisoner transferred out to another prison",
+  )
+  TRANSFER_OUT,
+
+  @Schema(
+    description = "A prisoner arrived at or returned to a prison",
+  )
+  ARRIVAL_OR_RETURN,
+
+  @Schema(
+    description = "A new non-association for a prisoner",
+  )
+  NON_ASSOCIATION,
+
+  @Schema(
+    description = "A prisoner has moved location",
+  )
+  CELL_MOVE,
+
+  @Schema(
+    description = "A prisoner has been merged into an existing prisoner record",
+  )
+  PRISONER_MERGED,
 }

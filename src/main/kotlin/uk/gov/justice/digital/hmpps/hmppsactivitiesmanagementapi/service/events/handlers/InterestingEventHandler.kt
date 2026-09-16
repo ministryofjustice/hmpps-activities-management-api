@@ -10,10 +10,14 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Allo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventReviewRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.Action
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.ActivitiesChangedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.AlertsUpdatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.InboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.InboundReleaseEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.NonAssociationsChangedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OffenderMergedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.PrisonerReceivedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.PrisonerReleasedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.PrisonerUpdatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
 import java.time.LocalDateTime
 
@@ -59,6 +63,7 @@ class InterestingEventHandler(
                 prisonCode = agencyId,
                 prisonerNumber = event.prisonerNumber(),
                 bookingId = it.bookingId?.toInt(),
+                eventDescription = event.getEventDesc(),
               ),
             )
             log.debug("Saved interesting event ID ${saved.eventReviewId} - ${event.eventType()} - for ${event.prisonerNumber()}")
@@ -133,13 +138,24 @@ class InterestingEventHandler(
         else -> null
       }
     is PrisonerReleasedEvent ->
-      if (isPermanent()) {
-        EventReviewDescription.PERMANENT_RELEASE
-      } else if (isTemporary()) {
-        EventReviewDescription.TEMPORARY_RELEASE
-      } else {
+      if (isTransferred()) {
+        EventReviewDescription.TRANSFER_OUT
+      } else if (isPermanent() || isTemporary()) {
         EventReviewDescription.RELEASED
+      } else {
+        null
       }
+    is AlertsUpdatedEvent ->
+      when {
+        hasAlertsAdded() && hasAlertsRemoved() -> EventReviewDescription.ALERTS_ADDED_AND_CLOSED
+        hasAlertsAdded() -> EventReviewDescription.ALERT_ADDED
+        hasAlertsRemoved() -> EventReviewDescription.ALERT_CLOSED
+        else -> null
+      }
+    is PrisonerReceivedEvent -> EventReviewDescription.ARRIVAL_OR_RETURN
+    is NonAssociationsChangedEvent -> EventReviewDescription.NON_ASSOCIATION
+    is PrisonerUpdatedEvent -> if (isCellMove()) EventReviewDescription.CELL_MOVE else null
+    is OffenderMergedEvent -> EventReviewDescription.PRISONER_MERGED
     else -> null
   }
 

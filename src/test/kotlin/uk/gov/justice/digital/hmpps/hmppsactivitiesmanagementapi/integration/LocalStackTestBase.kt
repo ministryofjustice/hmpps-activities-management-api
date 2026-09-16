@@ -61,6 +61,7 @@ import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
     "feature.event.prison-offender-events.prisoner.activities-changed=true",
     "feature.event.prison-offender-events.prisoner.appointments-changed=true",
     "feature.event.prison-offender-events.prisoner.merged=true",
+    "feature.event.prison-offender-events.prisoner.non-association-detail.changed=true",
     "feature.event.prisoner-offender-search.prisoner.alerts-updated=true",
     "feature.event.prisoner-offender-search.prisoner.received=true",
     "feature.event.prisoner-offender-search.prisoner.released=true",
