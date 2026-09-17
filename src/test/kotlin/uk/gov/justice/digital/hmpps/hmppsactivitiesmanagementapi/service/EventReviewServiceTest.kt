@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -42,7 +43,7 @@ class EventReviewServiceTest {
     val size = 10
     val sortDirection = "ascending"
     val prisonCode = "MDI"
-    val prisonerNumber = "G1234FF"
+    val prisonerNumbers = listOf<String>("G1234FF")
     val date = LocalDate.now()
 
     val repositoryResult = PageImpl(
@@ -55,7 +56,7 @@ class EventReviewServiceTest {
 
     whenever(eventReviewRepository.findAll(any<Specification<EventReview>>(), any<Pageable>())).thenReturn(repositoryResult)
 
-    val searchSpec = EventReviewSearchRequest(prisonCode = prisonCode, eventDate = date, prisonerNumber = prisonerNumber, acknowledgedEvents = true)
+    val searchSpec = EventReviewSearchRequest(prisonCode = prisonCode, eventDate = date, prisonerNumbers = prisonerNumbers, acknowledgedEvents = true)
 
     val result = eventReviewService.getFilteredEvents(page, size, sortDirection, searchSpec)
 
@@ -73,12 +74,94 @@ class EventReviewServiceTest {
   }
 
   @Test
+  fun `filters by multiple prisoner numbers`() {
+    val page = 0
+    val size = 10
+    val sortDirection = "ascending"
+    val prisonCode = "MDI"
+    val prisonerNumbers = listOf("G1234FF", "A1234AA")
+    val date = LocalDate.now()
+
+    val repositoryResult = PageImpl(
+      listOf(
+        EventReview(1, "service", "x.y.z", LocalDateTime.now(), prisonCode, "G1234FF", 1, "XYZ"),
+        EventReview(2, "service", "x.y.z", LocalDateTime.now(), prisonCode, "A1234AA", 2, "XYZ"),
+      ),
+    )
+
+    whenever(eventReviewRepository.findAll(any<Specification<EventReview>>(), any<Pageable>())).thenReturn(repositoryResult)
+    whenever(allocationRepository.findByPrisonCodeAndPrisonerNumbers(prisonCode, prisonerNumbers)).thenReturn(emptyList())
+
+    val searchSpec = EventReviewSearchRequest(prisonCode = prisonCode, eventDate = date, prisonerNumbers = prisonerNumbers, acknowledgedEvents = true)
+
+    val result = eventReviewService.getFilteredEvents(page, size, sortDirection, searchSpec)
+
+    assertThat(result.content.map { it.prisonerNumber }).containsExactly("G1234FF", "A1234AA")
+    verify(allocationRepository).findByPrisonCodeAndPrisonerNumbers(prisonCode, prisonerNumbers)
+  }
+
+  @Test
+  fun `deduplicates prisoner numbers before loading allocations`() {
+    val page = 0
+    val size = 10
+    val sortDirection = "ascending"
+    val prisonCode = "MDI"
+    val date = LocalDate.now()
+    val eventTime = LocalDateTime.now()
+
+    val repositoryResult = PageImpl(
+      listOf(
+        EventReview(1, "service", "x.y.z", eventTime, prisonCode, "A1234AA", 1, "XYZ"),
+        EventReview(2, "service", "x.y.z", eventTime, prisonCode, "A1234AA", 2, "XYZ"),
+        EventReview(3, "service", "x.y.z", eventTime, prisonCode, null, 3, "XYZ"),
+      ),
+    )
+
+    whenever(eventReviewRepository.findAll(any<Specification<EventReview>>(), any<Pageable>())).thenReturn(repositoryResult)
+
+    val kitchenAllocation = activitySchedule(activityEntity(summary = "KITCHEN AM", prisonCode = prisonCode), noExclusions = true).allocations().first()
+    whenever(allocationRepository.findByPrisonCodeAndPrisonerNumbers(prisonCode, listOf("A1234AA")))
+      .thenReturn(listOf(kitchenAllocation))
+
+    val searchSpec = EventReviewSearchRequest(prisonCode = prisonCode, eventDate = date, acknowledgedEvents = true)
+    val result = eventReviewService.getFilteredEvents(page, size, sortDirection, searchSpec)
+
+    assertThat(result.content[0].activeAllocations).containsExactly("KITCHEN AM")
+    assertThat(result.content[1].activeAllocations).containsExactly("KITCHEN AM")
+    assertThat(result.content[2].activeAllocations).isEmpty()
+    verify(allocationRepository).findByPrisonCodeAndPrisonerNumbers(prisonCode, listOf("A1234AA"))
+  }
+
+  @Test
+  fun `does not load allocations when no prisoner numbers are present`() {
+    val page = 0
+    val size = 10
+    val sortDirection = "ascending"
+    val prisonCode = "MDI"
+    val date = LocalDate.now()
+
+    val repositoryResult = PageImpl(
+      listOf(
+        EventReview(1, "service", "x.y.z", LocalDateTime.now(), prisonCode, null, 1, "XYZ"),
+      ),
+    )
+
+    whenever(eventReviewRepository.findAll(any<Specification<EventReview>>(), any<Pageable>())).thenReturn(repositoryResult)
+
+    val searchSpec = EventReviewSearchRequest(prisonCode = prisonCode, eventDate = date, acknowledgedEvents = true)
+    val result = eventReviewService.getFilteredEvents(page, size, sortDirection, searchSpec)
+
+    assertThat(result.content.single().activeAllocations).isEmpty()
+    verify(allocationRepository, never()).findByPrisonCodeAndPrisonerNumbers(any(), any())
+  }
+
+  @Test
   fun `returns rows based on a search specification with differing event descriptions`() {
     val page = 0
     val size = 10
     val sortDirection = "ascending"
     val prisonCode = "MDI"
-    val prisonerNumber = "G1234FF"
+    val prisonerNumbers = listOf<String>("G1234FF")
     val date = LocalDate.now()
 
     val eventTime = LocalDateTime.now()
@@ -92,7 +175,7 @@ class EventReviewServiceTest {
 
     whenever(eventReviewRepository.findAll(any<Specification<EventReview>>(), any<Pageable>())).thenReturn(repositoryResult)
 
-    val searchSpec = EventReviewSearchRequest(prisonCode = prisonCode, eventDate = date, prisonerNumber = prisonerNumber, acknowledgedEvents = true)
+    val searchSpec = EventReviewSearchRequest(prisonCode = prisonCode, eventDate = date, prisonerNumbers = prisonerNumbers, acknowledgedEvents = true)
 
     val result = eventReviewService.getFilteredEvents(page, size, sortDirection, searchSpec)
 

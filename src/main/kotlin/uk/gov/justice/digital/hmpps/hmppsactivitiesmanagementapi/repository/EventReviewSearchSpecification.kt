@@ -9,7 +9,7 @@ import java.time.LocalDateTime
 class EventReviewSearchSpecification {
   fun prisonCodeEquals(prisonCode: String) = Specification<EventReview> { root, _, cb -> cb.equal(root.get<String>("prisonCode"), prisonCode) }
 
-  fun prisonerNumberEquals(prisonerNumber: String) = Specification<EventReview> { root, _, cb -> cb.equal(root.get<String>("prisonerNumber"), prisonerNumber) }
+  fun prisonerNumberIn(prisonerNumbers: List<String>) = Specification<EventReview> { root, _, cb -> root.get<String>("prisonerNumber").`in`(prisonerNumbers) }
 
   fun eventTimeBetween(startTime: LocalDateTime, endTime: LocalDateTime) = Specification<EventReview> { root, _, cb -> cb.between(root.get("eventTime"), startTime, endTime) }
 
