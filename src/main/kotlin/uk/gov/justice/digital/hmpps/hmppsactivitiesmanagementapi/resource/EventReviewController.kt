@@ -80,6 +80,9 @@ class EventReviewController(private val eventReviewService: EventReviewService) 
     @RequestParam(required = false)
     @Parameter(description = "The prisoner number, eg. A9999AA (optional). Default is all prisoner numbers.")
     prisonerNumber: String?,
+    @RequestParam(required = false)
+    @Parameter(description = "The prisoner numbers, eg. A9999AA,A8888AA (optional). Default is all prisoner numbers.")
+    prisonerNumbers: List<String>?,
     @RequestParam(required = false, defaultValue = "false")
     @Parameter(description = "Whether to include acknowledged events (optional). Default is false.")
     includeAcknowledged: Boolean? = false,
@@ -98,7 +101,7 @@ class EventReviewController(private val eventReviewService: EventReviewService) 
     val filters = EventReviewSearchRequest(
       prisonCode = prisonCode,
       eventDate = date,
-      prisonerNumber = prisonerNumber,
+      prisonerNumbers = prisonerNumbers,
       acknowledgedEvents = includeAcknowledged,
     )
     val paginatedResults = eventReviewService.getFilteredEvents(page, size, sortDirection, filters)
