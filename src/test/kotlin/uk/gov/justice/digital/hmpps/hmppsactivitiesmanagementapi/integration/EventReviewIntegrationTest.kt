@@ -440,8 +440,10 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
       .maybeQueryParam("includeAcknowledged", includeAcknowledged)
       .maybeQueryParam("sortDirection", sort)
       .maybeQueryParam("prisonerNumber", prisonerNumber)
-      .maybeQueryParam("prisonerNumbers", prisonerNumbers)
-      .maybeQueryParam("eventCodes", eventCodes)
+      .also { builder ->
+        prisonerNumbers?.forEach { builder.queryParam("prisonerNumbers", it) }
+        eventCodes?.forEach { builder.queryParam("eventCodes", it) }
+      }
       .build()
   }
     .accept(MediaType.APPLICATION_JSON)
