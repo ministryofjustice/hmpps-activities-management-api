@@ -102,6 +102,51 @@ class EventReviewControllerTest : ControllerTestBase() {
     verify(eventReviewService).acknowledgeEvents(prisonCode, request, user.name)
   }
 
+  @Test
+  fun `uses event codes filter when supplied`() {
+    val eventCodes = listOf("EVENT_CODE_1", "EVENT_CODE_2")
+    val request = EventReviewSearchRequest(
+      prisonCode = prisonCode,
+      eventDate = date,
+      eventCodes = eventCodes,
+    )
+    val response = buildResponse()
+    whenever(eventReviewService.getFilteredEvents(page, size, sort, request)).thenReturn(response)
+
+    mockMvc.get("/event-review/prison/{prisonCode}", prisonCode) {
+      param("date", date.toString())
+      param("page", page.toString())
+      param("size", size.toString())
+      param("sortDirection", sort)
+      param("eventCodes", *eventCodes.toTypedArray())
+    }
+      .andExpect { status { isOk() } }
+
+    verify(eventReviewService).getFilteredEvents(page, size, sort, request)
+  }
+
+  @Test
+  fun `trims blank event codes and keeps non blank values`() {
+    val request = EventReviewSearchRequest(
+      prisonCode = prisonCode,
+      eventDate = date,
+      eventCodes = listOf("EVENT_CODE_1"),
+    )
+    val response = buildResponse()
+    whenever(eventReviewService.getFilteredEvents(page, size, sort, request)).thenReturn(response)
+
+    mockMvc.get("/event-review/prison/{prisonCode}", prisonCode) {
+      param("date", date.toString())
+      param("page", page.toString())
+      param("size", size.toString())
+      param("sortDirection", sort)
+      param("eventCodes", "  EVENT_CODE_1  ", "   ")
+    }
+      .andExpect { status { isOk() } }
+
+    verify(eventReviewService).getFilteredEvents(page, size, sort, request)
+  }
+
   private fun MockMvc.getEventsForReview(date: LocalDate, prisonCode: String, page: Int, size: Int, sort: String = "ascending") = get("/event-review/prison/{prisonCode}?date={date}&page={page}&size={size}&sort={sort}", prisonCode, date, page, size, sort)
 
   private fun MockMvc.acknowledgeEvents(prison: String, request: EventAcknowledgeRequest) = post("/event-review/prison/{prison}/acknowledge", prison) {
