@@ -80,6 +80,12 @@ class EventReviewController(private val eventReviewService: EventReviewService) 
     @RequestParam(required = false)
     @Parameter(description = "The prisoner number, eg. A9999AA (optional). Default is all prisoner numbers.")
     prisonerNumber: String?,
+    @RequestParam(required = false)
+    @Parameter(description = "The prisoner numbers, eg. A9999AA,A8888AA (optional). Default is all prisoner numbers.")
+    prisonerNumbers: List<String>?,
+    @RequestParam(required = false, name = "eventCodes")
+    @Parameter(description = "The events, eg. EVENT_CODE1,EVENT_CODE2 (optional). Default is all events.")
+    filterEventTypes: List<String>?,
     @RequestParam(required = false, defaultValue = "false")
     @Parameter(description = "Whether to include acknowledged events (optional). Default is false.")
     includeAcknowledged: Boolean? = false,
@@ -95,10 +101,23 @@ class EventReviewController(private val eventReviewService: EventReviewService) 
     @Parameter(description = "The sort direction based on the time the events occurred. Default is ascending.")
     sortDirection: String = "ascending",
   ): EventReviewSearchResults {
+    val sanitizedPrisonerNumber = prisonerNumber?.takeIf { it.isNotBlank() }?.trim()
+    val sanitizedPrisonerNumbers = prisonerNumbers
+      ?.map { it.trim() }
+      ?.filter { it.isNotEmpty() }
+    val sanitizedEventCodes = filterEventTypes
+      ?.map { it.trim() }
+      ?.filter { it.isNotEmpty() }
+
     val filters = EventReviewSearchRequest(
       prisonCode = prisonCode,
       eventDate = date,
-      prisonerNumber = prisonerNumber,
+      prisonerNumbers = when {
+        !sanitizedPrisonerNumber.isNullOrEmpty() -> listOf(sanitizedPrisonerNumber)
+        sanitizedPrisonerNumbers != null -> sanitizedPrisonerNumbers
+        else -> null
+      },
+      eventCodes = sanitizedEventCodes,
       acknowledgedEvents = includeAcknowledged,
     )
     val paginatedResults = eventReviewService.getFilteredEvents(page, size, sortDirection, filters)
