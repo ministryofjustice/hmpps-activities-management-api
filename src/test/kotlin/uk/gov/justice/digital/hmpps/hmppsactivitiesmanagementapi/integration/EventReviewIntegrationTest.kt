@@ -146,6 +146,62 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
 
   @Sql("classpath:test_data/event-review-data.sql")
   @Test
+  fun `should filter by event codes when requested`() {
+    val result = webTestClient.getEvents(eventCodes = listOf("EVENT_CODE_2"), size = 10)
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(EventReviewSearchResults::class.java)
+      .returnResult().responseBody
+
+    assertThat(result).isNotNull
+
+    with(result!!) {
+      assertThat(content).hasSize(5)
+      assertThat(content.map { it.eventType }).containsOnly("EVENT_CODE_2")
+      assertThat(totalPages).isEqualTo(1)
+      assertThat(totalElements).isEqualTo(5)
+    }
+  }
+
+  @Sql("classpath:test_data/event-review-data.sql")
+  @Test
+  fun `should filter by multiple event codes when requested`() {
+    val result = webTestClient.getEvents(eventCodes = listOf("EVENT_CODE_1", "EVENT_CODE_3"), size = 10)
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(EventReviewSearchResults::class.java)
+      .returnResult().responseBody
+
+    assertThat(result).isNotNull
+
+    with(result!!) {
+      assertThat(content).hasSize(7)
+      assertThat(content.map { it.eventType }).containsOnly("EVENT_CODE_1", "EVENT_CODE_3")
+      assertThat(totalPages).isEqualTo(1)
+      assertThat(totalElements).isEqualTo(7)
+    }
+  }
+
+  @Sql("classpath:test_data/event-review-data.sql")
+  @Test
+  fun `should return empty result for empty event codes list entry`() {
+    val result = webTestClient.getEvents(eventCodes = listOf(""), size = 10)
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(EventReviewSearchResults::class.java)
+      .returnResult().responseBody
+
+    assertThat(result).isNotNull
+
+    with(result!!) {
+      assertThat(content).isEmpty()
+      assertThat(totalPages).isEqualTo(0)
+      assertThat(totalElements).isEqualTo(0)
+    }
+  }
+
+  @Sql("classpath:test_data/event-review-data.sql")
+  @Test
   fun `should prioritise singular prisoner number when prisoner numbers list is supplied`() {
     val result = webTestClient.getEvents(prisonerNumber = "G1234DX", prisonerNumbers = listOf("A1234AA"), size = 10)
       .expectStatus().isOk
@@ -373,6 +429,7 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
     size: Long? = null,
     prisonerNumber: String? = null,
     prisonerNumbers: List<String>? = null,
+    eventCodes: List<String>? = null,
     role: String = ROLE_ACTIVITY_ADMIN,
   ) = get().uri { builder ->
     builder
@@ -384,6 +441,7 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
       .maybeQueryParam("sortDirection", sort)
       .maybeQueryParam("prisonerNumber", prisonerNumber)
       .maybeQueryParam("prisonerNumbers", prisonerNumbers)
+      .maybeQueryParam("eventCodes", eventCodes)
       .build()
   }
     .accept(MediaType.APPLICATION_JSON)

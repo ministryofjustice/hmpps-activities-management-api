@@ -101,6 +101,32 @@ class EventReviewServiceTest {
   }
 
   @Test
+  fun `filters by event codes`() {
+    val page = 0
+    val size = 10
+    val sortDirection = "ascending"
+    val prisonCode = "MDI"
+    val date = LocalDate.now()
+    val eventCodes = listOf("EVENT_CODE_1", "EVENT_CODE_2")
+
+    val repositoryResult = PageImpl(
+      listOf(
+        EventReview(1, "service", "EVENT_CODE_1", LocalDateTime.now(), prisonCode, "G1234FF", 1, "XYZ"),
+        EventReview(2, "service", "EVENT_CODE_2", LocalDateTime.now(), prisonCode, "A1234AA", 2, "XYZ"),
+      ),
+    )
+
+    whenever(eventReviewRepository.findAll(any<Specification<EventReview>>(), any<Pageable>())).thenReturn(repositoryResult)
+    whenever(allocationRepository.findByPrisonCodeAndPrisonerNumbers(prisonCode, listOf("G1234FF", "A1234AA"))).thenReturn(emptyList())
+
+    val searchSpec = EventReviewSearchRequest(prisonCode = prisonCode, eventDate = date, eventCodes = eventCodes, acknowledgedEvents = true)
+
+    val result = eventReviewService.getFilteredEvents(page, size, sortDirection, searchSpec)
+
+    assertThat(result.content.map { it.eventType }).containsExactly("EVENT_CODE_1", "EVENT_CODE_2")
+  }
+
+  @Test
   fun `deduplicates prisoner numbers before loading allocations`() {
     val page = 0
     val size = 10

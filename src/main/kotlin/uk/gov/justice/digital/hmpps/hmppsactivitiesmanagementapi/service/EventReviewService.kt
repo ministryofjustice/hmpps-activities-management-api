@@ -55,6 +55,10 @@ class EventReviewService(
           ),
         )
       }
+      eventCodes?.let {
+        // If eventCodes are supplied restrict results only to those relating to these events
+        spec = spec.and(eventReviewSearchSpecification.eventCodeIn(eventCodes))
+      }
       acknowledgedEvents?.let {
         // If acknowledgedEvents is false exclude any with an acknowledgedTime set
         if (!it) {

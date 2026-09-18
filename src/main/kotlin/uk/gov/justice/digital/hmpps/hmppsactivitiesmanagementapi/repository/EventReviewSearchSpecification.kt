@@ -11,6 +11,8 @@ class EventReviewSearchSpecification {
 
   fun prisonerNumberIn(prisonerNumbers: List<String>) = Specification<EventReview> { root, _, cb -> root.get<String>("prisonerNumber").`in`(prisonerNumbers) }
 
+  fun eventCodeIn(eventCodes: List<String>) = Specification<EventReview> { root, _, cb -> root.get<String>("eventType").`in`(eventCodes) }
+
   fun eventTimeBetween(startTime: LocalDateTime, endTime: LocalDateTime) = Specification<EventReview> { root, _, cb -> cb.between(root.get("eventTime"), startTime, endTime) }
 
   fun isNotAcknowledged() = Specification<EventReview> { root, _, cb -> cb.isNull(root.get<LocalDateTime>("acknowledgedTime")) }
