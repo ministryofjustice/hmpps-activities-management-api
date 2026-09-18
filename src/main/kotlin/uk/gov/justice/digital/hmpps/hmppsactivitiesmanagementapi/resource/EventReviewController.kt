@@ -98,10 +98,19 @@ class EventReviewController(private val eventReviewService: EventReviewService) 
     @Parameter(description = "The sort direction based on the time the events occurred. Default is ascending.")
     sortDirection: String = "ascending",
   ): EventReviewSearchResults {
+    val sanitizedPrisonerNumber = prisonerNumber?.takeIf { it.isNotBlank() }?.trim()
+    val sanitizedPrisonerNumbers = prisonerNumbers
+      ?.map { it.trim() }
+      ?.filter { it.isNotEmpty() }
+
     val filters = EventReviewSearchRequest(
       prisonCode = prisonCode,
       eventDate = date,
-      prisonerNumbers = prisonerNumbers,
+      prisonerNumbers = when {
+        !sanitizedPrisonerNumber.isNullOrEmpty() -> listOf(sanitizedPrisonerNumber)
+        sanitizedPrisonerNumbers != null -> sanitizedPrisonerNumbers
+        else -> null
+      },
       acknowledgedEvents = includeAcknowledged,
     )
     val paginatedResults = eventReviewService.getFilteredEvents(page, size, sortDirection, filters)

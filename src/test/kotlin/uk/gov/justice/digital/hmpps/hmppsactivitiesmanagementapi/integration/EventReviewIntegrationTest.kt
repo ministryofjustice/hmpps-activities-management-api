@@ -118,10 +118,10 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
     assertThat(result).isNotNull
 
     with(result!!) {
-      assertThat(content.size).isEqualTo(10)
-      assertThat(content.map { it.prisonerNumber }).contains("A1234AA")
-      assertThat(totalPages).isEqualTo(2)
-      assertThat(totalElements).isEqualTo(12)
+      assertThat(content.size).isEqualTo(5)
+      assertThat(content.map { it.prisonerNumber }).containsOnly("A1234AA")
+      assertThat(totalPages).isEqualTo(1)
+      assertThat(totalElements).isEqualTo(5)
     }
   }
 
@@ -146,7 +146,7 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
 
   @Sql("classpath:test_data/event-review-data.sql")
   @Test
-  fun `should ignore singular prisoner number when prisoner numbers list is supplied`() {
+  fun `should prioritise singular prisoner number when prisoner numbers list is supplied`() {
     val result = webTestClient.getEvents(prisonerNumber = "G1234DX", prisonerNumbers = listOf("A1234AA"), size = 10)
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -156,10 +156,10 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
     assertThat(result).isNotNull
 
     with(result!!) {
-      assertThat(content).hasSize(5)
-      assertThat(content.map { it.prisonerNumber }).containsOnly("A1234AA")
+      assertThat(content).hasSize(1)
+      assertThat(content.map { it.prisonerNumber }).containsOnly("G1234DX")
       assertThat(totalPages).isEqualTo(1)
-      assertThat(totalElements).isEqualTo(5)
+      assertThat(totalElements).isEqualTo(1)
     }
   }
 
