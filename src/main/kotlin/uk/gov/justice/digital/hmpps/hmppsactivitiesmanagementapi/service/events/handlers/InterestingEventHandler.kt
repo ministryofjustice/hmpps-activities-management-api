@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events
 
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerNotFoundException
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventReview
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventReviewDescription
@@ -10,6 +11,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Allo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventReviewRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.Action
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.ActivitiesChangedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.AlertsUpdatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.InboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.InboundReleaseEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OffenderMergedEvent
@@ -42,7 +44,17 @@ class InterestingEventHandler(
     if (event is InboundReleaseEvent) return recordRelease(event)
     if (event is OffenderMergedEvent) return recordMerge(event)
 
-    getPrisonerDetailsFor(event.prisonerNumber())?.let {
+    val prisoner = try {
+      findPrisonerDetailsOrThrow(event.prisonerNumber())
+    } catch (_: PrisonerNotFoundException) {
+      if (event is AlertsUpdatedEvent && event.isStaleRemoval()) {
+        log.info("Ignoring stale alerts update for prisoner {}", event.prisonerNumber())
+        return Outcome.success()
+      }
+      return Outcome.failed()
+    }
+
+    prisoner.let {
       it.prisonId?.let { agencyId ->
         if (rolloutPrisonService.isActivitiesRolledOutAt(agencyId)) {
           if (allocationRepository.findByPrisonCodePrisonerNumberPrisonerStatus(
@@ -144,4 +156,9 @@ class InterestingEventHandler(
   }
 
   private fun getPrisonerDetailsFor(prisonerNumber: String) = prisonerSearchApiAppWebClient.findByPrisonerNumber(prisonerNumber)
+
+  // Ignore stale alert removals for merged prisoners whose old number no longer exists.
+  private fun findPrisonerDetailsOrThrow(prisonerNumber: String) = prisonerSearchApiAppWebClient.findByPrisonerNumberOrNotFound(prisonerNumber)
+  private fun AlertsUpdatedEvent.isStaleRemoval() = additionalInformation.alertsAdded.isEmpty() &&
+    additionalInformation.alertsRemoved.isNotEmpty()
 }

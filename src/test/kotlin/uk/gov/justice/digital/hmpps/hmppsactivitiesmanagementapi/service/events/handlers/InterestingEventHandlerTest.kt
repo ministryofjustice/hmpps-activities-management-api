@@ -5,11 +5,13 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerNotFoundException
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
@@ -29,6 +31,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.InboundEventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.activitiesChangedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.alertsUpdatedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.alertsUpdatedEventAfterMerge
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.appointmentsChangedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.iepReviewDeletedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.iepReviewInsertedEvent
@@ -242,6 +245,17 @@ class InterestingEventHandlerTest {
       prisonCode isEqualTo PENTONVILLE_PRISON_CODE
       prisonerNumber isEqualTo "ABC1234"
     }
+  }
+
+  @Test
+  fun `ignores stale alerts update when prisoner lookup returns not found`() {
+    whenever(prisonerSearchApiClient.findByPrisonerNumberOrNotFound("123OLD")) doThrow PrisonerNotFoundException("123OLD")
+
+    val inboundEvent = alertsUpdatedEventAfterMerge(prisonerNumber = "123OLD")
+
+    handler.handle(inboundEvent).also { it.isSuccess() isBool true }
+
+    verify(eventReviewRepository, never()).saveAndFlush(any())
   }
 
   @Test
@@ -485,5 +499,6 @@ class InterestingEventHandlerTest {
     }
 
     whenever(prisonerSearchApiClient.findByPrisonerNumber(prisonerNum)) doReturn prisoner
+    whenever(prisonerSearchApiClient.findByPrisonerNumberOrNotFound(prisonerNum)) doReturn prisoner
   }
 }

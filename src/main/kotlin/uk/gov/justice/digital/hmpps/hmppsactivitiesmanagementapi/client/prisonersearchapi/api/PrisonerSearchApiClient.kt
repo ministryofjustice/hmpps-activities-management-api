@@ -82,4 +82,6 @@ class PrisonerSearchApiClient(
     .bodyToMono(typeReference<Prisoner>())
     .retryWhen(backoffSpec.withRetryContext(Context.of("api", "prisoner-search-api", "path", "/prisoner/{prisonerNumber}")))
     .block()
+
+  fun findByPrisonerNumberOrNotFound(prisonerNumber: String): Prisoner = findByPrisonerNumber(prisonerNumber) ?: throw PrisonerNotFoundException(prisonerNumber)
 }
