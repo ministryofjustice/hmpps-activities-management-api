@@ -23,6 +23,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.isAfterD
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.enumeration.ServiceName
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
@@ -144,6 +145,14 @@ data class Allocation(
   }
 
   fun exclusions(filter: ExclusionsFilter) = filter.filtered(exclusions)
+
+  /**
+   * Returns true if this allocation currently has an active (i.e. not ended) exclusion, present or future-dated,
+   * covering the given week number, time slot and day of week. Used to determine whether the prisoner was
+   * actually attending a session before/after an activity schedule amendment.
+   */
+  fun isExcludedFromSession(weekNumber: Int, timeSlot: TimeSlot, dayOfWeek: DayOfWeek) = exclusions(ExclusionsFilter.ACTIVE)
+    .any { it.weekNumber == weekNumber && it.timeSlot == timeSlot && dayOfWeek in it.getDaysOfWeek() }
 
   private fun exclusionsOnDate(date: LocalDate) = exclusions.filter { date.between(it.startDate, it.endDate) }.toSet()
 
