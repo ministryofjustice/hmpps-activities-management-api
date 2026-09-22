@@ -1,4 +1,11 @@
-CREATE EXTENSION IF NOT EXISTS pglogical;
+-- pglogical isn't bundled in the vanilla postgres image used for local/test envs
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_available_extensions WHERE name = 'pglogical') THEN
+    EXECUTE 'CREATE EXTENSION IF NOT EXISTS pglogical';
+  END IF;
+END
+$$;
 
 -- role only exists in environments where DPR replication has been provisioned
 DO $$
