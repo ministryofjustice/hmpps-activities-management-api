@@ -1,9 +1,11 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers
 
 import org.slf4j.LoggerFactory
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Component
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerNotFoundException
+import org.springframework.web.reactive.function.client.WebClientResponseException
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventReview
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventReviewDescription
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
@@ -34,6 +36,26 @@ class InterestingEventHandler(
     private val log = LoggerFactory.getLogger(this::class.java)
   }
 
+  private fun withPrisoner(
+    prisonerNumber: String,
+    onFound: (Prisoner) -> Outcome,
+    onMissing: () -> Outcome = { Outcome.success() },
+    onServerError: () -> Outcome = { Outcome.failed() },
+  ): Outcome = try {
+    val prisoner = prisonerSearchApiAppWebClient.findByPrisonerNumber(prisonerNumber)
+    if (prisoner != null) onFound(prisoner) else onMissing()
+  } catch (e: WebClientResponseException) {
+    when {
+      e.statusCode == HttpStatus.NOT_FOUND -> onMissing()
+      e.statusCode.is5xxServerError -> onServerError()
+      else -> Outcome.failed()
+    }
+  }
+
+  // Ignore stale alert removals for merged prisoners whose old number no longer exists.
+  private fun AlertsUpdatedEvent.isStaleRemoval() = additionalInformation.alertsAdded.isEmpty() &&
+    additionalInformation.alertsRemoved.isNotEmpty()
+
   override fun handle(event: InboundEvent): Outcome {
     log.debug("Checking for interesting event: {}", event)
 
@@ -44,51 +66,61 @@ class InterestingEventHandler(
     if (event is InboundReleaseEvent) return recordRelease(event)
     if (event is OffenderMergedEvent) return recordMerge(event)
 
-    val prisoner = try {
-      findPrisonerDetailsOrThrow(event.prisonerNumber())
-    } catch (_: PrisonerNotFoundException) {
-      if (event is AlertsUpdatedEvent && event.isStaleRemoval()) {
-        log.info("Ignoring stale alerts update for prisoner {}", event.prisonerNumber())
-        return Outcome.success()
-      }
-      return Outcome.failed()
-    }
-
-    prisoner.let {
-      it.prisonId?.let { agencyId ->
-        if (rolloutPrisonService.isActivitiesRolledOutAt(agencyId)) {
-          if (allocationRepository.findByPrisonCodePrisonerNumberPrisonerStatus(
-              prisonCode = agencyId,
-              prisonerNumber = event.prisonerNumber(),
-              prisonerStatus = arrayOf(PrisonerStatus.ACTIVE, PrisonerStatus.PENDING),
-            ).isNotEmpty()
-          ) {
-            val saved = eventReviewRepository.saveAndFlush(
-              EventReview(
-                eventTime = LocalDateTime.now(),
-                eventType = event.eventType(),
-                eventData = event.eventMessage(),
+    return withPrisoner(
+      prisonerNumber = event.prisonerNumber(),
+      onFound = { prisoner ->
+        prisoner.prisonId?.let { agencyId ->
+          if (rolloutPrisonService.isActivitiesRolledOutAt(agencyId)) {
+            if (allocationRepository.findByPrisonCodePrisonerNumberPrisonerStatus(
                 prisonCode = agencyId,
                 prisonerNumber = event.prisonerNumber(),
-                bookingId = it.bookingId?.toInt(),
-              ),
-            )
-            log.debug("Saved interesting event ID ${saved.eventReviewId} - ${event.eventType()} - for ${event.prisonerNumber()}")
-            return Outcome.success()
+                prisonerStatus = arrayOf(PrisonerStatus.ACTIVE, PrisonerStatus.PENDING),
+              ).isNotEmpty()
+            ) {
+              val saved = eventReviewRepository.saveAndFlush(
+                EventReview(
+                  eventTime = LocalDateTime.now(),
+                  eventType = event.eventType(),
+                  eventData = event.eventMessage(),
+                  prisonCode = agencyId,
+                  prisonerNumber = event.prisonerNumber(),
+                  bookingId = prisoner.bookingId?.toInt(),
+                ),
+              )
+              log.debug("Saved interesting event ID ${saved.eventReviewId} - ${event.eventType()} - for ${event.prisonerNumber()}")
+              return@withPrisoner Outcome.success()
+            } else {
+              log.info("${event.prisonerNumber()} has no active or pending allocations at $agencyId")
+            }
           } else {
-            log.info("${event.prisonerNumber()} has no active or pending allocations at $agencyId")
+            log.debug("$agencyId is not a rolled out prison")
           }
-        } else {
-          log.debug("$agencyId is not a rolled out prison")
         }
-      }
-    }
-    return Outcome.failed()
+
+        Outcome.failed()
+      },
+      onMissing = {
+        if (event is AlertsUpdatedEvent && event.isStaleRemoval()) {
+          log.info("Ignoring stale alerts update for prisoner {}", event.prisonerNumber())
+          Outcome.success()
+        } else {
+          Outcome.failed()
+        }
+      },
+      onServerError = {
+        Outcome.failed()
+      },
+    )
   }
 
   private fun recordRelease(releaseEvent: InboundReleaseEvent): Outcome {
-    if (rolloutPrisonService.isActivitiesRolledOutAt(releaseEvent.prisonCode())) {
-      getPrisonerDetailsFor(releaseEvent.prisonerNumber())?.let { prisoner ->
+    if (!rolloutPrisonService.isActivitiesRolledOutAt(releaseEvent.prisonCode())) {
+      log.debug("${releaseEvent.prisonCode()} is not a rolled out prison")
+      return Outcome.success()
+    }
+    return withPrisoner(
+      prisonerNumber = releaseEvent.prisonerNumber(),
+      onFound = { prisoner ->
         val saved = eventReviewRepository.saveAndFlush(
           EventReview(
             eventTime = LocalDateTime.now(),
@@ -101,20 +133,20 @@ class InterestingEventHandler(
             eventDescription = releaseEvent.getEventDesc(),
           ),
         )
-        log.debug("Saved interesting event ID ${saved.eventReviewId} - ${releaseEvent.eventType()} - for ${releaseEvent.prisonerNumber()}")
-        return Outcome.success()
-      }
-    } else {
-      log.debug("${releaseEvent.prisonCode()} is not a rolled out prison")
-    }
-
-    return Outcome.success()
+        log.debug(
+          "Saved interesting event ID ${saved.eventReviewId} - ${releaseEvent.eventType()} - for ${releaseEvent.prisonerNumber()}",
+        )
+        Outcome.success()
+      },
+      onMissing = { Outcome.success() },
+      onServerError = { Outcome.failed() },
+    )
   }
 
-  private fun recordMerge(mergedEvent: OffenderMergedEvent): Outcome {
-    // Use the new prisoner number - the merged will have been actioned in prison API
-    getPrisonerDetailsFor(mergedEvent.prisonerNumber())?.let {
-      it.prisonId?.let { agencyId ->
+  private fun recordMerge(mergedEvent: OffenderMergedEvent): Outcome = withPrisoner(
+    prisonerNumber = mergedEvent.prisonerNumber(),
+    onFound = { prisoner ->
+      prisoner.prisonId?.let { agencyId ->
         if (rolloutPrisonService.isActivitiesRolledOutAt(agencyId)) {
           val saved = eventReviewRepository.saveAndFlush(
             EventReview(
@@ -123,20 +155,24 @@ class InterestingEventHandler(
               eventData = mergedEvent.eventMessage(),
               prisonCode = agencyId,
               prisonerNumber = mergedEvent.prisonerNumber(),
-              bookingId = it.bookingId?.toInt(),
+              bookingId = prisoner.bookingId?.toInt(),
               eventDescription = mergedEvent.getEventDesc(),
             ),
           )
-          log.debug("Saved interesting event ID ${saved.eventReviewId} - ${mergedEvent.eventType()} - replaced ${mergedEvent.removedPrisonerNumber()} with ${mergedEvent.prisonerNumber()}")
+          log.debug(
+            "Saved interesting event ID ${saved.eventReviewId} - ${mergedEvent.eventType()} - replaced ${mergedEvent.removedPrisonerNumber()} with ${mergedEvent.prisonerNumber()}",
+          )
         } else {
-          log.debug("Ignoring offender merged event for ${mergedEvent.removedPrisonerNumber()} - prison $agencyId is not rolled out.")
+          log.debug(
+            "Ignoring offender merged event for ${mergedEvent.removedPrisonerNumber()} - prison $agencyId is not rolled out.",
+          )
         }
       }
-    }
-
-    return Outcome.success()
-  }
-
+      Outcome.success()
+    },
+    onMissing = { Outcome.success() },
+    onServerError = { Outcome.failed() }, // 500s should fail so retries can happen.
+  )
   private fun InboundEvent.getEventDesc(): EventReviewDescription? = when (this) {
     is ActivitiesChangedEvent ->
       when (action()) {
@@ -154,11 +190,4 @@ class InterestingEventHandler(
       }
     else -> null
   }
-
-  private fun getPrisonerDetailsFor(prisonerNumber: String) = prisonerSearchApiAppWebClient.findByPrisonerNumber(prisonerNumber)
-
-  // Ignore stale alert removals for merged prisoners whose old number no longer exists.
-  private fun findPrisonerDetailsOrThrow(prisonerNumber: String) = prisonerSearchApiAppWebClient.findByPrisonerNumberOrNotFound(prisonerNumber)
-  private fun AlertsUpdatedEvent.isStaleRemoval() = additionalInformation.alertsAdded.isEmpty() &&
-    additionalInformation.alertsRemoved.isNotEmpty()
 }
