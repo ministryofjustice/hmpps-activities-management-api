@@ -78,7 +78,7 @@ class InterestingEventHandlerTest {
 
     with(eventReviewCaptor.firstValue) {
       bookingId isEqualTo 1
-      eventData isEqualTo "Cell move"
+      eventData isEqualTo null
       eventTime isCloseTo TimeSource.now()
       eventType isEqualTo InboundEventType.PRISONER_UPDATED.eventType
       eventDescription isEqualTo EventReviewDescription.CELL_MOVE
@@ -104,7 +104,7 @@ class InterestingEventHandlerTest {
 
     with(eventReviewCaptor.firstValue) {
       bookingId isEqualTo 2
-      eventData isEqualTo "Cell move"
+      eventData isEqualTo null
       eventTime isCloseTo TimeSource.now()
       eventType isEqualTo InboundEventType.PRISONER_UPDATED.eventType
       eventDescription isEqualTo EventReviewDescription.CELL_MOVE
@@ -243,7 +243,7 @@ class InterestingEventHandlerTest {
 
     with(eventReviewCaptor.firstValue) {
       bookingId isEqualTo 1
-      eventData isEqualTo "Alert added: A1, A2; Alert closed: R1, R2"
+      eventData isEqualTo "A1,A2;R1,R2"
       eventTime isCloseTo TimeSource.now()
       eventType isEqualTo InboundEventType.ALERTS_UPDATED.eventType
       eventDescription isEqualTo EventReviewDescription.ALERTS_ADDED_AND_CLOSED
@@ -266,7 +266,7 @@ class InterestingEventHandlerTest {
     verify(eventReviewRepository).saveAndFlush(eventReviewCaptor.capture())
 
     with(eventReviewCaptor.firstValue) {
-      eventData isEqualTo "Alert added: A1, A2"
+      eventData isEqualTo "A1,A2;"
       eventDescription isEqualTo EventReviewDescription.ALERT_ADDED
     }
   }
@@ -285,7 +285,7 @@ class InterestingEventHandlerTest {
     verify(eventReviewRepository).saveAndFlush(eventReviewCaptor.capture())
 
     with(eventReviewCaptor.firstValue) {
-      eventData isEqualTo "Alert closed: R1, R2"
+      eventData isEqualTo ";R1,R2"
       eventDescription isEqualTo EventReviewDescription.ALERT_CLOSED
     }
   }

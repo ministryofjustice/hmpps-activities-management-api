@@ -131,16 +131,13 @@ data class PrisonerUpdatedEvent(val additionalInformation: PrisonerUpdatedInform
 
   override fun eventType() = InboundEventType.PRISONER_UPDATED.eventType
 
-  override fun eventMessage(): String? = with(additionalInformation.categoriesChanged) {
-    when {
-      contains("LOCATION") -> "Cell move"
-      else -> null
-    }
-  }
+  // eventData is left null for cell moves. The event only carries the changed categories, not the
+  // previous/new locations, so the orchestrator composes the "Previous.../New..." detail at read-time.
+  override fun eventMessage(): String? = null
 
   fun isCellMove() = additionalInformation.categoriesChanged.contains("LOCATION")
 
-  override fun isMeaningful() = eventMessage() != null
+  override fun isMeaningful() = isCellMove()
 }
 
 data class PrisonerUpdatedInformation(val nomsNumber: String, val categoriesChanged: List<String>)
@@ -218,20 +215,23 @@ data class AlertsUpdatedEvent(val additionalInformation: AlertsUpdatedInformatio
 
   fun hasAlertsRemoved() = additionalInformation.alertsRemoved.isNotEmpty()
 
-  override fun eventMessage(): String = listOfNotNull(
-    "Alert added: ${additionalInformation.alertsAdded.sorted().joinToString(", ")}".takeIf { hasAlertsAdded() },
-    "Alert closed: ${additionalInformation.alertsRemoved.sorted().joinToString(", ")}".takeIf { hasAlertsRemoved() },
-  ).joinToString("; ")
+  override fun eventMessage(): String = buildString {
+    append(additionalInformation.alertsAdded.sorted().joinToString(","))
+    append(";")
+    append(additionalInformation.alertsRemoved.sorted().joinToString(","))
+  }
 }
 
 /*
- Case                    eventData
- Added only          Alert added: A1, A2
- Closed only         Alert closed: R1, R2
- Both                Alert added: A1, A2; Alert closed: R1, R2
- */
+ Stored in event_data as "<added codes>;<removed codes>" (comma-separated, added before ';', removed after).
 
-// {"added":["A1","A2"],"removed":["R1","R2"]}
+ Case            eventData
+ Added only      A1,A2;
+ Closed only     ;C1,C2
+ Both            A1,A2;C1,C2
+
+ Decoded back into AlertsUpdatedDetails(alertsAdded, alertsRemoved) in the API response layer.
+ */
 
 data class AlertsUpdatedInformation(
   val nomsNumber: String,

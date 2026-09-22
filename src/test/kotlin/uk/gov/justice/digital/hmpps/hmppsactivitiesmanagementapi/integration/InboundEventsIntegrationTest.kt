@@ -323,7 +323,7 @@ class InboundEventsIntegrationTest : LocalStackTestBase() {
 
       assertThat(interestingEvent.eventType).isEqualTo("prisoner-offender-search.prisoner.alerts-updated")
       assertThat(interestingEvent.prisonerNumber).isEqualTo("A11111A")
-      assertThat(interestingEvent.eventData).isEqualTo("Alert added: A1, A2; Alert closed: R1, R2")
+      assertThat(interestingEvent.eventData).isEqualTo("A1,A2;R1,R2")
       assertThat(interestingEvent.eventDescription).isEqualTo(EventReviewDescription.ALERTS_ADDED_AND_CLOSED)
     }
   }
@@ -365,7 +365,7 @@ class InboundEventsIntegrationTest : LocalStackTestBase() {
 
       assertThat(interestingEvent.eventType).isEqualTo("prisoner-offender-search.prisoner.updated")
       assertThat(interestingEvent.prisonerNumber).isEqualTo("A11111A")
-      assertThat(interestingEvent.eventData).isEqualTo("Cell move")
+      assertThat(interestingEvent.eventData).isNull()
       assertThat(interestingEvent.eventDescription).isEqualTo(EventReviewDescription.CELL_MOVE)
     }
   }

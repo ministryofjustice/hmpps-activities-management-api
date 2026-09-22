@@ -52,6 +52,12 @@ data class EventReview(
     example = "[\"KITCHEN AM\", \"GYM PM\"]",
   )
   val activeAllocations: List<String> = emptyList(),
+
+  @Schema(
+    description = "The alert codes added and/or removed, for alerts-updated events. Null for all other events.",
+    nullable = true,
+  )
+  val alertDetails: AlertsUpdatedDetails? = null,
 )
 
 enum class EventDescription {
@@ -109,4 +115,30 @@ enum class EventDescription {
     description = "A prisoner has been merged into an existing prisoner record",
   )
   PRISONER_MERGED,
+}
+
+@Schema(description = "Alert codes added and/or removed by an alerts-updated event")
+data class AlertsUpdatedDetails(
+  @Schema(description = "The alert codes that were added", example = "[\"A1\", \"A2\"]")
+  val alertsAdded: List<String> = emptyList(),
+
+  @Schema(description = "The alert codes that were removed", example = "[\"C1\", \"C2\"]")
+  val alertsRemoved: List<String> = emptyList(),
+) {
+  companion object {
+    // Stored in event_data as "A1,A2;C1,C2" (added before ';', removed after).
+    fun decode(eventData: String): AlertsUpdatedDetails {
+      val parts = eventData.split(";", limit = 2)
+      return AlertsUpdatedDetails(
+        alertsAdded = parts.getOrNull(0).toCodes(),
+        alertsRemoved = parts.getOrNull(1).toCodes(),
+      )
+    }
+
+    private fun String?.toCodes(): List<String> = this
+      ?.split(",")
+      ?.map { it.trim() }
+      ?.filter { it.isNotEmpty() }
+      ?: emptyList()
+  }
 }
