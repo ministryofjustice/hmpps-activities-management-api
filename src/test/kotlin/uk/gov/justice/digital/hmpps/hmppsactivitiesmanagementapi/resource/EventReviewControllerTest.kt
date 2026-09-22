@@ -113,7 +113,7 @@ class EventReviewControllerTest : ControllerTestBase() {
     val response = buildResponse()
     whenever(eventReviewService.getFilteredEvents(page, size, sort, request)).thenReturn(response)
 
-    mockMvc.get("/event-review/prison/{prisonCode}", prisonCode) {
+    mockMvc.get("/event-review/v2/prison/{prisonCode}", prisonCode) {
       param("date", date.toString())
       param("page", page.toString())
       param("size", size.toString())
@@ -135,7 +135,7 @@ class EventReviewControllerTest : ControllerTestBase() {
     val response = buildResponse()
     whenever(eventReviewService.getFilteredEvents(page, size, sort, request)).thenReturn(response)
 
-    mockMvc.get("/event-review/prison/{prisonCode}", prisonCode) {
+    mockMvc.get("/event-review/v2/prison/{prisonCode}", prisonCode) {
       param("date", date.toString())
       param("page", page.toString())
       param("size", size.toString())

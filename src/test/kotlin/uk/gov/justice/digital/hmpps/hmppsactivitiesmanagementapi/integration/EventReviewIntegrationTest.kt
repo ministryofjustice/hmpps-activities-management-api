@@ -433,7 +433,7 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
     role: String = ROLE_ACTIVITY_ADMIN,
   ) = get().uri { builder ->
     builder
-      .path("/event-review/prison/$prisonCode")
+      .path("/event-review/v2/prison/$prisonCode")
       .queryParam("date", date)
       .maybeQueryParam("size", size)
       .maybeQueryParam("page", page)
