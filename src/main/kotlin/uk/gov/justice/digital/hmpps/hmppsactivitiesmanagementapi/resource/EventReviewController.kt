@@ -69,7 +69,7 @@ class EventReviewController(private val eventReviewService: EventReviewService) 
       ),
     ],
   )
-  fun getEventsForReview(
+  fun getEventsForReviewLegacy(
     @PathVariable("prisonCode", required = true)
     @Parameter(description = "The prison code e.g. MDI")
     @NotEmpty(message = "Prison code must be supplied")
