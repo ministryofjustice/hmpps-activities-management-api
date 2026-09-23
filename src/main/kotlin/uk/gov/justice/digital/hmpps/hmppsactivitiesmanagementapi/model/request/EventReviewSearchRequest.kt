@@ -14,10 +14,10 @@ data class EventReviewSearchRequest(
   val eventDate: LocalDate? = null,
 
   @Schema(description = "The specific prisoner number(s) to search in the events data", example = "G1234GH")
-  val prisonerNumbers: List<String>? = null,
+  val prisonerNumbers: List<String>? = listOf(),
 
   @Schema(description = "The specific event(s) to search in the events data", example = "EVENT_CODE")
-  val eventCodes: List<String>? = null,
+  val eventCodes: List<String>? = listOf(),
 
   @Schema(description = "A boolean value indicating whether acknowledged events should be returned. Default is true.", example = "true")
   val acknowledgedEvents: Boolean? = false,

@@ -34,6 +34,7 @@ import java.time.LocalDate
 class EventReviewController(private val eventReviewService: EventReviewService) {
 
   @GetMapping(value = ["/prison/{prisonCode}"])
+  @Deprecated("Use /v2/prison/{prisonCode} endpoint instead")
   @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_ADMIN')")
   @ResponseBody
   @Operation(
@@ -166,9 +167,6 @@ class EventReviewController(private val eventReviewService: EventReviewService) 
     @PastOrPresent(message = "The date supplied must be today or a date in the past.")
     date: LocalDate,
     @RequestParam(required = false)
-    @Parameter(description = "The prisoner number, eg. A9999AA (optional). Default is all prisoner numbers.")
-    prisonerNumber: String?,
-    @RequestParam(required = false)
     @Parameter(description = "The prisoner numbers, eg. A9999AA,A8888AA (optional). Default is all prisoner numbers.")
     prisonerNumbers: List<String>?,
     @RequestParam(required = false, name = "eventCodes")
@@ -189,7 +187,6 @@ class EventReviewController(private val eventReviewService: EventReviewService) 
     @Parameter(description = "The sort direction based on the time the events occurred. Default is ascending.")
     sortDirection: String = "ascending",
   ): EventReviewSearchResults {
-    val sanitizedPrisonerNumber = prisonerNumber?.takeIf { it.isNotBlank() }?.trim()
     val sanitizedPrisonerNumbers = prisonerNumbers
       ?.map { it.trim() }
       ?.filter { it.isNotEmpty() }
@@ -201,7 +198,6 @@ class EventReviewController(private val eventReviewService: EventReviewService) 
       prisonCode = prisonCode,
       eventDate = date,
       prisonerNumbers = when {
-        !sanitizedPrisonerNumber.isNullOrEmpty() -> listOf(sanitizedPrisonerNumber)
         sanitizedPrisonerNumbers != null -> sanitizedPrisonerNumbers
         else -> null
       },
