@@ -37,7 +37,7 @@ class EventReviewControllerTest : ControllerTestBase() {
   private var size = 10
   private var date = LocalDate.now()
   private var sort = "ascending"
-  private var request = EventReviewSearchRequest(prisonCode, LocalDate.now())
+  private var request = EventReviewSearchRequest(prisonCode, LocalDate.now(), prisonerNumbers = null, eventCodes = null)
 
   @Test
   fun `Success - 200 response`() {
@@ -108,6 +108,7 @@ class EventReviewControllerTest : ControllerTestBase() {
     val request = EventReviewSearchRequest(
       prisonCode = prisonCode,
       eventDate = date,
+      prisonerNumbers = null,
       eventCodes = eventCodes,
     )
     val response = buildResponse()
@@ -130,6 +131,7 @@ class EventReviewControllerTest : ControllerTestBase() {
     val request = EventReviewSearchRequest(
       prisonCode = prisonCode,
       eventDate = date,
+      prisonerNumbers = null,
       eventCodes = listOf("EVENT_CODE_1"),
     )
     val response = buildResponse()
