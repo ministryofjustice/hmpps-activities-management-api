@@ -100,7 +100,7 @@ class EventReviewController(private val eventReviewService: EventReviewService) 
     sortDirection: String = "ascending",
   ): EventReviewSearchResults {
     val sanitizedPrisonerNumber = prisonerNumber?.takeIf { it.isNotBlank() }?.trim()
-//    Retain legacy compatability, filtering for including acknowledged events
+//    Retain legacy compatibility, filtering for including acknowledged events
     val acknowledgedEvents = when (includeAcknowledged) {
       true -> null
       else -> includeAcknowledged
