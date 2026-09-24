@@ -69,7 +69,7 @@ dependencies {
   testImplementation("org.testcontainers:localstack:1.21.4")
   testImplementation("io.jsonwebtoken:jjwt-impl:0.13.0")
   testImplementation("io.jsonwebtoken:jjwt-jackson:0.13.0")
-  testImplementation("org.mockito.kotlin:mockito-kotlin:6.3.0") // temp, fix version to prevent dependency clash between sar test support lib and hmpps kotlin plugin
+  testImplementation("org.mockito.kotlin:mockito-kotlin:6.4.0") // temp, fix version to prevent dependency clash between sar test support lib and hmpps kotlin plugin
   testImplementation("org.mockito:mockito-inline:5.2.0")
   testImplementation("net.javacrumbs.json-unit:json-unit:6.2.0")
   testImplementation("net.javacrumbs.json-unit:json-unit-assertj:6.2.0")
