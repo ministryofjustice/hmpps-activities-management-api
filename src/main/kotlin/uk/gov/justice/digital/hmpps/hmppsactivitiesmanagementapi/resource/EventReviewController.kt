@@ -34,6 +34,95 @@ import java.time.LocalDate
 class EventReviewController(private val eventReviewService: EventReviewService) {
 
   @GetMapping(value = ["/prison/{prisonCode}"])
+  @Deprecated("Use /v2/prison/{prisonCode} endpoint instead")
+  @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_ADMIN')")
+  @ResponseBody
+  @Operation(
+    summary = "Get events for a prison which may indicate that a change of circumstances affecting allocations had occurred",
+    description = "Returns events in the prison which match the search criteria provided.",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Search performed successfully",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getEventsForReviewLegacy(
+    @PathVariable("prisonCode", required = true)
+    @Parameter(description = "The prison code e.g. MDI")
+    @NotEmpty(message = "Prison code must be supplied")
+    prisonCode: String,
+    @RequestParam(required = true)
+    @Parameter(description = "The date for which to request events, format YYYY-MM-DD, e.g. 2023-10-01")
+    @PastOrPresent(message = "The date supplied must be today or a date in the past.")
+    date: LocalDate,
+    @RequestParam(required = false)
+    @Parameter(description = "The prisoner number, eg. A9999AA (optional). Default is all prisoner numbers.")
+    prisonerNumber: String?,
+    @RequestParam(required = false, name = "eventCodes")
+    @Parameter(description = "The events, eg. EVENT_CODE1,EVENT_CODE2 (optional). Default is all events.")
+    filterEventTypes: List<String>?,
+    @RequestParam(required = false, defaultValue = "false")
+    @Parameter(description = "Whether to include acknowledged events (optional). Default is false.")
+    includeAcknowledged: Boolean? = false,
+    @RequestParam(required = false, defaultValue = "0")
+    @Parameter(description = "The page number to return (optional). Default is page zero.")
+    @PositiveOrZero(message = "Page number cannot be negative.")
+    page: Int = 0,
+    @RequestParam(required = false, defaultValue = "100000")
+    @Parameter(description = "The maximum number of items to return in each page (optional). Default is 100000.")
+    @Positive(message = "Page size must be a positive number.")
+    size: Int = 100000,
+    @RequestParam(required = false, defaultValue = "ascending")
+    @Parameter(description = "The sort direction based on the time the events occurred. Default is ascending.")
+    sortDirection: String = "ascending",
+  ): EventReviewSearchResults {
+    val sanitizedPrisonerNumber = prisonerNumber?.takeIf { it.isNotBlank() }?.trim()
+
+    val filters = EventReviewSearchRequest(
+      prisonCode = prisonCode,
+      eventDate = date,
+      prisonerNumbers = when {
+        !sanitizedPrisonerNumber.isNullOrEmpty() -> listOf(sanitizedPrisonerNumber)
+        else -> null
+      },
+      acknowledgedEvents = includeAcknowledged,
+      eventCodes = filterEventTypes
+        ?.map { it.trim() }
+        ?.filter { it.isNotEmpty() },
+    )
+    val paginatedResults = eventReviewService.getFilteredEvents(page, size, sortDirection, filters)
+    return EventReviewSearchResults(
+      paginatedResults.content,
+      paginatedResults.number,
+      paginatedResults.totalElements,
+      paginatedResults.totalPages,
+    )
+  }
+
+  @GetMapping(value = ["/v2/prison/{prisonCode}"])
   @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_ADMIN')")
   @ResponseBody
   @Operation(
@@ -78,8 +167,11 @@ class EventReviewController(private val eventReviewService: EventReviewService) 
     @PastOrPresent(message = "The date supplied must be today or a date in the past.")
     date: LocalDate,
     @RequestParam(required = false)
-    @Parameter(description = "The prisoner number, eg. A9999AA (optional). Default is all prisoner numbers.")
-    prisonerNumber: String?,
+    @Parameter(description = "The prisoner numbers, eg. A9999AA,A8888AA (optional). Default is all prisoner numbers.")
+    prisonerNumbers: List<String>?,
+    @RequestParam(required = false, name = "eventCodes")
+    @Parameter(description = "The events, eg. EVENT_CODE1,EVENT_CODE2 (optional). Default is all events.")
+    filterEventTypes: List<String>?,
     @RequestParam(required = false, defaultValue = "false")
     @Parameter(description = "Whether to include acknowledged events (optional). Default is false.")
     includeAcknowledged: Boolean? = false,
@@ -95,10 +187,21 @@ class EventReviewController(private val eventReviewService: EventReviewService) 
     @Parameter(description = "The sort direction based on the time the events occurred. Default is ascending.")
     sortDirection: String = "ascending",
   ): EventReviewSearchResults {
+    val sanitizedPrisonerNumbers = prisonerNumbers
+      ?.map { it.trim() }
+      ?.filter { it.isNotEmpty() }
+    val sanitizedEventCodes = filterEventTypes
+      ?.map { it.trim() }
+      ?.filter { it.isNotEmpty() }
+
     val filters = EventReviewSearchRequest(
       prisonCode = prisonCode,
       eventDate = date,
-      prisonerNumber = prisonerNumber,
+      prisonerNumbers = when {
+        sanitizedPrisonerNumbers != null -> sanitizedPrisonerNumbers
+        else -> null
+      },
+      eventCodes = sanitizedEventCodes,
       acknowledgedEvents = includeAcknowledged,
     )
     val paginatedResults = eventReviewService.getFilteredEvents(page, size, sortDirection, filters)
