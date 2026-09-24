@@ -127,6 +127,22 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
 
   @Sql("classpath:test_data/event-review-data.sql")
   @Test
+  fun `should filter by prisoner number when requested (legacy endpoint)`() {
+    val result = webTestClient.getEvents(prisonerNumber = "A1234AA")
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(EventReviewSearchResults::class.java)
+      .returnResult().responseBody
+
+    assertThat(result).isNotNull
+
+    with(result!!) {
+      assertThat(content.map { it.prisonerNumber }).containsOnly("A1234AA")
+    }
+  }
+
+  @Sql("classpath:test_data/event-review-data.sql")
+  @Test
   fun `should filter by prisoner numbers list when requested`() {
     val result = webTestClient.getEventsV2(prisonerNumbers = listOf("A1234AA", "G1234DD"), size = 10)
       .expectStatus().isOk
@@ -409,7 +425,6 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
     page: Long? = null,
     size: Long? = null,
     prisonerNumber: String? = null,
-    prisonerNumbers: List<String>? = null,
     eventCodes: List<String>? = null,
     role: String = ROLE_ACTIVITY_ADMIN,
   ) = get().uri { builder ->
@@ -419,9 +434,10 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
       .maybeQueryParam("size", size)
       .maybeQueryParam("page", page)
       .maybeQueryParam("includeAcknowledged", includeAcknowledged)
+      .maybeQueryParam("prisonerNumber", prisonerNumber)
       .maybeQueryParam("sortDirection", sort)
       .also { builder ->
-        prisonerNumbers?.forEach { builder.queryParam("prisonerNumbers", it) }
+        // prisonerNumbers?.forEach { builder.queryParam("prisonerNumbers", it) }
         eventCodes?.forEach { builder.queryParam("eventCodes", it) }
       }
       .build()

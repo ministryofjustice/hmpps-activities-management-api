@@ -103,6 +103,26 @@ class EventReviewControllerTest : ControllerTestBase() {
   }
 
   @Test
+  fun `legacy endpoint filters based on prisonerNumber`() {
+    val request = EventReviewSearchRequest(
+      prisonCode = prisonCode,
+      eventDate = date,
+      prisonerNumbers = listOf("G1234FF"),
+      eventCodes = null,
+    )
+    val response = buildResponse()
+    whenever(eventReviewService.getFilteredEvents(page, 100000, sort, request)).thenReturn(response)
+
+    mockMvc.get("/event-review/prison/{prisonCode}", prisonCode) {
+      param("date", date.toString())
+      param(name = "prisonerNumber", "G1234FF")
+    }
+      .andExpect { status { isOk() } }
+
+    verify(eventReviewService).getFilteredEvents(page, 100000, sort, request)
+  }
+
+  @Test
   fun `uses event codes filter when supplied`() {
     val eventCodes = listOf("EVENT_CODE_1", "EVENT_CODE_2")
     val request = EventReviewSearchRequest(
