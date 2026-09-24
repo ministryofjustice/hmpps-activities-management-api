@@ -13,6 +13,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.AlertsUpdatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.InboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.InboundReleaseEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.IncentivesInsertedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.IncentivesUpdatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.NonAssociationsChangedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OffenderMergedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.PrisonerReceivedEvent
@@ -155,6 +157,8 @@ class InterestingEventHandler(
     is PrisonerReceivedEvent -> EventReviewDescription.ARRIVAL_OR_RETURN
     is NonAssociationsChangedEvent -> EventReviewDescription.NON_ASSOCIATION
     is PrisonerUpdatedEvent -> if (isCellMove()) EventReviewDescription.CELL_MOVE else null
+    is IncentivesInsertedEvent -> EventReviewDescription.INCENTIVE_LEVEL_CHANGED
+    is IncentivesUpdatedEvent -> EventReviewDescription.INCENTIVE_LEVEL_CHANGED
     is OffenderMergedEvent -> EventReviewDescription.PRISONER_MERGED
     else -> null
   }

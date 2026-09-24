@@ -112,6 +112,11 @@ enum class EventDescription {
   CELL_MOVE,
 
   @Schema(
+    description = "A prisoner's incentive level has changed",
+  )
+  INCENTIVE_LEVEL_CHANGED,
+
+  @Schema(
     description = "A prisoner has been merged into an existing prisoner record",
   )
   PRISONER_MERGED,

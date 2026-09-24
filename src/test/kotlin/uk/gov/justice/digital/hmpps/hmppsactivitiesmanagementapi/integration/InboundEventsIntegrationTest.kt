@@ -58,6 +58,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.activitiesChangedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.alertsUpdatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.appointmentsChangedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.iepReviewUpdatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.nonAssociationsChangedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.offenderMergedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.prisonerReceivedEvent
@@ -325,6 +326,46 @@ class InboundEventsIntegrationTest : LocalStackTestBase() {
       assertThat(interestingEvent.prisonerNumber).isEqualTo("A11111A")
       assertThat(interestingEvent.eventData).isEqualTo("A1,A2;R1,R2")
       assertThat(interestingEvent.eventDescription).isEqualTo(EventReviewDescription.ALERTS_ADDED_AND_CLOSED)
+    }
+  }
+
+  @Test
+  @Sql("classpath:test_data/seed-activity-id-1.sql")
+  fun `prisoner incentive level changed is recorded with an INCENTIVE_LEVEL_CHANGED description`() {
+    stubPrisonerForInterestingEvent(prisoner = activeInPentonvilleInmate.copy(offenderNo = "A11111A"))
+
+    val event = iepReviewUpdatedEvent(
+      prisonerNumber = "A11111A",
+      incentiveLevel = "Enhanced",
+      previousIncentiveLevel = "Standard",
+      incentiveLevelChanged = true,
+    )
+
+    this.sendInboundEvent(event)
+
+    await untilAsserted {
+      assertThat(eventReviewRepository.findAll()).isNotEmpty
+
+      val interestingEvent = eventReviewRepository.findAll().last()
+
+      assertThat(interestingEvent.eventType).isEqualTo("incentives.iep-review.updated")
+      assertThat(interestingEvent.prisonerNumber).isEqualTo("A11111A")
+      assertThat(interestingEvent.eventData).isEqualTo("New level: Enhanced, Previous level: Standard")
+      assertThat(interestingEvent.eventDescription).isEqualTo(EventReviewDescription.INCENTIVE_LEVEL_CHANGED)
+    }
+  }
+
+  @Test
+  @Sql("classpath:test_data/seed-activity-id-1.sql")
+  fun `prisoner incentive review with no level change is not recorded`() {
+    stubPrisonerForInterestingEvent(prisoner = activeInPentonvilleInmate.copy(offenderNo = "A11111A"))
+
+    val event = iepReviewUpdatedEvent(prisonerNumber = "A11111A", incentiveLevelChanged = false)
+
+    this.sendInboundEvent(event)
+
+    await().during(Duration.ofMillis(200)).atMost(Duration.ofMillis(400)).until {
+      eventReviewRepository.findAll().isEmpty()
     }
   }
 

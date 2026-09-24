@@ -101,7 +101,10 @@ data class IncentivesInsertedEvent(val additionalInformation: IncentivesInformat
   EventOfInterest {
   override fun prisonerNumber() = additionalInformation.nomsNumber
   override fun eventType() = InboundEventType.INCENTIVES_INSERTED.eventType
-  override fun eventMessage() = "Incentive review created"
+  override fun eventMessage() = additionalInformation.incentiveLevelChangeMessage()
+
+  // Only recorded when the incentive level actually changed; otherwise it is not an interesting event.
+  override fun isMeaningful() = additionalInformation.incentiveLevelChanged
 }
 
 data class IncentivesUpdatedEvent(val additionalInformation: IncentivesInformation) :
@@ -109,7 +112,10 @@ data class IncentivesUpdatedEvent(val additionalInformation: IncentivesInformati
   EventOfInterest {
   override fun prisonerNumber() = additionalInformation.nomsNumber
   override fun eventType() = InboundEventType.INCENTIVES_UPDATED.eventType
-  override fun eventMessage() = "Incentive review updated"
+  override fun eventMessage() = additionalInformation.incentiveLevelChangeMessage()
+
+  // Only recorded when the incentive level actually changed; otherwise it is not an interesting event.
+  override fun isMeaningful() = additionalInformation.incentiveLevelChanged
 }
 
 data class IncentivesDeletedEvent(val additionalInformation: IncentivesInformation) :
@@ -117,10 +123,23 @@ data class IncentivesDeletedEvent(val additionalInformation: IncentivesInformati
   EventOfInterest {
   override fun prisonerNumber() = additionalInformation.nomsNumber
   override fun eventType() = InboundEventType.INCENTIVES_DELETED.eventType
-  override fun eventMessage() = "Incentive review deleted"
+  override fun eventMessage(): String? = null
+
+  // Incentive review deletions are not recorded as interesting events.
+  override fun isMeaningful() = false
 }
 
-data class IncentivesInformation(val nomsNumber: String, val reason: String?, val prisonId: String?)
+data class IncentivesInformation(
+  val nomsNumber: String,
+  val reason: String?,
+  val prisonId: String?,
+  val incentiveLevel: String? = null,
+  val previousIncentiveLevel: String? = null,
+  val incentiveLevelChanged: Boolean = false,
+) {
+  fun incentiveLevelChangeMessage() =
+    "New level: ${incentiveLevel.orEmpty()}, Previous level: ${previousIncentiveLevel.orEmpty()}"
+}
 
 // ------------ Prisoner updated events ------------------------------------------------------------------
 
@@ -132,7 +151,7 @@ data class PrisonerUpdatedEvent(val additionalInformation: PrisonerUpdatedInform
   override fun eventType() = InboundEventType.PRISONER_UPDATED.eventType
 
   // eventData is left null for cell moves. The event only carries the changed categories, not the
-  // previous/new locations, so the orchestrator composes the "Previous.../New..." detail at read-time.
+  // previous/new locations, so the orchestrator composes the "Previous.../New..." detail.
   override fun eventMessage(): String? = null
 
   fun isCellMove() = additionalInformation.categoriesChanged.contains("LOCATION")
@@ -221,17 +240,6 @@ data class AlertsUpdatedEvent(val additionalInformation: AlertsUpdatedInformatio
     append(additionalInformation.alertsRemoved.sorted().joinToString(","))
   }
 }
-
-/*
- Stored in event_data as "<added codes>;<removed codes>" (comma-separated, added before ';', removed after).
-
- Case            eventData
- Added only      A1,A2;
- Closed only     ;C1,C2
- Both            A1,A2;C1,C2
-
- Decoded back into AlertsUpdatedDetails(alertsAdded, alertsRemoved) in the API response layer.
- */
 
 data class AlertsUpdatedInformation(
   val nomsNumber: String,

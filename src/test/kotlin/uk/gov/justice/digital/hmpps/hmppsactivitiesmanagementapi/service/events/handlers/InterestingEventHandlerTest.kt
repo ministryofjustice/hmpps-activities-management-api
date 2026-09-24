@@ -120,7 +120,7 @@ class InterestingEventHandlerTest {
     val activeAllocations = listOf(allocation().copy(allocationId = 1, prisonerNumber = "123456"))
     mockAllocations(PENTONVILLE_PRISON_CODE, "123456", activeAllocations)
 
-    val inboundEvent = iepReviewInsertedEvent("123456")
+    val inboundEvent = iepReviewInsertedEvent("123456", incentiveLevelChanged = true)
 
     handler.handle(inboundEvent).also { it.isSuccess() isBool true }
 
@@ -129,9 +129,10 @@ class InterestingEventHandlerTest {
 
     with(eventReviewCaptor.firstValue) {
       bookingId isEqualTo 1
-      eventData isEqualTo "Incentive review created"
+      eventData isEqualTo "New level: , Previous level: "
       eventTime isCloseTo TimeSource.now()
       eventType isEqualTo InboundEventType.INCENTIVES_INSERTED.eventType
+      eventDescription isEqualTo EventReviewDescription.INCENTIVE_LEVEL_CHANGED
       prisonCode isEqualTo PENTONVILLE_PRISON_CODE
       prisonerNumber isEqualTo "123456"
     }
@@ -325,13 +326,18 @@ class InterestingEventHandlerTest {
   }
 
   @Test
-  fun `stores an incentives inserted event`() {
+  fun `stores an incentives inserted event when the incentive level changed`() {
     mockPrisoner(prisonerNum = "ABC1234")
 
     val activeAllocations = listOf(allocation().copy(allocationId = 1, prisonerNumber = "ABC1234"))
     mockAllocations(PENTONVILLE_PRISON_CODE, "ABC1234", activeAllocations)
 
-    val inboundEvent = iepReviewInsertedEvent(prisonerNumber = "ABC1234")
+    val inboundEvent = iepReviewInsertedEvent(
+      prisonerNumber = "ABC1234",
+      incentiveLevel = "Standard",
+      previousIncentiveLevel = "Basic",
+      incentiveLevelChanged = true,
+    )
 
     handler.handle(inboundEvent).also { it.isSuccess() isBool true }
 
@@ -340,22 +346,37 @@ class InterestingEventHandlerTest {
 
     with(eventReviewCaptor.firstValue) {
       bookingId isEqualTo 1
-      eventData isEqualTo "Incentive review created"
+      eventData isEqualTo "New level: Standard, Previous level: Basic"
       eventTime isCloseTo TimeSource.now()
       eventType isEqualTo InboundEventType.INCENTIVES_INSERTED.eventType
+      eventDescription isEqualTo EventReviewDescription.INCENTIVE_LEVEL_CHANGED
       prisonCode isEqualTo PENTONVILLE_PRISON_CODE
       prisonerNumber isEqualTo "ABC1234"
     }
   }
 
   @Test
-  fun `stores an incentives updated event`() {
+  fun `does not store an incentives inserted event when the incentive level did not change`() {
+    val inboundEvent = iepReviewInsertedEvent(prisonerNumber = "ABC1234", incentiveLevelChanged = false)
+
+    handler.handle(inboundEvent).also { it.isSuccess() isBool true }
+
+    verify(eventReviewRepository, never()).saveAndFlush(any())
+  }
+
+  @Test
+  fun `stores an incentives updated event when the incentive level changed`() {
     mockPrisoner(prisonerNum = "ABC1234")
 
     val activeAllocations = listOf(allocation().copy(allocationId = 1, prisonerNumber = "ABC1234"))
     mockAllocations(PENTONVILLE_PRISON_CODE, "ABC1234", activeAllocations)
 
-    val inboundEvent = iepReviewUpdatedEvent(prisonerNumber = "ABC1234")
+    val inboundEvent = iepReviewUpdatedEvent(
+      prisonerNumber = "ABC1234",
+      incentiveLevel = "Enhanced",
+      previousIncentiveLevel = "Standard",
+      incentiveLevelChanged = true,
+    )
 
     handler.handle(inboundEvent).also { it.isSuccess() isBool true }
 
@@ -364,36 +385,31 @@ class InterestingEventHandlerTest {
 
     with(eventReviewCaptor.firstValue) {
       bookingId isEqualTo 1
-      eventData isEqualTo "Incentive review updated"
+      eventData isEqualTo "New level: Enhanced, Previous level: Standard"
       eventTime isCloseTo TimeSource.now()
       eventType isEqualTo InboundEventType.INCENTIVES_UPDATED.eventType
+      eventDescription isEqualTo EventReviewDescription.INCENTIVE_LEVEL_CHANGED
       prisonCode isEqualTo PENTONVILLE_PRISON_CODE
       prisonerNumber isEqualTo "ABC1234"
     }
   }
 
   @Test
-  fun `stores an incentives deleted event`() {
-    mockPrisoner(prisonerNum = "ABC1234")
+  fun `does not store an incentives updated event when the incentive level did not change`() {
+    val inboundEvent = iepReviewUpdatedEvent(prisonerNumber = "ABC1234", incentiveLevelChanged = false)
 
-    val activeAllocations = listOf(allocation().copy(allocationId = 1, prisonerNumber = "ABC1234"))
-    mockAllocations(PENTONVILLE_PRISON_CODE, "ABC1234", activeAllocations)
+    handler.handle(inboundEvent).also { it.isSuccess() isBool true }
 
+    verify(eventReviewRepository, never()).saveAndFlush(any())
+  }
+
+  @Test
+  fun `does not store an incentives deleted event`() {
     val inboundEvent = iepReviewDeletedEvent(prisonerNumber = "ABC1234")
 
     handler.handle(inboundEvent).also { it.isSuccess() isBool true }
 
-    verify(allocationRepository).findByPrisonCodePrisonerNumberPrisonerStatus(PENTONVILLE_PRISON_CODE, "ABC1234", PrisonerStatus.ACTIVE, PrisonerStatus.PENDING)
-    verify(eventReviewRepository).saveAndFlush(eventReviewCaptor.capture())
-
-    with(eventReviewCaptor.firstValue) {
-      bookingId isEqualTo 1
-      eventData isEqualTo "Incentive review deleted"
-      eventTime isCloseTo TimeSource.now()
-      eventType isEqualTo InboundEventType.INCENTIVES_DELETED.eventType
-      prisonCode isEqualTo PENTONVILLE_PRISON_CODE
-      prisonerNumber isEqualTo "ABC1234"
-    }
+    verify(eventReviewRepository, never()).saveAndFlush(any())
   }
 
   @Test
