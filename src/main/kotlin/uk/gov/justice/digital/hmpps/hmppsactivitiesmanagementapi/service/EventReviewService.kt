@@ -6,6 +6,7 @@ import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
+import org.springframework.data.jpa.domain.Specification
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
@@ -60,9 +61,12 @@ class EventReviewService(
         spec = spec.and(eventReviewSearchSpecification.eventCodeIn(eventCodes))
       }
       acknowledgedEvents?.let {
-        // If acknowledgedEvents is false exclude any with an acknowledgedTime set
-        if (!it) {
-          spec = spec.and(eventReviewSearchSpecification.isNotAcknowledged())
+        // If acknowledgedEvents is true, only include rows with an acknowledgedTime set.
+        // Otherwise exclude acknowledged rows and return only unacknowledged events.
+        spec = if (it) {
+          spec.and(eventReviewSearchSpecification.isAcknowledged())
+        } else {
+          spec.and(Specification.not(eventReviewSearchSpecification.isAcknowledged()))
         }
       }
     }

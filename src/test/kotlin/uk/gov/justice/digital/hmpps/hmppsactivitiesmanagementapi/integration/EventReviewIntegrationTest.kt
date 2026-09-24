@@ -90,7 +90,7 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
 
   @Sql("classpath:test_data/event-review-data.sql")
   @Test
-  fun `should include acknowledged events when requested`() {
+  fun `should include acknowledged events when requested (legacy endpoint)`() {
     val result = webTestClient.getEvents(includeAcknowledged = true, size = 13)
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -103,6 +103,26 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
       assertThat(content.size).isEqualTo(13)
       assertThat(totalPages).isEqualTo(1)
       assertThat(totalElements).isEqualTo(13)
+    }
+  }
+
+  @Sql("classpath:test_data/event-review-data.sql")
+  @Test
+  fun `should return only acknowledged events when filter is true`() {
+    val result = webTestClient.getEventsV2(filterAcknowledged = true, size = 13)
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(EventReviewSearchResults::class.java)
+      .returnResult().responseBody
+
+    assertThat(result).isNotNull
+
+    with(result!!) {
+      assertThat(content).hasSize(1)
+      assertThat(content.single().eventReviewId).isEqualTo(13)
+      assertThat(content.single().acknowledgedTime).isNotNull
+      assertThat(totalPages).isEqualTo(1)
+      assertThat(totalElements).isEqualTo(1)
     }
   }
 
@@ -449,11 +469,10 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
   private fun WebTestClient.getEventsV2(
     date: LocalDate = LocalDate.of(2023, 5, 10),
     prisonCode: String? = "MDI",
-    includeAcknowledged: Boolean? = null,
+    filterAcknowledged: Boolean? = null,
     sort: String? = null,
     page: Long? = null,
     size: Long? = null,
-    prisonerNumber: String? = null,
     prisonerNumbers: List<String>? = null,
     eventCodes: List<String>? = null,
     role: String = ROLE_ACTIVITY_ADMIN,
@@ -463,7 +482,7 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
       .queryParam("date", date)
       .maybeQueryParam("size", size)
       .maybeQueryParam("page", page)
-      .maybeQueryParam("includeAcknowledged", includeAcknowledged)
+      .maybeQueryParam("filterAcknowledged", filterAcknowledged)
       .maybeQueryParam("sortDirection", sort)
       .also { builder ->
         prisonerNumbers?.forEach { builder.queryParam("prisonerNumbers", it) }
