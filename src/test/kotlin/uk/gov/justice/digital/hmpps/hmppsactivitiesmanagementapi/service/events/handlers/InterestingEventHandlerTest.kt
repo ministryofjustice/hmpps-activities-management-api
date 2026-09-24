@@ -5,11 +5,14 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
+import org.springframework.http.HttpHeaders
+import org.springframework.web.reactive.function.client.WebClientResponseException
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
@@ -29,6 +32,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.InboundEventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.activitiesChangedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.alertsUpdatedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.alertsUpdatedEventAfterMerge
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.appointmentsChangedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.iepReviewDeletedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.iepReviewInsertedEvent
@@ -39,6 +43,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.prisonerReleasedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.prisonerUpdatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
+import java.nio.charset.StandardCharsets
 
 class InterestingEventHandlerTest {
   private val rolloutPrisonService = RolloutPrisonService("PVI,MDI", "PVI,MDI", "", "PVI,MDI")
@@ -54,6 +59,14 @@ class InterestingEventHandlerTest {
       eventReviewRepository,
       prisonerSearchApiClient,
     )
+
+  private fun webClientResponseException(statusCode: Int): WebClientResponseException = WebClientResponseException.create(
+    statusCode,
+    "Error",
+    HttpHeaders(),
+    byteArrayOf(),
+    StandardCharsets.UTF_8,
+  )
 
   @BeforeEach
   fun beforeTests() {
@@ -242,6 +255,64 @@ class InterestingEventHandlerTest {
       prisonCode isEqualTo PENTONVILLE_PRISON_CODE
       prisonerNumber isEqualTo "ABC1234"
     }
+  }
+
+  @Test
+  fun `uses found prisoner path when prisoner lookup succeeds`() {
+    mockPrisoner(prisonerNum = "ABC1234")
+
+    val activeAllocations = listOf(allocation().copy(allocationId = 1, prisonerNumber = "ABC1234"))
+    mockAllocations(PENTONVILLE_PRISON_CODE, "ABC1234", activeAllocations)
+
+    val inboundEvent = alertsUpdatedEvent(prisonerNumber = "ABC1234")
+
+    handler.handle(inboundEvent).also { it.isSuccess() isBool true }
+
+    verify(eventReviewRepository).saveAndFlush(any())
+  }
+
+  @Test
+  fun `ignores stale alerts update after attempting prisoner search after alerts have been removed from a merged prisoner`() {
+    whenever(prisonerSearchApiClient.findByPrisonerNumber("123OLD")) doThrow webClientResponseException(404)
+
+    val inboundEvent = alertsUpdatedEventAfterMerge(prisonerNumber = "123OLD")
+
+    handler.handle(inboundEvent).also { it.isSuccess() isBool true }
+
+    verify(eventReviewRepository, never()).saveAndFlush(any())
+  }
+
+  @Test
+  fun `fails stale alerts update when prisoner lookup returns server error`() {
+    whenever(prisonerSearchApiClient.findByPrisonerNumber("123OLD")) doThrow webClientResponseException(500)
+
+    val inboundEvent = alertsUpdatedEvent(prisonerNumber = "123OLD")
+
+    handler.handle(inboundEvent).also { it.isSuccess() isBool false }
+
+    verify(eventReviewRepository, never()).saveAndFlush(any())
+  }
+
+  @Test
+  fun `fails when prisoner lookup returns null for a normal alerts update`() {
+    whenever(prisonerSearchApiClient.findByPrisonerNumber("123OLD")) doReturn null
+
+    val inboundEvent = alertsUpdatedEvent(prisonerNumber = "123OLD")
+
+    handler.handle(inboundEvent).also { it.isSuccess() isBool false }
+
+    verify(eventReviewRepository, never()).saveAndFlush(any())
+  }
+
+  @Test
+  fun `fails when prisoner lookup returns a non-404 or 5xx client error`() {
+    whenever(prisonerSearchApiClient.findByPrisonerNumber("123OLD")) doThrow webClientResponseException(400)
+
+    val inboundEvent = alertsUpdatedEvent(prisonerNumber = "123OLD")
+
+    handler.handle(inboundEvent).also { it.isSuccess() isBool false }
+
+    verify(eventReviewRepository, never()).saveAndFlush(any())
   }
 
   @Test
