@@ -48,12 +48,15 @@ import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 import java.util.*
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity as ActivityEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventReview as EventReviewEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventReviewDescription as EventReviewDescriptionEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity as ModelActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityEligibility as ModelActivityEligibility
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityMinimumEducationLevel as ModelActivityMinimumEducationLevel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityPay as ModelActivityPay
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule as ModelActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AdvanceAttendance as ModelAdvanceAttendance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AlertsUpdatedDetails as ModelAlertsUpdatedDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentFrequency as ModelAppointmentFrequency
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance as ModelAttendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EligibilityRule as ModelEligibilityRule
@@ -963,5 +966,54 @@ class TransformFunctionsTest {
   fun `Convert to money format with decimal`() {
     val amount = toMoney(59)
     amount isEqualTo "£0.59"
+  }
+
+  @Nested
+  @DisplayName("Alert details")
+  inner class AlertDetailsTransformation {
+    private fun eventReview(description: EventReviewDescriptionEntity?, eventData: String?) = EventReviewEntity(
+      eventReviewId = 1,
+      eventType = "prisoner-offender-search.prisoner.alerts-updated",
+      eventData = eventData,
+      eventDescription = description,
+    )
+
+    @Test
+    fun `decodes alerts added and removed into details while keeping eventData`() {
+      val result = transform(eventReview(EventReviewDescriptionEntity.ALERTS_ADDED_AND_CLOSED, "A1,A2;C1,C2"))
+
+      result.eventData isEqualTo "A1,A2;C1,C2"
+      result.alertDetails isEqualTo ModelAlertsUpdatedDetails(alertsAdded = listOf("A1", "A2"), alertsClosed = listOf("C1", "C2"))
+    }
+
+    @Test
+    fun `decodes alerts added only`() {
+      val result = transform(eventReview(EventReviewDescriptionEntity.ALERT_ADDED, "A1,A2;"))
+
+      result.alertDetails isEqualTo ModelAlertsUpdatedDetails(alertsAdded = listOf("A1", "A2"), alertsClosed = emptyList())
+    }
+
+    @Test
+    fun `decodes alerts removed only`() {
+      val result = transform(eventReview(EventReviewDescriptionEntity.ALERT_CLOSED, ";C1,C2"))
+
+      result.alertDetails isEqualTo ModelAlertsUpdatedDetails(alertsAdded = emptyList(), alertsClosed = listOf("C1", "C2"))
+    }
+
+    @Test
+    fun `alertDetails is null for non-alert events`() {
+      val result = transform(eventReview(EventReviewDescriptionEntity.NON_ASSOCIATION, "New non-association"))
+
+      result.eventData isEqualTo "New non-association"
+      assertThat(result.alertDetails).isNull()
+    }
+
+    @Test
+    fun `null eventData is handled gracefully - empty alertDetails and eventData preserved as null`() {
+      val result = transform(eventReview(EventReviewDescriptionEntity.ALERTS_ADDED_AND_CLOSED, null))
+
+      result.alertDetails isEqualTo ModelAlertsUpdatedDetails(alertsAdded = emptyList(), alertsClosed = emptyList())
+      assertThat(result.eventData).isNull()
+    }
   }
 }

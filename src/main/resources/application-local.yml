@@ -117,7 +117,7 @@ hmpps.sqs:
   queues:
     activities:
       queueName: ${random.uuid}
-      subscribeFilter: '{"eventType":[ "prisoner-offender-search.prisoner.received", "prisoner-offender-search.prisoner.released", "prison-offender-events.prisoner.activities-changed", "prison-offender-events.prisoner.appointments-changed", "prisoner-offender-search.prisoner.alerts-updated"]}'
+      subscribeFilter: '{"eventType":[ "prisoner-offender-search.prisoner.received", "prisoner-offender-search.prisoner.released", "prison-offender-events.prisoner.activities-changed", "prison-offender-events.prisoner.appointments-changed", "prisoner-offender-search.prisoner.alerts-updated", "incentives.iep-review.inserted", "incentives.iep-review.updated", "incentives.iep-review.deleted", "prison-offender-events.prisoner.merged", "prison-offender-events.prisoner.non-association-detail.changed", "prisoner-offender-search.prisoner.updated"]}'
       dlqName: ${random.uuid}
       subscribeTopicId: domainevents
       dlqMaxReceiveCount: 1
@@ -145,11 +145,20 @@ feature:
       prisoner:
         activities-changed: true
         appointments-changed: true
+        merged: true
+        non-association-detail:
+          changed: true
     prisoner-offender-search:
       prisoner:
         received: true
         released: true
         alerts-updated: true
+        updated: true
+    incentives:
+      iep-review:
+        inserted: true
+        updated: true
+        deleted: true
     activities:
       prisoner:
         allocated: true

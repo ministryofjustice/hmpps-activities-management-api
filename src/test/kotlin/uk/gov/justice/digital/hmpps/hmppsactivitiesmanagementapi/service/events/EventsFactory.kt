@@ -25,6 +25,18 @@ fun prisonerReceivedFromTemporaryAbsence(
   ),
 )
 
+fun prisonerReceivedEvent(
+  prisonCode: String = PENTONVILLE_PRISON_CODE,
+  prisonerNumber: String = "XXXXXX",
+  reason: String = "NEW_ADMISSION",
+) = PrisonerReceivedEvent(
+  ReceivedInformation(
+    prisonerNumber,
+    reason,
+    prisonCode,
+  ),
+)
+
 fun prisonerUpdatedEvent(prisonerNumber: String = "XXXXXX", categoriesChanged: List<String> = listOf<String>("LOCATION")) = PrisonerUpdatedEvent(
   PrisonerUpdatedInformation(
     nomsNumber = prisonerNumber,
@@ -44,19 +56,39 @@ fun appointmentsChangedEvent(prisonerNumber: String = "XXXXXX", prisonId: String
   ),
 )
 
-fun iepReviewInsertedEvent(prisonerNumber: String = "XXXXXX", prisonId: String? = null, reason: String? = null) = IncentivesInsertedEvent(
+fun iepReviewInsertedEvent(
+  prisonerNumber: String = "XXXXXX",
+  prisonId: String? = null,
+  reason: String? = null,
+  incentiveLevel: String? = null,
+  previousIncentiveLevel: String? = null,
+  incentiveLevelChanged: Boolean = false,
+) = IncentivesInsertedEvent(
   IncentivesInformation(
     nomsNumber = prisonerNumber,
     prisonId = prisonId,
     reason = reason,
+    incentiveLevel = incentiveLevel,
+    previousIncentiveLevel = previousIncentiveLevel,
+    incentiveLevelChanged = incentiveLevelChanged,
   ),
 )
 
-fun iepReviewUpdatedEvent(prisonerNumber: String = "XXXXXX", prisonId: String? = null, reason: String? = null) = IncentivesUpdatedEvent(
+fun iepReviewUpdatedEvent(
+  prisonerNumber: String = "XXXXXX",
+  prisonId: String? = null,
+  reason: String? = null,
+  incentiveLevel: String? = null,
+  previousIncentiveLevel: String? = null,
+  incentiveLevelChanged: Boolean = false,
+) = IncentivesUpdatedEvent(
   IncentivesInformation(
     nomsNumber = prisonerNumber,
     prisonId = prisonId,
     reason = reason,
+    incentiveLevel = incentiveLevel,
+    previousIncentiveLevel = previousIncentiveLevel,
+    incentiveLevelChanged = incentiveLevelChanged,
   ),
 )
 

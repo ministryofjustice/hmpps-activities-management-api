@@ -264,7 +264,7 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
     assertThat(result).isNotNull
 
     with(result!!) {
-      assertThat(content.first().eventDescription).isEqualTo(EventDescription.TEMPORARY_RELEASE)
+      assertThat(content.first().eventDescription).isEqualTo(EventDescription.RELEASED)
       assertThat(totalPages).isEqualTo(1)
       assertThat(totalElements).isEqualTo(1)
     }
