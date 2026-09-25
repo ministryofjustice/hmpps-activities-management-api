@@ -77,6 +77,16 @@ enum class EventDescription {
   RELEASED,
 
   @Schema(
+    description = "A permanently released prisoner",
+  )
+  PERMANENT_RELEASE,
+
+  @Schema(
+    description = "A temporarily released prisoner",
+  )
+  TEMPORARY_RELEASE,
+
+  @Schema(
     description = "An alert has been added",
   )
   ALERT_ADDED,
@@ -128,15 +138,15 @@ data class AlertsUpdatedDetails(
   val alertsAdded: List<String> = emptyList(),
 
   @Schema(description = "The alert codes that were removed", example = "[\"C1\", \"C2\"]")
-  val alertsRemoved: List<String> = emptyList(),
+  val alertsClosed: List<String> = emptyList(),
 ) {
   companion object {
-    // Stored in event_data as "A1,A2;C1,C2" (added before ';', removed after).
+    // Stored in event_data as "A1,A2;C1,C2" (added before ';', closed after).
     fun decode(eventData: String): AlertsUpdatedDetails {
       val parts = eventData.split(";", limit = 2)
       return AlertsUpdatedDetails(
         alertsAdded = parts.getOrNull(0).toCodes(),
-        alertsRemoved = parts.getOrNull(1).toCodes(),
+        alertsClosed = parts.getOrNull(1).toCodes(),
       )
     }
 

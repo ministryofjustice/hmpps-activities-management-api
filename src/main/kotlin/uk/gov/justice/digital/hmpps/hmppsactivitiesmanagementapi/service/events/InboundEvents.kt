@@ -89,7 +89,7 @@ data class OffenderMergedEvent(val additionalInformation: MergeInformation) :
   override fun prisonerNumber() = additionalInformation.nomsNumber
   fun removedPrisonerNumber() = additionalInformation.removedNomsNumber
   override fun eventType() = InboundEventType.OFFENDER_MERGED.eventType
-  override fun eventMessage() = "From '${this.removedPrisonerNumber()}' to '${this.prisonerNumber()}'"
+  override fun eventMessage() = "From ${this.removedPrisonerNumber()} to ${this.prisonerNumber()}"
 }
 
 data class MergeInformation(val nomsNumber: String, val removedNomsNumber: String)
@@ -137,8 +137,7 @@ data class IncentivesInformation(
   val previousIncentiveLevel: String? = null,
   val incentiveLevelChanged: Boolean = false,
 ) {
-  fun incentiveLevelChangeMessage() =
-    "New level: ${incentiveLevel.orEmpty()}, Previous level: ${previousIncentiveLevel.orEmpty()}"
+  fun incentiveLevelChangeMessage() = "New level: ${incentiveLevel.orEmpty()}, Previous level: ${previousIncentiveLevel.orEmpty()}"
 }
 
 // ------------ Prisoner updated events ------------------------------------------------------------------

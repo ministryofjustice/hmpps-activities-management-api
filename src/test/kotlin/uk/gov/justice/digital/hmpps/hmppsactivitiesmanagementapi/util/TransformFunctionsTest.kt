@@ -983,21 +983,21 @@ class TransformFunctionsTest {
       val result = transform(eventReview(EventReviewDescriptionEntity.ALERTS_ADDED_AND_CLOSED, "A1,A2;C1,C2"))
 
       result.eventData isEqualTo "A1,A2;C1,C2"
-      result.alertDetails isEqualTo ModelAlertsUpdatedDetails(alertsAdded = listOf("A1", "A2"), alertsRemoved = listOf("C1", "C2"))
+      result.alertDetails isEqualTo ModelAlertsUpdatedDetails(alertsAdded = listOf("A1", "A2"), alertsClosed = listOf("C1", "C2"))
     }
 
     @Test
     fun `decodes alerts added only`() {
       val result = transform(eventReview(EventReviewDescriptionEntity.ALERT_ADDED, "A1,A2;"))
 
-      result.alertDetails isEqualTo ModelAlertsUpdatedDetails(alertsAdded = listOf("A1", "A2"), alertsRemoved = emptyList())
+      result.alertDetails isEqualTo ModelAlertsUpdatedDetails(alertsAdded = listOf("A1", "A2"), alertsClosed = emptyList())
     }
 
     @Test
     fun `decodes alerts removed only`() {
       val result = transform(eventReview(EventReviewDescriptionEntity.ALERT_CLOSED, ";C1,C2"))
 
-      result.alertDetails isEqualTo ModelAlertsUpdatedDetails(alertsAdded = emptyList(), alertsRemoved = listOf("C1", "C2"))
+      result.alertDetails isEqualTo ModelAlertsUpdatedDetails(alertsAdded = emptyList(), alertsClosed = listOf("C1", "C2"))
     }
 
     @Test
@@ -1012,7 +1012,7 @@ class TransformFunctionsTest {
     fun `null eventData is handled gracefully - empty alertDetails and eventData preserved as null`() {
       val result = transform(eventReview(EventReviewDescriptionEntity.ALERTS_ADDED_AND_CLOSED, null))
 
-      result.alertDetails isEqualTo ModelAlertsUpdatedDetails(alertsAdded = emptyList(), alertsRemoved = emptyList())
+      result.alertDetails isEqualTo ModelAlertsUpdatedDetails(alertsAdded = emptyList(), alertsClosed = emptyList())
       assertThat(result.eventData).isNull()
     }
   }

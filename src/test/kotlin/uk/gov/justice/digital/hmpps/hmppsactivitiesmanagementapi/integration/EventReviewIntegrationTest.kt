@@ -144,7 +144,7 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
 
   @Sql("classpath:test_data/event-review-data.sql")
   @Test
-  fun `should include event description of TEMPORARY_DESCRIPTION when there a temporary released prisoner event description set`() {
+  fun `should return event description of RELEASED for a released prisoner event`() {
     val result = webTestClient.getEvents(prisonerNumber = "G1234DY")
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)

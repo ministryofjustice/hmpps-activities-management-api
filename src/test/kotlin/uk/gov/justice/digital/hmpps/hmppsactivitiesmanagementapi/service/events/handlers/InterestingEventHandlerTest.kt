@@ -120,7 +120,7 @@ class InterestingEventHandlerTest {
     val activeAllocations = listOf(allocation().copy(allocationId = 1, prisonerNumber = "123456"))
     mockAllocations(PENTONVILLE_PRISON_CODE, "123456", activeAllocations)
 
-    val inboundEvent = iepReviewInsertedEvent("123456", incentiveLevelChanged = true)
+    val inboundEvent = iepReviewInsertedEvent("123456", incentiveLevelChanged = true, incentiveLevel = "STD", previousIncentiveLevel = "BAS")
 
     handler.handle(inboundEvent).also { it.isSuccess() isBool true }
 
@@ -129,7 +129,7 @@ class InterestingEventHandlerTest {
 
     with(eventReviewCaptor.firstValue) {
       bookingId isEqualTo 1
-      eventData isEqualTo "New level: , Previous level: "
+      eventData isEqualTo "New level: STD, Previous level: BAS"
       eventTime isCloseTo TimeSource.now()
       eventType isEqualTo InboundEventType.INCENTIVES_INSERTED.eventType
       eventDescription isEqualTo EventReviewDescription.INCENTIVE_LEVEL_CHANGED
@@ -334,8 +334,8 @@ class InterestingEventHandlerTest {
 
     val inboundEvent = iepReviewInsertedEvent(
       prisonerNumber = "ABC1234",
-      incentiveLevel = "Standard",
-      previousIncentiveLevel = "Basic",
+      incentiveLevel = "STD",
+      previousIncentiveLevel = "BAS",
       incentiveLevelChanged = true,
     )
 
@@ -346,7 +346,7 @@ class InterestingEventHandlerTest {
 
     with(eventReviewCaptor.firstValue) {
       bookingId isEqualTo 1
-      eventData isEqualTo "New level: Standard, Previous level: Basic"
+      eventData isEqualTo "New level: STD, Previous level: BAS"
       eventTime isCloseTo TimeSource.now()
       eventType isEqualTo InboundEventType.INCENTIVES_INSERTED.eventType
       eventDescription isEqualTo EventReviewDescription.INCENTIVE_LEVEL_CHANGED
@@ -373,8 +373,8 @@ class InterestingEventHandlerTest {
 
     val inboundEvent = iepReviewUpdatedEvent(
       prisonerNumber = "ABC1234",
-      incentiveLevel = "Enhanced",
-      previousIncentiveLevel = "Standard",
+      incentiveLevel = "BAS",
+      previousIncentiveLevel = "STD",
       incentiveLevelChanged = true,
     )
 
@@ -385,7 +385,7 @@ class InterestingEventHandlerTest {
 
     with(eventReviewCaptor.firstValue) {
       bookingId isEqualTo 1
-      eventData isEqualTo "New level: Enhanced, Previous level: Standard"
+      eventData isEqualTo "New level: BAS, Previous level: STD"
       eventTime isCloseTo TimeSource.now()
       eventType isEqualTo InboundEventType.INCENTIVES_UPDATED.eventType
       eventDescription isEqualTo EventReviewDescription.INCENTIVE_LEVEL_CHANGED
@@ -424,7 +424,7 @@ class InterestingEventHandlerTest {
 
     with(eventReviewCaptor.firstValue) {
       bookingId isEqualTo 1
-      eventData isEqualTo "From 'DEF9876' to 'ABC1234'"
+      eventData isEqualTo "From DEF9876 to ABC1234"
       eventTime isCloseTo TimeSource.now()
       eventType isEqualTo InboundEventType.OFFENDER_MERGED.eventType
       prisonCode isEqualTo PENTONVILLE_PRISON_CODE

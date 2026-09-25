@@ -484,7 +484,7 @@ fun transform(entityEventReview: EventReview) = ModelEventReview(
   alertDetails = entityEventReview.toAlertDetails(),
 )
 
-// Decodes event_data into a typed alert-details object for alerts-updated events.
+// Decodes event_data into a typed AlertsUpdatedDetails object for alerts-updated events.
 // Fail-open: any decode problem yields null so a single malformed row never breaks the response,
 // and event_data is always retained as a human-readable fallback.
 private fun EventReview.toAlertDetails(): AlertsUpdatedDetails? = runCatching {
