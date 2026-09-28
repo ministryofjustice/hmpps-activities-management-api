@@ -19,6 +19,6 @@ data class EventReviewSearchRequest(
   @Schema(description = "The specific event(s) to search in the events data", example = "EVENT_CODE")
   val eventCodes: List<String>? = null,
 
-  @Schema(description = "A boolean value indicating whether acknowledged events should be returned. Default is true.", example = "true")
+  @Schema(description = "A boolean value indicating whether to filter for acknowledged events only. True returns acknowledged events only; false excludes acknowledged events. Default is false.", example = "true")
   val acknowledgedEvents: Boolean? = false,
 )
