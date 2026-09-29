@@ -15,5 +15,5 @@ class EventReviewSearchSpecification {
 
   fun eventTimeBetween(startTime: LocalDateTime, endTime: LocalDateTime) = Specification<EventReview> { root, _, cb -> cb.between(root.get("eventTime"), startTime, endTime) }
 
-  fun isNotAcknowledged() = Specification<EventReview> { root, _, cb -> cb.isNull(root.get<LocalDateTime>("acknowledgedTime")) }
+  fun isAcknowledged() = Specification<EventReview> { root, _, cb -> cb.isNotNull(root.get<LocalDateTime>("acknowledgedTime")) }
 }
