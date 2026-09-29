@@ -85,7 +85,7 @@ class EventReviewController(private val eventReviewService: EventReviewService) 
     @Parameter(description = "The events, eg. EVENT_CODE1,EVENT_CODE2 (optional). Default is all events.")
     filterEventTypes: List<String>?,
     @RequestParam(required = false, defaultValue = "false")
-    @Parameter(description = "Whether to include acknowledged events (optional). Default is false.")
+    @Parameter(description = "Legacy compatibility: true includes acknowledged events, false excludes them.")
     includeAcknowledged: Boolean? = false,
     @RequestParam(required = false, defaultValue = "0")
     @Parameter(description = "The page number to return (optional). Default is page zero.")
@@ -100,6 +100,11 @@ class EventReviewController(private val eventReviewService: EventReviewService) 
     sortDirection: String = "ascending",
   ): EventReviewSearchResults {
     val sanitizedPrisonerNumber = prisonerNumber?.takeIf { it.isNotBlank() }?.trim()
+//    Retain legacy compatibility, filtering for including acknowledged events
+    val acknowledgedEvents = when (includeAcknowledged) {
+      true -> null
+      else -> includeAcknowledged
+    }
 
     val filters = EventReviewSearchRequest(
       prisonCode = prisonCode,
@@ -108,7 +113,7 @@ class EventReviewController(private val eventReviewService: EventReviewService) 
         !sanitizedPrisonerNumber.isNullOrEmpty() -> listOf(sanitizedPrisonerNumber)
         else -> null
       },
-      acknowledgedEvents = includeAcknowledged,
+      acknowledgedEvents = acknowledgedEvents,
       eventCodes = filterEventTypes
         ?.map { it.trim() }
         ?.filter { it.isNotEmpty() },
@@ -173,8 +178,8 @@ class EventReviewController(private val eventReviewService: EventReviewService) 
     @Parameter(description = "The events, eg. EVENT_CODE1,EVENT_CODE2 (optional). Default is all events.")
     filterEventTypes: List<String>?,
     @RequestParam(required = false, defaultValue = "false")
-    @Parameter(description = "Whether to include acknowledged events (optional). Default is false.")
-    includeAcknowledged: Boolean? = false,
+    @Parameter(description = "Whether to filter to acknowledged events only. When false, acknowledged events are excluded. Default is false.")
+    filterAcknowledged: Boolean? = false,
     @RequestParam(required = false, defaultValue = "0")
     @Parameter(description = "The page number to return (optional). Default is page zero.")
     @PositiveOrZero(message = "Page number cannot be negative.")
@@ -202,7 +207,7 @@ class EventReviewController(private val eventReviewService: EventReviewService) 
         else -> null
       },
       eventCodes = sanitizedEventCodes,
-      acknowledgedEvents = includeAcknowledged,
+      acknowledgedEvents = filterAcknowledged,
     )
     val paginatedResults = eventReviewService.getFilteredEvents(page, size, sortDirection, filters)
     return EventReviewSearchResults(
