@@ -6,6 +6,11 @@ generic-service:
 
   ingress:
     host: activities-api-dev.prison.service.justice.gov.uk
+    modsecurity_enabled: true
+    modsecurity_snippet: |
+      SecAuditEngine On
+      SecRuleEngine DetectionOnly
+      SecDefaultAction "phase:2,pass,log,tag:github_team=activities-and-appointments,tag:namespace={{ .Release.Namespace }}"
 
   env:
     HMPPS_AUTH_URL: https://sign-in-dev.hmpps.service.justice.gov.uk/auth
