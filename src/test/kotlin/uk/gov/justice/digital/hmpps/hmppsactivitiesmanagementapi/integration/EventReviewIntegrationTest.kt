@@ -274,7 +274,7 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
 
   @Sql("classpath:test_data/event-review-data.sql")
   @Test
-  fun `should include event description of TEMPORARY_DESCRIPTION when there a temporary released prisoner event description set`() {
+  fun `should include event description as RELEASED when there is a released prisoner event`() {
     val result = webTestClient.getEventsV2(prisonerNumbers = listOf("G1234DY"))
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -284,7 +284,7 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
     assertThat(result).isNotNull
 
     with(result!!) {
-      assertThat(content.first().eventDescription).isEqualTo(EventDescription.TEMPORARY_RELEASE)
+      assertThat(content.first().eventDescription).isEqualTo(EventDescription.RELEASED)
       assertThat(totalPages).isEqualTo(1)
       assertThat(totalElements).isEqualTo(1)
     }

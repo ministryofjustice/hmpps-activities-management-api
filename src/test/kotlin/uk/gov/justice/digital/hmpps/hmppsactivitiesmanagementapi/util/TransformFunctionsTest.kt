@@ -48,17 +48,23 @@ import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 import java.util.*
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity as ActivityEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventReview as EventReviewEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventReviewDescription as EventReviewDescriptionEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity as ModelActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityEligibility as ModelActivityEligibility
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityMinimumEducationLevel as ModelActivityMinimumEducationLevel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityPay as ModelActivityPay
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule as ModelActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AdvanceAttendance as ModelAdvanceAttendance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AlertsUpdatedDetails as ModelAlertsUpdatedDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentFrequency as ModelAppointmentFrequency
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance as ModelAttendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EligibilityRule as ModelEligibilityRule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventOrganiser as ModelEventOrganiser
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventTier as ModelEventTier
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.IncentiveLevelsChangedDetails as ModelIncentiveLevelsChangedDetails
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.OffenderMergedDetails as ModelOffenderMergedDetails
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerUpdatedDetails as ModelPrisonerUpdatedDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledEvent as ModelScheduledEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledInstance as ModelScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory as ModelActivityCategory
@@ -963,5 +969,148 @@ class TransformFunctionsTest {
   fun `Convert to money format with decimal`() {
     val amount = toMoney(59)
     amount isEqualTo "£0.59"
+  }
+
+  @Nested
+  @DisplayName("Alert details")
+  inner class AlertDetailsTransformation {
+    private fun eventReview(description: EventReviewDescriptionEntity?, eventData: String?) = EventReviewEntity(
+      eventReviewId = 1,
+      eventType = "prisoner-offender-search.prisoner.alerts-updated",
+      eventData = eventData,
+      eventDescription = description,
+    )
+
+    @Test
+    fun `decodes alerts added and removed into details while keeping eventData`() {
+      val result = transform(eventReview(EventReviewDescriptionEntity.ALERTS_ADDED_AND_CLOSED, "A1,A2;C1,C2"))
+
+      result.eventData isEqualTo "A1,A2;C1,C2"
+      result.alertDetails isEqualTo ModelAlertsUpdatedDetails(alertsAdded = listOf("A1", "A2"), alertsClosed = listOf("C1", "C2"))
+    }
+
+    @Test
+    fun `decodes alerts added only`() {
+      val result = transform(eventReview(EventReviewDescriptionEntity.ALERT_ADDED, "A1,A2;"))
+
+      result.alertDetails isEqualTo ModelAlertsUpdatedDetails(alertsAdded = listOf("A1", "A2"), alertsClosed = emptyList())
+    }
+
+    @Test
+    fun `decodes alerts removed only`() {
+      val result = transform(eventReview(EventReviewDescriptionEntity.ALERT_CLOSED, ";C1,C2"))
+
+      result.alertDetails isEqualTo ModelAlertsUpdatedDetails(alertsAdded = emptyList(), alertsClosed = listOf("C1", "C2"))
+    }
+
+    @Test
+    fun `alertDetails is null for non-alert events`() {
+      val result = transform(eventReview(EventReviewDescriptionEntity.NON_ASSOCIATION, "New non-association"))
+
+      result.eventData isEqualTo "New non-association"
+      assertThat(result.alertDetails).isNull()
+    }
+
+    @Test
+    fun `null eventData is handled gracefully - empty alertDetails and eventData preserved as null`() {
+      val result = transform(eventReview(EventReviewDescriptionEntity.ALERTS_ADDED_AND_CLOSED, null))
+
+      result.alertDetails isEqualTo ModelAlertsUpdatedDetails(alertsAdded = emptyList(), alertsClosed = emptyList())
+      assertThat(result.eventData).isNull()
+    }
+  }
+
+  @Nested
+  @DisplayName("Incentive details")
+  inner class IncentiveDetailsTransformation {
+    private fun eventReview(description: EventReviewDescriptionEntity?, eventData: String?) = EventReviewEntity(
+      eventReviewId = 1,
+      eventType = "incentives.iep-review.updated",
+      eventData = eventData,
+      eventDescription = description,
+    )
+
+    @Test
+    fun `decodes new and previous levels into details while keeping eventData`() {
+      val result = transform(eventReview(EventReviewDescriptionEntity.INCENTIVE_LEVEL_CHANGED, "STD;BAS"))
+
+      result.eventData isEqualTo "STD;BAS"
+      result.incentiveDetails isEqualTo ModelIncentiveLevelsChangedDetails(newLevel = "STD", previousLevel = "BAS")
+    }
+
+    @Test
+    fun `incentiveDetails is null for non-incentive events`() {
+      val result = transform(eventReview(EventReviewDescriptionEntity.NON_ASSOCIATION, "New non-association"))
+
+      assertThat(result.incentiveDetails).isNull()
+    }
+
+    @Test
+    fun `null eventData is handled gracefully - empty incentiveDetails and eventData preserved as null`() {
+      val result = transform(eventReview(EventReviewDescriptionEntity.INCENTIVE_LEVEL_CHANGED, null))
+
+      result.incentiveDetails isEqualTo ModelIncentiveLevelsChangedDetails(newLevel = null, previousLevel = null)
+      assertThat(result.eventData).isNull()
+    }
+  }
+
+  @Nested
+  @DisplayName("Prisoner updated (cell move) details")
+  inner class PrisonerUpdatedDetailsTransformation {
+    private fun eventReview(description: EventReviewDescriptionEntity?, eventData: String?) = EventReviewEntity(
+      eventReviewId = 1,
+      eventType = "prison-offender-events.prisoner.updated",
+      eventData = eventData,
+      eventDescription = description,
+    )
+
+    @Test
+    fun `exposes an empty prisonerUpdatedDetails for cell-move events - cells are populated by the orchestrator`() {
+      val result = transform(eventReview(EventReviewDescriptionEntity.CELL_MOVE, null))
+
+      result.prisonerUpdatedDetails isEqualTo ModelPrisonerUpdatedDetails(previousCell = null, newCell = null)
+      assertThat(result.eventData).isNull()
+    }
+
+    @Test
+    fun `prisonerUpdatedDetails is null for non-cell-move events`() {
+      val result = transform(eventReview(EventReviewDescriptionEntity.NON_ASSOCIATION, "New non-association"))
+
+      assertThat(result.prisonerUpdatedDetails).isNull()
+    }
+  }
+
+  @Nested
+  @DisplayName("Merge details")
+  inner class MergeDetailsTransformation {
+    private fun eventReview(description: EventReviewDescriptionEntity?, eventData: String?) = EventReviewEntity(
+      eventReviewId = 1,
+      eventType = "prison-offender-events.prisoner.merged",
+      eventData = eventData,
+      eventDescription = description,
+    )
+
+    @Test
+    fun `decodes removed and retained prisoner numbers into details while keeping eventData`() {
+      val result = transform(eventReview(EventReviewDescriptionEntity.PRISONER_MERGED, "DEF9876;ABC1234"))
+
+      result.eventData isEqualTo "DEF9876;ABC1234"
+      result.mergeDetails isEqualTo ModelOffenderMergedDetails(removedPrisonerNumber = "DEF9876", prisonerNumber = "ABC1234")
+    }
+
+    @Test
+    fun `mergeDetails is null for non-merge events`() {
+      val result = transform(eventReview(EventReviewDescriptionEntity.NON_ASSOCIATION, "New non-association"))
+
+      assertThat(result.mergeDetails).isNull()
+    }
+
+    @Test
+    fun `null eventData is handled gracefully - empty mergeDetails and eventData preserved as null`() {
+      val result = transform(eventReview(EventReviewDescriptionEntity.PRISONER_MERGED, null))
+
+      result.mergeDetails isEqualTo ModelOffenderMergedDetails(removedPrisonerNumber = null, prisonerNumber = null)
+      assertThat(result.eventData).isNull()
+    }
   }
 }
