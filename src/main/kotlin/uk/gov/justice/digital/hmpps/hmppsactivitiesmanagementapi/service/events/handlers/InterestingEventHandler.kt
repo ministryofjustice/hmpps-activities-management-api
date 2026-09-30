@@ -11,6 +11,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Even
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.Action
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.ActivitiesChangedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.AlertsUpdatedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.AppointmentsChangedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.InboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.InboundReleaseEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.IncentivesInsertedEvent
@@ -137,6 +138,12 @@ class InterestingEventHandler(
       when (action()) {
         Action.END -> EventReviewDescription.ACTIVITY_ENDED
         Action.SUSPEND -> EventReviewDescription.ACTIVITY_SUSPENDED
+        else -> null
+      }
+    is AppointmentsChangedEvent ->
+      when (action()) {
+        Action.YES -> EventReviewDescription.APPOINTMENTS_CANCELLED
+        Action.NO -> EventReviewDescription.APPOINTMENTS_KEPT
         else -> null
       }
     is PrisonerReleasedEvent ->

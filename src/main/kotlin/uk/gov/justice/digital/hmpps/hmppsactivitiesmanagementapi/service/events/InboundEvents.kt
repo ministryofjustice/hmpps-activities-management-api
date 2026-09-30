@@ -89,7 +89,9 @@ data class OffenderMergedEvent(val additionalInformation: MergeInformation) :
   override fun prisonerNumber() = additionalInformation.nomsNumber
   fun removedPrisonerNumber() = additionalInformation.removedNomsNumber
   override fun eventType() = InboundEventType.OFFENDER_MERGED.eventType
-  override fun eventMessage() = "From ${this.removedPrisonerNumber()} to ${this.prisonerNumber()}"
+
+  // Stored in event_data as "<removed>;<retained>" and decoded into OffenderMergedDetails by the transform.
+  override fun eventMessage() = "${this.removedPrisonerNumber()};${this.prisonerNumber()}"
 }
 
 data class MergeInformation(val nomsNumber: String, val removedNomsNumber: String)
@@ -137,7 +139,8 @@ data class IncentivesInformation(
   val previousIncentiveLevel: String? = null,
   val incentiveLevelChanged: Boolean = false,
 ) {
-  fun incentiveLevelChangeMessage() = "New level: ${incentiveLevel.orEmpty()}, Previous level: ${previousIncentiveLevel.orEmpty()}"
+  // Stored in event_data as "<new>;<previous>" and decoded into IncentiveLevelsChangedDetails by the transform.
+  fun incentiveLevelChangeMessage() = "${incentiveLevel.orEmpty()};${previousIncentiveLevel.orEmpty()}"
 }
 
 // ------------ Prisoner updated events ------------------------------------------------------------------
@@ -150,7 +153,7 @@ data class PrisonerUpdatedEvent(val additionalInformation: PrisonerUpdatedInform
   override fun eventType() = InboundEventType.PRISONER_UPDATED.eventType
 
   // eventData is left null for cell moves. The event only carries the changed categories, not the
-  // previous/new locations, so the orchestrator composes the "Previous.../New..." detail.
+  // previous/new locations, so the orchestrator composes the "Previous.../New..." detail in PrisonerUpdatedDetails.
   override fun eventMessage(): String? = null
 
   fun isCellMove() = additionalInformation.categoriesChanged.contains("LOCATION")
@@ -181,9 +184,11 @@ data class AppointmentsChangedEvent(
 ) : InboundReleaseEvent {
   override fun prisonerNumber(): String = personReference.identifiers.first { it.type == "NOMS" }.value
 
+  fun action() = Action.entries.firstOrNull { it.name == additionalInformation.action }
+
   override fun eventType() = InboundEventType.APPOINTMENTS_CHANGED.eventType
 
-  override fun eventMessage() = "Appointments changed '${additionalInformation.action}'"
+  override fun eventMessage(): String? = null
 
   override fun prisonCode() = additionalInformation.prisonId
 
@@ -202,7 +207,7 @@ data class ActivitiesChangedEvent(
 
   override fun eventType() = InboundEventType.ACTIVITIES_CHANGED.eventType
 
-  override fun eventMessage() = "Activities changed"
+  override fun eventMessage(): String? = null
 }
 
 data class PersonReference(val identifiers: List<Identifier>)
@@ -216,6 +221,8 @@ data class AppointmentsChangedInformation(val action: String, val prisonId: Stri
 enum class Action {
   END,
   SUSPEND,
+  YES,
+  NO,
 }
 
 // ------------ New event contents here -------------------------------------------------------------
