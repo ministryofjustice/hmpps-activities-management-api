@@ -63,9 +63,10 @@ data class PrisonerReleasedEvent(val additionalInformation: ReleaseInformation) 
   override fun prisonCode() = additionalInformation.prisonId
   override fun prisonerNumber() = additionalInformation.nomsNumber
   override fun eventType() = InboundEventType.PRISONER_RELEASED.eventType
-  override fun eventMessage() = "Prisoner released"
+  override fun eventMessage() = additionalInformation.reason
   fun isTemporary() = listOf("TEMPORARY_ABSENCE_RELEASE", "SENT_TO_COURT").contains(additionalInformation.reason)
   fun isPermanent() = listOf("RELEASED", "RELEASED_TO_HOSPITAL").contains(additionalInformation.reason)
+  fun isTransferred() = additionalInformation.reason == "TRANSFERRED"
 }
 
 data class ReleaseInformation(val nomsNumber: String, val reason: String, val prisonId: String)
@@ -75,7 +76,7 @@ data class PrisonerReceivedEvent(val additionalInformation: ReceivedInformation)
   fun prisonCode() = additionalInformation.prisonId
   override fun prisonerNumber() = additionalInformation.nomsNumber
   override fun eventType() = InboundEventType.PRISONER_RECEIVED.eventType
-  override fun eventMessage() = "Prisoner received"
+  override fun eventMessage() = additionalInformation.reason
 }
 
 data class ReceivedInformation(val nomsNumber: String, val reason: String, val prisonId: String)
@@ -88,7 +89,7 @@ data class OffenderMergedEvent(val additionalInformation: MergeInformation) :
   override fun prisonerNumber() = additionalInformation.nomsNumber
   fun removedPrisonerNumber() = additionalInformation.removedNomsNumber
   override fun eventType() = InboundEventType.OFFENDER_MERGED.eventType
-  override fun eventMessage() = "Prisoner merged from '${this.removedPrisonerNumber()}' to '${this.prisonerNumber()}'"
+  override fun eventMessage() = "From ${this.removedPrisonerNumber()} to ${this.prisonerNumber()}"
 }
 
 data class MergeInformation(val nomsNumber: String, val removedNomsNumber: String)
@@ -100,7 +101,10 @@ data class IncentivesInsertedEvent(val additionalInformation: IncentivesInformat
   EventOfInterest {
   override fun prisonerNumber() = additionalInformation.nomsNumber
   override fun eventType() = InboundEventType.INCENTIVES_INSERTED.eventType
-  override fun eventMessage() = "Incentive review created"
+  override fun eventMessage() = additionalInformation.incentiveLevelChangeMessage()
+
+  // Only recorded when the incentive level actually changed; otherwise it is not an interesting event.
+  override fun isMeaningful() = additionalInformation.incentiveLevelChanged
 }
 
 data class IncentivesUpdatedEvent(val additionalInformation: IncentivesInformation) :
@@ -108,7 +112,10 @@ data class IncentivesUpdatedEvent(val additionalInformation: IncentivesInformati
   EventOfInterest {
   override fun prisonerNumber() = additionalInformation.nomsNumber
   override fun eventType() = InboundEventType.INCENTIVES_UPDATED.eventType
-  override fun eventMessage() = "Incentive review updated"
+  override fun eventMessage() = additionalInformation.incentiveLevelChangeMessage()
+
+  // Only recorded when the incentive level actually changed; otherwise it is not an interesting event.
+  override fun isMeaningful() = additionalInformation.incentiveLevelChanged
 }
 
 data class IncentivesDeletedEvent(val additionalInformation: IncentivesInformation) :
@@ -116,10 +123,22 @@ data class IncentivesDeletedEvent(val additionalInformation: IncentivesInformati
   EventOfInterest {
   override fun prisonerNumber() = additionalInformation.nomsNumber
   override fun eventType() = InboundEventType.INCENTIVES_DELETED.eventType
-  override fun eventMessage() = "Incentive review deleted"
+  override fun eventMessage(): String? = null
+
+  // Incentive review deletions are not recorded as interesting events.
+  override fun isMeaningful() = false
 }
 
-data class IncentivesInformation(val nomsNumber: String, val reason: String?, val prisonId: String?)
+data class IncentivesInformation(
+  val nomsNumber: String,
+  val reason: String?,
+  val prisonId: String?,
+  val incentiveLevel: String? = null,
+  val previousIncentiveLevel: String? = null,
+  val incentiveLevelChanged: Boolean = false,
+) {
+  fun incentiveLevelChangeMessage() = "New level: ${incentiveLevel.orEmpty()}, Previous level: ${previousIncentiveLevel.orEmpty()}"
+}
 
 // ------------ Prisoner updated events ------------------------------------------------------------------
 
@@ -130,14 +149,13 @@ data class PrisonerUpdatedEvent(val additionalInformation: PrisonerUpdatedInform
 
   override fun eventType() = InboundEventType.PRISONER_UPDATED.eventType
 
-  override fun eventMessage(): String? = with(additionalInformation.categoriesChanged) {
-    when {
-      contains("LOCATION") -> "Cell move"
-      else -> null
-    }
-  }
+  // eventData is left null for cell moves. The event only carries the changed categories, not the
+  // previous/new locations, so the orchestrator composes the "Previous.../New..." detail.
+  override fun eventMessage(): String? = null
 
-  override fun isMeaningful() = eventMessage() != null
+  fun isCellMove() = additionalInformation.categoriesChanged.contains("LOCATION")
+
+  override fun isMeaningful() = isCellMove()
 }
 
 data class PrisonerUpdatedInformation(val nomsNumber: String, val categoriesChanged: List<String>)
@@ -149,7 +167,7 @@ data class NonAssociationsChangedEvent(val additionalInformation: NonAssociation
   EventOfInterest {
   override fun prisonerNumber() = additionalInformation.nomsNumber
   override fun eventType() = InboundEventType.NON_ASSOCIATIONS.eventType
-  override fun eventMessage() = "Non-associations changed"
+  override fun eventMessage() = "New non-association"
   fun bookingId() = additionalInformation.bookingId
 }
 
@@ -209,7 +227,17 @@ data class AlertsUpdatedEvent(val additionalInformation: AlertsUpdatedInformatio
 
   override fun eventType() = InboundEventType.ALERTS_UPDATED.eventType
 
-  override fun eventMessage() = "Alerts updated"
+  override fun isMeaningful() = hasAlertsAdded() || hasAlertsRemoved()
+
+  fun hasAlertsAdded() = additionalInformation.alertsAdded.isNotEmpty()
+
+  fun hasAlertsRemoved() = additionalInformation.alertsRemoved.isNotEmpty()
+
+  override fun eventMessage(): String = buildString {
+    append(additionalInformation.alertsAdded.sorted().joinToString(","))
+    append(";")
+    append(additionalInformation.alertsRemoved.sorted().joinToString(","))
+  }
 }
 
 data class AlertsUpdatedInformation(

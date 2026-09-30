@@ -23,9 +23,9 @@ Content-Type: application/json
 ### Returns allocations as part of event review
 // @no-log
 < {%
-    request.variables.set("prisonCode", "MDI")
+    request.variables.set("prisonCode", "RSI")
 %}
 
-GET {{ baseUrl }}/event-review/prison/{{prisonCode}}?date=2023-05-10
+GET {{ baseUrl }}/event-review/prison/{{prisonCode}}?date=2024-04-24
 Authorization: Bearer {{$auth.token("auth-token")}}
 Content-Type: application/json
