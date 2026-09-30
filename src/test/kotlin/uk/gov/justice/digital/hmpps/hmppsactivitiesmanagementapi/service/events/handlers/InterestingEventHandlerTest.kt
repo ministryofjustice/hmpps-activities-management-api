@@ -129,7 +129,7 @@ class InterestingEventHandlerTest {
 
     with(eventReviewCaptor.firstValue) {
       bookingId isEqualTo 1
-      eventData isEqualTo "New level: STD, Previous level: BAS"
+      eventData isEqualTo "STD;BAS"
       eventTime isCloseTo TimeSource.now()
       eventType isEqualTo InboundEventType.INCENTIVES_INSERTED.eventType
       eventDescription isEqualTo EventReviewDescription.INCENTIVE_LEVEL_CHANGED
@@ -346,7 +346,7 @@ class InterestingEventHandlerTest {
 
     with(eventReviewCaptor.firstValue) {
       bookingId isEqualTo 1
-      eventData isEqualTo "New level: STD, Previous level: BAS"
+      eventData isEqualTo "STD;BAS"
       eventTime isCloseTo TimeSource.now()
       eventType isEqualTo InboundEventType.INCENTIVES_INSERTED.eventType
       eventDescription isEqualTo EventReviewDescription.INCENTIVE_LEVEL_CHANGED
@@ -385,7 +385,7 @@ class InterestingEventHandlerTest {
 
     with(eventReviewCaptor.firstValue) {
       bookingId isEqualTo 1
-      eventData isEqualTo "New level: BAS, Previous level: STD"
+      eventData isEqualTo "BAS;STD"
       eventTime isCloseTo TimeSource.now()
       eventType isEqualTo InboundEventType.INCENTIVES_UPDATED.eventType
       eventDescription isEqualTo EventReviewDescription.INCENTIVE_LEVEL_CHANGED
@@ -424,7 +424,7 @@ class InterestingEventHandlerTest {
 
     with(eventReviewCaptor.firstValue) {
       bookingId isEqualTo 1
-      eventData isEqualTo "From DEF9876 to ABC1234"
+      eventData isEqualTo "DEF9876;ABC1234"
       eventTime isCloseTo TimeSource.now()
       eventType isEqualTo InboundEventType.OFFENDER_MERGED.eventType
       prisonCode isEqualTo PENTONVILLE_PRISON_CODE
@@ -447,7 +447,7 @@ class InterestingEventHandlerTest {
 
     with(eventReviewCaptor.firstValue) {
       bookingId isEqualTo 1
-      eventData isEqualTo "Activities changed"
+      eventData isEqualTo null
       eventTime isCloseTo TimeSource.now()
       eventType isEqualTo InboundEventType.ACTIVITIES_CHANGED.eventType
       prisonCode isEqualTo PENTONVILLE_PRISON_CODE
@@ -469,7 +469,7 @@ class InterestingEventHandlerTest {
 
     with(eventReviewCaptor.firstValue) {
       bookingId isEqualTo 1
-      eventData isEqualTo "Activities changed"
+      eventData isEqualTo null
       eventTime isCloseTo TimeSource.now()
       eventType isEqualTo InboundEventType.ACTIVITIES_CHANGED.eventType
       prisonCode isEqualTo PENTONVILLE_PRISON_CODE
@@ -491,11 +491,34 @@ class InterestingEventHandlerTest {
 
     with(eventReviewCaptor.firstValue) {
       bookingId isEqualTo 1
-      eventData isEqualTo "Appointments changed 'YES'"
+      eventData isEqualTo null
       eventTime isCloseTo TimeSource.now()
       eventType isEqualTo InboundEventType.APPOINTMENTS_CHANGED.eventType
       prisonCode isEqualTo PENTONVILLE_PRISON_CODE
       prisonerNumber isEqualTo "ABC1234"
+      eventDescription isEqualTo EventReviewDescription.APPOINTMENTS_CANCELLED
+    }
+  }
+
+  @Test
+  fun `stores an appointments changed event with action NO`() {
+    mockPrisoner(prisonerNum = "ABC1234")
+    val inboundEvent =
+      appointmentsChangedEvent(prisonId = PENTONVILLE_PRISON_CODE, prisonerNumber = "ABC1234", action = "NO")
+
+    handler.handle(inboundEvent).also { it.isSuccess() isBool true }
+
+    verifyNoInteractions(allocationRepository)
+    verify(eventReviewRepository).saveAndFlush(eventReviewCaptor.capture())
+
+    with(eventReviewCaptor.firstValue) {
+      bookingId isEqualTo 1
+      eventData isEqualTo null
+      eventTime isCloseTo TimeSource.now()
+      eventType isEqualTo InboundEventType.APPOINTMENTS_CHANGED.eventType
+      prisonCode isEqualTo PENTONVILLE_PRISON_CODE
+      prisonerNumber isEqualTo "ABC1234"
+      eventDescription isEqualTo EventReviewDescription.APPOINTMENTS_KEPT
     }
   }
 
