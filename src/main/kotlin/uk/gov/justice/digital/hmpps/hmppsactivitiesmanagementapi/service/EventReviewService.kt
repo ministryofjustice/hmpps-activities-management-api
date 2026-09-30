@@ -6,6 +6,7 @@ import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
+import org.springframework.data.jpa.domain.Specification
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
@@ -42,9 +43,9 @@ class EventReviewService(
     val pageable: Pageable = if (sort != null) PageRequest.of(page, size, sort) else PageRequest.of(page, size)
     var spec = eventReviewSearchSpecification.prisonCodeEquals(request.prisonCode)
     with(request) {
-      prisonerNumber?.let {
-        // If a prisonerNumber is supplied restrict results only to those relating to this person
-        spec = spec.and(eventReviewSearchSpecification.prisonerNumberEquals(prisonerNumber))
+      prisonerNumbers?.let {
+        // If prisonerNumbers are supplied restrict results only to those relating to these prisoners
+        spec = spec.and(eventReviewSearchSpecification.prisonerNumberIn(prisonerNumbers))
       }
       eventDate?.let {
         // Restrict results to the time period of the date supplied (start to end of day)
@@ -55,10 +56,17 @@ class EventReviewService(
           ),
         )
       }
+      eventCodes?.let {
+        // If eventCodes are supplied restrict results only to those relating to these events
+        spec = spec.and(eventReviewSearchSpecification.eventCodeIn(eventCodes))
+      }
       acknowledgedEvents?.let {
-        // If acknowledgedEvents is false exclude any with an acknowledgedTime set
-        if (!it) {
-          spec = spec.and(eventReviewSearchSpecification.isNotAcknowledged())
+        // If acknowledgedEvents is true, only include rows with an acknowledgedTime set.
+        // Otherwise exclude acknowledged rows and return only unacknowledged events.
+        spec = if (it) {
+          spec.and(eventReviewSearchSpecification.isAcknowledged())
+        } else {
+          spec.and(Specification.not(eventReviewSearchSpecification.isAcknowledged()))
         }
       }
     }

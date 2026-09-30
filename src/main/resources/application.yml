@@ -180,7 +180,6 @@ hmpps:
 
 springdoc:
   swagger-ui:
-    version: 5.32.11
     tags-sorter: alpha
 
 migrate:

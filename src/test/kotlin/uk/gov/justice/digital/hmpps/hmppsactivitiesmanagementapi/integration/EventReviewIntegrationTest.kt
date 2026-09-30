@@ -18,7 +18,7 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
   @Sql("classpath:test_data/event-review-data.sql")
   @Test
   fun `should return rows with default filter settings`() {
-    val result = webTestClient.getEvents()
+    val result = webTestClient.getEventsV2()
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
       .expectBody(EventReviewSearchResults::class.java)
@@ -90,7 +90,7 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
 
   @Sql("classpath:test_data/event-review-data.sql")
   @Test
-  fun `should include acknowledged events when requested`() {
+  fun `should include acknowledged events when requested (legacy endpoint)`() {
     val result = webTestClient.getEvents(includeAcknowledged = true, size = 13)
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -108,8 +108,28 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
 
   @Sql("classpath:test_data/event-review-data.sql")
   @Test
+  fun `should return only acknowledged events when filter is true`() {
+    val result = webTestClient.getEventsV2(filterAcknowledged = true, size = 13)
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(EventReviewSearchResults::class.java)
+      .returnResult().responseBody
+
+    assertThat(result).isNotNull
+
+    with(result!!) {
+      assertThat(content).hasSize(1)
+      assertThat(content.single().eventReviewId).isEqualTo(13)
+      assertThat(content.single().acknowledgedTime).isNotNull
+      assertThat(totalPages).isEqualTo(1)
+      assertThat(totalElements).isEqualTo(1)
+    }
+  }
+
+  @Sql("classpath:test_data/event-review-data.sql")
+  @Test
   fun `should filter by prisoner number when requested`() {
-    val result = webTestClient.getEvents(prisonerNumber = "A1234AA")
+    val result = webTestClient.getEventsV2(prisonerNumbers = listOf("A1234AA"))
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
       .expectBody(EventReviewSearchResults::class.java)
@@ -119,6 +139,7 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
 
     with(result!!) {
       assertThat(content.size).isEqualTo(5)
+      assertThat(content.map { it.prisonerNumber }).containsOnly("A1234AA")
       assertThat(totalPages).isEqualTo(1)
       assertThat(totalElements).isEqualTo(5)
     }
@@ -126,8 +147,117 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
 
   @Sql("classpath:test_data/event-review-data.sql")
   @Test
+  fun `should filter by prisoner number when requested (legacy endpoint)`() {
+    val result = webTestClient.getEvents(prisonerNumber = "A1234AA")
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(EventReviewSearchResults::class.java)
+      .returnResult().responseBody
+
+    assertThat(result).isNotNull
+
+    with(result!!) {
+      assertThat(content.map { it.prisonerNumber }).containsOnly("A1234AA")
+    }
+  }
+
+  @Sql("classpath:test_data/event-review-data.sql")
+  @Test
+  fun `should filter by prisoner numbers list when requested`() {
+    val result = webTestClient.getEventsV2(prisonerNumbers = listOf("A1234AA", "G1234DD"), size = 10)
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(EventReviewSearchResults::class.java)
+      .returnResult().responseBody
+
+    assertThat(result).isNotNull
+
+    with(result!!) {
+      assertThat(content).hasSize(10)
+      assertThat(content.map { it.prisonerNumber }).containsOnly("A1234AA", "G1234DD")
+      assertThat(totalPages).isEqualTo(1)
+      assertThat(totalElements).isEqualTo(10)
+    }
+  }
+
+  @Sql("classpath:test_data/event-review-data.sql")
+  @Test
+  fun `should filter by event codes when requested`() {
+    val result = webTestClient.getEvents(eventCodes = listOf("EVENT_CODE_2"), size = 10)
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(EventReviewSearchResults::class.java)
+      .returnResult().responseBody
+
+    assertThat(result).isNotNull
+
+    with(result!!) {
+      assertThat(content).hasSize(5)
+      assertThat(content.map { it.eventType }).containsOnly("EVENT_CODE_2")
+      assertThat(totalPages).isEqualTo(1)
+      assertThat(totalElements).isEqualTo(5)
+    }
+  }
+
+  @Sql("classpath:test_data/event-review-data.sql")
+  @Test
+  fun `should filter by multiple event codes when requested`() {
+    val result = webTestClient.getEvents(eventCodes = listOf("EVENT_CODE_1", "EVENT_CODE_3"), size = 10)
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(EventReviewSearchResults::class.java)
+      .returnResult().responseBody
+
+    assertThat(result).isNotNull
+
+    with(result!!) {
+      assertThat(content).hasSize(7)
+      assertThat(content.map { it.eventType }).containsOnly("EVENT_CODE_1", "EVENT_CODE_3")
+      assertThat(totalPages).isEqualTo(1)
+      assertThat(totalElements).isEqualTo(7)
+    }
+  }
+
+  @Sql("classpath:test_data/event-review-data.sql")
+  @Test
+  fun `should return empty result for empty event codes list entry`() {
+    val result = webTestClient.getEvents(eventCodes = listOf(""), size = 10)
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(EventReviewSearchResults::class.java)
+      .returnResult().responseBody
+
+    assertThat(result).isNotNull
+
+    with(result!!) {
+      assertThat(content).isEmpty()
+      assertThat(totalPages).isEqualTo(0)
+      assertThat(totalElements).isEqualTo(0)
+    }
+  }
+
+  @Sql("classpath:test_data/event-review-data.sql")
+  @Test
+  fun `should return empty result for empty prisoner numbers list entry`() {
+    val result = webTestClient.getEventsV2(prisonerNumbers = listOf(""), size = 10)
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(EventReviewSearchResults::class.java)
+      .returnResult().responseBody
+
+    assertThat(result).isNotNull
+
+    with(result!!) {
+      assertThat(content).isEmpty()
+      assertThat(totalPages).isEqualTo(0)
+      assertThat(totalElements).isEqualTo(0)
+    }
+  }
+
+  @Sql("classpath:test_data/event-review-data.sql")
+  @Test
   fun `should include blank event description when there is no event description set`() {
-    val result = webTestClient.getEvents(prisonerNumber = "G1234DX")
+    val result = webTestClient.getEventsV2(prisonerNumbers = listOf("G1234DX"))
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
       .expectBody(EventReviewSearchResults::class.java)
@@ -145,7 +275,7 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
   @Sql("classpath:test_data/event-review-data.sql")
   @Test
   fun `should include event description of TEMPORARY_DESCRIPTION when there a temporary released prisoner event description set`() {
-    val result = webTestClient.getEvents(prisonerNumber = "G1234DY")
+    val result = webTestClient.getEventsV2(prisonerNumbers = listOf("G1234DY"))
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
       .expectBody(EventReviewSearchResults::class.java)
@@ -163,7 +293,7 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
   @Sql("classpath:test_data/event-review-data.sql")
   @Test
   fun `should sort in descending event time order`() {
-    val result = webTestClient.getEvents(sort = "descending", page = 0, size = 12)
+    val result = webTestClient.getEventsV2(sort = "descending", page = 0, size = 12)
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
       .expectBody(EventReviewSearchResults::class.java)
@@ -182,7 +312,7 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
   @Sql("classpath:test_data/event-review-data.sql")
   @Test
   fun `should fail with forbidden - incorrect role`() {
-    webTestClient.getEvents(role = "INVALID_ROLE")
+    webTestClient.getEventsV2(role = "INVALID_ROLE")
       .expectStatus().isForbidden
       .expectBody(ErrorResponse::class.java)
       .returnResult().responseBody
@@ -198,7 +328,7 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
       .expectBody()
 
     // Check that the 12 formerly unacknowledged items is now 9 items
-    val result = webTestClient.getEvents(page = 0, size = 12)
+    val result = webTestClient.getEventsV2(page = 0, size = 12)
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
       .expectBody(EventReviewSearchResults::class.java)
@@ -213,7 +343,7 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
   @Sql("classpath:test_data/event-review-with-allocations-data.sql")
   @Test
   fun `should return current allocations for prisoner with active allocations`() {
-    val result = webTestClient.getEvents(prisonerNumber = "A1234AA")
+    val result = webTestClient.getEventsV2(prisonerNumbers = listOf("A1234AA"))
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
       .expectBody(EventReviewSearchResults::class.java)
@@ -231,7 +361,7 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
   @Sql("classpath:test_data/event-review-with-allocations-data.sql")
   @Test
   fun `should return single allocation for prisoner with one active allocation`() {
-    val result = webTestClient.getEvents(prisonerNumber = "G1234DX")
+    val result = webTestClient.getEventsV2(prisonerNumbers = listOf("G1234DX"))
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
       .expectBody(EventReviewSearchResults::class.java)
@@ -249,7 +379,7 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
   @Sql("classpath:test_data/event-review-with-allocations-data.sql")
   @Test
   fun `should return empty allocations for prisoner with no active allocations`() {
-    val result = webTestClient.getEvents(prisonerNumber = "G1234DD")
+    val result = webTestClient.getEventsV2(prisonerNumbers = listOf("G1234DD"))
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
       .expectBody(EventReviewSearchResults::class.java)
@@ -267,7 +397,7 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
   @Sql("classpath:test_data/event-review-with-allocations-data.sql")
   @Test
   fun `should return active allocations for multiple prisoners`() {
-    val result = webTestClient.getEvents()
+    val result = webTestClient.getEventsV2()
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
       .expectBody(EventReviewSearchResults::class.java)
@@ -291,7 +421,7 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
   @Sql("classpath:test_data/event-review-with-allocations-data.sql")
   @Test
   fun `should not return allocations that have ended for a prisoner`() {
-    val result = webTestClient.getEvents(prisonerNumber = "A1234AC")
+    val result = webTestClient.getEventsV2(prisonerNumbers = listOf("A1234AC"))
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
       .expectBody(EventReviewSearchResults::class.java)
@@ -315,6 +445,7 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
     page: Long? = null,
     size: Long? = null,
     prisonerNumber: String? = null,
+    eventCodes: List<String>? = null,
     role: String = ROLE_ACTIVITY_ADMIN,
   ) = get().uri { builder ->
     builder
@@ -323,8 +454,40 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
       .maybeQueryParam("size", size)
       .maybeQueryParam("page", page)
       .maybeQueryParam("includeAcknowledged", includeAcknowledged)
-      .maybeQueryParam("sortDirection", sort)
       .maybeQueryParam("prisonerNumber", prisonerNumber)
+      .maybeQueryParam("sortDirection", sort)
+      .also { builder ->
+        // prisonerNumbers?.forEach { builder.queryParam("prisonerNumbers", it) }
+        eventCodes?.forEach { builder.queryParam("eventCodes", it) }
+      }
+      .build()
+  }
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisationAsClient(roles = listOf(role)))
+    .exchange()
+
+  private fun WebTestClient.getEventsV2(
+    date: LocalDate = LocalDate.of(2023, 5, 10),
+    prisonCode: String? = "MDI",
+    filterAcknowledged: Boolean? = null,
+    sort: String? = null,
+    page: Long? = null,
+    size: Long? = null,
+    prisonerNumbers: List<String>? = null,
+    eventCodes: List<String>? = null,
+    role: String = ROLE_ACTIVITY_ADMIN,
+  ) = get().uri { builder ->
+    builder
+      .path("/event-review/v2/prison/$prisonCode")
+      .queryParam("date", date)
+      .maybeQueryParam("size", size)
+      .maybeQueryParam("page", page)
+      .maybeQueryParam("filterAcknowledged", filterAcknowledged)
+      .maybeQueryParam("sortDirection", sort)
+      .also { builder ->
+        prisonerNumbers?.forEach { builder.queryParam("prisonerNumbers", it) }
+        eventCodes?.forEach { builder.queryParam("eventCodes", it) }
+      }
       .build()
   }
     .accept(MediaType.APPLICATION_JSON)
