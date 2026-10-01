@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events
 
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
@@ -112,5 +113,14 @@ class InboundEventsServiceTest {
     val offenderMergedEvent = offenderMergedEvent(prisonerNumber = "B2222BB", removedPrisonerNumber = "A1111AA")
     service.process(offenderMergedEvent)
     verify(interestingEventHandler).handle(offenderMergedEvent)
+  }
+
+  @Test
+  fun `process throws when a handler fails`() {
+    whenever(releasedEventHandler.handle(any())).thenReturn(Outcome.failed())
+
+    assertThrows<IllegalStateException> {
+      service.process(prisonerReleasedEvent(MOORLAND_PRISON_CODE, "123456"))
+    }
   }
 }

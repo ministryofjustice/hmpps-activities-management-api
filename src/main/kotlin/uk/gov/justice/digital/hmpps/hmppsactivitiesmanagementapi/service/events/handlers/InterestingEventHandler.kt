@@ -53,7 +53,7 @@ class InterestingEventHandler(
   }
 
   // Ignore stale alert removals for merged prisoners whose old number no longer exists.
-  private fun AlertsUpdatedEvent.isStaleRemoval() = additionalInformation.alertsAdded.isEmpty() &&
+  private fun AlertsUpdatedEvent.isStaleAlertRemovalOfMergedPrisoner() = additionalInformation.alertsAdded.isEmpty() &&
     additionalInformation.alertsRemoved.isNotEmpty()
 
   override fun handle(event: InboundEvent): Outcome {
@@ -100,7 +100,7 @@ class InterestingEventHandler(
         Outcome.failed()
       },
       onMissing = {
-        if (event is AlertsUpdatedEvent && event.isStaleRemoval()) {
+        if (event is AlertsUpdatedEvent && event.isStaleAlertRemovalOfMergedPrisoner()) {
           log.info("Ignoring stale alerts update for prisoner {}", event.prisonerNumber())
           Outcome.success()
         } else {

@@ -8,6 +8,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers.AppointmentChangedEventHandler
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers.InterestingEventHandler
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers.OffenderMergedEventHandler
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers.Outcome
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers.PrisonerReceivedEventHandler
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers.PrisonerReleasedEventHandler
 
@@ -25,16 +26,37 @@ class InboundEventsService(
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
+  private fun requireSuccess(outcome: Outcome, event: InboundEvent) {
+    if (!outcome.isSuccess()) {
+      throw IllegalStateException("Failed to process inbound event ${event.eventType()}")
+    }
+  }
+
   fun process(event: InboundEvent) {
     log.debug("Processing inbound event {}", event.eventType())
 
     when (event) {
-      is ActivitiesChangedEvent -> activitiesChangedEventHandler.handle(event).run { interestingEventHandler.handle(event) }
-      is AppointmentsChangedEvent -> appointmentsChangedEventHandler.handle(event).run { interestingEventHandler.handle(event) }
-      is PrisonerReceivedEvent -> receivedEventHandler.handle(event).run { interestingEventHandler.handle(event) }
-      is PrisonerReleasedEvent -> releasedEventHandler.handle(event).run { interestingEventHandler.handle(event) }
-      is OffenderMergedEvent -> mergedEventHandler.handle(event).run { interestingEventHandler.handle(event) }
-      is EventOfInterest -> interestingEventHandler.handle(event)
+      is ActivitiesChangedEvent -> {
+        requireSuccess(activitiesChangedEventHandler.handle(event), event)
+        requireSuccess(interestingEventHandler.handle(event), event)
+      }
+      is AppointmentsChangedEvent -> {
+        requireSuccess(appointmentsChangedEventHandler.handle(event), event)
+        requireSuccess(interestingEventHandler.handle(event), event)
+      }
+      is PrisonerReceivedEvent -> {
+        requireSuccess(receivedEventHandler.handle(event), event)
+        requireSuccess(interestingEventHandler.handle(event), event)
+      }
+      is PrisonerReleasedEvent -> {
+        requireSuccess(releasedEventHandler.handle(event), event)
+        requireSuccess(interestingEventHandler.handle(event), event)
+      }
+      is OffenderMergedEvent -> {
+        requireSuccess(mergedEventHandler.handle(event), event)
+        requireSuccess(interestingEventHandler.handle(event), event)
+      }
+      is EventOfInterest -> requireSuccess(interestingEventHandler.handle(event), event)
       else -> log.warn("Unsupported event ${event.javaClass.name}")
     }
   }
