@@ -123,4 +123,16 @@ class InboundEventsServiceTest {
       service.process(prisonerReleasedEvent(MOORLAND_PRISON_CODE, "123456"))
     }
   }
+
+  @Test
+  fun `interesting event handler still runs for release events when release handling fails`() {
+    whenever(releasedEventHandler.handle(any())).thenReturn(Outcome.failed())
+    val prisonerReleasedEvent = prisonerReleasedEvent(MOORLAND_PRISON_CODE, "123456", "UNKNOWN")
+
+    assertThrows<IllegalStateException> {
+      service.process(prisonerReleasedEvent)
+    }
+
+    verify(interestingEventHandler).handle(prisonerReleasedEvent)
+  }
 }

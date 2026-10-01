@@ -98,7 +98,8 @@ class InterestingEventHandler(
             return@withPrisoner Outcome.success()
           }
         }
-
+        // Prisoner search was successful, but without a prisonId there is no prison context
+        // to match against, so this event is treated as non-applicable.
         Outcome.success()
       },
       onMissing = {

@@ -49,8 +49,9 @@ class InboundEventsService(
         requireSuccess(interestingEventHandler.handle(event), event)
       }
       is PrisonerReleasedEvent -> {
-        requireSuccess(releasedEventHandler.handle(event), event)
+        val releaseOutcome = releasedEventHandler.handle(event)
         requireSuccess(interestingEventHandler.handle(event), event)
+        requireSuccess(releaseOutcome, event)
       }
       is OffenderMergedEvent -> {
         requireSuccess(mergedEventHandler.handle(event), event)
