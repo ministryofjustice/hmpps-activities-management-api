@@ -286,7 +286,7 @@ class InterestingEventHandlerTest {
   fun `fails stale alerts update when prisoner lookup returns server error`() {
     whenever(prisonerSearchApiClient.findByPrisonerNumber("123OLD")) doThrow webClientResponseException(500)
 
-    val inboundEvent = alertsUpdatedEvent(prisonerNumber = "123OLD")
+    val inboundEvent = alertsUpdatedEventAfterMerge(prisonerNumber = "123OLD")
 
     handler.handle(inboundEvent).also { it.isSuccess() isBool false }
 
