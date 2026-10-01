@@ -174,7 +174,11 @@ class PrisonerReleasedEventHandlerTest {
       ),
     )
 
-    assertThat(outcome.isSuccess()).isFalse
+    verifyNoInteractions(prisonerSearchApiClient)
+    verifyNoInteractions(prisonerAllocationHandler)
+    verifyNoInteractions(waitingListService)
+    verifyNoInteractions(appointmentAttendeeService)
+    assertThat(outcome.isSuccess()).isTrue
   }
 
   @Test

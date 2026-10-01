@@ -83,6 +83,20 @@ fun activitiesChangedEvent(
   ),
 )
 
+fun alertsUpdatedEventAfterMerge(
+  prisonerNumber: String = "123456",
+  bookingId: Long = 42,
+  alertsAdded: Set<String> = setOf(),
+  alertsRemoved: Set<String> = setOf("R1", "R2"),
+) = AlertsUpdatedEvent(
+  additionalInformation = AlertsUpdatedInformation(
+    bookingId = bookingId,
+    alertsAdded = alertsAdded,
+    alertsRemoved = alertsRemoved,
+    nomsNumber = prisonerNumber,
+  ),
+)
+
 fun alertsUpdatedEvent(
   prisonerNumber: String = "123456",
   bookingId: Long = 42,
