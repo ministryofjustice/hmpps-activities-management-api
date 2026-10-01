@@ -91,13 +91,15 @@ class InterestingEventHandler(
               return@withPrisoner Outcome.success()
             } else {
               log.info("${event.prisonerNumber()} has no active or pending allocations at $agencyId")
+              return@withPrisoner Outcome.success()
             }
           } else {
             log.debug("$agencyId is not a rolled out prison")
+            return@withPrisoner Outcome.success()
           }
         }
 
-        Outcome.failed()
+        Outcome.success()
       },
       onMissing = {
         if (event is AlertsUpdatedEvent && event.isStaleAlertRemovalOfMergedPrisoner()) {

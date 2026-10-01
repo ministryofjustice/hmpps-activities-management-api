@@ -502,7 +502,7 @@ class InterestingEventHandlerTest {
     mockPrisoner(prisonCode = "RSI")
     val inboundEvent = prisonerUpdatedEvent("123456")
 
-    handler.handle(inboundEvent).also { it.isSuccess() isBool false }
+    handler.handle(inboundEvent).also { it.isSuccess() isBool true }
 
     verifyNoInteractions(allocationRepository)
     verifyNoInteractions(eventReviewRepository)
@@ -514,7 +514,7 @@ class InterestingEventHandlerTest {
     mockAllocations(PENTONVILLE_PRISON_CODE, "123456", emptyList())
     val inboundEvent = prisonerUpdatedEvent("123456", listOf("LOCATION", "SENTENCE"))
 
-    handler.handle(inboundEvent).also { it.isSuccess() isBool false }
+    handler.handle(inboundEvent).also { it.isSuccess() isBool true }
 
     verify(allocationRepository).findByPrisonCodePrisonerNumberPrisonerStatus(PENTONVILLE_PRISON_CODE, "123456", PrisonerStatus.ACTIVE, PrisonerStatus.PENDING)
     verifyNoInteractions(eventReviewRepository)
