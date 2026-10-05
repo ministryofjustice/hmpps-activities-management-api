@@ -62,8 +62,10 @@ class PrisonerReleasedEventHandler(
         }
 
         else -> {
-          log.warn("Failed to handle event $event")
-          Outcome.failed()
+          // No release-side action is needed here, but returning success allows the
+          // interesting-event flow to populate the release information to users.
+          log.info("No release action required for unknown release reason on event $event")
+          Outcome.success()
         }
       }
     } else {
