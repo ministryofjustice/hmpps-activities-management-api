@@ -3,7 +3,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
 
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "11.0.10"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "11.0.11"
   kotlin("plugin.spring") version "2.4.20"
   kotlin("plugin.jpa") version "2.4.20"
   jacoco
@@ -37,7 +37,7 @@ dependencies {
   implementation("org.springframework.retry:spring-retry")
   implementation("org.springframework:spring-aspects")
 
-  implementation("io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations:2.31.1")
+  implementation("io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations:2.32.0")
 
   // OpenAPI
   implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.1")
@@ -49,7 +49,7 @@ dependencies {
     }
   }
 
-  implementation("aws.sdk.kotlin:s3:1.9.11")
+  implementation("aws.sdk.kotlin:s3:1.9.14")
 
   // Other dependencies
   implementation("org.apache.commons:commons-text:1.15.0")
@@ -60,7 +60,7 @@ dependencies {
 
   // Test dependencies
   testImplementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter-test:3.0.3")
-  testImplementation("uk.gov.justice.service.hmpps:hmpps-subject-access-request-test-support:2.8.3")
+  testImplementation("uk.gov.justice.service.hmpps:hmpps-subject-access-request-test-support:2.8.4")
   testImplementation("org.springframework.boot:spring-boot-starter-webflux-test")
   testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
   testImplementation("org.wiremock:wiremock-standalone:3.13.2")
