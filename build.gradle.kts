@@ -15,6 +15,15 @@ configurations {
   testImplementation { exclude(group = "org.junit.vintage") }
 }
 
+configurations.all {
+  resolutionStrategy.eachDependency {
+    if (requested.group == "org.apache.tomcat.embed" && requested.name.startsWith("tomcat-embed")) {
+      useVersion("11.0.26")
+      because("Fixes CVE-2026-76183 in embedded Tomcat websocket")
+    }
+  }
+}
+
 dependencies {
   implementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter:3.0.3")
 
