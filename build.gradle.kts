@@ -4,10 +4,10 @@ import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
 
 plugins {
   id("uk.gov.justice.hmpps.gradle-spring-boot") version "11.0.11"
-  kotlin("plugin.spring") version "2.4.20"
-  kotlin("plugin.jpa") version "2.4.20"
+  kotlin("plugin.spring") version "2.4.21"
+  kotlin("plugin.jpa") version "2.4.21"
   jacoco
-  id("org.openapi.generator") version "7.25.0"
+  id("org.openapi.generator") version "7.26.0"
   id("io.sentry.jvm.gradle") version "6.23.0"
 }
 
@@ -49,14 +49,14 @@ dependencies {
     }
   }
 
-  implementation("aws.sdk.kotlin:s3:1.9.14")
+  implementation("aws.sdk.kotlin:s3:1.9.15")
 
   // Other dependencies
   implementation("org.apache.commons:commons-text:1.15.0")
 
   // Database dependencies
   runtimeOnly("org.flywaydb:flyway-database-postgresql")
-  runtimeOnly("org.postgresql:postgresql:42.7.13") // temp fix, will need unpinning - addresses CVE-2026-42198
+  runtimeOnly("org.postgresql:postgresql:42.7.14") // temp fix, will need unpinning - addresses CVE-2026-42198
 
   // Test dependencies
   testImplementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter-test:3.0.3")
