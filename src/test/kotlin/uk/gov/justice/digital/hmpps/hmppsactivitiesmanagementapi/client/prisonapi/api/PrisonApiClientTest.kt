@@ -222,6 +222,27 @@ class PrisonApiClientTest {
   }
 
   @Test
+  fun `getCellHistoryForPrisoner - success`(): Unit = runBlocking {
+    val bookingId = 12345L
+    prisonApiMockServer.stubGetCellHistoryForPrisoner(bookingId)
+
+    val cellHistory = prisonApiClient.getCellHistoryForPrisoner(bookingId)
+    assertThat(cellHistory).hasSize(1)
+    assertThat(cellHistory.first().description).isEqualTo("MDI-1-1-2")
+    assertThat(cellHistory.first().bookingId).isEqualTo(bookingId)
+    assertThat(cellHistory.first().agencyId).isEqualTo("MDI")
+  }
+
+  @Test
+  fun `getCellHistoryForPrisoner - not found`(): Unit = runBlocking {
+    val bookingId = 99999L
+    prisonApiMockServer.stubGetCellHistoryForPrisonerNotFound(bookingId)
+
+    val cellHistory = prisonApiClient.getCellHistoryForPrisoner(bookingId)
+    assertThat(cellHistory).isEmpty()
+  }
+
+  @Test
   fun `getLocationsForType - success`() {
     val agencyId = "LEI"
     val locationType = "CELL"
