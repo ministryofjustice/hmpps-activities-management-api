@@ -53,7 +53,6 @@ generic-service:
 # CloudPlatform AlertManager receiver to route prometheus alerts to slack
 # See https://user-guide.cloud-platform.service.justice.gov.uk/documentation/monitoring-an-app/how-to-create-alarms.html#creating-your-own-custom-alerts
 generic-prometheus-alerts:
-  alertSeverity: hmpps-activities-management-prod
   sqsAlertsQueueNames:
     - "Digital-Prison-Services-prod-activities_domain_events_queue"
     - "Digital-Prison-Services-prod-activities_domain_events_dl"
