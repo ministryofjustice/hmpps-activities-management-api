@@ -76,7 +76,7 @@ class LocationsInsidePrisonApiMockServer : MockServer(8093) {
     stubFor(
       WireMock.get(urlPathEqualTo("/locations/non-residential/prison/$prisonCode/service/$serviceType"))
         .withQueryParam("formatLocalName", equalTo("true"))
-        .withQueryParam("filterParents", equalTo("false"))
+        .withQueryParam("filterParents", equalTo("true"))
         .withQueryParam("sortByLocalName", equalTo("true"))
         .willReturn(
           WireMock.aResponse()
