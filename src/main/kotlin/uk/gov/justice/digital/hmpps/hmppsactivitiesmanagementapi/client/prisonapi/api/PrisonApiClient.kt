@@ -279,7 +279,6 @@ class PrisonApiClient(
     }
     .retrieve()
     .bodyToMono(typeReference<PageBedAssignment>())
-    .onErrorResume(WebClientResponseException.NotFound::class.java) { Mono.just(PageBedAssignment()) }
     .retryWhen(backoffSpec.withRetryContext(Context.of("api", "prison-api", "path", "/api/bookings/{bookingId}/cell-history")))
     .awaitSingle()
     .content ?: emptyList()

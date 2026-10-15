@@ -119,6 +119,44 @@ class InterestingEventHandlerTest {
   }
 
   @Test
+  fun `does not store an interesting event when cell history is empty`() {
+    mockPrisoner(bookId = 2)
+    mockAllocations(
+      PENTONVILLE_PRISON_CODE,
+      "123456",
+      listOf(allocation().copy(allocationId = 1, prisonerNumber = "123456", prisonerStatus = PrisonerStatus.ACTIVE)),
+    )
+
+    runBlocking {
+      whenever(prisonApiClient.getCellHistoryForPrisoner(2L))
+        .thenReturn(emptyList())
+    }
+
+    handler.handle(prisonerUpdatedEvent("123456")).also { it.isSuccess() isBool true }
+
+    verify(eventReviewRepository, never()).saveAndFlush(any())
+  }
+
+  @Test
+  fun `fails interesting event when cell move data cannot be retrieved from prison api`() {
+    mockPrisoner(bookId = 2)
+    mockAllocations(
+      PENTONVILLE_PRISON_CODE,
+      "123456",
+      listOf(allocation().copy(allocationId = 1, prisonerNumber = "123456", prisonerStatus = PrisonerStatus.ACTIVE)),
+    )
+
+    runBlocking {
+      whenever(prisonApiClient.getCellHistoryForPrisoner(2L))
+        .thenThrow(webClientResponseException(500))
+    }
+
+    handler.handle(prisonerUpdatedEvent("123456")).also { it.isSuccess() isBool false }
+
+    verify(eventReviewRepository, never()).saveAndFlush(any())
+  }
+
+  @Test
   fun `stores none and current cell locations for cell move events if no previous record exists`() {
     mockPrisoner(
       prisonCode = MOORLAND_PRISON_CODE,
