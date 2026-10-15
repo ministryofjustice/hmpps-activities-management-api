@@ -66,8 +66,7 @@ data class EventReview(
   val incentiveDetails: IncentiveLevelsChangedDetails? = null,
 
   @Schema(
-    description = "The previous and new cell locations, for prisoner-updated events. Null for all other events. " +
-      "The cell values are populated by the orchestrator.",
+    description = "The previous and new cell locations, for prisoner-updated events. Null for all other events.",
     nullable = true,
   )
   val prisonerUpdatedDetails: PrisonerUpdatedDetails? = null,
@@ -209,14 +208,27 @@ data class IncentiveLevelsChangedDetails(
   }
 }
 
-@Schema(description = "The previous and new cell locations for a prisoner updated (cell-move) event, populated by the orchestrator")
+@Schema(description = "The previous and new cell locations for a prisoner updated (cell-move) event")
 data class PrisonerUpdatedDetails(
   @Schema(description = "The cell the prisoner was moved from", example = "MDI-1-1-001")
   val previousCell: String? = null,
 
   @Schema(description = "The cell the prisoner was moved to", example = "MDI-1-1-002")
   val newCell: String? = null,
-)
+) {
+  companion object {
+    // Stored in event_data as "<previous>;<new>" for cell-move events.
+    fun decode(eventData: String): PrisonerUpdatedDetails {
+      val parts = eventData.split(";", limit = 2)
+      return PrisonerUpdatedDetails(
+        previousCell = parts.getOrNull(0).toCell(),
+        newCell = parts.getOrNull(1).toCell(),
+      )
+    }
+
+    private fun String?.toCell(): String? = this?.trim()?.takeIf { it.isNotEmpty() }
+  }
+}
 
 @Schema(description = "The removed and retained prisoner numbers from a prisoner-merged event")
 data class OffenderMergedDetails(

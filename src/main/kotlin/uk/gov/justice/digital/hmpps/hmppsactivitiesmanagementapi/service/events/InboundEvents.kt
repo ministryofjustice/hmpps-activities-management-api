@@ -152,8 +152,8 @@ data class PrisonerUpdatedEvent(val additionalInformation: PrisonerUpdatedInform
 
   override fun eventType() = InboundEventType.PRISONER_UPDATED.eventType
 
-  // eventData is left null for cell moves. The event only carries the changed categories, not the
-  // previous/new locations, so the orchestrator composes the "Previous.../New..." detail in PrisonerUpdatedDetails.
+  // The event itself only tells us that LOCATION changed. Previous/current cell values are
+  // resolved during inbound event processing from Prison API cell history and then stored in eventData.
   override fun eventMessage(): String? = null
 
   fun isCellMove() = additionalInformation.categoriesChanged.contains("LOCATION")

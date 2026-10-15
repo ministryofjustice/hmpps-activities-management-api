@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers
 
+import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
@@ -15,6 +16,8 @@ import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import org.springframework.http.HttpHeaders
 import org.springframework.web.reactive.function.client.WebClientResponseException
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.BedAssignment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
@@ -51,6 +54,7 @@ class InterestingEventHandlerTest {
   private val rolloutPrisonService = RolloutPrisonService("PVI,MDI", "PVI,MDI", "", "PVI,MDI")
   private val allocationRepository: AllocationRepository = mock()
   private val eventReviewRepository: EventReviewRepository = mock()
+  private val prisonApiClient: PrisonApiClient = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
   private val eventReviewCaptor = argumentCaptor<EventReview>()
 
@@ -59,6 +63,7 @@ class InterestingEventHandlerTest {
       rolloutPrisonService,
       allocationRepository,
       eventReviewRepository,
+      prisonApiClient,
       prisonerSearchApiClient,
     )
 
@@ -76,8 +81,11 @@ class InterestingEventHandlerTest {
   }
 
   @Test
-  fun `stores an interesting event when active allocations exist`() {
+  fun `does not store an interesting event when active allocations exist but cell move data is unavailable`() {
     mockPrisoner()
+    runBlocking {
+      whenever(prisonApiClient.getCellHistoryForPrisoner(1L)).thenReturn(emptyList())
+    }
     val activeAllocations =
       listOf(allocation().copy(allocationId = 1, prisonerNumber = "123456", prisonerStatus = PrisonerStatus.ACTIVE))
     mockAllocations(PENTONVILLE_PRISON_CODE, "123456", activeAllocations)
@@ -87,22 +95,16 @@ class InterestingEventHandlerTest {
     handler.handle(inboundEvent).also { it.isSuccess() isBool true }
 
     verify(allocationRepository).findByPrisonCodePrisonerNumberPrisonerStatus(PENTONVILLE_PRISON_CODE, "123456", PrisonerStatus.ACTIVE, PrisonerStatus.PENDING)
-    verify(eventReviewRepository).saveAndFlush(eventReviewCaptor.capture())
-
-    with(eventReviewCaptor.firstValue) {
-      bookingId isEqualTo 1
-      eventData isEqualTo null
-      eventTime isCloseTo TimeSource.now()
-      eventType isEqualTo InboundEventType.PRISONER_UPDATED.eventType
-      eventDescription isEqualTo EventReviewDescription.CELL_MOVE
-      prisonCode isEqualTo PENTONVILLE_PRISON_CODE
-      prisonerNumber isEqualTo "123456"
-    }
+    verify(eventReviewRepository, never()).saveAndFlush(any())
   }
 
   @Test
-  fun `stores an interesting event when pending allocations exist`() {
+  fun `does not store an interesting event when pending allocations exist but cell move data is unavailable`() {
     mockPrisoner(bookId = 2)
+
+    runBlocking {
+      whenever(prisonApiClient.getCellHistoryForPrisoner(any())).thenReturn(emptyList())
+    }
 
     val activeAllocations =
       listOf(allocation().copy(allocationId = 1, prisonerNumber = "123456", prisonerStatus = PrisonerStatus.PENDING))
@@ -113,16 +115,118 @@ class InterestingEventHandlerTest {
     handler.handle(inboundEvent).also { it.isSuccess() isBool true }
 
     verify(allocationRepository).findByPrisonCodePrisonerNumberPrisonerStatus(PENTONVILLE_PRISON_CODE, "123456", PrisonerStatus.ACTIVE, PrisonerStatus.PENDING)
+    verify(eventReviewRepository, never()).saveAndFlush(any())
+  }
+
+  @Test
+  fun `stores none and current cell locations for cell move events if no previous record exists`() {
+    mockPrisoner(
+      prisonCode = MOORLAND_PRISON_CODE,
+      prisonerNum = "676767",
+      bookId = 2,
+    )
+    mockAllocations(
+      MOORLAND_PRISON_CODE,
+      "676767",
+      listOf(allocation().copy(allocationId = 1, prisonerNumber = "676767", prisonerStatus = PrisonerStatus.ACTIVE)),
+    )
+    val currentAssignment = mock<BedAssignment> {
+      on { description } doReturn "MDI-1-1-001"
+      on { assignmentDateTime } doReturn "2026-10-12T12:40:13"
+      on { assignmentEndDateTime } doReturn null
+      on { bedAssignmentHistorySequence } doReturn 1
+    }
+
+    val activeAllocations =
+      listOf(allocation().copy(allocationId = 1, prisonerNumber = "676767", prisonerStatus = PrisonerStatus.PENDING))
+    mockAllocations(MOORLAND_PRISON_CODE, "676767", activeAllocations)
+
+    runBlocking {
+      whenever(prisonApiClient.getCellHistoryForPrisoner(2L))
+        .thenReturn(listOf(currentAssignment))
+    }
+
+    handler.handle(prisonerUpdatedEvent("676767")).also { it.isSuccess() isBool true }
+
     verify(eventReviewRepository).saveAndFlush(eventReviewCaptor.capture())
 
     with(eventReviewCaptor.firstValue) {
-      bookingId isEqualTo 2
-      eventData isEqualTo null
-      eventTime isCloseTo TimeSource.now()
-      eventType isEqualTo InboundEventType.PRISONER_UPDATED.eventType
-      eventDescription isEqualTo EventReviewDescription.CELL_MOVE
-      prisonCode isEqualTo PENTONVILLE_PRISON_CODE
-      prisonerNumber isEqualTo "123456"
+      eventData isEqualTo "None;MDI-1-1-001"
+    }
+  }
+
+  @Test
+  fun `stores previous and current cell locations for cell move events`() {
+    mockPrisoner(bookId = 2)
+    mockAllocations(
+      PENTONVILLE_PRISON_CODE,
+      "123456",
+      listOf(allocation().copy(allocationId = 1, prisonerNumber = "123456", prisonerStatus = PrisonerStatus.ACTIVE)),
+    )
+    val currentAssignment = mock<BedAssignment> {
+      on { description } doReturn "PVI-1-1-002"
+      on { assignmentDateTime } doReturn "2026-10-12T12:40:13"
+      on { assignmentEndDateTime } doReturn null
+      on { bedAssignmentHistorySequence } doReturn 2
+    }
+    val previousAssignment = mock<BedAssignment> {
+      on { description } doReturn "PVI-1-1-001"
+      on { assignmentDateTime } doReturn "2026-10-12T12:40:13"
+      on { assignmentEndDateTime } doReturn "2026-10-12T12:40:13"
+      on { bedAssignmentHistorySequence } doReturn 1
+    }
+    runBlocking {
+      whenever(prisonApiClient.getCellHistoryForPrisoner(2L))
+        .thenReturn(listOf(currentAssignment, previousAssignment))
+    }
+
+    handler.handle(prisonerUpdatedEvent("123456")).also { it.isSuccess() isBool true }
+
+    verify(eventReviewRepository).saveAndFlush(eventReviewCaptor.capture())
+
+    with(eventReviewCaptor.firstValue) {
+      eventData isEqualTo "PVI-1-1-001;PVI-1-1-002"
+    }
+  }
+
+  @Test
+  fun `stores previous and current cell locations for out of order cell history`() {
+    mockPrisoner(bookId = 2)
+    mockAllocations(
+      PENTONVILLE_PRISON_CODE,
+      "123456",
+      listOf(allocation().copy(allocationId = 1, prisonerNumber = "123456", prisonerStatus = PrisonerStatus.ACTIVE)),
+    )
+    val earlierAssignment = mock<BedAssignment> {
+      on { description } doReturn "RSI-0-0-OLD"
+      on { assignmentDateTime } doReturn "2026-10-12T12:39:52"
+      on { assignmentEndDateTime } doReturn "2026-10-12T12:40:13"
+      on { bedAssignmentHistorySequence } doReturn 1
+    }
+    val currentAssignment = mock<BedAssignment> {
+      on { description } doReturn "RSI-9-9-NEW"
+      on { assignmentDateTime } doReturn "2026-10-12T12:40:13"
+      on { assignmentEndDateTime } doReturn null
+      on { bedAssignmentHistorySequence } doReturn 2
+    }
+    val oldAssignment = mock<BedAssignment> {
+      on { description } doReturn "RSI-A-N-2-18S"
+      on { assignmentDateTime } doReturn "2026-10-09T17:57:30"
+      on { assignmentEndDateTime } doReturn "2026-10-09T17:57:50"
+      on { bedAssignmentHistorySequence } doReturn 0
+    }
+
+    runBlocking {
+      whenever(prisonApiClient.getCellHistoryForPrisoner(2L))
+        .thenReturn(listOf(earlierAssignment, currentAssignment, oldAssignment))
+    }
+
+    handler.handle(prisonerUpdatedEvent("123456")).also { it.isSuccess() isBool true }
+
+    verify(eventReviewRepository).saveAndFlush(eventReviewCaptor.capture())
+
+    with(eventReviewCaptor.firstValue) {
+      eventData isEqualTo "RSI-0-0-OLD;RSI-9-9-NEW"
     }
   }
 
