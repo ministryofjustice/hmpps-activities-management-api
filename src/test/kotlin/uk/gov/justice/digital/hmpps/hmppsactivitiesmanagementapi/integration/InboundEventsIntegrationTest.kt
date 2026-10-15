@@ -546,7 +546,7 @@ class InboundEventsIntegrationTest : LocalStackTestBase() {
   @Sql("classpath:test_data/seed-activity-id-1.sql")
   fun `prisoner update including LOCATION is recorded`() {
     prisonerSearchApiMockServer.stubSearchByPrisonerNumber(activeInPentonvilleInmate.copy(offenderNo = "A11111A", bookingId = 10001).convert())
-    prisonApiMockServer.stubGetCellHistoryForPrisoner(10001)
+    prisonApiMockServer.stubGetCellHistoryForPrisonerWithPreviousCell(10001)
 
     val event = prisonerUpdatedEvent(prisonerNumber = "A11111A", listOf("STATUS", "LOCATION", "SENTENCE"))
 
