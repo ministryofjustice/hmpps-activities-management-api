@@ -514,11 +514,9 @@ private fun EventReview.toIncentiveDetails(): IncentiveLevelsChangedDetails? = r
   }
 }.getOrNull()
 
-// Exposes an (empty) PrisonerUpdatedDetails object for prisoner-updated events. The event carries no location
-// data, so the cell-location values are populated downstream by the orchestrator; the API only signals that the
-// event is a cell move by returning a non-null object.
+// Decodes event_data into previous/new cell values for prisoner-updated cell-move events.
 private fun EventReview.toPrisonerUpdatedDetails(): PrisonerUpdatedDetails? = when (eventDescription) {
-  EventReviewDescription.CELL_MOVE -> PrisonerUpdatedDetails()
+  EventReviewDescription.CELL_MOVE -> PrisonerUpdatedDetails.decode(eventData.orEmpty())
   else -> null
 }
 
