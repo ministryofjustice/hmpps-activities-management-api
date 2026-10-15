@@ -1,16 +1,28 @@
 {
   "totalPages": 1,
-  "totalElements": 1,
+  "totalElements": 2,
   "size": 20,
   "content": [
+    {
+      "bookingId": 12345,
+      "livingUnitId": 123122,
+      "assignmentDate": "2020-10-11",
+      "assignmentDateTime": "2020-10-11T08:00",
+      "assignmentReason": "ADM",
+      "assignmentEndDate": "2020-10-12",
+      "assignmentEndDateTime": "2020-10-12T07:59",
+      "agencyId": "MDI",
+      "description": "MDI-1-1-001",
+      "bedAssignmentHistorySequence": 1,
+      "movementMadeBy": "KQJ74F",
+      "offenderNo": "A1234AA"
+    },
     {
       "bookingId": 12345,
       "livingUnitId": 123123,
       "assignmentDate": "2020-10-12",
       "assignmentDateTime": "2020-10-12T08:00",
       "assignmentReason": "ADM",
-      "assignmentEndDate": "2020-11-12",
-      "assignmentEndDateTime": "2020-11-12T15:00",
       "agencyId": "MDI",
       "description": "MDI-1-1-2",
       "bedAssignmentHistorySequence": 2,

@@ -49,6 +49,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.activeI
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.activeInPentonvillePrisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.convert
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.Action
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.InboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.APPOINTMENT_INSTANCE_DELETED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.PRISONER_ALLOCATION_AMENDED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.PRISONER_ATTENDANCE_AMENDED
@@ -95,6 +96,9 @@ class InboundEventsIntegrationTest : LocalStackTestBase() {
 
   @Autowired
   private lateinit var auditRepository: AuditRepository
+
+  @Autowired
+  private lateinit var inboundEventsService: InboundEventsService
 
   private val hmppsAuditEventCaptor = argumentCaptor<HmppsAuditEvent>()
 
@@ -541,11 +545,12 @@ class InboundEventsIntegrationTest : LocalStackTestBase() {
   @Test
   @Sql("classpath:test_data/seed-activity-id-1.sql")
   fun `prisoner update including LOCATION is recorded`() {
-    stubPrisonerForInterestingEvent(prisoner = activeInPentonvilleInmate.copy(offenderNo = "A11111A"))
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(activeInPentonvilleInmate.copy(offenderNo = "A11111A", bookingId = 10001).convert())
+    prisonApiMockServer.stubGetCellHistoryForPrisoner(10001)
 
     val event = prisonerUpdatedEvent(prisonerNumber = "A11111A", listOf("STATUS", "LOCATION", "SENTENCE"))
 
-    this.sendInboundEvent(event)
+    inboundEventsService.process(event)
 
     await untilAsserted {
       assertThat(eventReviewRepository.findAll()).isNotEmpty
@@ -554,7 +559,29 @@ class InboundEventsIntegrationTest : LocalStackTestBase() {
 
       assertThat(interestingEvent.eventType).isEqualTo("prisoner-offender-search.prisoner.updated")
       assertThat(interestingEvent.prisonerNumber).isEqualTo("A11111A")
-      assertThat(interestingEvent.eventData).isNull()
+      assertThat(interestingEvent.eventData).isEqualTo("MDI-1-1-001;MDI-1-1-2")
+      assertThat(interestingEvent.eventDescription).isEqualTo(EventReviewDescription.CELL_MOVE)
+    }
+  }
+
+  @Test
+  @Sql("classpath:test_data/seed-activity-id-1.sql")
+  fun `prisoner update including LOCATION is recorded when no previous cell exists`() {
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(activeInPentonvilleInmate.copy(offenderNo = "A11111A", bookingId = 10001).convert())
+    prisonApiMockServer.stubGetSingleCellHistoryForPrisoner(10001)
+
+    val event = prisonerUpdatedEvent(prisonerNumber = "A11111A", listOf("STATUS", "LOCATION", "SENTENCE"))
+
+    inboundEventsService.process(event)
+
+    await untilAsserted {
+      assertThat(eventReviewRepository.findAll()).isNotEmpty
+
+      val interestingEvent = eventReviewRepository.findAll().last()
+
+      assertThat(interestingEvent.eventType).isEqualTo("prisoner-offender-search.prisoner.updated")
+      assertThat(interestingEvent.prisonerNumber).isEqualTo("A11111A")
+      assertThat(interestingEvent.eventData).isEqualTo("None;MDI-1-1-001")
       assertThat(interestingEvent.eventDescription).isEqualTo(EventReviewDescription.CELL_MOVE)
     }
   }
