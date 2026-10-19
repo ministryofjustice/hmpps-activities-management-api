@@ -238,8 +238,8 @@ class PrisonApiClientTest {
     val bookingId = 99999L
     prisonApiMockServer.stubGetCellHistoryForPrisonerNotFound(bookingId)
 
-    val cellHistory = prisonApiClient.getCellHistoryForPrisoner(bookingId)
-    assertThat(cellHistory).isEmpty()
+    assertThatThrownBy { runBlocking { prisonApiClient.getCellHistoryForPrisoner(bookingId) } }
+      .isInstanceOf(WebClientResponseException.NotFound::class.java)
   }
 
   @Test

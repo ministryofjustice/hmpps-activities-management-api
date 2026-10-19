@@ -1065,7 +1065,15 @@ class TransformFunctionsTest {
     )
 
     @Test
-    fun `exposes an empty prisonerUpdatedDetails for cell-move events - cells are populated by the orchestrator`() {
+    fun `decodes previous and new cells for cell-move events while keeping eventData`() {
+      val result = transform(eventReview(EventReviewDescriptionEntity.CELL_MOVE, "MDI-1-1-001;MDI-1-1-002"))
+
+      result.prisonerUpdatedDetails isEqualTo ModelPrisonerUpdatedDetails(previousCell = "MDI-1-1-001", newCell = "MDI-1-1-002")
+      assertThat(result.eventData).isEqualTo("MDI-1-1-001;MDI-1-1-002")
+    }
+
+    @Test
+    fun `null eventData yields empty prisonerUpdatedDetails for cell-move events`() {
       val result = transform(eventReview(EventReviewDescriptionEntity.CELL_MOVE, null))
 
       result.prisonerUpdatedDetails isEqualTo ModelPrisonerUpdatedDetails(previousCell = null, newCell = null)

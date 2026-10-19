@@ -1,9 +1,11 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers
 
+import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.client.WebClientResponseException
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventReview
@@ -36,6 +38,7 @@ class InterestingEventHandler(
   private val rolloutPrisonService: RolloutPrisonService,
   private val allocationRepository: AllocationRepository,
   private val eventReviewRepository: EventReviewRepository,
+  private val prisonApiClient: PrisonApiClient,
   private val prisonerSearchApiAppWebClient: PrisonerSearchApiClient,
 ) : EventHandler<InboundEvent> {
   companion object {
@@ -83,11 +86,12 @@ class InterestingEventHandler(
                 prisonerStatus = arrayOf(PrisonerStatus.ACTIVE, PrisonerStatus.PENDING),
               ).isNotEmpty()
             ) {
+              val eventData = buildEventData(event, prisoner) ?: return@withPrisoner Outcome.success()
               val saved = eventReviewRepository.saveAndFlush(
                 EventReview(
                   eventTime = LocalDateTime.now(),
                   eventType = event.eventType(),
-                  eventData = event.eventMessage(),
+                  eventData = eventData,
                   prisonCode = agencyId,
                   prisonerNumber = event.prisonerNumber(),
                   bookingId = prisoner.bookingId?.toInt(),
@@ -121,6 +125,36 @@ class InterestingEventHandler(
         Outcome.failed()
       },
     )
+  }
+
+  private fun buildEventData(event: InboundEvent, prisoner: Prisoner): String? {
+    if (event !is PrisonerUpdatedEvent || !event.isCellMove()) {
+      return event.eventMessage()
+    }
+
+    return buildCellMoveEventData(prisoner.bookingId?.toLong())
+  }
+
+  private fun buildCellMoveEventData(bookingId: Long?): String? {
+    if (bookingId == null) return null
+
+    val cellHistory = runBlocking { prisonApiClient.getCellHistoryForPrisoner(bookingId) }
+    val currentAssignment = cellHistory.firstOrNull { it.assignmentEndDateTime == null } ?: return null
+    val previousAssignment = currentAssignment.bedAssignmentHistorySequence
+      ?.minus(1)
+      ?.let { previousSequence ->
+        cellHistory.firstOrNull {
+          it.bedAssignmentHistorySequence == previousSequence && !it.description.isNullOrBlank()
+        }
+      }
+
+    val currentCell = currentAssignment.description?.trim()?.takeIf(String::isNotEmpty)
+    val previousCell = previousAssignment?.description?.trim()?.takeIf(String::isNotEmpty)
+
+    return when {
+      currentCell == null && previousCell == null -> null
+      else -> "${previousCell ?: "None"};${currentCell.orEmpty()}"
+    }
   }
 
   private fun recordRelease(releaseEvent: InboundReleaseEvent): Outcome {
