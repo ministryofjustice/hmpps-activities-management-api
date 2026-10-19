@@ -39,6 +39,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refd
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.EventOrganiserRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.EventTierRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationRemap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
@@ -81,6 +82,7 @@ class AppointmentUpdateDomainServiceTest {
       telemetryClient,
       auditService,
       locationService,
+      mock(),
     ),
   )
 
@@ -100,6 +102,33 @@ class AppointmentUpdateDomainServiceTest {
     whenever(appointmentAttendeeRemovalReasonRepository.findById(permanentRemovalByUserAppointmentAttendeeRemovalReason.appointmentAttendeeRemovalReasonId)).thenReturn(
       Optional.of(permanentRemovalByUserAppointmentAttendeeRemovalReason),
     )
+  }
+
+  @Test
+  fun `remaps future appointments even when series header has a different location`() {
+    val source = appointmentSeries.dpsLocationId!!
+    val target = UUID.randomUUID()
+    val headerLocation = UUID.randomUUID()
+    appointmentSeries.dpsLocationId = headerLocation
+    appointmentSeries.appointments()[0].startDate = LocalDate.now().minusDays(100)
+    appointmentSeries.appointments()[1].cancelledTime = LocalDateTime.now()
+    appointmentSeries.appointments()[2].dpsLocationId = headerLocation
+    appointmentSeries.appointments()[3].isDeleted = true
+    whenever(locationService.getLocationDetails(null, target)).thenReturn(LocationService.LocationDetails("TPR", 456, target, "CHILD", "Laundry"))
+
+    service.remapLocation(appointmentSeries.appointmentSeriesId, LocationRemap("TPR", source, target), LocalDate.now(), updatedBy)
+
+    assertThat(appointmentSeries.dpsLocationId).isEqualTo(headerLocation)
+    assertThat(appointmentSeries.appointments(true)[0].dpsLocationId).isEqualTo(source)
+    assertThat(appointmentSeries.appointments(true)[1].dpsLocationId).isEqualTo(target)
+    assertThat(appointmentSeries.appointments(true)[1].internalLocationId).isEqualTo(456)
+    assertThat(appointmentSeries.appointments(true)[1].cancelledTime).isNotNull()
+    assertThat(appointmentSeries.appointments(true)[2].dpsLocationId).isEqualTo(headerLocation)
+    assertThat(appointmentSeries.appointments(true)[3].dpsLocationId).isEqualTo(source)
+    appointmentSeries.appointments(true)[1].attendees().forEach {
+      verify(outboundEventsService).sendAppointmentEvent(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentAttendeeId, "TEST")
+    }
+    verifyNoMoreInteractions(outboundEventsService)
   }
 
   @Nested

@@ -20,10 +20,13 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refd
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.findByCodeOrThrowIllegalArgument
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentCategoryService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationRemap
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationRemapChange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.getSourceLocationName
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_TIME_MS_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.toTelemetryMetricsMap
@@ -31,6 +34,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.toTel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 import java.security.Principal
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.util.UUID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSet as AppointmentSetModel
 
@@ -50,6 +54,37 @@ class AppointmentSetService(
   private val nomisMappingAPIClient: NomisMappingAPIClient,
   @Value("\${applications.max-appointment-start-date-from-today:370}") private val maxStartDateOffsetDays: Long = 370,
 ) {
+  fun remapLocation(setId: Long, mapping: LocationRemap, today: LocalDate, updatedBy: String): Boolean {
+    val change = transactionHandler.newSpringTransaction {
+      val appointmentSet = appointmentSetRepository.findOrThrowNotFound(setId)
+      require(appointmentSet.prisonCode == mapping.prisonId) { "Appointment set prison does not match mapping" }
+      if (appointmentSet.dpsLocationId != mapping.locationId || !appointmentSet.startDate.isAfter(today)) return@newSpringTransaction null
+      val location = locationService.getLocationDetails(mapping.chosenChildId)
+      require(location.agencyId == mapping.prisonId) { "Destination prison does not match mapping" }
+      val change = LocationRemapChange(
+        objectType = "APPOINTMENT_SET",
+        objectId = appointmentSet.appointmentSetId,
+        prisonCode = appointmentSet.prisonCode,
+        name = appointmentSet.customName?.takeIf(String::isNotBlank) ?: appointmentCategoryService.getAll()[appointmentSet.categoryCode]?.description ?: appointmentSet.categoryCode,
+        appointmentSetId = appointmentSet.appointmentSetId,
+        oldDpsLocationId = appointmentSet.dpsLocationId,
+        newDpsLocationId = location.dpsLocationId,
+        oldLocationName = locationService.getSourceLocationName(mapping),
+        newLocationName = location.description,
+        oldNomisLocationId = appointmentSet.internalLocationId,
+        newNomisLocationId = location.locationId,
+      )
+      appointmentSet.dpsLocationId = location.dpsLocationId
+      appointmentSet.internalLocationId = location.locationId
+      appointmentSet.updatedBy = updatedBy
+      appointmentSet.updatedTime = LocalDateTime.now()
+      appointmentSetRepository.saveAndFlush(appointmentSet)
+      change
+    }
+    change?.logCommitted()
+    return change != null
+  }
+
   @Transactional(readOnly = true)
   fun getAppointmentSetDetailsById(appointmentSetId: Long): AppointmentSetDetails {
     val appointmentSet = appointmentSetRepository.findOrThrowNotFound(appointmentSetId)

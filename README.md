@@ -109,6 +109,117 @@ There are some example scripts to simulate publishing and consuming messages in 
 ./gradlew integrationTest
 ```
 
+## Temporary Non-Residential Location Remap (SAA-4624)
+
+The ingress-only `POST /job/remap-non-residential-locations` trigger runs a bundled CSV migration asynchronously.
+The CronJob is disabled and suspended by default. It does not create, rename or archive Locations records.
+
+Add mapping files to `src/main/resources/location-mappings/` and deploy the application before selecting them.
+Use the Locations team's comma-separated format, including `prisonId`, `locationType`, `locationId` and
+`chosenChildId`. Quoted commas and CRLF are supported. Both `PARENT` and `OTHER_CHILD` rows are processed;
+the archive columns and `chosenChildHasActivities` do not filter out appointment updates.
+Never use the preprod mapping in production: newly created destination GUIDs differ between environments.
+
+For a live run, explicitly set the API deployment environment variable `LOCATION_REMAP_ALLOWED_FILE` to the approved
+CSV basename. The default empty value blocks live runs. SNS and both schedule/appointment update event switches
+must be enabled. Dry runs require neither filename approval nor publishing and never update data or publish events.
+
+The job moves locations on activities/schedules that have not ended, including future-starting activities.
+For appointments and appointment sets, future means `start_date >` the run's current date (tomorrow onwards).
+Future cancelled appointments are included without changing their cancellation status. Historical, today's and
+deleted appointments remain unchanged. Individual location overrides are preserved unless their ID also appears
+as a source in the selected CSV. Active-series headers are updated even when the series started in the past.
+NOMIS location IDs and schedule codes/descriptions are updated with the DPS GUID.
+
+### Running And Checking
+
+1. Agree the run with the Locations team. Ensure destination locations and their required services exist.
+  A preprod database restore may require Locations to rerun its preparation and provide a fresh mapping.
+2. Set `cron.locationRemap.enabled=true`, leave `suspend=true`, select `file`, and set `prisons` to
+  `GMI,EEI,CLI` for the pilot (Guys Marsh, Erlestoke, Coldingley), or `ALL` for the full set.
+3. Start with `dryRun=true`. Trigger once using `kubectl create job --from=cronjob/remap-non-residential-locations <unique-job-name>`
+  in the service namespace, or call the endpoint from within the namespace:
+
+  ```sh
+  curl --fail-with-body --request POST \
+    --data-urlencode 'file=MAPB-924-preprod-mapping-2026-10-16.csv' \
+    --data-urlencode 'prisons=GMI,EEI,CLI' \
+    --data-urlencode 'dryRun=true' \
+    http://hmpps-activities-management-api/job/remap-non-residential-locations
+  ```
+
+4. Review API logs for the selected file, scope, candidate IDs and destination preflight failures. A missing,
+  inactive, wrong-prison or unsuitable destination aborts before writes. Unused mapping rows are no-ops.
+5. Approve the filename in the deployment environment and repeat with `dryRun=false`. For a scheduled run,
+  explicitly set the agreed `schedule` and unsuspend only for that run. The backend prevents overlapping migrations.
+6. Wait for the backend `job` row with `job_type='REMAP_NON_RESIDENTIAL_LOCATIONS'` to have `ended_at` set and
+  `successful=true`. HTTP 202 and Kubernetes trigger completion only acknowledge submission, not completion.
+  Review the final changed/failure/residual counts and SNS/NOMIS reconciliation before frontend checks.
+7. Run preprod pilot, preprod full, production pilot, then production full, with manual validation between stages.
+  Keep the CronJob suspended/disabled between runs and disable it after completion. Avoid concurrent user edits;
+  check for newly created source references again before authorising the Locations team to archive anything.
+
+Independent object failures are logged and processing continues, but the backend job is marked failed if any
+update fails or eligible source references remain. Reruns are data-idempotent, not event-delivery retries:
+the existing services commit before publishing SNS messages. A publication failure can therefore leave changed
+database rows and missing events. Use the logged schedule/appointment-attendee IDs and existing failed-event
+telemetry to arrange event replay/reconciliation before signing off; a no-op rerun cannot repair missing events.
+
+### Committed Change Logs
+
+Each changed schedule, appointment, series header and set header emits one INFO log beginning
+`Location remap committed`, followed by a JSON object. These logs are emitted only after the database transaction
+commits, and before outbound events are published, so a later publishing failure does not hide a committed change.
+Dry runs, rolled-back updates and already-migrated records do not emit committed-change logs.
+
+The JSON includes `objectType`, `objectId`, `prisonCode`, `name`, `oldDpsLocationId`, `newDpsLocationId`,
+`oldLocationName`, `newLocationName`, `oldNomisLocationId` and `newNomisLocationId`.
+Schedules include the owning `activityId`, activity summary as `name`, and schedule `description`.
+Appointments and series include `appointmentSeriesId`, `appointmentType` (individual/group), and
+`appointmentSetId` where applicable. The appointment display name uses its custom name, category description,
+or category code, in that order. Sets include their set ID and display name. Appointment notes and prisoner
+information are not included.
+
+Old schedule names come from their stored description. For appointments, series and sets, the old name is read
+from Locations, falling back to the CSV `locationName`, or explicitly `Unavailable` if neither exists.
+New names come from the destination location. Names are JSON-escaped so quotes, commas and newlines remain
+unambiguous. Use GUIDs and object IDs, not names, to identify the records: duplicate locations can share a name.
+
+Retain these logs and the input CSV outside normal log-retention limits until cleanup is signed off.
+They record the per-object old/new values needed to plan a reversal, not an automatic undo operation.
+Any reversal should check for subsequent user edits and use the normal service/event publishing paths.
+
+### App Insights Results
+
+Each job execution submits `SAA-Location-Remap-Job-Result`, including failures before updates start.
+Properties identify `runId`, `file`, `prisons`, `dryRun`, `status` (`SUCCEEDED`, `FAILED` or `DRY_RUN`),
+the last `stage`, and `errorType` on failure. The run ID is also logged at the start and end of the job.
+Metrics include `totalSucceeded` and `totalFailed`: counts of successful/failed update calls, each operating on
+one activity, appointment series or appointment set for one mapping, not counts of CSV rows or SNS messages.
+`totalChanged` counts schedules, appointments and set headers reported changed by successful calls; it does not
+include series-header-only changes or changes committed by calls that subsequently fail to publish events.
+`totalMappings`, `totalCandidates`, `preflightFailures`, `residualMappings` and `durationMs` provide context.
+Dry runs have zero update totals. An early abort can also have zero update totals: always check `status` and
+`stage`, and check `preflightFailures` for destination validation errors. Results are also logged; telemetry
+submission failure is logged without changing the migration outcome. App Insights ingestion is not guaranteed.
+
+```kusto
+customEvents
+| where name == "SAA-Location-Remap-Job-Result"
+| project timestamp,
+  runId = tostring(customDimensions.runId),
+  file = tostring(customDimensions.file),
+  prisons = tostring(customDimensions.prisons),
+  dryRun = tostring(customDimensions.dryRun),
+  status = tostring(customDimensions.status),
+  stage = tostring(customDimensions.stage),
+  totalSucceeded = todouble(customMeasurements.totalSucceeded),
+  totalFailed = todouble(customMeasurements.totalFailed),
+  preflightFailures = todouble(customMeasurements.preflightFailures),
+  residualMappings = todouble(customMeasurements.residualMappings)
+| order by timestamp desc
+```
+
 ## Common gradle tasks
 
 To list project dependencies, run:

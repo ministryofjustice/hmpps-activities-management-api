@@ -38,6 +38,7 @@ generic-service:
   # Environment variables to load into the deployment
   env:
     SERVER_PORT: "8080"
+    LOCATION_REMAP_ALLOWED_FILE: ""
     SPRING_PROFILES_ACTIVE: "logstash"
     APPLICATIONINSIGHTS_CONFIGURATION_FILE: applicationinsights.json
     DB_SSL_MODE: "verify-full"
@@ -136,6 +137,13 @@ generic-prometheus-alerts:
   targetApplication: hmpps-activities-management-api
 
 cron:
+  locationRemap:
+    enabled: false
+    suspend: true
+    schedule: "0 9 * * 1-4"
+    file: ""
+    prisons: "GMI,EEI,CLI"
+    dryRun: true
   allocationsDeallocateEnding: "0 1 * * *"
   allocationsDeallocateExpiring: "0 22 * * *"
   allocationsFixAutoSuspended: "45 1 * * *"

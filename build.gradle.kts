@@ -56,6 +56,7 @@ dependencies {
 
   // Other dependencies
   implementation("org.apache.commons:commons-text:1.15.0")
+  implementation("org.apache.commons:commons-csv:1.14.1")
 
   // Database dependencies
   runtimeOnly("org.flywaydb:flyway-database-postgresql")

@@ -19,6 +19,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ActivityMet
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.AppointmentMetricsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CreateScheduledInstancesJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.FixLocationsJob
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.LocationRemapJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ManageAllocationsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ManageAttendanceRecordsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.PurposefulActivityReportsJob
@@ -54,12 +55,34 @@ class JobTriggerControllerTest : ControllerTestBase() {
   private lateinit var fixLocationsJob: FixLocationsJob
 
   @MockitoBean
+  private lateinit var locationRemapJob: LocationRemapJob
+
+  @MockitoBean
   private lateinit var clock: Clock
 
   @BeforeEach
   fun init() {
     whenever(clock.instant()).thenReturn(LocalDateTime.now().toInstant(ZoneOffset.UTC))
     whenever(clock.zone).thenReturn(ZoneId.of("UTC"))
+  }
+
+  @Test
+  fun `location remap defaults to dry run and passes explicit prison scope`() {
+    mockMvc.post("/job/remap-non-residential-locations") {
+      param("file", "mapping.csv")
+      param("prisons", "GMI,EEI,CLI")
+    }.andExpect { status { isAccepted() } }
+    verify(locationRemapJob).execute("mapping.csv", setOf("GMI", "EEI", "CLI"), true)
+  }
+
+  @Test
+  fun `location remap supports all prisons and a live run`() {
+    mockMvc.post("/job/remap-non-residential-locations") {
+      param("file", "mapping.csv")
+      param("prisons", "ALL")
+      param("dryRun", "false")
+    }.andExpect { status { isAccepted() } }
+    verify(locationRemapJob).execute("mapping.csv", emptySet(), false)
   }
 
   @Test

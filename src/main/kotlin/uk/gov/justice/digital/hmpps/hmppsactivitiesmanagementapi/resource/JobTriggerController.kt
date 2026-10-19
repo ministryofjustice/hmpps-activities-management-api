@@ -15,6 +15,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ActivityMet
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.AppointmentMetricsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CreateScheduledInstancesJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.FixLocationsJob
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.LocationRemapJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ManageAllocationsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ManageAttendanceRecordsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.PurposefulActivityReportsJob
@@ -36,7 +37,22 @@ class JobTriggerController(
   private val clock: Clock,
   private val purposefulActivityReportsJob: PurposefulActivityReportsJob,
   private val fixLocationsJob: FixLocationsJob,
+  private val locationRemapJob: LocationRemapJob,
 ) {
+
+  @PostMapping("/remap-non-residential-locations")
+  @Operation(summary = "Remap activity and appointment locations from a bundled CSV; dry run by default")
+  @ResponseStatus(HttpStatus.ACCEPTED)
+  fun triggerLocationRemapJob(
+    @RequestParam file: String,
+    @RequestParam prisons: Set<String>,
+    @RequestParam(defaultValue = "true") dryRun: Boolean,
+  ): String {
+    require(file.matches(Regex("[A-Za-z0-9][A-Za-z0-9._-]*\\.csv"))) { "A bundled CSV basename is required" }
+    require(prisons.isNotEmpty() && (prisons == setOf("ALL") || prisons.all { it.matches(Regex("[A-Z]{3}")) })) { "Supply prison codes or ALL" }
+    locationRemapJob.execute(file, if (prisons == setOf("ALL")) emptySet() else prisons, dryRun)
+    return "Location remap job triggered"
+  }
 
   @PostMapping(value = ["/create-scheduled-instances"])
   @Operation(
