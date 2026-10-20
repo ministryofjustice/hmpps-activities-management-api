@@ -8,11 +8,14 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 import org.mockito.AdditionalAnswers
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
@@ -127,6 +130,49 @@ class AppointmentUpdateDomainServiceTest {
     assertThat(appointmentSeries.appointments(true)[3].dpsLocationId).isEqualTo(source)
     appointmentSeries.appointments(true)[1].attendees().forEach {
       verify(outboundEventsService).sendAppointmentEvent(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentAttendeeId, "TEST")
+    }
+    verifyNoMoreInteractions(outboundEventsService)
+  }
+
+  @ParameterizedTest(name = "location changed between transactions: {0}")
+  @ValueSource(booleans = [true, false])
+  fun `does not publish events for appointments excluded during remap revalidation`(locationChanged: Boolean) {
+    val today = LocalDate.now()
+    val source = appointmentSeries.dpsLocationId!!
+    val target = UUID.randomUUID()
+    val otherLocation = UUID.randomUUID()
+    val excludedAppointment = appointmentSeries.appointments().first()
+    val originalUpdatedTime = excludedAppointment.updatedTime
+    val originalUpdatedBy = excludedAppointment.updatedBy
+    var repositoryReads = 0
+    whenever(appointmentSeriesRepository.findById(appointmentSeries.appointmentSeriesId)).thenAnswer {
+      repositoryReads++
+      if (repositoryReads == 2) {
+        if (locationChanged) {
+          excludedAppointment.dpsLocationId = otherLocation
+        } else {
+          excludedAppointment.startDate = today
+        }
+      }
+      Optional.of(appointmentSeries)
+    }
+    whenever(locationService.getLocationDetails(null, target)).thenReturn(LocationService.LocationDetails("TPR", 456, target, "CHILD", "Laundry"))
+
+    service.remapLocation(appointmentSeries.appointmentSeriesId, LocationRemap("TPR", source, target), today, updatedBy)
+
+    assertThat(repositoryReads).isEqualTo(2)
+    assertThat(excludedAppointment.dpsLocationId).isEqualTo(if (locationChanged) otherLocation else source)
+    assertThat(excludedAppointment.updatedTime).isEqualTo(originalUpdatedTime)
+    assertThat(excludedAppointment.updatedBy).isEqualTo(originalUpdatedBy)
+    excludedAppointment.attendees().forEach {
+      verify(outboundEventsService, never()).sendAppointmentEvent(any(), eq(it.appointmentAttendeeId), any())
+    }
+    verify(outboundEventsService, never()).sendAppointmentEvent(eq(OutboundEvent.APPOINTMENT_INSTANCE_CREATED), any(), any())
+    appointmentSeries.appointments().filterNot { it.appointmentId == excludedAppointment.appointmentId }.forEach { changedAppointment ->
+      assertThat(changedAppointment.dpsLocationId).isEqualTo(target)
+      changedAppointment.attendees().forEach {
+        verify(outboundEventsService).sendAppointmentEvent(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentAttendeeId, "TEST")
+      }
     }
     verifyNoMoreInteractions(outboundEventsService)
   }

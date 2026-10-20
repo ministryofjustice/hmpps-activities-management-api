@@ -98,6 +98,7 @@ class AppointmentUpdateDomainService(
         appointmentIdsToUpdate.contains(it.appointmentId) &&
           (locationRemap == null || (it.dpsLocationId == locationRemap.mapping.locationId && it.startDate.isAfter(locationRemap.today)))
       }.toSet()
+      val revalidatedAppointmentIds = appointmentsToUpdate.map { it.appointmentId }.toSet()
 
       val locationChanges = mutableListOf<LocationRemapChange>()
       locationRemap?.let { remap ->
@@ -168,7 +169,7 @@ class AppointmentUpdateDomainService(
       val updatedAppointmentSeries = appointmentSeriesRepository.saveAndFlush(appointmentSeries)
 
       val addedAttendees = updatedAppointmentSeries.appointments()
-        .filter { appointmentIdsToUpdate.contains(it.appointmentId) }
+        .filter { revalidatedAppointmentIds.contains(it.appointmentId) }
         .flatMap { it.attendees() }
         .filterNot { originalAttendeeIds.contains(it.appointmentAttendeeId) }
 
@@ -176,7 +177,7 @@ class AppointmentUpdateDomainService(
         writeAppointmentUpdatedAuditRecord(appointmentId, request, appointmentSeries, updatedAppointmentSeries)
       }
 
-      AppointmentUpdateResult(updatedAppointmentSeries.toModel(), removedAttendees, addedAttendees, appointmentsToUpdate.map { it.appointmentId }.toSet(), locationChanges)
+      AppointmentUpdateResult(updatedAppointmentSeries.toModel(), removedAttendees, addedAttendees, revalidatedAppointmentIds, locationChanges)
     }.also { (updatedAppointmentSeries, removedAttendees, addedAttendees, changedAppointmentIds, locationChanges) ->
 
       locationChanges.forEach { it.logCommitted() }
