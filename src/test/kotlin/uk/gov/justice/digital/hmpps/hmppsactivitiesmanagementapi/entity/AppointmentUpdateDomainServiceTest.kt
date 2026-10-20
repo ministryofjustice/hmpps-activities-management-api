@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.microsoft.applicationinsights.TelemetryClient
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
@@ -158,8 +159,9 @@ class AppointmentUpdateDomainServiceTest {
     }
     whenever(locationService.getLocationDetails(null, target)).thenReturn(LocationService.LocationDetails("TPR", 456, target, "CHILD", "Laundry"))
 
-    service.remapLocation(appointmentSeries.appointmentSeriesId, LocationRemap("TPR", source, target), today, updatedBy)
+    val changedCount = service.remapLocation(appointmentSeries.appointmentSeriesId, LocationRemap("TPR", source, target), today, updatedBy)
 
+    assertThat(changedCount).isEqualTo(3)
     assertThat(repositoryReads).isEqualTo(2)
     assertThat(excludedAppointment.dpsLocationId).isEqualTo(if (locationChanged) otherLocation else source)
     assertThat(excludedAppointment.updatedTime).isEqualTo(originalUpdatedTime)
@@ -175,6 +177,23 @@ class AppointmentUpdateDomainServiceTest {
       }
     }
     verifyNoMoreInteractions(outboundEventsService)
+  }
+
+  @Test
+  fun `remap audit preserves the original series location`() {
+    val source = appointmentSeries.dpsLocationId!!
+    val target = UUID.randomUUID()
+    val originalNomisLocationId = appointmentSeries.internalLocationId
+    whenever(locationService.getLocationDetails(null, target)).thenReturn(LocationService.LocationDetails("TPR", 456, target, "CHILD", "Laundry"))
+
+    service.remapLocation(appointmentSeries.appointmentSeriesId, LocationRemap("TPR", source, target), LocalDate.now(), updatedBy)
+
+    val audit = argumentCaptor<AppointmentEditedEvent>()
+    verify(auditService).logEvent(audit.capture())
+    val payload = jacksonObjectMapper().readTree(audit.firstValue.toJson())
+    assertThat(payload["originalInternalLocationId"].asLong()).isEqualTo(originalNomisLocationId)
+    assertThat(payload["internalLocationId"].asLong()).isEqualTo(456)
+    assertThat(payload["dpsLocationId"].asText()).isEqualTo(target.toString())
   }
 
   @Nested

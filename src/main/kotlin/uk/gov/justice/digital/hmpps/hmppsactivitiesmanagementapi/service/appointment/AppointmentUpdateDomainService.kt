@@ -59,7 +59,8 @@ class AppointmentUpdateDomainService(
       require(series.prisonCode == mapping.prisonId) { "Appointment series prison does not match mapping" }
       series.appointments().filter { it.startDate.isAfter(today) && it.dpsLocationId == mapping.locationId }.map { it.appointmentId }.toSet()
     }
-    val result = updateAppointments(
+    val locationRemap = AppointmentLocationRemap(mapping, today)
+    updateAppointments(
       seriesId,
       appointmentIds.firstOrNull() ?: 0,
       appointmentIds,
@@ -72,9 +73,9 @@ class AppointmentUpdateDomainService(
       System.currentTimeMillis(),
       false,
       appointmentIds.isNotEmpty(),
-      AppointmentLocationRemap(mapping, today),
+      locationRemap,
     )
-    return result.appointments.count { it.id in appointmentIds }
+    return locationRemap.committedAppointmentCount
   }
 
   fun updateAppointments(
@@ -94,6 +95,7 @@ class AppointmentUpdateDomainService(
   ): AppointmentSeriesModel {
     transactionHandler.newSpringTransaction {
       val appointmentSeries = appointmentSeriesRepository.findOrThrowNotFound(appointmentSeriesId)
+      val originalInternalLocationId = appointmentSeries.internalLocationId
       val appointmentsToUpdate = appointmentSeries.appointments().filter {
         appointmentIdsToUpdate.contains(it.appointmentId) &&
           (locationRemap == null || (it.dpsLocationId == locationRemap.mapping.locationId && it.startDate.isAfter(locationRemap.today)))
@@ -174,7 +176,7 @@ class AppointmentUpdateDomainService(
         .filterNot { originalAttendeeIds.contains(it.appointmentAttendeeId) }
 
       if (auditEvent) {
-        writeAppointmentUpdatedAuditRecord(appointmentId, request, appointmentSeries, updatedAppointmentSeries)
+        writeAppointmentUpdatedAuditRecord(appointmentId, request, appointmentSeries, updatedAppointmentSeries, originalInternalLocationId)
       }
 
       AppointmentUpdateResult(updatedAppointmentSeries.toModel(), removedAttendees, addedAttendees, revalidatedAppointmentIds, locationChanges)
@@ -183,6 +185,7 @@ class AppointmentUpdateDomainService(
       locationChanges.forEach { it.logCommitted() }
 
       if (locationRemap != null) {
+        locationRemap.committedAppointmentCount = changedAppointmentIds.size
         log.info(
           "Location remap series={} appointments={} attendees={} source={} target={}",
           appointmentSeriesId,
@@ -231,7 +234,10 @@ class AppointmentUpdateDomainService(
     }
   }
 
-  data class AppointmentLocationRemap(val mapping: LocationRemap, val today: LocalDate)
+  data class AppointmentLocationRemap(val mapping: LocationRemap, val today: LocalDate) {
+    var committedAppointmentCount: Int = 0
+      internal set
+  }
 
   private data class AppointmentUpdateResult(
     val series: AppointmentSeriesModel,
@@ -425,6 +431,7 @@ class AppointmentUpdateDomainService(
     request: AppointmentUpdateRequest,
     originalAppointmentSeries: AppointmentSeries,
     updatedAppointmentSeries: AppointmentSeries,
+    originalInternalLocationId: Long?,
   ) {
     auditService.logEvent(
       AppointmentEditedEvent(
@@ -437,7 +444,7 @@ class AppointmentUpdateDomainService(
         tierCode = updatedAppointmentSeries.appointmentTier?.code,
         originalOrganiserCode = originalAppointmentSeries.appointmentOrganiser?.code,
         organiserCode = updatedAppointmentSeries.appointmentOrganiser?.code,
-        originalInternalLocationId = originalAppointmentSeries.internalLocationId,
+        originalInternalLocationId = originalInternalLocationId,
         internalLocationId = updatedAppointmentSeries.internalLocationId,
         dpsLocationId = updatedAppointmentSeries.dpsLocationId,
         originalStartDate = originalAppointmentSeries.startDate,
