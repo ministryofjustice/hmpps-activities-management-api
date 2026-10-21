@@ -27,7 +27,7 @@ class LocationsInsidePrisonApiMockServer : MockServer(8093) {
 
   fun stubLocationFromDpsUuidNotFound(dpsLocationId: UUID = UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc")) {
     stubFor(
-      WireMock.get("/locations/$dpsLocationId?formatLocalName=true&filterParents=false").willReturn(
+      WireMock.get("/locations/$dpsLocationId?formatLocalName=true").willReturn(
         WireMock.aResponse()
           .withHeader("Content-Type", "application/json")
           .withStatus(404),
@@ -76,7 +76,6 @@ class LocationsInsidePrisonApiMockServer : MockServer(8093) {
     stubFor(
       WireMock.get(urlPathEqualTo("/locations/non-residential/prison/$prisonCode/service/$serviceType"))
         .withQueryParam("formatLocalName", equalTo("true"))
-        .withQueryParam("filterParents", equalTo("false"))
         .withQueryParam("sortByLocalName", equalTo("true"))
         .willReturn(
           WireMock.aResponse()
