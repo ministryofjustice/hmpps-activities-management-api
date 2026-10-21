@@ -14,6 +14,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.RISLEY_PRISON_CODE
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AttendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AttendanceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceHistoryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
@@ -71,6 +72,47 @@ class AttendanceIntegrationTest : LocalStackTestBase() {
       assertThat(attendanceHistory).hasSize(1)
       assertThat(attendanceHistory!!.first().recordedBy).isEqualTo("MR BLOGS")
     }
+  }
+
+  @Sql(
+    "classpath:test_data/seed-activity-id-18.sql",
+  )
+  @Test
+  fun `get unacceptable absence count for a prisoner`() {
+    webTestClient
+      .put()
+      .uri("/attendances")
+      .bodyValue(
+        listOf(
+          AttendanceUpdateRequest(1, MOORLAND_PRISON_CODE, AttendanceStatus.COMPLETED, "REFUSED", null, false, null, null, null),
+        ),
+      )
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisationAsClient(roles = listOf(ROLE_ACTIVITY_ADMIN)))
+      .exchange()
+      .expectStatus().isNoContent
+
+    val summary = webTestClient
+      .get()
+      .uri("/attendances/offender/A11111A/unacceptable-absence-count?fromDate=${LocalDate.now().minusDays(1)}&toDate=${LocalDate.now()}")
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
+      .exchange()
+      .expectStatus().isOk
+      .expectBody(AttendanceSummary::class.java)
+      .returnResult().responseBody
+
+    assertThat(summary).isEqualTo(AttendanceSummary(acceptableAbsence = 0, unacceptableAbsence = 1, total = 1))
+  }
+
+  @Test
+  fun `unacceptable absence count is forbidden without a suitable role`() {
+    webTestClient
+      .get()
+      .uri("/attendances/offender/A11111A/unacceptable-absence-count?fromDate=2026-01-01&toDate=2026-02-01")
+      .headers(setAuthorisationAsClient(roles = listOf("ROLE_UNKNOWN")))
+      .exchange()
+      .expectStatus().isForbidden
   }
 
   @Sql(
