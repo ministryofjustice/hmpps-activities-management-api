@@ -387,6 +387,53 @@ class ActivityService(
   }
 
   @Transactional
+  fun remapLocation(activityId: Long, mapping: LocationRemap, today: LocalDate, updatedBy: String): Int {
+    val location = getLocationForSchedule(activityRepository.findOrThrowNotFound(activityId), mapping.chosenChildId)
+    val changes = transactionHandler.newSpringTransaction {
+      val activity = activityRepository.findOrThrowNotFound(activityId)
+      require(activity.prisonCode == mapping.prisonId) { "Activity prison does not match mapping" }
+      val schedules = activity.schedules().filter {
+        it.dpsLocationId == mapping.locationId &&
+          (it.endDate == null || !it.endDate!!.isBefore(today)) &&
+          (activity.endDate == null || !activity.endDate!!.isBefore(today))
+      }
+      val changes = schedules.map {
+        LocationRemapChange(
+          objectType = "ACTIVITY_SCHEDULE",
+          objectId = it.activityScheduleId,
+          prisonCode = activity.prisonCode,
+          name = activity.summary,
+          description = it.description,
+          activityId = activity.activityId,
+          oldDpsLocationId = it.dpsLocationId,
+          newDpsLocationId = location.dpsLocationId,
+          oldLocationName = it.internalLocationDescription ?: mapping.locationName ?: it.internalLocationCode ?: "Unavailable",
+          newLocationName = location.description,
+          oldNomisLocationId = it.internalLocationId?.toLong(),
+          newNomisLocationId = location.locationId,
+        )
+      }
+      schedules.forEach {
+        it.internalLocationId = Math.toIntExact(location.locationId)
+        it.internalLocationCode = location.code
+        it.internalLocationDescription = location.description
+        it.dpsLocationId = location.dpsLocationId
+        it.updatedBy = updatedBy
+        it.updatedTime = LocalDateTime.now()
+      }
+      if (schedules.isNotEmpty()) {
+        activity.updatedBy = updatedBy
+        activity.updatedTime = LocalDateTime.now()
+        activityRepository.saveAndFlush(activity)
+      }
+      changes
+    }
+    changes.forEach { it.logCommitted() }
+    changes.forEach { outboundEventsService.send(OutboundEvent.ACTIVITY_SCHEDULE_UPDATED, it.objectId) }
+    return changes.size
+  }
+
+  @Transactional
   fun updateActivity(
     prisonCode: String,
     activityId: Long,

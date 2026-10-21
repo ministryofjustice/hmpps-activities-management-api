@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment
 
 import com.microsoft.applicationinsights.TelemetryClient
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
@@ -16,16 +17,21 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refd
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.EventTierRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.PERMANENT_REMOVAL_BY_USER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.findByCodeOrThrowIllegalArgument
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentCategoryService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationRemap
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationRemapChange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService.LocationDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.getSourceLocationName
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_TIME_MS_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.toTelemetryMetricsMap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.toTelemetryPropertiesMap
+import java.time.LocalDate
 import java.time.LocalDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeries as AppointmentSeriesModel
 
@@ -41,7 +47,37 @@ class AppointmentUpdateDomainService(
   private val telemetryClient: TelemetryClient,
   private val auditService: AuditService,
   private val locationService: LocationService,
+  private val appointmentCategoryService: AppointmentCategoryService,
 ) {
+  companion object {
+    private val log = LoggerFactory.getLogger(this::class.java)
+  }
+
+  fun remapLocation(seriesId: Long, mapping: LocationRemap, today: LocalDate, updatedBy: String): Int {
+    val appointmentIds = transactionHandler.newSpringTransaction {
+      val series = appointmentSeriesRepository.findOrThrowNotFound(seriesId)
+      require(series.prisonCode == mapping.prisonId) { "Appointment series prison does not match mapping" }
+      series.appointments().filter { it.startDate.isAfter(today) && it.dpsLocationId == mapping.locationId }.map { it.appointmentId }.toSet()
+    }
+    val locationRemap = AppointmentLocationRemap(mapping, today)
+    updateAppointments(
+      seriesId,
+      appointmentIds.firstOrNull() ?: 0,
+      appointmentIds,
+      AppointmentUpdateRequest(dpsLocationId = mapping.chosenChildId),
+      emptyMap(),
+      LocalDateTime.now(),
+      updatedBy,
+      appointmentIds.size,
+      0,
+      System.currentTimeMillis(),
+      false,
+      appointmentIds.isNotEmpty(),
+      locationRemap,
+    )
+    return locationRemap.committedAppointmentCount
+  }
+
   fun updateAppointments(
     appointmentSeriesId: Long,
     appointmentId: Long,
@@ -55,10 +91,66 @@ class AppointmentUpdateDomainService(
     startTimeInMs: Long,
     trackEvent: Boolean,
     auditEvent: Boolean,
+    locationRemap: AppointmentLocationRemap? = null,
   ): AppointmentSeriesModel {
     transactionHandler.newSpringTransaction {
       val appointmentSeries = appointmentSeriesRepository.findOrThrowNotFound(appointmentSeriesId)
-      val appointmentsToUpdate = appointmentSeries.appointments().filter { appointmentIdsToUpdate.contains(it.appointmentId) }.toSet()
+      val originalInternalLocationId = appointmentSeries.internalLocationId
+      val appointmentsToUpdate = appointmentSeries.appointments().filter {
+        appointmentIdsToUpdate.contains(it.appointmentId) &&
+          (locationRemap == null || (it.dpsLocationId == locationRemap.mapping.locationId && it.startDate.isAfter(locationRemap.today)))
+      }.toSet()
+      val revalidatedAppointmentIds = appointmentsToUpdate.map { it.appointmentId }.toSet()
+
+      val locationChanges = mutableListOf<LocationRemapChange>()
+      locationRemap?.let { remap ->
+        require(appointmentSeries.prisonCode == remap.mapping.prisonId) { "Appointment series prison does not match mapping" }
+        require(appointmentSeries.appointments().any { it.startDate.isAfter(remap.today) }) { "Appointment series no longer has future appointments" }
+        val location = locationService.getLocationDetails(null, remap.mapping.chosenChildId)
+        require(location.agencyId == remap.mapping.prisonId) { "Destination prison does not match mapping" }
+        val sourceName = locationService.getSourceLocationName(remap.mapping)
+        val categories = appointmentCategoryService.getAll()
+        if (appointmentSeries.dpsLocationId == remap.mapping.locationId) {
+          locationChanges.add(
+            LocationRemapChange(
+              objectType = "APPOINTMENT_SERIES",
+              objectId = appointmentSeries.appointmentSeriesId,
+              prisonCode = appointmentSeries.prisonCode,
+              name = appointmentSeries.customName?.takeIf(String::isNotBlank) ?: categories[appointmentSeries.categoryCode]?.description ?: appointmentSeries.categoryCode,
+              appointmentSeriesId = appointmentSeries.appointmentSeriesId,
+              appointmentSetId = appointmentSeries.appointmentSet?.appointmentSetId,
+              appointmentType = appointmentSeries.appointmentType.name,
+              oldDpsLocationId = appointmentSeries.dpsLocationId,
+              newDpsLocationId = location.dpsLocationId,
+              oldLocationName = sourceName,
+              newLocationName = location.description,
+              oldNomisLocationId = appointmentSeries.internalLocationId,
+              newNomisLocationId = location.locationId,
+            ),
+          )
+          appointmentSeries.dpsLocationId = location.dpsLocationId
+          appointmentSeries.internalLocationId = location.locationId
+        }
+        appointmentsToUpdate.forEach { appointment ->
+          locationChanges.add(
+            LocationRemapChange(
+              objectType = "APPOINTMENT",
+              objectId = appointment.appointmentId,
+              prisonCode = appointment.prisonCode,
+              name = appointment.customName?.takeIf(String::isNotBlank) ?: categories[appointment.categoryCode]?.description ?: appointment.categoryCode,
+              appointmentSeriesId = appointmentSeries.appointmentSeriesId,
+              appointmentSetId = appointmentSeries.appointmentSet?.appointmentSetId,
+              appointmentType = appointmentSeries.appointmentType.name,
+              oldDpsLocationId = appointment.dpsLocationId,
+              newDpsLocationId = location.dpsLocationId,
+              oldLocationName = sourceName,
+              newLocationName = location.description,
+              oldNomisLocationId = appointment.internalLocationId,
+              newNomisLocationId = location.locationId,
+            ),
+          )
+        }
+      }
 
       applyPropertyUpdates(request, appointmentSeries, appointmentsToUpdate)
       val removedAttendees = applyRemovePrisonersUpdate(request, appointmentsToUpdate, updated, updatedBy)
@@ -79,16 +171,30 @@ class AppointmentUpdateDomainService(
       val updatedAppointmentSeries = appointmentSeriesRepository.saveAndFlush(appointmentSeries)
 
       val addedAttendees = updatedAppointmentSeries.appointments()
-        .filter { appointmentIdsToUpdate.contains(it.appointmentId) }
+        .filter { revalidatedAppointmentIds.contains(it.appointmentId) }
         .flatMap { it.attendees() }
         .filterNot { originalAttendeeIds.contains(it.appointmentAttendeeId) }
 
       if (auditEvent) {
-        writeAppointmentUpdatedAuditRecord(appointmentId, request, appointmentSeries, updatedAppointmentSeries)
+        writeAppointmentUpdatedAuditRecord(appointmentId, request, appointmentSeries, updatedAppointmentSeries, originalInternalLocationId)
       }
 
-      Triple(updatedAppointmentSeries.toModel(), removedAttendees, addedAttendees)
-    }.also { (updatedAppointmentSeries, removedAttendees, addedAttendees) ->
+      AppointmentUpdateResult(updatedAppointmentSeries.toModel(), removedAttendees, addedAttendees, revalidatedAppointmentIds, locationChanges)
+    }.also { (updatedAppointmentSeries, removedAttendees, addedAttendees, changedAppointmentIds, locationChanges) ->
+
+      locationChanges.forEach { it.logCommitted() }
+
+      if (locationRemap != null) {
+        locationRemap.committedAppointmentCount = changedAppointmentIds.size
+        log.info(
+          "Location remap series={} appointments={} attendees={} source={} target={}",
+          appointmentSeriesId,
+          changedAppointmentIds,
+          updatedAppointmentSeries.appointments.filter { it.id in changedAppointmentIds }.flatMap { it.attendees }.map { it.id },
+          locationRemap.mapping.locationId,
+          locationRemap.mapping.chosenChildId,
+        )
+      }
 
       removedAttendees.forEach { attendee ->
         outboundEventsService.sendAppointmentEvent(OutboundEvent.APPOINTMENT_INSTANCE_DELETED, attendee.appointmentAttendeeId, updatedAppointmentSeries.categoryCode)
@@ -101,7 +207,7 @@ class AppointmentUpdateDomainService(
       if (request.isPropertyUpdate()) {
         updatedAppointmentSeries.appointments
           .filterNot { it.isDeleted }
-          .filter { appointmentIdsToUpdate.contains(it.id) }
+          .filter { changedAppointmentIds.contains(it.id) }
           .flatMap { it.attendees }
           .filter { attendee ->
             removedAttendees.none { it.appointmentAttendeeId == attendee.id } &&
@@ -127,6 +233,19 @@ class AppointmentUpdateDomainService(
       return updatedAppointmentSeries
     }
   }
+
+  data class AppointmentLocationRemap(val mapping: LocationRemap, val today: LocalDate) {
+    var committedAppointmentCount: Int = 0
+      internal set
+  }
+
+  private data class AppointmentUpdateResult(
+    val series: AppointmentSeriesModel,
+    val removed: Collection<AppointmentAttendee>,
+    val added: Collection<AppointmentAttendee>,
+    val appointmentIds: Set<Long>,
+    val locationChanges: List<LocationRemapChange>,
+  )
 
   fun getUpdateInstancesCount(
     request: AppointmentUpdateRequest,
@@ -312,6 +431,7 @@ class AppointmentUpdateDomainService(
     request: AppointmentUpdateRequest,
     originalAppointmentSeries: AppointmentSeries,
     updatedAppointmentSeries: AppointmentSeries,
+    originalInternalLocationId: Long?,
   ) {
     auditService.logEvent(
       AppointmentEditedEvent(
@@ -324,7 +444,7 @@ class AppointmentUpdateDomainService(
         tierCode = updatedAppointmentSeries.appointmentTier?.code,
         originalOrganiserCode = originalAppointmentSeries.appointmentOrganiser?.code,
         organiserCode = updatedAppointmentSeries.appointmentOrganiser?.code,
-        originalInternalLocationId = originalAppointmentSeries.internalLocationId,
+        originalInternalLocationId = originalInternalLocationId,
         internalLocationId = updatedAppointmentSeries.internalLocationId,
         dpsLocationId = updatedAppointmentSeries.dpsLocationId,
         originalStartDate = originalAppointmentSeries.startDate,

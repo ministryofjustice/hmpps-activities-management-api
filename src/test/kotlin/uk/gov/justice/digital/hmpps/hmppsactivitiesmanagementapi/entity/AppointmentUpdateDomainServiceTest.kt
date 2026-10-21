@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.microsoft.applicationinsights.TelemetryClient
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
@@ -8,11 +9,14 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 import org.mockito.AdditionalAnswers
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
@@ -39,6 +43,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refd
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.EventOrganiserRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.EventTierRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationRemap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
@@ -81,6 +86,7 @@ class AppointmentUpdateDomainServiceTest {
       telemetryClient,
       auditService,
       locationService,
+      mock(),
     ),
   )
 
@@ -100,6 +106,94 @@ class AppointmentUpdateDomainServiceTest {
     whenever(appointmentAttendeeRemovalReasonRepository.findById(permanentRemovalByUserAppointmentAttendeeRemovalReason.appointmentAttendeeRemovalReasonId)).thenReturn(
       Optional.of(permanentRemovalByUserAppointmentAttendeeRemovalReason),
     )
+  }
+
+  @Test
+  fun `remaps future appointments even when series header has a different location`() {
+    val source = appointmentSeries.dpsLocationId!!
+    val target = UUID.randomUUID()
+    val headerLocation = UUID.randomUUID()
+    appointmentSeries.dpsLocationId = headerLocation
+    appointmentSeries.appointments()[0].startDate = LocalDate.now().minusDays(100)
+    appointmentSeries.appointments()[1].cancelledTime = LocalDateTime.now()
+    appointmentSeries.appointments()[2].dpsLocationId = headerLocation
+    appointmentSeries.appointments()[3].isDeleted = true
+    whenever(locationService.getLocationDetails(null, target)).thenReturn(LocationService.LocationDetails("TPR", 456, target, "CHILD", "Laundry"))
+
+    service.remapLocation(appointmentSeries.appointmentSeriesId, LocationRemap("TPR", source, target), LocalDate.now(), updatedBy)
+
+    assertThat(appointmentSeries.dpsLocationId).isEqualTo(headerLocation)
+    assertThat(appointmentSeries.appointments(true)[0].dpsLocationId).isEqualTo(source)
+    assertThat(appointmentSeries.appointments(true)[1].dpsLocationId).isEqualTo(target)
+    assertThat(appointmentSeries.appointments(true)[1].internalLocationId).isEqualTo(456)
+    assertThat(appointmentSeries.appointments(true)[1].cancelledTime).isNotNull()
+    assertThat(appointmentSeries.appointments(true)[2].dpsLocationId).isEqualTo(headerLocation)
+    assertThat(appointmentSeries.appointments(true)[3].dpsLocationId).isEqualTo(source)
+    appointmentSeries.appointments(true)[1].attendees().forEach {
+      verify(outboundEventsService).sendAppointmentEvent(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentAttendeeId, "TEST")
+    }
+    verifyNoMoreInteractions(outboundEventsService)
+  }
+
+  @ParameterizedTest(name = "location changed between transactions: {0}")
+  @ValueSource(booleans = [true, false])
+  fun `does not publish events for appointments excluded during remap revalidation`(locationChanged: Boolean) {
+    val today = LocalDate.now()
+    val source = appointmentSeries.dpsLocationId!!
+    val target = UUID.randomUUID()
+    val otherLocation = UUID.randomUUID()
+    val excludedAppointment = appointmentSeries.appointments().first()
+    val originalUpdatedTime = excludedAppointment.updatedTime
+    val originalUpdatedBy = excludedAppointment.updatedBy
+    var repositoryReads = 0
+    whenever(appointmentSeriesRepository.findById(appointmentSeries.appointmentSeriesId)).thenAnswer {
+      repositoryReads++
+      if (repositoryReads == 2) {
+        if (locationChanged) {
+          excludedAppointment.dpsLocationId = otherLocation
+        } else {
+          excludedAppointment.startDate = today
+        }
+      }
+      Optional.of(appointmentSeries)
+    }
+    whenever(locationService.getLocationDetails(null, target)).thenReturn(LocationService.LocationDetails("TPR", 456, target, "CHILD", "Laundry"))
+
+    val changedCount = service.remapLocation(appointmentSeries.appointmentSeriesId, LocationRemap("TPR", source, target), today, updatedBy)
+
+    assertThat(changedCount).isEqualTo(3)
+    assertThat(repositoryReads).isEqualTo(2)
+    assertThat(excludedAppointment.dpsLocationId).isEqualTo(if (locationChanged) otherLocation else source)
+    assertThat(excludedAppointment.updatedTime).isEqualTo(originalUpdatedTime)
+    assertThat(excludedAppointment.updatedBy).isEqualTo(originalUpdatedBy)
+    excludedAppointment.attendees().forEach {
+      verify(outboundEventsService, never()).sendAppointmentEvent(any(), eq(it.appointmentAttendeeId), any())
+    }
+    verify(outboundEventsService, never()).sendAppointmentEvent(eq(OutboundEvent.APPOINTMENT_INSTANCE_CREATED), any(), any())
+    appointmentSeries.appointments().filterNot { it.appointmentId == excludedAppointment.appointmentId }.forEach { changedAppointment ->
+      assertThat(changedAppointment.dpsLocationId).isEqualTo(target)
+      changedAppointment.attendees().forEach {
+        verify(outboundEventsService).sendAppointmentEvent(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentAttendeeId, "TEST")
+      }
+    }
+    verifyNoMoreInteractions(outboundEventsService)
+  }
+
+  @Test
+  fun `remap audit preserves the original series location`() {
+    val source = appointmentSeries.dpsLocationId!!
+    val target = UUID.randomUUID()
+    val originalNomisLocationId = appointmentSeries.internalLocationId
+    whenever(locationService.getLocationDetails(null, target)).thenReturn(LocationService.LocationDetails("TPR", 456, target, "CHILD", "Laundry"))
+
+    service.remapLocation(appointmentSeries.appointmentSeriesId, LocationRemap("TPR", source, target), LocalDate.now(), updatedBy)
+
+    val audit = argumentCaptor<AppointmentEditedEvent>()
+    verify(auditService).logEvent(audit.capture())
+    val payload = jacksonObjectMapper().readTree(audit.firstValue.toJson())
+    assertThat(payload["originalInternalLocationId"].asLong()).isEqualTo(originalNomisLocationId)
+    assertThat(payload["internalLocationId"].asLong()).isEqualTo(456)
+    assertThat(payload["dpsLocationId"].asText()).isEqualTo(target.toString())
   }
 
   @Nested

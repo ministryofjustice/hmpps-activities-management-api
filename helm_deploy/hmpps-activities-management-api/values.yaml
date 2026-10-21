@@ -136,6 +136,13 @@ generic-prometheus-alerts:
   targetApplication: hmpps-activities-management-api
 
 cron:
+  locationRemap:
+    enabled: false
+    suspend: true
+    schedule: "0 9 * * 1-4"
+    file: ""
+    prisons: "GMI,EEI,CLI"
+    dryRun: true
   allocationsDeallocateEnding: "0 1 * * *"
   allocationsDeallocateExpiring: "0 22 * * *"
   allocationsFixAutoSuspended: "45 1 * * *"

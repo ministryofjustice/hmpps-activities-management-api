@@ -1,0 +1,40 @@
+{{- if .Values.cron.locationRemap.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: remap-non-residential-locations
+spec:
+  schedule: {{ .Values.cron.locationRemap.schedule | quote }}
+  suspend: {{ .Values.cron.locationRemap.suspend }}
+  concurrencyPolicy: Forbid
+  failedJobsHistoryLimit: 5
+  successfulJobsHistoryLimit: 5
+  startingDeadlineSeconds: 300
+  jobTemplate:
+    spec:
+      ttlSecondsAfterFinished: 345600
+      backoffLimit: 0
+      template:
+        spec:
+          restartPolicy: Never
+          activeDeadlineSeconds: 3600
+          containers:
+            - name: location-remap-trigger
+              image: ghcr.io/ministryofjustice/hmpps-devops-tools
+              env:
+                - name: MAPPING_FILE
+                  value: {{ required "cron.locationRemap.file is required" .Values.cron.locationRemap.file | quote }}
+                - name: PRISONS
+                  value: {{ .Values.cron.locationRemap.prisons | quote }}
+                - name: DRY_RUN
+                  value: {{ .Values.cron.locationRemap.dryRun | quote }}
+              args:
+                - /bin/sh
+                - -c
+                - >-
+                  curl --fail-with-body --silent --show-error --request POST
+                  --data-urlencode "file=$MAPPING_FILE"
+                  --data-urlencode "prisons=$PRISONS"
+                  --data-urlencode "dryRun=$DRY_RUN"
+                  http://hmpps-activities-management-api/job/remap-non-residential-locations
+{{- end }}
