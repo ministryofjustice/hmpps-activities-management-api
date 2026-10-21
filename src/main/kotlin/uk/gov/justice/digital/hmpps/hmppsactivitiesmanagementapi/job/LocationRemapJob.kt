@@ -8,7 +8,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationRemapResult
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationRemapService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
-import java.util.UUID
 import javax.sql.DataSource
 
 @Component
@@ -29,7 +28,7 @@ class LocationRemapJob(
         val summary = LocationRemapResult()
         val started = System.nanoTime()
         val properties = mutableMapOf(
-          "runId" to UUID.randomUUID().toString(),
+          "runId" to summary.runId,
           "file" to file,
           "prisons" to prisons.sorted().joinToString(",").ifEmpty { "ALL" },
           "dryRun" to dryRun.toString(),
