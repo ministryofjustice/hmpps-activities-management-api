@@ -90,7 +90,7 @@ class AttendanceController(private val attendancesService: AttendancesService) {
     @PathVariable("attendanceId") instanceId: Long,
   ): Attendance = attendancesService.getAttendanceById(instanceId)
 
-  @GetMapping(value = ["/offender/{prisonerNumber}/unacceptable-absence-count"])
+  @GetMapping(value = ["/prisoner/{prisonerNumber}/unacceptable-absence-count"])
   @ResponseBody
   @Operation(
     summary = "Get counts of acceptable and unacceptable absences for a prisoner",
@@ -123,15 +123,15 @@ class AttendanceController(private val attendancesService: AttendancesService) {
   @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN', 'ACTIVITIES_MANAGEMENT__RO')")
   fun getAttendanceSummary(
     @PathVariable("prisonerNumber") @Parameter(description = "The prisoner number (NOMIS ID)", example = "A1234AA") prisonerNumber: String,
-    @RequestParam(name = "fromDate", required = true)
+    @RequestParam(name = "startDate", required = true)
     @Parameter(description = "Start date of the range in format YYYY-MM-DD", required = true)
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-    fromDate: LocalDate,
-    @RequestParam(name = "toDate", required = true)
+    startDate: LocalDate,
+    @RequestParam(name = "endDate", required = true)
     @Parameter(description = "End date of the range in format YYYY-MM-DD", required = true)
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-    toDate: LocalDate,
-  ): AttendanceSummary = attendancesService.getAttendanceSummary(prisonerNumber, fromDate, toDate)
+    endDate: LocalDate,
+  ): AttendanceSummary = attendancesService.getAttendanceSummary(prisonerNumber, startDate, endDate)
 
   @GetMapping(value = ["/{prisonCode}/{sessionDate}"])
   @ResponseBody
