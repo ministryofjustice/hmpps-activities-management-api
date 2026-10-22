@@ -24,6 +24,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventTierType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AllAttendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AttendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AttendanceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.SuspendedPrisonerAttendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendancesService
@@ -88,6 +89,49 @@ class AttendanceController(private val attendancesService: AttendancesService) {
   fun getAttendanceById(
     @PathVariable("attendanceId") instanceId: Long,
   ): Attendance = attendancesService.getAttendanceById(instanceId)
+
+  @GetMapping(value = ["/prisoner/{prisonerNumber}/attendance-summary"])
+  @ResponseBody
+  @Operation(
+    summary = "Get counts of acceptable and unacceptable absences for a prisoner",
+    description = "Returns the number of acceptable absences, unacceptable absences and total attendances with a recorded outcome for a prisoner between two dates (inclusive).",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Attendance summary",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = AttendanceSummary::class))],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Invalid date range",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN', 'ACTIVITIES_MANAGEMENT__RO')")
+  fun getAttendanceSummary(
+    @PathVariable("prisonerNumber") @Parameter(description = "The prisoner number (NOMIS ID)", example = "A1234AA") prisonerNumber: String,
+    @RequestParam(name = "startDate", required = true)
+    @Parameter(description = "Start date of the range in format YYYY-MM-DD", required = true)
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+    startDate: LocalDate,
+    @RequestParam(name = "endDate", required = true)
+    @Parameter(description = "End date of the range in format YYYY-MM-DD", required = true)
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+    endDate: LocalDate,
+  ): AttendanceSummary = attendancesService.getAttendanceSummary(prisonerNumber, startDate, endDate)
 
   @GetMapping(value = ["/{prisonCode}/{sessionDate}"])
   @ResponseBody
