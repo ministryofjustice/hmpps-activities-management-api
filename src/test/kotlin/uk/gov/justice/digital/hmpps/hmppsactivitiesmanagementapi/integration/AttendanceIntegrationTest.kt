@@ -3,6 +3,8 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.tuple
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
@@ -103,6 +105,35 @@ class AttendanceIntegrationTest : LocalStackTestBase() {
       .returnResult().responseBody
 
     assertThat(summary).isEqualTo(AttendanceSummary(acceptableAbsence = 0, unacceptableAbsence = 1, total = 1))
+  }
+
+  @Sql(
+    "classpath:test_data/seed-activity-id-18.sql",
+    "classpath:test_data/seed-attendance-summary.sql",
+  )
+  @ParameterizedTest
+  @CsvSource(
+    "2026-01-10, 2026-01-20, 2, 1, 4",
+    "2026-01-10, 2026-01-10, 0, 1, 1",
+    "2026-01-20, 2026-01-20, 1, 0, 1",
+    "2026-01-11, 2026-01-19, 1, 0, 2",
+    "2026-02-01, 2026-02-28, 0, 0, 0",
+  )
+  fun `attendance summary includes both date boundaries and excludes other prisoners and incomplete outcomes`(
+    startDate: String,
+    endDate: String,
+    acceptableAbsence: Int,
+    unacceptableAbsence: Int,
+    total: Int,
+  ) {
+    webTestClient
+      .get()
+      .uri("/attendances/prisoner/A11111A/attendance-summary?startDate=$startDate&endDate=$endDate")
+      .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
+      .exchange()
+      .expectStatus().isOk
+      .expectBody(AttendanceSummary::class.java)
+      .value { assertThat(it).isEqualTo(AttendanceSummary(acceptableAbsence, unacceptableAbsence, total)) }
   }
 
   @Test
