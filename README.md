@@ -287,6 +287,34 @@ customEvents
 | order by timestamp desc
 ```
 
+Preflight also submits one `SAA-Location-Remap-Preflight-Failed` event per failed mapping, including during dry
+runs. These events share the result event's `runId` and include the file, scope, prison, source/destination DPS
+IDs and location names where available, plus `errorType` and `reason`. Measurements show the affected activity,
+appointment-series and appointment-set counts. Each event reports the mapping's first validation failure;
+validation continues across the remaining mappings. Telemetry submission errors do not interrupt preflight.
+
+```kusto
+customEvents
+| where timestamp > ago(24h)
+| where name == "SAA-Location-Remap-Preflight-Failed"
+// Add a runId filter to select one run's failures.
+| project timestamp,
+  runId = tostring(customDimensions.runId),
+  file = tostring(customDimensions.file),
+  dryRun = tostring(customDimensions.dryRun),
+  prison = tostring(customDimensions.prisonId),
+  sourceId = tostring(customDimensions.sourceDpsLocationId),
+  sourceName = tostring(customDimensions.sourceLocationName),
+  destinationId = tostring(customDimensions.destinationDpsLocationId),
+  destinationName = tostring(customDimensions.destinationLocationName),
+  reason = tostring(customDimensions.reason),
+  errorType = tostring(customDimensions.errorType),
+  activities = todouble(customMeasurements.activityCount),
+  series = todouble(customMeasurements.appointmentSeriesCount),
+  sets = todouble(customMeasurements.appointmentSetCount)
+| order by timestamp desc
+```
+
 ## Common gradle tasks
 
 To list project dependencies, run:
