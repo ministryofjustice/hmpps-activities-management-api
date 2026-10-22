@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import com.microsoft.applicationinsights.TelemetryClient
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
@@ -13,8 +14,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.AppointmentSetService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.AppointmentUpdateDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import java.time.Clock
 import java.time.LocalDate
+import java.util.UUID
 
 @Service
 class LocationRemapService(
@@ -28,6 +31,7 @@ class LocationRemapService(
   private val locations: LocationService,
   private val features: FeatureSwitches,
   private val clock: Clock,
+  private val telemetryClient: TelemetryClient,
   @Value("\${location-remap.allowed-file:}") private val allowedFile: String,
 ) {
   companion object {
@@ -64,7 +68,30 @@ class LocationRemapService(
         val services = target.servicesUsingLocation.orEmpty().map { it.serviceType }.toSet()
         require(plan.activities.isEmpty() || ServiceType.PROGRAMMES_AND_ACTIVITIES in services) { "Destination is not enabled for Activities" }
         require((plan.series.isEmpty() && plan.sets.isEmpty()) || ServiceType.APPOINTMENT in services) { "Destination is not enabled for Appointments" }
-      }.exceptionOrNull()?.also { log.error("Location remap preflight failed for {}", plan.mapping, it) }
+      }.exceptionOrNull()?.also { failure ->
+        log.error("Location remap preflight failed for {}", plan.mapping, failure)
+        val target = targets.getValue(plan.mapping.chosenChildId).getOrNull()
+        val properties = mapOf(
+          "runId" to result.runId,
+          "file" to file,
+          "prisons" to prisons.sorted().joinToString(",").ifEmpty { "ALL" },
+          "dryRun" to dryRun.toString(),
+          "prisonId" to plan.mapping.prisonId,
+          "sourceDpsLocationId" to plan.mapping.locationId.toString(),
+          "destinationDpsLocationId" to plan.mapping.chosenChildId.toString(),
+          "sourceLocationName" to plan.mapping.locationName.orEmpty(),
+          "destinationLocationName" to (target?.localName ?: target?.code).orEmpty(),
+          "errorType" to failure.javaClass.simpleName,
+          "reason" to (failure.message ?: failure.javaClass.simpleName),
+        )
+        val metrics = mapOf(
+          "activityCount" to plan.activities.size.toDouble(),
+          "appointmentSeriesCount" to plan.series.size.toDouble(),
+          "appointmentSetCount" to plan.sets.size.toDouble(),
+        )
+        runCatching { telemetryClient.trackEvent(TelemetryEvent.LOCATION_REMAP_PREFLIGHT_FAILED.value, properties, metrics) }
+          .onFailure { log.error("Failed to publish preflight failure telemetry for run ${result.runId} mapping=${plan.mapping}", it) }
+      }
     }
     plans.forEach { log.info("Location remap plan {} activities={} series={} sets={}", it.mapping, it.activities, it.series, it.sets) }
     result.preflightFailures = preflightFailures.size
@@ -113,6 +140,7 @@ class LocationRemapService(
 }
 
 class LocationRemapResult {
+  val runId: String = UUID.randomUUID().toString()
   var stage: String = "LOCK"
   var totalMappings: Int = 0
   var totalCandidates: Int = 0

@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import com.microsoft.applicationinsights.TelemetryClient
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.BeforeEach
@@ -7,8 +8,10 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
@@ -23,6 +26,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.AppointmentSetService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.AppointmentUpdateDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import java.time.Clock
 import java.time.LocalDate
 import java.time.ZoneOffset
@@ -38,10 +42,11 @@ class LocationRemapServiceTest {
   private val setService: AppointmentSetService = mock()
   private val locations: LocationService = mock()
   private val features: FeatureSwitches = mock()
+  private val telemetryClient: TelemetryClient = mock()
   private val today = LocalDate.of(2026, 10, 19)
   private val clock = Clock.fixed(today.atStartOfDay().toInstant(ZoneOffset.UTC), ZoneOffset.UTC)
   private val mapping = LocationRemap("GMI", UUID.randomUUID(), UUID.randomUUID())
-  private val service = LocationRemapService(files, schedules, series, sets, activityService, appointmentService, setService, locations, features, clock, "mapping.csv")
+  private val service = LocationRemapService(files, schedules, series, sets, activityService, appointmentService, setService, locations, features, clock, telemetryClient, "mapping.csv")
 
   @BeforeEach
   fun setUp() {
@@ -65,6 +70,7 @@ class LocationRemapServiceTest {
     assertThat(result.stage).isEqualTo("COMPLETED")
     verify(locations).getDpsLocationDetails(mapping.chosenChildId)
     verifyNoInteractions(activityService, appointmentService, setService)
+    verifyNoInteractions(telemetryClient)
   }
 
   @Test
@@ -98,6 +104,18 @@ class LocationRemapServiceTest {
     assertThat(result.totalFailed).isZero()
     assertThat(result.stage).isEqualTo("PREFLIGHT")
     verifyNoInteractions(activityService, appointmentService, setService)
+    val properties = argumentCaptor<Map<String, String>>()
+    val metrics = argumentCaptor<Map<String, Double>>()
+    verify(telemetryClient).trackEvent(eq(TelemetryEvent.LOCATION_REMAP_PREFLIGHT_FAILED.value), properties.capture(), metrics.capture())
+    assertThat(properties.firstValue).containsEntry("runId", result.runId)
+      .containsEntry("file", "mapping.csv")
+      .containsEntry("prisonId", "GMI")
+      .containsEntry("sourceDpsLocationId", mapping.locationId.toString())
+      .containsEntry("destinationDpsLocationId", mapping.chosenChildId.toString())
+      .containsEntry("errorType", "IllegalArgumentException")
+      .containsEntry("reason", "Missing target")
+      .containsEntry("dryRun", "false")
+    assertThat(metrics.firstValue).containsEntry("activityCount", 1.0)
   }
 
   @ParameterizedTest
@@ -129,6 +147,49 @@ class LocationRemapServiceTest {
     assertThat(result.totalMappings).isEqualTo(2)
     assertThat(result.preflightFailures).isEqualTo(1)
     assertThat(result.stage).isEqualTo("PREFLIGHT")
+    verifyNoInteractions(activityService, appointmentService, setService)
+    val properties = argumentCaptor<Map<String, String>>()
+    val metrics = argumentCaptor<Map<String, Double>>()
+    verify(telemetryClient).trackEvent(eq(TelemetryEvent.LOCATION_REMAP_PREFLIGHT_FAILED.value), properties.capture(), metrics.capture())
+    assertThat(properties.firstValue).containsEntry("runId", result.runId)
+      .containsEntry("sourceDpsLocationId", mapping.locationId.toString())
+      .containsEntry("destinationDpsLocationId", mapping.chosenChildId.toString())
+      .containsEntry("destinationLocationName", "Laundry")
+    assertThat(properties.firstValue["reason"]).isNotBlank()
+    assertThat(metrics.firstValue).containsEntry("activityCount", 1.0)
+      .containsEntry("appointmentSeriesCount", 1.0)
+      .containsEntry("appointmentSetCount", 1.0)
+  }
+
+  @ParameterizedTest(name = "telemetry unavailable: {0}")
+  @ValueSource(booleans = [false, true])
+  fun `reports every failed mapping during dry run even when telemetry throws`(telemetryUnavailable: Boolean) {
+    val firstMapping = mapping.copy(locationName = "First old room")
+    val secondMapping = mapping.copy(locationId = UUID.randomUUID(), chosenChildId = UUID.randomUUID(), locationName = "Second old room")
+    whenever(files.load("mapping.csv")).thenReturn(listOf(firstMapping, secondMapping))
+    listOf(firstMapping, secondMapping).forEach { candidate ->
+      whenever(schedules.findActivityIdsForLocationRemap("GMI", candidate.locationId, today)).thenReturn(listOf(1))
+    }
+    whenever(locations.getDpsLocationDetails(firstMapping.chosenChildId)).thenReturn(destination(firstMapping.chosenChildId).copy(servicesUsingLocation = emptyList()))
+    whenever(locations.getDpsLocationDetails(secondMapping.chosenChildId)).thenThrow(IllegalArgumentException("Second destination missing"))
+    if (telemetryUnavailable) {
+      whenever(telemetryClient.trackEvent(eq(TelemetryEvent.LOCATION_REMAP_PREFLIGHT_FAILED.value), any(), any())).thenThrow(IllegalStateException("Telemetry unavailable"))
+    }
+    val result = LocationRemapResult()
+
+    assertThatThrownBy { service.remap("mapping.csv", setOf("GMI"), true, result) }.hasMessageContaining("preflight failed for 2 mappings")
+
+    assertThat(result.preflightFailures).isEqualTo(2)
+    val properties = argumentCaptor<Map<String, String>>()
+    verify(telemetryClient, times(2)).trackEvent(eq(TelemetryEvent.LOCATION_REMAP_PREFLIGHT_FAILED.value), properties.capture(), any())
+    assertThat(properties.allValues.map { it["sourceDpsLocationId"] }).containsExactly(firstMapping.locationId.toString(), secondMapping.locationId.toString())
+    assertThat(properties.allValues.map { it["sourceLocationName"] }).containsExactly("First old room", "Second old room")
+    assertThat(properties.allValues.map { it["reason"] }).containsExactly("Destination is not enabled for Activities", "Second destination missing")
+    properties.allValues.forEach {
+      assertThat(it).containsEntry("runId", result.runId)
+        .containsEntry("prisons", "GMI")
+        .containsEntry("dryRun", "true")
+    }
     verifyNoInteractions(activityService, appointmentService, setService)
   }
 
