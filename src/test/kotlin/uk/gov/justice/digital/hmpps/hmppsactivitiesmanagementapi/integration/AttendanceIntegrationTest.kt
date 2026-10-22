@@ -78,7 +78,7 @@ class AttendanceIntegrationTest : LocalStackTestBase() {
     "classpath:test_data/seed-activity-id-18.sql",
   )
   @Test
-  fun `get unacceptable absence count for a prisoner`() {
+  fun `get attendance summary for a prisoner`() {
     webTestClient
       .put()
       .uri("/attendances")
@@ -94,7 +94,7 @@ class AttendanceIntegrationTest : LocalStackTestBase() {
 
     val summary = webTestClient
       .get()
-      .uri("/attendances/prisoner/A11111A/unacceptable-absence-count?startDate=${LocalDate.now().minusDays(1)}&endDate=${LocalDate.now()}")
+      .uri("/attendances/prisoner/A11111A/attendance-summary?startDate=${LocalDate.now().minusDays(1)}&endDate=${LocalDate.now()}")
       .accept(MediaType.APPLICATION_JSON)
       .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
       .exchange()
@@ -106,10 +106,10 @@ class AttendanceIntegrationTest : LocalStackTestBase() {
   }
 
   @Test
-  fun `unacceptable absence count is forbidden without a suitable role`() {
+  fun `attendance summary is forbidden without a suitable role`() {
     webTestClient
       .get()
-      .uri("/attendances/prisoner/A11111A/unacceptable-absence-count?startDate=2026-01-01&endDate=2026-02-01")
+      .uri("/attendances/prisoner/A11111A/attendance-summary?startDate=2026-01-01&endDate=2026-02-01")
       .headers(setAuthorisationAsClient(roles = listOf("ROLE_UNKNOWN")))
       .exchange()
       .expectStatus().isForbidden

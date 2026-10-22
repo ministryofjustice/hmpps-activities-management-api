@@ -90,7 +90,7 @@ class AttendanceController(private val attendancesService: AttendancesService) {
     @PathVariable("attendanceId") instanceId: Long,
   ): Attendance = attendancesService.getAttendanceById(instanceId)
 
-  @GetMapping(value = ["/prisoner/{prisonerNumber}/unacceptable-absence-count"])
+  @GetMapping(value = ["/prisoner/{prisonerNumber}/attendance-summary"])
   @ResponseBody
   @Operation(
     summary = "Get counts of acceptable and unacceptable absences for a prisoner",

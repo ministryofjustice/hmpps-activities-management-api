@@ -66,14 +66,14 @@ class AttendanceControllerTest : ControllerTestBase() {
   }
 
   @Nested
-  inner class UnacceptableAbsenceCount {
+  inner class AttendanceSummaryEndpoint {
     @WithMockAuthUser(username = "ITAG_USER", authorities = ["ROLE_ACTIVITIES_MANAGEMENT__RO"])
     @Test
     fun `200 response with summary`() {
       whenever(attendancesService.getAttendanceSummary("A1234AA", LocalDate.parse("2026-04-21"), LocalDate.parse("2026-10-21")))
         .thenReturn(AttendanceSummary(acceptableAbsence = 1, unacceptableAbsence = 2, total = 5))
 
-      mockMvc.get("/attendances/prisoner/A1234AA/unacceptable-absence-count?startDate=2026-04-21&endDate=2026-10-21")
+      mockMvc.get("/attendances/prisoner/A1234AA/attendance-summary?startDate=2026-04-21&endDate=2026-10-21")
         .andExpect {
           status { isOk() }
           content { json("""{"acceptableAbsence":1,"unacceptableAbsence":2,"total":5}""") }
@@ -83,7 +83,7 @@ class AttendanceControllerTest : ControllerTestBase() {
     @WithMockAuthUser(username = "ITAG_USER", authorities = ["ROLE_PRISON"])
     @Test
     fun `400 response when dates are missing`() {
-      mockMvc.get("/attendances/prisoner/A1234AA/unacceptable-absence-count")
+      mockMvc.get("/attendances/prisoner/A1234AA/attendance-summary")
         .andExpect { status { isBadRequest() } }
     }
   }
