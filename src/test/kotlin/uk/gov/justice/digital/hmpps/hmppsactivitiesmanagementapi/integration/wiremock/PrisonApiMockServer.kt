@@ -167,6 +167,52 @@ class PrisonApiMockServer : MockServer(8999) {
     )
   }
 
+  fun stubGetCellHistoryForPrisoner(bookingId: Long) {
+    stubFor(
+      WireMock.get(WireMock.urlEqualTo("/api/bookings/$bookingId/cell-history"))
+        .willReturn(
+          WireMock.aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withBodyFile("prisonapi/bookings/cell-history-1.json")
+            .withStatus(200),
+        ),
+    )
+  }
+
+  fun stubGetSingleCellHistoryForPrisoner(bookingId: Long) {
+    stubFor(
+      WireMock.get(WireMock.urlEqualTo("/api/bookings/$bookingId/cell-history"))
+        .willReturn(
+          WireMock.aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withBodyFile("prisonapi/bookings/cell-history-2.json")
+            .withStatus(200),
+        ),
+    )
+  }
+
+  fun stubGetCellHistoryForPrisonerWithPreviousCell(bookingId: Long) {
+    stubFor(
+      WireMock.get(WireMock.urlEqualTo("/api/bookings/$bookingId/cell-history"))
+        .willReturn(
+          WireMock.aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withBodyFile("prisonapi/bookings/cell-history-3.json")
+            .withStatus(200),
+        ),
+    )
+  }
+
+  fun stubGetCellHistoryForPrisonerNotFound(bookingId: Long) {
+    stubFor(
+      WireMock.get(WireMock.urlEqualTo("/api/bookings/$bookingId/cell-history"))
+        .willReturn(
+          WireMock.aResponse()
+            .withStatus(404),
+        ),
+    )
+  }
+
   fun stubGetScheduledVisitsNotFound(bookingId: Long, startDate: LocalDate, endDate: LocalDate) {
     stubFor(
       WireMock.get(WireMock.urlEqualTo("/api/bookings/$bookingId/visits?fromDate=$startDate&toDate=$endDate"))

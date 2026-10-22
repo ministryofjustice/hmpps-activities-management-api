@@ -35,5 +35,17 @@ class PrisonerReleasedEventTest {
     releaseEvent("UNKNOWN").isPermanent() isBool false
   }
 
+  @Test
+  fun `release event is a transfer out`() {
+    releaseEvent("TRANSFERRED").isTransferred() isBool true
+  }
+
+  @Test
+  fun `non-transfer release event is not a transfer out`() {
+    releaseEvent("RELEASED").isTransferred() isBool false
+    releaseEvent("TEMPORARY_ABSENCE_RELEASE").isTransferred() isBool false
+    releaseEvent("UNKNOWN").isTransferred() isBool false
+  }
+
   private fun releaseEvent(reason: String) = PrisonerReleasedEvent(ReleaseInformation("123456", reason, MOORLAND_PRISON_CODE))
 }
