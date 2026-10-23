@@ -28,7 +28,7 @@ dependencies {
   implementation("org.springframework.boot:spring-boot-starter-webflux")
   implementation("org.springframework.boot:spring-boot-starter-webclient")
   implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-  implementation("org.springframework.data:spring-data-envers:4.1.1")
+  implementation("org.springframework.data:spring-data-envers:4.1.2")
   implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:7.4.1")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.11.0")
@@ -52,7 +52,7 @@ dependencies {
     }
   }
 
-  implementation("aws.sdk.kotlin:s3:1.9.23")
+  implementation("aws.sdk.kotlin:s3:1.9.24")
 
   // Other dependencies
   implementation("org.apache.commons:commons-text:1.15.0")
@@ -64,7 +64,7 @@ dependencies {
 
   // Test dependencies
   testImplementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter-test:3.0.3")
-  testImplementation("uk.gov.justice.service.hmpps:hmpps-subject-access-request-test-support:2.8.4")
+  testImplementation("uk.gov.justice.service.hmpps:hmpps-subject-access-request-test-support:2.8.5")
   testImplementation("org.springframework.boot:spring-boot-starter-webflux-test")
   testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
   testImplementation("org.wiremock:wiremock-standalone:3.13.2")
@@ -75,8 +75,8 @@ dependencies {
   testImplementation("io.jsonwebtoken:jjwt-jackson:0.13.0")
   testImplementation("org.mockito.kotlin:mockito-kotlin:6.4.0") // temp, fix version to prevent dependency clash between sar test support lib and hmpps kotlin plugin
   testImplementation("org.mockito:mockito-inline:5.2.0")
-  testImplementation("net.javacrumbs.json-unit:json-unit:6.3.0")
-  testImplementation("net.javacrumbs.json-unit:json-unit-assertj:6.3.0")
+  testImplementation("net.javacrumbs.json-unit:json-unit:6.4.0")
+  testImplementation("net.javacrumbs.json-unit:json-unit-assertj:6.4.0")
   testImplementation("net.javacrumbs.json-unit:json-unit-json-path:5.1.2")
   testImplementation("org.springframework.security:spring-security-test")
   testImplementation("org.springframework.boot:spring-boot-starter-test")
