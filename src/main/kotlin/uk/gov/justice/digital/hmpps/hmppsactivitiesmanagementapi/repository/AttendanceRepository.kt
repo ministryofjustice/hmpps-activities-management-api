@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BookingCount
 import java.time.LocalDate
 import java.time.LocalTime
@@ -113,6 +114,20 @@ interface AttendanceRepository : JpaRepository<Attendance, Long> {
     prisonCode: String? = null,
   ): List<Attendance>
 
+  @Query(
+    """
+      SELECT new uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceReasonCount(a.attendanceReason.code, count(a))
+      FROM Attendance a
+      WHERE a.prisonerNumber = :prisonerNumber
+      AND a.status = 'COMPLETED'
+      AND a.attendanceReason IS NOT NULL
+      AND a.scheduledInstance.sessionDate >= :startDate
+      AND a.scheduledInstance.sessionDate <= :endDate
+      GROUP BY a.attendanceReason.code
+    """,
+  )
+  fun countCompletedAttendancesByReason(prisonerNumber: String, startDate: LocalDate, endDate: LocalDate): List<AttendanceReasonCount>
+
   @Query(value = "UPDATE Attendance a SET a.prisonerNumber = :newNumber WHERE a.prisonerNumber = :oldNumber")
   @Modifying
   fun mergeOldPrisonerNumberToNew(oldNumber: String, newNumber: String)
@@ -152,6 +167,8 @@ interface AttendanceRepository : JpaRepository<Attendance, Long> {
     @Param("categories") categories: List<String>,
   ): List<SuspendedPrisonerAttendance>
 }
+
+data class AttendanceReasonCount(val code: AttendanceReasonEnum, val count: Long)
 
 interface SuspendedPrisonerAttendance {
   fun getPrisonerNumber(): String

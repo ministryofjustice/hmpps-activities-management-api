@@ -3,6 +3,8 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.tuple
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
@@ -14,6 +16,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.RISLEY_PRISON_CODE
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AttendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AttendanceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceHistoryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
@@ -71,6 +74,76 @@ class AttendanceIntegrationTest : LocalStackTestBase() {
       assertThat(attendanceHistory).hasSize(1)
       assertThat(attendanceHistory!!.first().recordedBy).isEqualTo("MR BLOGS")
     }
+  }
+
+  @Sql(
+    "classpath:test_data/seed-activity-id-18.sql",
+  )
+  @Test
+  fun `get attendance summary for a prisoner`() {
+    webTestClient
+      .put()
+      .uri("/attendances")
+      .bodyValue(
+        listOf(
+          AttendanceUpdateRequest(1, MOORLAND_PRISON_CODE, AttendanceStatus.COMPLETED, "REFUSED", null, false, null, null, null),
+        ),
+      )
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisationAsClient(roles = listOf(ROLE_ACTIVITY_ADMIN)))
+      .exchange()
+      .expectStatus().isNoContent
+
+    val summary = webTestClient
+      .get()
+      .uri("/attendances/prisoner/A11111A/attendance-summary?startDate=${LocalDate.now().minusDays(1)}&endDate=${LocalDate.now()}")
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
+      .exchange()
+      .expectStatus().isOk
+      .expectBody(AttendanceSummary::class.java)
+      .returnResult().responseBody
+
+    assertThat(summary).isEqualTo(AttendanceSummary(acceptableAbsence = 0, unacceptableAbsence = 1, total = 1))
+  }
+
+  @Sql(
+    "classpath:test_data/seed-activity-id-18.sql",
+    "classpath:test_data/seed-attendance-summary.sql",
+  )
+  @ParameterizedTest
+  @CsvSource(
+    "2026-01-10, 2026-01-20, 2, 1, 4",
+    "2026-01-10, 2026-01-10, 0, 1, 1",
+    "2026-01-20, 2026-01-20, 1, 0, 1",
+    "2026-01-11, 2026-01-19, 1, 0, 2",
+    "2026-02-01, 2026-02-28, 0, 0, 0",
+  )
+  fun `attendance summary includes both date boundaries and excludes other prisoners and incomplete outcomes`(
+    startDate: String,
+    endDate: String,
+    acceptableAbsence: Int,
+    unacceptableAbsence: Int,
+    total: Int,
+  ) {
+    webTestClient
+      .get()
+      .uri("/attendances/prisoner/A11111A/attendance-summary?startDate=$startDate&endDate=$endDate")
+      .headers(setAuthorisationAsClient(roles = listOf(ROLE_PRISON)))
+      .exchange()
+      .expectStatus().isOk
+      .expectBody(AttendanceSummary::class.java)
+      .value { assertThat(it).isEqualTo(AttendanceSummary(acceptableAbsence, unacceptableAbsence, total)) }
+  }
+
+  @Test
+  fun `attendance summary is forbidden without a suitable role`() {
+    webTestClient
+      .get()
+      .uri("/attendances/prisoner/A11111A/attendance-summary?startDate=2026-01-01&endDate=2026-02-01")
+      .headers(setAuthorisationAsClient(roles = listOf("ROLE_UNKNOWN")))
+      .exchange()
+      .expectStatus().isForbidden
   }
 
   @Sql(

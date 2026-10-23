@@ -44,12 +44,14 @@ class LocationRemapJobTest : JobsTestBase() {
 
   @Test
   fun `runs through safe job runner and releases the database lock`() {
+    val summary = argumentCaptor<LocationRemapResult>()
     job.execute("mapping.csv", setOf("GMI"), true)
     verify(safeJobRunner).runJob(argThat { jobType == JobType.REMAP_NON_RESIDENTIAL_LOCATIONS })
-    verify(service).remap(eq("mapping.csv"), eq(setOf("GMI")), eq(true), any())
+    verify(service).remap(eq("mapping.csv"), eq(setOf("GMI")), eq(true), summary.capture())
     verify(statement).execute("select pg_advisory_unlock(4624, 924)")
     verify(connection).close()
     verifySummary("DRY_RUN", 0.0, 0.0)
+    assertThat(properties.firstValue["runId"]).isEqualTo(summary.firstValue.runId)
   }
 
   @Test
