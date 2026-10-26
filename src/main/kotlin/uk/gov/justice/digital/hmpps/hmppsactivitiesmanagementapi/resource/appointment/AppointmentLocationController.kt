@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.appointment
 
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
@@ -11,6 +12,7 @@ import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
@@ -46,5 +48,8 @@ class AppointmentLocationController(private val locationService: LocationService
   @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
   fun getAppointmentLocations(
     @PathVariable("prisonCode") prisonCode: String,
-  ): List<AppointmentLocationSummary> = locationService.getDpsLocationsForAppointments(prisonCode).toAppointmentLocation()
+    @RequestParam(value = "filterParents", required = false, defaultValue = "false")
+    @Parameter(description = "Exclude parent locations that have sub-locations also used for appointments. Use when offering locations for selection when creating or editing appointments. Defaults to false.")
+    filterParents: Boolean = false,
+  ): List<AppointmentLocationSummary> = locationService.getDpsLocationsForAppointments(prisonCode, filterParents).toAppointmentLocation()
 }
