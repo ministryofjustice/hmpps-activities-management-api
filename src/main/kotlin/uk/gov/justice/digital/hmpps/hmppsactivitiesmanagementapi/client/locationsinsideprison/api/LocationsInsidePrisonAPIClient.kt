@@ -51,6 +51,7 @@ class LocationsInsidePrisonAPIClient(
       uriBuilder
         .path("/locations/non-residential/prison/{prisonCode}/service/{serviceType}")
         .queryParam("formatLocalName", true)
+        .queryParam("filterParents", false)
         .queryParam("sortByLocalName", true)
         .build(prisonCode, serviceType)
     }
