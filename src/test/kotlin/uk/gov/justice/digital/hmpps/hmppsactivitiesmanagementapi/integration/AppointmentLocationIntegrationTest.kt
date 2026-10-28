@@ -36,6 +36,27 @@ class AppointmentLocationIntegrationTest : IntegrationTestBase() {
   }
 
   @Test
+  fun `get list of appointment locations with parent locations filtered`() {
+    val dpsLocation1 = dpsLocation(UUID.fromString("11111111-1111-1111-1111-111111111111"), MOORLAND_PRISON_CODE, localName = "Kitchen")
+
+    locationsInsidePrisonApiMockServer.stubLocationsForServiceType(
+      prisonCode = MOORLAND_PRISON_CODE,
+      locations = listOf(dpsLocation1),
+      filterParents = true,
+    )
+
+    nomisMappingApiMockServer.stubMappingsFromDpsIds(
+      listOf(
+        NomisDpsLocationMapping(dpsLocation1.id, 1),
+      ),
+    )
+
+    assertThat(webTestClient.getAppointmentLocations(filterParents = true)!!).containsExactly(
+      AppointmentLocationSummary(id = 1, dpsLocationId = dpsLocation1.id, prisonCode = MOORLAND_PRISON_CODE, description = "Kitchen"),
+    )
+  }
+
+  @Test
   fun `authorisation required`() {
     webTestClient.get()
       .uri("/appointment-locations/{prisonCode}", MOORLAND_PRISON_CODE)
@@ -43,8 +64,12 @@ class AppointmentLocationIntegrationTest : IntegrationTestBase() {
       .expectStatus().isUnauthorized
   }
 
-  private fun WebTestClient.getAppointmentLocations() = get()
-    .uri("/appointment-locations/{prisonCode}", MOORLAND_PRISON_CODE)
+  private fun WebTestClient.getAppointmentLocations(filterParents: Boolean? = null) = get()
+    .uri { builder ->
+      builder.path("/appointment-locations/{prisonCode}")
+        .apply { filterParents?.let { queryParam("filterParents", it) } }
+        .build(MOORLAND_PRISON_CODE)
+    }
     .headers(setAuthorisationAsClient(roles = listOf(ROLE_ACTIVITY_ADMIN)))
     .exchange()
     .expectStatus().isOk
