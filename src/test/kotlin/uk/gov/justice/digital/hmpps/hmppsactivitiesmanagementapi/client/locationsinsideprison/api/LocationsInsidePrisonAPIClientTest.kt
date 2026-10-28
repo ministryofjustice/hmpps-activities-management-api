@@ -75,6 +75,16 @@ class LocationsInsidePrisonAPIClientTest {
     }
   }
 
+  @Test
+  fun `should return locations for service type with parent locations filtered`() {
+    val mockLocations = mockServer.stubLocationsForServiceType(filterParents = true)
+
+    runBlocking {
+      val locations = apiClient.getLocationsForServiceType("RSI", ServiceType.APPOINTMENT, filterParents = true)
+      assertThat(locations).isEqualTo(mockLocations)
+    }
+  }
+
   @Nested
   @DisplayName("Retrying failed api calls")
   inner class RetryFailedCalls {

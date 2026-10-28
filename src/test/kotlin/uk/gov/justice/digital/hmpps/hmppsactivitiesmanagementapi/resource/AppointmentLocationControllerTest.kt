@@ -36,4 +36,19 @@ class AppointmentLocationControllerTest : ControllerTestBase() {
 
     assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(locations.toAppointmentLocation()))
   }
+
+  @Test
+  fun `200 response when get appointment locations with parent locations filtered`() {
+    val locations = listOf(appointmentLocationDetails(1, UUID.fromString("44444444-1111-2222-3333-444444444444"), MOORLAND_PRISON_CODE))
+
+    whenever(locationService.getDpsLocationsForAppointments(MOORLAND_PRISON_CODE, true)).thenReturn(locations)
+
+    val response = mockMvc
+      .get("/appointment-locations/{prisonCode}?filterParents=true", MOORLAND_PRISON_CODE)
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andExpect { status { isOk() } }
+      .andReturn().response
+
+    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(locations.toAppointmentLocation()))
+  }
 }
