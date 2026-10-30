@@ -19,6 +19,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventReviewDescription
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReasonEnum
@@ -48,6 +49,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.activeI
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.activeInPentonvillePrisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.convert
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.Action
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.InboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.APPOINTMENT_INSTANCE_DELETED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.PRISONER_ALLOCATION_AMENDED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.PRISONER_ATTENDANCE_AMENDED
@@ -57,7 +59,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.activitiesChangedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.alertsUpdatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.appointmentsChangedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.iepReviewUpdatedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.nonAssociationsChangedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.offenderMergedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.prisonerReceivedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.prisonerReceivedFromTemporaryAbsence
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.prisonerReleasedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.prisonerUpdatedEvent
@@ -91,6 +96,9 @@ class InboundEventsIntegrationTest : LocalStackTestBase() {
 
   @Autowired
   private lateinit var auditRepository: AuditRepository
+
+  @Autowired
+  private lateinit var inboundEventsService: InboundEventsService
 
   private val hmppsAuditEventCaptor = argumentCaptor<HmppsAuditEvent>()
 
@@ -131,6 +139,192 @@ class InboundEventsIntegrationTest : LocalStackTestBase() {
     assertThat(webTestClient.getScheduledInstancesByIds(1)!!.first().advanceAttendances).extracting("prisonerNumber").containsOnly("A11111A")
 
     validateNoMessagesSent()
+  }
+
+  @Test
+  @Sql("classpath:test_data/seed-activity-id-1.sql")
+  fun `prisoner received is recorded as an interesting event with an ARRIVAL_OR_RETURN description and the reason as event data`() {
+    assertThat(eventReviewRepository.count()).isEqualTo(0)
+
+    stubPrisonerForInterestingEvent("A11111A")
+
+    val event =
+      prisonerReceivedEvent(
+        prisonCode = PENTONVILLE_PRISON_CODE,
+        prisonerNumber = "A11111A",
+        reason = "NEW_ADMISSION",
+      )
+
+    this.sendInboundEvent(event)
+
+    await untilAsserted {
+      assertThat(eventReviewRepository.count()).isEqualTo(1L)
+    }
+
+    val interestingEvent = eventReviewRepository.findAll().last()
+
+    assertThat(interestingEvent.eventType).isEqualTo("prisoner-offender-search.prisoner.received")
+    assertThat(interestingEvent.prisonerNumber).isEqualTo("A11111A")
+    assertThat(interestingEvent.eventData).isEqualTo("NEW_ADMISSION")
+    assertThat(interestingEvent.eventDescription).isEqualTo(EventReviewDescription.ARRIVAL_OR_RETURN)
+
+    validateNoMessagesSent()
+  }
+
+  @Test
+  @Sql("classpath:test_data/seed-activity-id-1.sql")
+  fun `temporary absence release is recorded as an interesting event with a RELEASED description and the reason as event data`() {
+    assertThat(eventReviewRepository.count()).isEqualTo(0)
+
+    stubPrisonerForInterestingEvent("A11111A")
+
+    val event =
+      PrisonerReleasedEvent(
+        ReleaseInformation(
+          nomsNumber = "A11111A",
+          reason = "TEMPORARY_ABSENCE_RELEASE",
+          prisonId = PENTONVILLE_PRISON_CODE,
+        ),
+      )
+
+    this.sendInboundEvent(event)
+
+    await untilAsserted {
+      assertThat(eventReviewRepository.count()).isEqualTo(1L)
+    }
+
+    val interestingEvent = eventReviewRepository.findAll().last()
+
+    assertThat(interestingEvent.eventType).isEqualTo("prisoner-offender-search.prisoner.released")
+    assertThat(interestingEvent.prisonerNumber).isEqualTo("A11111A")
+    assertThat(interestingEvent.eventData).isEqualTo("TEMPORARY_ABSENCE_RELEASE")
+    assertThat(interestingEvent.eventDescription).isEqualTo(EventReviewDescription.RELEASED)
+
+    validateNoMessagesSent()
+  }
+
+  @Test
+  @Sql("classpath:test_data/seed-activity-id-1.sql")
+  fun `transferred release is recorded as an interesting event with a TRANSFER_OUT description and the reason as event data`() {
+    assertThat(eventReviewRepository.count()).isEqualTo(0)
+
+    stubPrisonerForInterestingEvent("A11111A")
+
+    val event =
+      PrisonerReleasedEvent(
+        ReleaseInformation(
+          nomsNumber = "A11111A",
+          reason = "TRANSFERRED",
+          prisonId = PENTONVILLE_PRISON_CODE,
+        ),
+      )
+
+    this.sendInboundEvent(event)
+
+    await untilAsserted {
+      assertThat(eventReviewRepository.count()).isEqualTo(1L)
+    }
+
+    val interestingEvent = eventReviewRepository.findAll().last()
+
+    assertThat(interestingEvent.eventType).isEqualTo("prisoner-offender-search.prisoner.released")
+    assertThat(interestingEvent.prisonerNumber).isEqualTo("A11111A")
+    assertThat(interestingEvent.eventData).isEqualTo("TRANSFERRED")
+    assertThat(interestingEvent.eventDescription).isEqualTo(EventReviewDescription.TRANSFER_OUT)
+
+    validateNoMessagesSent()
+  }
+
+  @Test
+  @Sql("classpath:test_data/seed-activity-id-1.sql")
+  fun `activities changed with action END is recorded as an interesting event with an ACTIVITY_ENDED description and null event data`() {
+    assertThat(eventReviewRepository.count()).isEqualTo(0)
+
+    stubPrisonerForInterestingEvent("A11111A")
+
+    this.sendInboundEvent(
+      activitiesChangedEvent(prisonId = PENTONVILLE_PRISON_CODE, prisonerNumber = "A11111A", action = Action.END),
+    )
+
+    await untilAsserted {
+      assertThat(eventReviewRepository.count()).isEqualTo(1L)
+    }
+
+    val interestingEvent = eventReviewRepository.findAll().last()
+
+    assertThat(interestingEvent.eventType).isEqualTo("prison-offender-events.prisoner.activities-changed")
+    assertThat(interestingEvent.prisonerNumber).isEqualTo("A11111A")
+    assertThat(interestingEvent.eventData).isNull()
+    assertThat(interestingEvent.eventDescription).isEqualTo(EventReviewDescription.ACTIVITY_ENDED)
+  }
+
+  @Test
+  @Sql("classpath:test_data/seed-activity-id-1.sql")
+  fun `activities changed with action SUSPEND is recorded as an interesting event with an ACTIVITY_SUSPENDED description and null event data`() {
+    assertThat(eventReviewRepository.count()).isEqualTo(0)
+
+    stubPrisonerForInterestingEvent("A11111A")
+
+    this.sendInboundEvent(
+      activitiesChangedEvent(prisonId = PENTONVILLE_PRISON_CODE, prisonerNumber = "A11111A", action = Action.SUSPEND),
+    )
+
+    await untilAsserted {
+      assertThat(eventReviewRepository.count()).isEqualTo(1L)
+    }
+
+    val interestingEvent = eventReviewRepository.findAll().last()
+
+    assertThat(interestingEvent.eventType).isEqualTo("prison-offender-events.prisoner.activities-changed")
+    assertThat(interestingEvent.prisonerNumber).isEqualTo("A11111A")
+    assertThat(interestingEvent.eventData).isNull()
+    assertThat(interestingEvent.eventDescription).isEqualTo(EventReviewDescription.ACTIVITY_SUSPENDED)
+  }
+
+  @Test
+  @Sql("classpath:test_data/seed-activity-id-1.sql")
+  fun `appointments changed with action YES is recorded as an interesting event with an APPOINTMENTS_CANCELLED description and null event data`() {
+    assertThat(eventReviewRepository.count()).isEqualTo(0)
+
+    stubPrisonerForInterestingEvent("A11111A")
+
+    this.sendInboundEvent(
+      appointmentsChangedEvent(prisonId = PENTONVILLE_PRISON_CODE, prisonerNumber = "A11111A", action = "YES"),
+    )
+
+    await untilAsserted {
+      assertThat(eventReviewRepository.count()).isEqualTo(1L)
+    }
+
+    val interestingEvent = eventReviewRepository.findAll().last()
+
+    assertThat(interestingEvent.eventType).isEqualTo("prison-offender-events.prisoner.appointments-changed")
+    assertThat(interestingEvent.prisonerNumber).isEqualTo("A11111A")
+    assertThat(interestingEvent.eventData).isNull()
+    assertThat(interestingEvent.eventDescription).isEqualTo(EventReviewDescription.APPOINTMENTS_CANCELLED)
+  }
+
+  @Test
+  @Sql("classpath:test_data/seed-activity-id-1.sql")
+  fun `appointments changed with action NO is recorded as an interesting event with an APPOINTMENTS_KEPT description and null event data`() {
+    assertThat(eventReviewRepository.count()).isEqualTo(0)
+
+    stubPrisonerForInterestingEvent("A11111A")
+
+    this.sendInboundEvent(
+      appointmentsChangedEvent(prisonId = PENTONVILLE_PRISON_CODE, prisonerNumber = "A11111A", action = "NO"),
+    )
+
+    await untilAsserted {
+      assertThat(eventReviewRepository.count()).isEqualTo(1L)
+    }
+
+    val interestingEvent = eventReviewRepository.findAll().last()
+
+    assertThat(interestingEvent.eventType).isEqualTo("prison-offender-events.prisoner.appointments-changed")
+    assertThat(interestingEvent.prisonerNumber).isEqualTo("A11111A")
+    assertThat(interestingEvent.eventData).isNull()
+    assertThat(interestingEvent.eventDescription).isEqualTo(EventReviewDescription.APPOINTMENTS_KEPT)
   }
 
   @Test
@@ -226,16 +420,17 @@ class InboundEventsIntegrationTest : LocalStackTestBase() {
 
       assertThat(interestingEvent.eventType).isEqualTo("prisoner-offender-search.prisoner.alerts-updated")
       assertThat(interestingEvent.prisonerNumber).isEqualTo("A11111A")
-      assertThat(interestingEvent.eventData).isEqualTo("Alerts updated")
+      assertThat(interestingEvent.eventData).isEqualTo("A1,A2;R1,R2")
+      assertThat(interestingEvent.eventDescription).isEqualTo(EventReviewDescription.ALERTS_ADDED_AND_CLOSED)
     }
   }
 
   @Test
   @Sql("classpath:test_data/seed-activity-id-1.sql")
-  fun `prisoner update including LOCATION is recorded`() {
+  fun `prisoner alerts updated with only alerts added is recorded with an ALERT_ADDED description`() {
     stubPrisonerForInterestingEvent(prisoner = activeInPentonvilleInmate.copy(offenderNo = "A11111A"))
 
-    val event = prisonerUpdatedEvent(prisonerNumber = "A11111A", listOf("STATUS", "LOCATION", "SENTENCE"))
+    val event = alertsUpdatedEvent(prisonerNumber = "A11111A", alertsAdded = setOf("A1", "A2"), alertsRemoved = emptySet())
 
     this.sendInboundEvent(event)
 
@@ -244,9 +439,150 @@ class InboundEventsIntegrationTest : LocalStackTestBase() {
 
       val interestingEvent = eventReviewRepository.findAll().last()
 
+      assertThat(interestingEvent.eventType).isEqualTo("prisoner-offender-search.prisoner.alerts-updated")
+      assertThat(interestingEvent.prisonerNumber).isEqualTo("A11111A")
+      assertThat(interestingEvent.eventData).isEqualTo("A1,A2;")
+      assertThat(interestingEvent.eventDescription).isEqualTo(EventReviewDescription.ALERT_ADDED)
+    }
+  }
+
+  @Test
+  @Sql("classpath:test_data/seed-activity-id-1.sql")
+  fun `prisoner alerts updated with only alerts closed is recorded with an ALERT_CLOSED description`() {
+    stubPrisonerForInterestingEvent(prisoner = activeInPentonvilleInmate.copy(offenderNo = "A11111A"))
+
+    val event = alertsUpdatedEvent(prisonerNumber = "A11111A", alertsAdded = emptySet(), alertsRemoved = setOf("R1", "R2"))
+
+    this.sendInboundEvent(event)
+
+    await untilAsserted {
+      assertThat(eventReviewRepository.findAll()).isNotEmpty
+
+      val interestingEvent = eventReviewRepository.findAll().last()
+
+      assertThat(interestingEvent.eventType).isEqualTo("prisoner-offender-search.prisoner.alerts-updated")
+      assertThat(interestingEvent.prisonerNumber).isEqualTo("A11111A")
+      assertThat(interestingEvent.eventData).isEqualTo(";R1,R2")
+      assertThat(interestingEvent.eventDescription).isEqualTo(EventReviewDescription.ALERT_CLOSED)
+    }
+  }
+
+  @Test
+  @Sql("classpath:test_data/seed-activity-id-1.sql")
+  fun `prisoner alerts updated with no alerts added or closed is not recorded`() {
+    stubPrisonerForInterestingEvent(prisoner = activeInPentonvilleInmate.copy(offenderNo = "A11111A"))
+
+    val event = alertsUpdatedEvent(prisonerNumber = "A11111A", alertsAdded = emptySet(), alertsRemoved = emptySet())
+
+    this.sendInboundEvent(event)
+
+    await().during(Duration.ofMillis(200)).atMost(Duration.ofMillis(400)).until {
+      eventReviewRepository.findAll().isEmpty()
+    }
+  }
+
+  @Test
+  @Sql("classpath:test_data/seed-activity-id-1.sql")
+  fun `prisoner incentive level changed is recorded when an incentiveLevelChanged is true`() {
+    stubPrisonerForInterestingEvent(prisoner = activeInPentonvilleInmate.copy(offenderNo = "A11111A"))
+
+    val event = iepReviewUpdatedEvent(
+      prisonerNumber = "A11111A",
+      incentiveLevel = "BAS",
+      previousIncentiveLevel = "STD",
+      incentiveLevelChanged = true,
+    )
+
+    this.sendInboundEvent(event)
+
+    await untilAsserted {
+      assertThat(eventReviewRepository.findAll()).isNotEmpty
+
+      val interestingEvent = eventReviewRepository.findAll().last()
+
+      assertThat(interestingEvent.eventType).isEqualTo("incentives.iep-review.updated")
+      assertThat(interestingEvent.prisonerNumber).isEqualTo("A11111A")
+      assertThat(interestingEvent.eventData).isEqualTo("BAS;STD")
+      assertThat(interestingEvent.eventDescription).isEqualTo(EventReviewDescription.INCENTIVE_LEVEL_CHANGED)
+    }
+  }
+
+  @Test
+  @Sql("classpath:test_data/seed-activity-id-1.sql")
+  fun `prisoner incentive review with no level change is not recorded`() {
+    stubPrisonerForInterestingEvent(prisoner = activeInPentonvilleInmate.copy(offenderNo = "A11111A"))
+
+    val event = iepReviewUpdatedEvent(prisonerNumber = "A11111A", incentiveLevelChanged = false)
+
+    this.sendInboundEvent(event)
+
+    await().during(Duration.ofMillis(200)).atMost(Duration.ofMillis(400)).until {
+      eventReviewRepository.findAll().isEmpty()
+    }
+  }
+
+  @Test
+  @Sql("classpath:test_data/seed-activity-id-1.sql")
+  fun `prisoner non-association changed is recorded with a NON_ASSOCIATION description`() {
+    stubPrisonerForInterestingEvent(prisoner = activeInPentonvilleInmate.copy(offenderNo = "A11111A"))
+
+    val event = nonAssociationsChangedEvent(prisonerNumber = "A11111A")
+
+    this.sendInboundEvent(event)
+
+    await untilAsserted {
+      assertThat(eventReviewRepository.findAll()).isNotEmpty
+
+      val interestingEvent = eventReviewRepository.findAll().last()
+
+      assertThat(interestingEvent.eventType).isEqualTo("prison-offender-events.prisoner.non-association-detail.changed")
+      assertThat(interestingEvent.prisonerNumber).isEqualTo("A11111A")
+      assertThat(interestingEvent.eventData).isEqualTo("New non-association")
+      assertThat(interestingEvent.eventDescription).isEqualTo(EventReviewDescription.NON_ASSOCIATION)
+    }
+  }
+
+  @Test
+  @Sql("classpath:test_data/seed-activity-id-1.sql")
+  fun `prisoner update including LOCATION is recorded`() {
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(activeInPentonvilleInmate.copy(offenderNo = "A11111A", bookingId = 10001).convert())
+    prisonApiMockServer.stubGetCellHistoryForPrisonerWithPreviousCell(10001)
+
+    val event = prisonerUpdatedEvent(prisonerNumber = "A11111A", listOf("STATUS", "LOCATION", "SENTENCE"))
+
+    inboundEventsService.process(event)
+
+    await untilAsserted {
+      assertThat(eventReviewRepository.findAll()).isNotEmpty
+
+      val interestingEvent = eventReviewRepository.findAll().last()
+
       assertThat(interestingEvent.eventType).isEqualTo("prisoner-offender-search.prisoner.updated")
       assertThat(interestingEvent.prisonerNumber).isEqualTo("A11111A")
-      assertThat(interestingEvent.eventData).isEqualTo("Cell move")
+      assertThat(interestingEvent.eventData).isEqualTo("MDI-1-1-001;MDI-1-1-2")
+      assertThat(interestingEvent.eventDescription).isEqualTo(EventReviewDescription.CELL_MOVE)
+    }
+  }
+
+  @Test
+  @Sql("classpath:test_data/seed-activity-id-1.sql")
+  fun `prisoner update including LOCATION is recorded when no previous cell exists`() {
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(activeInPentonvilleInmate.copy(offenderNo = "A11111A", bookingId = 10001).convert())
+    prisonApiMockServer.stubGetSingleCellHistoryForPrisoner(10001)
+
+    val event = prisonerUpdatedEvent(prisonerNumber = "A11111A", listOf("STATUS", "LOCATION", "SENTENCE"))
+
+    inboundEventsService.process(event)
+
+    await untilAsserted {
+      assertThat(eventReviewRepository.findAll()).isNotEmpty
+
+      val interestingEvent = eventReviewRepository.findAll().last()
+
+      assertThat(interestingEvent.eventType).isEqualTo("prisoner-offender-search.prisoner.updated")
+      assertThat(interestingEvent.prisonerNumber).isEqualTo("A11111A")
+      assertThat(interestingEvent.eventData).isEqualTo("None;MDI-1-1-001")
+      assertThat(interestingEvent.eventDescription).isEqualTo(EventReviewDescription.CELL_MOVE)
     }
   }
 
@@ -941,6 +1277,14 @@ class InboundEventsIntegrationTest : LocalStackTestBase() {
         newPrisonerNumberAndNewBooking,
         newPrisonerNumberAndNewBooking,
       )
+
+      with(eventReviewRepository.findAll().single { it.eventType == "prison-offender-events.prisoner.merged" }) {
+        eventDescription isEqualTo EventReviewDescription.PRISONER_MERGED
+        eventData isEqualTo "$oldPrisonerNumber;$newPrisonerNumber"
+        prisonerNumber isEqualTo newPrisonerNumber
+        bookingId isEqualTo newBookingId.toInt()
+        prisonCode isEqualTo "PVI"
+      }
 
       appointmentAttendeeRepository.findAll()
         .map { it.prisonerNumber to it.bookingId } containsExactlyInAnyOrder listOf(

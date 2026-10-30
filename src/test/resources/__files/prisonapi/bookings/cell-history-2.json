@@ -1,0 +1,21 @@
+{
+  "totalPages": 1,
+  "totalElements": 1,
+  "size": 20,
+  "content": [
+    {
+      "bookingId": 77777,
+      "livingUnitId": 123123,
+      "assignmentDate": "2020-10-12",
+      "assignmentDateTime": "2020-10-12T08:00",
+      "assignmentReason": "ADM",
+      "agencyId": "MDI",
+      "description": "MDI-1-1-001",
+      "bedAssignmentHistorySequence": 1,
+      "movementMadeBy": "KQJ74F",
+      "offenderNo": "A11111A"
+    }
+  ],
+  "number": 0,
+  "empty": false
+}
