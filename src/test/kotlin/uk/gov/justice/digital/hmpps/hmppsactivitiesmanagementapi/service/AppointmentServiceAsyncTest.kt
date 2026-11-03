@@ -10,7 +10,6 @@ import org.mockito.AdditionalAnswers.returnsFirstArg
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
-import org.mockito.kotlin.isNull
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.verify
@@ -78,7 +77,6 @@ class AppointmentServiceAsyncTest {
       telemetryClient,
       auditService,
       locationService,
-      appointmentCategoryService,
     ),
   )
   private val appointmentCancelDomainService = spy(
@@ -178,7 +176,6 @@ class AppointmentServiceAsyncTest {
       startTimeInMs.capture(),
       eq(true),
       eq(true),
-      isNull(),
     )
 
     assertThat(updated.firstValue).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
@@ -223,7 +220,6 @@ class AppointmentServiceAsyncTest {
       startTimeInMs.capture(),
       eq(true),
       eq(true),
-      isNull(),
     )
 
     assertThat(updated.firstValue).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
@@ -268,7 +264,6 @@ class AppointmentServiceAsyncTest {
       startTimeInMs.capture(),
       eq(false),
       eq(true),
-      isNull(),
     )
 
     assertThat(updated.firstValue).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
@@ -329,7 +324,6 @@ class AppointmentServiceAsyncTest {
       startTimeInMs.capture(),
       eq(false),
       eq(true),
-      isNull(),
     )
 
     assertThat(updated.firstValue).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
@@ -390,7 +384,6 @@ class AppointmentServiceAsyncTest {
       startTimeInMs.capture(),
       eq(true),
       eq(true),
-      isNull(),
     )
 
     assertThat(updated.firstValue).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
@@ -435,7 +428,6 @@ class AppointmentServiceAsyncTest {
       startTimeInMs.capture(),
       eq(false),
       eq(true),
-      isNull(),
     )
 
     assertThat(updated.firstValue).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
@@ -506,7 +498,6 @@ class AppointmentServiceAsyncTest {
       startTimeInMs.capture(),
       eq(true),
       eq(true),
-      isNull(),
     )
 
     assertThat(updated.firstValue).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
@@ -561,7 +552,6 @@ class AppointmentServiceAsyncTest {
       startTimeInMs.capture(),
       eq(false),
       eq(true),
-      isNull(),
     )
 
     assertThat(updated.firstValue).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))

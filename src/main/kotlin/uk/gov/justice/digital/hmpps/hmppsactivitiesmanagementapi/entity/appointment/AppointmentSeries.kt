@@ -59,7 +59,7 @@ data class AppointmentSeries(
   @JoinColumn(name = "appointment_tier_id")
   val appointmentTier: EventTier?,
 
-  var internalLocationId: Long?,
+  val internalLocationId: Long?,
 
   val customLocation: String? = null,
 

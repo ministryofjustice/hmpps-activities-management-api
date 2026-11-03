@@ -6,7 +6,6 @@ generic-service:
     host: activities-api.prison.service.justice.gov.uk
 
   env:
-    LOCATION_REMAP_ALLOWED_FILE: "MAP-924-prod-mapping-HMI-only-2026-11-02.csv"
     HMPPS_AUTH_URL: https://sign-in.hmpps.service.justice.gov.uk/auth
     PRISON_API_URL: https://prison-api.prison.service.justice.gov.uk
     PRISONER_SEARCH_API_URL: https://prisoner-search.prison.service.justice.gov.uk
