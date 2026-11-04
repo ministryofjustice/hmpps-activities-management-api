@@ -52,5 +52,6 @@ generic-prometheus-alerts:
     - "Digital-Prison-Services-preprod-activities_domain_events_dl"
     - "activities-and-appointments-preprod-hmpps_activities_management_jobs_queue"
     - "activities-and-appointments-preprod-hmpps_activities_management_jobs_dlq"
+    - "activities-and-appointments-preprod-update_from_external_system_events_dlq"
   sqsAlertsOldestThreshold: 10
   sqsAlertsTotalMessagesThreshold: 1
