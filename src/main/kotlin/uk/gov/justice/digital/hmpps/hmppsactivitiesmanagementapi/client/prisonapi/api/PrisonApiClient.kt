@@ -13,8 +13,10 @@ import reactor.core.publisher.Mono
 import reactor.util.context.Context
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.RetryApiService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.maybeQueryParam
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.BedAssignment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.PageBedAssignment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.Education
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.LocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.Movement
@@ -268,6 +270,18 @@ class PrisonApiClient(
     .bodyToMono(typeReference<List<LocationSummary>>())
     .retryWhen(backoffSpec.withRetryContext(Context.of("api", "prison-api", "path", "/api/agencies/{prisonCode}/eventLocationsBooked")))
     .awaitSingle()
+
+  suspend fun getCellHistoryForPrisoner(bookingId: Long): List<BedAssignment> = prisonApiWebClient.get()
+    .uri { uriBuilder: UriBuilder ->
+      uriBuilder
+        .path("/api/bookings/{bookingId}/cell-history")
+        .build(bookingId)
+    }
+    .retrieve()
+    .bodyToMono(typeReference<PageBedAssignment>())
+    .retryWhen(backoffSpec.withRetryContext(Context.of("api", "prison-api", "path", "/api/bookings/{bookingId}/cell-history")))
+    .awaitSingle()
+    .content ?: emptyList()
 
   fun getMovementsForPrisonersFromPrison(prisonCode: String, prisonerNumbers: Set<String>) = prisonerNumbers.ifNotEmpty {
     prisonApiWebClient
