@@ -99,7 +99,6 @@ class AppointmentServiceCancelTest {
       telemetryClient,
       auditService,
       locationService,
-      appointmentCategoryService,
     ),
     AppointmentCancelDomainService(
       appointmentSeriesRepository,
