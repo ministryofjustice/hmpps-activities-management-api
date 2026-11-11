@@ -31,6 +31,36 @@ generic-service:
           deny all;
           return 401;
         }
+    modsecurity_enabled: true
+    modsecurity_snippet: |
+      # Evaluate and log rule matches but never block requests
+      SecRuleEngine DetectionOnly
+      # Tag every logged match so it can be filtered by team/namespace in the modsec logs
+      SecDefaultAction "phase:2,pass,log,tag:github_team=activities-and-appointments,tag:namespace={{ .Release.Namespace }}"
+      # Each suspicious match adds points to the request score; 949110 (request) and 959100 (response) block once the total passes a threshold.
+      # Blocked requests get a 406 rather than the default 403; no effect until SecRuleEngine is On
+      SecRuleUpdateActionById 949110 "t:none,deny,status:406,logdata:%{SERVER_NAME}"
+      SecRuleUpdateActionById 959100 "t:none,deny,status:406,logdata:%{SERVER_NAME}"
+      # Bearer JWTs are base64url, which can contain -- and trip the SQL comment-sequence rule
+      SecRuleUpdateTargetById 942100 "!REQUEST_HEADERS:Authorization"
+      SecRuleUpdateTargetById 942440 "!REQUEST_HEADERS:Authorization"
+      # CRS default is GET HEAD POST OPTIONS; the API also exposes PUT, PATCH and DELETE endpoints
+      SecAction \
+        "id:900200,\
+         phase:1,\
+         nolog,\
+         pass,\
+         t:none,\
+         setvar:tx.allowed_methods=GET HEAD POST OPTIONS PUT PATCH DELETE"
+      # CRS paranoia level 2: enables stricter rules than the default level 1, so expect more false positives
+      SecAction \
+        "id:900000,\
+         phase:1,\
+         nolog,\
+         pass,\
+         t:none,\
+         setvar:tx.paranoia_level=2"
+
 
   # Used to access resources like SQS queues and SNS topics
   serviceAccountName: hmpps-activities-management-api
