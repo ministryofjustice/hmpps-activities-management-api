@@ -347,13 +347,13 @@ class ScheduledInstanceTest {
 
   @Test
   fun `is future end scheduled instance`() {
-    val now = LocalTime.now()
+    val now = LocalDateTime.of(2026, 1, 1, 12, 0)
 
-    val scheduledInstance = instance.copy(sessionDate = today, startTime = now.minusMinutes(30), endTime = now.plusMinutes(1))
-    assertThat(scheduledInstance.isEndFuture(LocalDateTime.now())).isTrue()
+    val scheduledInstance = instance.copy(sessionDate = now.toLocalDate(), startTime = now.toLocalTime().minusMinutes(30), endTime = now.toLocalTime().plusMinutes(1))
+    assertThat(scheduledInstance.isEndFuture(now)).isTrue()
 
-    val scheduledInstance2 = instance.copy(sessionDate = today, startTime = now.minusMinutes(30), endTime = now.minusMinutes(1))
-    assertThat(scheduledInstance2.isFuture(LocalDateTime.now())).isFalse()
+    val scheduledInstance2 = instance.copy(sessionDate = now.toLocalDate(), startTime = now.toLocalTime().minusMinutes(30), endTime = now.toLocalTime().minusMinutes(1))
+    assertThat(scheduledInstance2.isEndFuture(now)).isFalse()
   }
 
   @Nested
