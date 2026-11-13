@@ -141,7 +141,7 @@ cron:
     suspend: true
     schedule: "0 9 * * 1-4"
     file: ""
-    prisons: "GMI,EEI,CLI"
+    prisons: "HLI"
     dryRun: true
   allocationsDeallocateEnding: "0 1 * * *"
   allocationsDeallocateExpiring: "0 22 * * *"
