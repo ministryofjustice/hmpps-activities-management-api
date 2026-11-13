@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonLocations
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventReview
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventReviewDescription
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstanceAttendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentCategory
@@ -12,11 +13,15 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AlertsUpdatedDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AttendanceHistory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventDescription
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventOrganiser
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.IncentiveLevelsChangedDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.OffenderMergedDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerUpdatedDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.EarliestReleaseDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.PrisonerAllocations
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService.LocationDetails
@@ -479,7 +484,52 @@ fun transform(entityEventReview: EventReview) = ModelEventReview(
   acknowledgedTime = entityEventReview.acknowledgedTime,
   acknowledgedBy = entityEventReview.acknowledgedBy,
   eventDescription = enumEntries<EventDescription>().firstOrNull { it.name == entityEventReview.eventDescription?.name },
+  alertDetails = entityEventReview.toAlertDetails(),
+  incentiveDetails = entityEventReview.toIncentiveDetails(),
+  prisonerUpdatedDetails = entityEventReview.toPrisonerUpdatedDetails(),
+  mergeDetails = entityEventReview.toMergeDetails(),
 )
+
+// Decodes event_data into a typed AlertsUpdatedDetails object for alerts-updated events.
+// Fail-open: any decode problem yields null so a single malformed row never breaks the response,
+// and event_data is always retained as a human-readable fallback.
+private fun EventReview.toAlertDetails(): AlertsUpdatedDetails? = runCatching {
+  when (eventDescription) {
+    EventReviewDescription.ALERT_ADDED,
+    EventReviewDescription.ALERT_CLOSED,
+    EventReviewDescription.ALERTS_ADDED_AND_CLOSED,
+    -> AlertsUpdatedDetails.decode(eventData.orEmpty())
+    else -> null
+  }
+}.getOrNull()
+
+// Decodes event_data into a typed IncentiveLevelsChangedDetails object for incentives-changed events.
+// Fail-open: any decode problem yields null so a single malformed row never breaks the response,
+// and event_data is always retained as a fallback.
+private fun EventReview.toIncentiveDetails(): IncentiveLevelsChangedDetails? = runCatching {
+  when (eventDescription) {
+    EventReviewDescription.INCENTIVE_LEVEL_CHANGED,
+    -> IncentiveLevelsChangedDetails.decode(eventData.orEmpty())
+    else -> null
+  }
+}.getOrNull()
+
+// Decodes event_data into previous/new cell values for prisoner-updated cell-move events.
+private fun EventReview.toPrisonerUpdatedDetails(): PrisonerUpdatedDetails? = when (eventDescription) {
+  EventReviewDescription.CELL_MOVE -> PrisonerUpdatedDetails.decode(eventData.orEmpty())
+  else -> null
+}
+
+// Decodes event_data into a typed OffenderMergedDetails object for prisoner-merged events.
+// Fail-open: any decode problem yields null so a single malformed row never breaks the response,
+// and event_data is always retained as a fallback.
+private fun EventReview.toMergeDetails(): OffenderMergedDetails? = runCatching {
+  when (eventDescription) {
+    EventReviewDescription.PRISONER_MERGED,
+    -> OffenderMergedDetails.decode(eventData.orEmpty())
+    else -> null
+  }
+}.getOrNull()
 
 fun transform(activityBasic: EntityActivityBasic) = ModelActivityBasic(
   activityId = activityBasic.activityId,
