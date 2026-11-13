@@ -9,6 +9,14 @@ This service provides access to the endpoints for the management of prisoner rel
 
 The main, but not the only, client is the Activities Management UI found [here](https://github.com/ministryofjustice/hmpps-activities-management).
 
+## Architecture documentation
+
+See the [documentation index](docs/README.md) for the [high-level design](docs/high-level-design.md),
+[data flows and trust boundaries](docs/data-flow-diagram.md), [NOMIS migration and synchronisation](docs/02-nomis-sync-and-migration.md),
+and [database design](docs/03-activities-db-design.md). The [CronJob reference](docs/04-cron-jobs.md)
+covers scheduled processing and operational checks, and the [external API reference](docs/05-external-api-calls.md)
+details outbound backend calls. These documents cover this API and its frontend.
+
 ## Building the project
 
 Tools required:

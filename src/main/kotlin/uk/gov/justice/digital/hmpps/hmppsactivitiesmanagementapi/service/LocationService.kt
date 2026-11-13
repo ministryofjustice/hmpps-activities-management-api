@@ -57,8 +57,12 @@ class LocationService(
     }
   }
 
-  fun getDpsLocationsForAppointments(agencyId: String): List<LocationDetails> = runBlocking {
-    val locations = locationsInsidePrisonAPIClient.getLocationsForServiceType(agencyId, ServiceType.APPOINTMENT)
+  /**
+   * Parent locations should only be filtered out when offering locations for selection. Lookups resolving the
+   * location of existing appointments must not filter parents, otherwise those appointments cannot be displayed.
+   */
+  fun getDpsLocationsForAppointments(agencyId: String, filterParents: Boolean = false): List<LocationDetails> = runBlocking {
+    val locations = locationsInsidePrisonAPIClient.getLocationsForServiceType(agencyId, ServiceType.APPOINTMENT, filterParents)
 
     val mappings = getLocationMappingsByDpsIds(locations.toIdSet())
 

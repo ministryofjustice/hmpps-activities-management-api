@@ -234,6 +234,32 @@ class LocationServiceTest {
   }
 
   @Test
+  fun `getDpsLocationsForAppointments passes filter parents to locations inside prison`() {
+    val dpsLocationId = UUID.randomUUID()
+    val location = dpsLocation(dpsLocationId)
+
+    locationsInsidePrisonAPIClient.stub {
+      on {
+        runBlocking {
+          locationsInsidePrisonAPIClient.getLocationsForServiceType("TPR", ServiceType.APPOINTMENT, true)
+        }
+      } doReturn listOf(location)
+    }
+
+    nomisMappingAPIClient.stub {
+      on {
+        runBlocking {
+          nomisMappingAPIClient.getLocationMappingsByDpsIds(setOf(dpsLocationId))
+        }
+      } doReturn listOf(NomisDpsLocationMapping(dpsLocationId, 1))
+    }
+
+    assertThat(locationService.getDpsLocationsForAppointments("TPR", filterParents = true)).containsExactly(
+      LocationDetails(location.prisonId, 1, location.id, location.code, location.localName!!, location.pathHierarchy),
+    )
+  }
+
+  @Test
   fun `getLocationDetails - by DPS location id - returns location details when local name is null`() {
     whenever(nomisMappingAPIClient.getLocationMappingByDpsId(dpsLocationUuid)).thenReturn(NomisDpsLocationMapping(dpsLocationUuid, 123))
 

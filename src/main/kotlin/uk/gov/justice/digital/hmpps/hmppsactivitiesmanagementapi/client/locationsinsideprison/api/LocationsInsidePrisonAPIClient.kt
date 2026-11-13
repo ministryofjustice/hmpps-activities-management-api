@@ -46,12 +46,16 @@ class LocationsInsidePrisonAPIClient(
     .retryWhen(backoffSpec.withRetryContext(Context.of("api", "locations-inside-prison-api", "path", "/locations/prison/{prisonCode}/non-residential")))
     .awaitSingle()
 
-  suspend fun getLocationsForServiceType(prisonCode: String, serviceType: ServiceType): List<Location> = locationsInsidePrisonApiWebClient.get()
+  suspend fun getLocationsForServiceType(
+    prisonCode: String,
+    serviceType: ServiceType,
+    filterParents: Boolean = false,
+  ): List<Location> = locationsInsidePrisonApiWebClient.get()
     .uri { uriBuilder: UriBuilder ->
       uriBuilder
         .path("/locations/non-residential/prison/{prisonCode}/service/{serviceType}")
         .queryParam("formatLocalName", true)
-        .queryParam("filterParents", false)
+        .queryParam("filterParents", filterParents)
         .queryParam("sortByLocalName", true)
         .build(prisonCode, serviceType)
     }

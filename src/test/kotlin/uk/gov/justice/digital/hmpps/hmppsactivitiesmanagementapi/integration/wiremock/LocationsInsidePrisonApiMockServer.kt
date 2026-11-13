@@ -70,13 +70,14 @@ class LocationsInsidePrisonApiMockServer : MockServer(8093) {
     serviceType: ServiceType = ServiceType.APPOINTMENT,
     dpsLocationIds: Set<UUID> = setOf(UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc")),
     locations: List<Location>? = null,
+    filterParents: Boolean = false,
   ): List<Location> {
     val responseLocations = locations ?: defaultLocations(dpsLocationIds)
 
     stubFor(
       WireMock.get(urlPathEqualTo("/locations/non-residential/prison/$prisonCode/service/$serviceType"))
         .withQueryParam("formatLocalName", equalTo("true"))
-        .withQueryParam("filterParents", equalTo("false"))
+        .withQueryParam("filterParents", equalTo(filterParents.toString()))
         .withQueryParam("sortByLocalName", equalTo("true"))
         .willReturn(
           WireMock.aResponse()

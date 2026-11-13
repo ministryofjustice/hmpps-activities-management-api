@@ -16,6 +16,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventTierType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AttendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AttendanceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.SuspendedPrisonerActivityAttendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.SuspendedPrisonerAttendance
@@ -146,6 +147,24 @@ class AttendancesService(
       )
 
     return attendance.map { transform(it, caseNotesApiClient = caseNotesApiClient) }
+  }
+
+  @Transactional(readOnly = true)
+  fun getAttendanceSummary(prisonerNumber: String, fromDate: LocalDate, toDate: LocalDate): AttendanceSummary {
+    require(!toDate.isBefore(fromDate)) { "End date cannot be before the start date." }
+
+    val counts = attendanceRepository.countCompletedAttendancesByReason(prisonerNumber, fromDate, toDate)
+
+    // REFUSED is the only unacceptable absence; ATTENDED counts towards the total only; any other reason is an acceptable absence.
+    val unacceptable = counts.filter { it.code == AttendanceReasonEnum.REFUSED }.sumOf { it.count }
+    val attended = counts.filter { it.code == AttendanceReasonEnum.ATTENDED }.sumOf { it.count }
+    val acceptable = counts.sumOf { it.count } - unacceptable - attended
+
+    return AttendanceSummary(
+      acceptableAbsence = acceptable.toInt(),
+      unacceptableAbsence = unacceptable.toInt(),
+      total = (acceptable + unacceptable + attended).toInt(),
+    )
   }
 
   private fun AttendanceUpdateRequest.mayBeCaseNote(attendance: Attendance): CaseNote? = caseNote?.let {

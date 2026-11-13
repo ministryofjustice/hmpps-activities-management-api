@@ -39,8 +39,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attenda
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceReasons
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AttendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AttendanceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllAttendanceRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceReasonCount
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.SuspendedPrisonerAttendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.AttendanceReasonRepository
@@ -711,5 +713,39 @@ class AttendancesServiceTest {
       eventId = 1,
       sensitive = false,
     )
+  }
+
+  @Nested
+  inner class AttendanceSummaryTest {
+    private val from = LocalDate.now().minusDays(10)
+    private val to = LocalDate.now()
+
+    @Test
+    fun `counts refused as unacceptable, attended as total only and other reasons as acceptable`() {
+      whenever(attendanceRepository.countCompletedAttendancesByReason("A1234AA", from, to)).thenReturn(
+        listOf(
+          AttendanceReasonCount(AttendanceReasonEnum.ATTENDED, 5),
+          AttendanceReasonCount(AttendanceReasonEnum.REFUSED, 2),
+          AttendanceReasonCount(AttendanceReasonEnum.SICK, 1),
+          AttendanceReasonCount(AttendanceReasonEnum.CANCELLED, 3),
+        ),
+      )
+
+      assertThat(service.getAttendanceSummary("A1234AA", from, to))
+        .isEqualTo(AttendanceSummary(acceptableAbsence = 4, unacceptableAbsence = 2, total = 11))
+    }
+
+    @Test
+    fun `returns zeros when there are no attendances`() {
+      whenever(attendanceRepository.countCompletedAttendancesByReason("A1234AA", from, to)).thenReturn(emptyList())
+
+      assertThat(service.getAttendanceSummary("A1234AA", from, to)).isEqualTo(AttendanceSummary())
+    }
+
+    @Test
+    fun `rejects an end date before the start date`() {
+      assertThatThrownBy { service.getAttendanceSummary("A1234AA", to, from) }
+        .isInstanceOf(IllegalArgumentException::class.java)
+    }
   }
 }
