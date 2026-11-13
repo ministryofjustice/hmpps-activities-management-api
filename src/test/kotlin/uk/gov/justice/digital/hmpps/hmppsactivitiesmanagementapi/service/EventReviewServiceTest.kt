@@ -195,7 +195,7 @@ class EventReviewServiceTest {
       listOf(
         EventReview(1, "service1", "prison-offender-events.prisoner.activities-changed", eventTime, prisonCode, "G1234FF", 1, "XYZ", eventDescription = EventReviewDescription.ACTIVITY_ENDED),
         EventReview(2, "service2", "prison-offender-events.prisoner.activities-changed", eventTime, prisonCode, "G1234FX", 2, "XYZ", eventDescription = EventReviewDescription.ACTIVITY_SUSPENDED),
-        EventReview(3, "service3", "prisoner-offender-search.prisoner.released", eventTime, prisonCode, "G1234FY", 3, "XYZ", eventDescription = EventReviewDescription.TEMPORARY_RELEASE),
+        EventReview(3, "service3", "prisoner-offender-search.prisoner.released", eventTime, prisonCode, "G1234FY", 3, "XYZ", eventDescription = EventReviewDescription.RELEASED),
       ),
     )
 
@@ -242,7 +242,7 @@ class EventReviewServiceTest {
           bookingId = 3,
           prisonerNumber = "G1234FY",
           prisonCode = "MDI",
-          eventDescription = EventDescription.TEMPORARY_RELEASE,
+          eventDescription = EventDescription.RELEASED,
         ),
       ),
     )
