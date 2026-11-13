@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
+import java.time.LocalDate
 import java.util.*
 
 @Repository
@@ -15,6 +16,16 @@ interface ActivityScheduleRepository :
   JpaRepository<ActivitySchedule, Long>,
   ActivityScheduleRepositoryCustom {
   fun findAllByActivityPrisonCode(prisonCode: String): List<ActivitySchedule>
+
+  @Query(
+    """
+      select distinct s.activity.activityId from ActivitySchedule s
+      where s.activity.prisonCode = :prisonCode and s.dpsLocationId = :locationId
+      and (s.activity.endDate is null or s.activity.endDate >= :today)
+      and (s.endDate is null or s.endDate >= :today)
+    """,
+  )
+  fun findActivityIdsForLocationRemap(prisonCode: String, locationId: UUID, today: LocalDate): List<Long>
 
   @EntityGraph(attributePaths = ["instances"], type = EntityGraph.EntityGraphType.LOAD)
   fun getAllByActivity(activity: Activity): List<ActivitySchedule>

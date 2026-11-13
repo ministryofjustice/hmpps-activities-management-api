@@ -5,10 +5,19 @@ import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentSet
+import java.time.LocalDate
 import java.util.UUID
 
 @Repository
 interface AppointmentSetRepository : JpaRepository<AppointmentSet, Long> {
+
+  @Query(
+    """
+      select s.appointmentSetId from AppointmentSet s
+      where s.prisonCode = :prisonCode and s.dpsLocationId = :locationId and s.startDate > :today
+    """,
+  )
+  fun findSetIdsForLocationRemap(prisonCode: String, locationId: UUID, today: LocalDate): List<Long>
 
   @Query(
     """

@@ -6,12 +6,23 @@ import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentSeries
+import java.time.LocalDate
 import java.util.*
 
 @Repository
 interface AppointmentSeriesRepository :
   JpaRepository<AppointmentSeries, Long>,
   JpaSpecificationExecutor<AppointmentSeries> {
+
+  @Query(
+    """
+      select distinct s.appointmentSeriesId from AppointmentSeries s, Appointment a
+      where a.appointmentSeries = s and s.prisonCode = :prisonCode
+      and a.startDate > :today and a.isDeleted = false
+      and (s.dpsLocationId = :locationId or a.dpsLocationId = :locationId)
+    """,
+  )
+  fun findSeriesIdsForLocationRemap(prisonCode: String, locationId: UUID, today: LocalDate): List<Long>
 
   @Query(
     """

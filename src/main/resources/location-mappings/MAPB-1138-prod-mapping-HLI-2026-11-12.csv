@@ -1,0 +1,2 @@
+prisonId,locationType,locationId,locationKey,locationName,parentId,chosenChildId,chosenChildKey,chosenChildHasActivities,step2WillArchive,step2ReasonNotArchived
+HLI,PARENT,99ee5bde-e648-4469-baf0-3b0c62c38a79,HLI-EDUC-EDUC1,EDUCATION 1,99ee5bde-e648-4469-baf0-3b0c62c38a79,01a1d03d-a20f-7212-b5a7-a39cb3dee555,HLI-EDUC-EDUC1-DCTN68,true,false,Parent

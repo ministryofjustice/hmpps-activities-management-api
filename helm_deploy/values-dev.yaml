@@ -13,6 +13,7 @@ generic-service:
       SecDefaultAction "phase:2,pass,log,tag:github_team=activities-and-appointments,tag:namespace={{ .Release.Namespace }}"
 
   env:
+    LOCATION_REMAP_ALLOWED_FILE: ""
     HMPPS_AUTH_URL: https://sign-in-dev.hmpps.service.justice.gov.uk/auth
     PRISON_API_URL: https://prison-api-dev.prison.service.justice.gov.uk
     PRISONER_SEARCH_API_URL: https://prisoner-search-dev.prison.service.justice.gov.uk

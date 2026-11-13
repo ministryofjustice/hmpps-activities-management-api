@@ -12,6 +12,7 @@ import org.mockito.ArgumentMatchers.anySet
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
+import org.mockito.kotlin.isNull
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
@@ -175,7 +176,7 @@ class AppointmentServiceUpdateTest {
 
     service.updateAppointment(appointment.appointmentId, request, principal)
 
-    verify(appointmentUpdateDomainService).updateAppointments(anyLong(), anyLong(), anySet(), any(), anyMap(), any(), anyString(), any(), anyInt(), anyLong(), eq(true), eq(true))
+    verify(appointmentUpdateDomainService).updateAppointments(anyLong(), anyLong(), anySet(), any(), anyMap(), any(), anyString(), any(), anyInt(), anyLong(), eq(true), eq(true), isNull())
   }
 
   @Test

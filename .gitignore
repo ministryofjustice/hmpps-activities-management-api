@@ -82,3 +82,6 @@ sonar-project.properties
 
 # Localstack
 /volume/
+
+# For anyone using the Playwright MCP assuming local name is .playwright-mcp
+.playwright-mcp/
