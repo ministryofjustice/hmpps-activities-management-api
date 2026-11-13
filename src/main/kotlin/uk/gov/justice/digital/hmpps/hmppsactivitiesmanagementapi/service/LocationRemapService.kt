@@ -37,7 +37,7 @@ class LocationRemapService(
   companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
     private const val ADMIN_USERNAME = "activities-management-admin-1"
-    val PILOT_PRISONS = setOf("GMI", "EEI", "CLI")
+    val PILOT_PRISONS = setOf("HLI")
   }
 
   fun remap(file: String, prisons: Set<String>, dryRun: Boolean, result: LocationRemapResult = LocationRemapResult()) {
