@@ -34,7 +34,7 @@ class LocationRemapFileTest {
 
   @Test
   fun `loads supplied preprod mapping including all pilot prisons`() {
-    val mappings = reader.load("MAPB-924-preprod-mapping-2026-10-22.csv")
+    val mappings = reader.load("MAPB-1138-prod-mapping-HLI-2026-11-12.csv")
     assertThat(mappings).isNotEmpty
     assertThat(mappings.map { it.prisonId }).containsAll(LocationRemapService.PILOT_PRISONS)
   }
