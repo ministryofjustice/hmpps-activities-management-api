@@ -39,6 +39,7 @@ generic-service:
 
   postgresDatabaseRestore:
     enabled: true
+    timeout: 7200 # (2hrs) Raised from chart default of 2400s (40min) - review once a full restore duration is known.
     namespace_secrets:
       rds-instance-output:
         DB_NAME: "database_name"
