@@ -861,6 +861,8 @@ class ActivityService(
         .associateBy { it.prisonPayBandId }
         .ifEmpty { throw IllegalArgumentException("No pay bands found for prison '${activity.prisonCode}'") }
 
+      validatePayRemoval(activity, pay)
+
       return replacePayBandAllocationBeforePayRemoval(activity.prisonCode, pay, activity, prisonPayBands).also {
         activity.removePay()
         pay.forEach {
@@ -881,6 +883,49 @@ class ActivityService(
     if (request.paid != null && activity.paid && activity.activityPay().isEmpty()) throw IllegalStateException("Activity '${activity.activityId}' must have at least one pay rate.")
 
     return emptySet()
+  }
+
+  private fun validatePayRemoval(
+    activity: Activity,
+    newPay: List<ActivityPayCreateRequest>,
+  ) {
+    val oldPay = activity.activityPay()
+    val hasReplacement = newPay.any { newRate ->
+      oldPay.none { existing ->
+        existing.payBand.prisonPayBandId == newRate.payBandId &&
+          existing.incentiveNomisCode == newRate.incentiveNomisCode
+      }
+    }
+
+    if (hasReplacement) return
+
+    val removedPay = oldPay.filter { existing ->
+      newPay.none {
+        it.payBandId == existing.payBand.prisonPayBandId &&
+          it.incentiveNomisCode == existing.incentiveNomisCode
+      }
+    }
+
+    val activeAllocations = activity.schedules()
+      .flatMap { it.allocations(excludeEnded = true) }
+
+    if (removedPay.isNotEmpty() && activeAllocations.isNotEmpty()) {
+      val prisoners = prisonerSearchApiClient
+        .findByPrisonerNumbers(activeAllocations.map { it.prisonerNumber }.distinct())
+        .associateBy { it.prisonerNumber }
+
+      require(
+        activeAllocations.none { allocation ->
+          val prisoner = prisoners.getValue(allocation.prisonerNumber)
+          removedPay.any {
+            it.payBand.prisonPayBandId == allocation.payBand?.prisonPayBandId &&
+              it.incentiveNomisCode == prisoner.currentIncentive?.level?.code
+          }
+        },
+      ) {
+        "You cannot remove this pay rate because people are allocated to it."
+      }
+    }
   }
 
   private fun applyPayHistoryUpdate(
