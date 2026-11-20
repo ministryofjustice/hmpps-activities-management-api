@@ -39,6 +39,9 @@ generic-service:
 
   postgresDatabaseRestore:
     enabled: true
+    # Every 4 hours (06:26, 10:26, 14:26, 18:26), Sun-Fri. Chart default is every 30 minutes, which re-runs a failed restore
+    # back-to-back and keeps the preprod RDS EBS burst balance drained (SAA-4905).
+    schedule: "26 6-21/4 * * 0-5"
     timeout: 7200 # (2hrs) Raised from chart default of 2400s (40min) - review once a full restore duration is known.
     namespace_secrets:
       rds-instance-output:
