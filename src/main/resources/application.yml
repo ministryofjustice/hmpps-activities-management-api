@@ -180,6 +180,8 @@ hmpps:
 
 springdoc:
   swagger-ui:
+    # Must match the pinned swagger-ui webjar version in build.gradle.kts
+    version: 5.34.1
     tags-sorter: alpha
 
 migrate:
