@@ -1656,6 +1656,26 @@ class ActivityServiceTest {
   }
 
   @Test
+  fun `updateActivity - cannot delete a pay rate with someone allocated`() {
+    val activity = activityEntity(activityId = 17)
+    val allocations = activity.schedules().flatMap { it.allocations(excludeEnded = true) }
+    val prisonerNumbers = allocations.map { it.prisonerNumber }.distinct()
+    val request = ActivityUpdateRequest(pay = emptyList())
+
+    whenever(
+      activityRepository.findByActivityIdAndPrisonCodeWithFilters(17, MOORLAND_PRISON_CODE, LocalDate.now()),
+    ).thenReturn(activity)
+    whenever(prisonPayBandRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh())
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(prisonerNumbers))
+      .thenReturn(prisonerNumbers.map { PrisonerSearchPrisonerFixture.instance(prisonerNumber = it) })
+
+    assertThatThrownBy {
+      service().updateActivity(MOORLAND_PRISON_CODE, 17, request, "TEST")
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("You cannot remove this pay rate because people are allocated to it.")
+  }
+
+  @Test
   fun `updateActivity - update pay band where someone is allocated to it`() {
     val updateActivityRequest: ActivityUpdateRequest = mapper.read("activity/activity-update-request-6.json")
     val activityEntity: ActivityEntity = activityEntity()
