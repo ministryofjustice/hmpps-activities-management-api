@@ -10,5 +10,10 @@
 # Snyk (https://snyk.io) policy file, patches or ignores known vulnerabilities.
 version: v1.25.1
 # ignores vulnerabilities until expiry date; change duration by modifying expiry date
-ignore: {}
+ignore:
+    SNYK-UPSTREAM-OPENJDKJRE-22576909:
+      - '*':
+           reason: Temporarily mitigated in Helm deployments by disabling the Base64 intrinsic with -XX:-UseBASE64Intrinsics; update the JRE.
+           expires: 2026-12-25T00:00:00.000Z
+           created: 2026-11-25T13:00:00.000Z
 patch: {}
